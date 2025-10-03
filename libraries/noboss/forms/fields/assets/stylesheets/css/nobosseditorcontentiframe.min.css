@@ -1,0 +1,2 @@
+/* Coloca em todos textos do editor o efeito de sombra 'zerado' como default */
+body span{text-shadow:0 0}[data-mce-style*="#fff"]{text-shadow:1px 1px 1px #000;background-color:#686868}

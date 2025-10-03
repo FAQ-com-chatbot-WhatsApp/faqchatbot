@@ -1,0 +1,456 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fieldset name="hidden" addfieldpath="libraries/noboss/forms/fields">
+        <field type="nobossloadtranslation" />
+        <field type="nobosshaslibrary"/>
+        <field type="nobossrequestjsconstants" constants="NOBOSS_EXTENSIONS_GLOBAL_NEW"/>
+        <field
+			type="nobossrequestjscss"
+			filetype="css"
+			prefixurlsite="external"
+			file="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+            majorVersionJoomlaAccept="3"
+		/>
+    </fieldset>
+    
+    <fieldset name="intro">
+        <field
+			id="title"
+			name="name_faqs_group"
+			type="text"
+            size="40"
+            class="input-xxlarge input-large-text"
+			label="JFIELD_NAME_LABEL"
+			required="required" 
+		/>
+    </fieldset>
+    
+	<!-- Aba layout -->
+	<fieldset name="theme" label="NOBOSS_EXTENSIONS_LAYOUT_LABEL" description="COM_NOBOSSFAQ_TAB_THEME_INTRO">
+		<field type="note" label="COM_NOBOSSFAQ_LAYOUT_LABEL" description="COM_NOBOSSFAQ_LAYOUT_DESC"/>
+
+		<field
+			name="faqs_display_theme"
+			type="nobosstheme"
+			columns="1"
+			modalsprefix="model"
+            parentclass="stack span-2"
+			required="true"
+			hiddenLabel="true"
+        >
+			<theme columns="1" value="model1" plan="custom">COM_NOBOSSFAQ_MODEL1</theme>
+			<theme columns="1" value="model2" plan="custom">COM_NOBOSSFAQ_MODEL2</theme>
+			<theme columns="1" value="model3" plan="custom">COM_NOBOSSFAQ_MODEL3</theme>
+		</field>
+
+        <field
+			name="faqs_display_categories"
+			type="nobossradio"
+			class="btn-group btn-group-yesno"
+			label="COM_NOBOSSFAQ_SHOW_CATEGORIES_LABEL"
+			description="COM_NOBOSSFAQ_SHOW_CATEGORIES_DESC"
+			default="1" 
+			showon="faqs_display_theme:model3" 
+            parentclass="stack span-2"
+		>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+
+        <field
+			name="faqs_display_search_form"
+			type="nobossradio"
+			class="btn-group btn-group-yesno"
+			label="COM_NOBOSSFAQ_SHOW_SEARCH_FORM_LABEL"
+			description="COM_NOBOSSFAQ_SHOW_SEARCH_FORM_DESC"
+			default="1"
+			showon="faqs_display_theme:model1,model2"
+            parentclass="stack span-2"
+            >
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+
+        <field 
+			name="faqs_display_submit_button_text" 
+			type="text"
+			rows="5"
+			default="Search"
+			label="COM_NOBOSSFAQ_SUBMIT_BUTTON_TEXT_LABEL" 
+			description="COM_NOBOSSFAQ_SUBMIT_BUTTON_TEXT_DESC" 
+			size="10"
+			showon="faqs_display_theme:model1,model2[AND]faqs_display_search_form:1"
+            parentclass="stack span-2"
+		/>
+
+		<!-- Field introdutorio de personalizacao -->
+		<field type="note" label="NOBOSS_EXTENSIONS_LAYOUT_SETTINGS_NOTE" description="COM_NOBOSSFAQ_LAYOUT_SETTINGS_DESC" showon="theme!:"/>
+
+		<field
+			name="faqs_display_external_area_model1" 
+			type="nobossmodal" 
+			formsource="administrator/components/com_nobossfaq/models/forms/modals/model1_external_area_customization.xml" 
+			label="NOBOSS_EXTENSIONS_MODAL_EXTERNAL_AREA_CUSTOMIZATION_LABEL"	
+			button="NOBOSS_EXTENSIONS_MODAL_EXTERNAL_AREA_CUSTOMIZATION_BUTTON"
+			showon="faqs_display_theme:model1"
+            parentclass="reduce-br stack span-2-inline"
+		/>
+
+		<field
+			name="faqs_display_items_customization_model1" 
+			type="nobossmodal" 
+			formsource="administrator/components/com_nobossfaq/models/forms/modals/model1_items_customization.xml" 
+			label="COM_NOBOSSFAQ_MODAL_ITEMS_CUSTOMIZATION_LABEL"	
+			button="NOBOSS_EXTENSIONS_MODAL_ITEMS_CUSTOMIZATION_BUTTON"
+            not_found_message="NOBOSS_EXTENSIONS_THEME_NOT_FOUND_XML_ITENS_MESSAGE"
+			showon="faqs_display_theme:model1"
+            parentclass="reduce-br stack span-2-inline"
+		/>
+
+		<field
+			name="faqs_display_external_area_model2" 
+			type="nobossmodal" 
+			formsource="administrator/components/com_nobossfaq/models/forms/modals/model2_external_area_customization.xml" 
+			label="NOBOSS_EXTENSIONS_MODAL_EXTERNAL_AREA_CUSTOMIZATION_LABEL"	
+			button="NOBOSS_EXTENSIONS_MODAL_EXTERNAL_AREA_CUSTOMIZATION_BUTTON"
+			showon="faqs_display_theme:model2"
+            parentclass="reduce-br stack span-2-inline"
+		/>
+		<field
+			name="faqs_display_items_customization_model2" 
+			type="nobossmodal" 
+			formsource="administrator/components/com_nobossfaq/models/forms/modals/model2_items_customization.xml" 
+			label="COM_NOBOSSFAQ_MODAL_ITEMS_CUSTOMIZATION_LABEL"	
+			button="NOBOSS_EXTENSIONS_MODAL_ITEMS_CUSTOMIZATION_BUTTON"
+            not_found_message="NOBOSS_EXTENSIONS_THEME_NOT_FOUND_XML_ITENS_MESSAGE"
+			showon="faqs_display_theme:model2"
+            parentclass="reduce-br stack span-2-inline"
+		/>
+
+		<field
+			name="faqs_display_external_area_model3" 
+			type="nobossmodal" 
+			formsource="administrator/components/com_nobossfaq/models/forms/modals/model3_external_area_customization.xml" 
+			label="NOBOSS_EXTENSIONS_MODAL_EXTERNAL_AREA_CUSTOMIZATION_LABEL"	
+			button="NOBOSS_EXTENSIONS_MODAL_EXTERNAL_AREA_CUSTOMIZATION_BUTTON"
+			showon="faqs_display_theme:model3"
+            parentclass="reduce-br stack span-2-inline"
+		/>
+
+		<field
+			name="faqs_display_items_customization_model3" 
+			type="nobossmodal" 
+			formsource="administrator/components/com_nobossfaq/models/forms/modals/model3_items_customization.xml" 
+			label="COM_NOBOSSFAQ_MODAL_ITEMS_CUSTOMIZATION_LABEL"	
+			button="NOBOSS_EXTENSIONS_MODAL_ITEMS_CUSTOMIZATION_BUTTON"
+            not_found_message="NOBOSS_EXTENSIONS_THEME_NOT_FOUND_XML_ITENS_MESSAGE"
+			showon="faqs_display_theme:model3"
+            parentclass="reduce-br stack span-2-inline"
+		/>
+
+		<field
+			name="faqs_display_categories_model3" 
+			type="nobossmodal" 
+			formsource="administrator/components/com_nobossfaq/models/forms/modals/model3_categories.xml" 
+			label="COM_NOBOSSFAQ_SUBJECTS"	
+			button="NOBOSS_EXTENSIONS_MODAL_ITEMS_CUSTOMIZATION_BUTTON"
+			showon="faqs_display_theme:model3[AND]faqs_display_categories:1"
+            parentclass="reduce-br stack span-2-inline"
+		/>
+		
+		<field
+			name="faqs_display_search_form_model1" 
+			type="nobossmodal" 
+			formsource="administrator/components/com_nobossfaq/models/forms/modals/model1_search_form.xml" 
+			label="COM_NOBOSSFAQ_SEARCH_FORM_LABEL"	
+			button="NOBOSS_EXTENSIONS_MODAL_ITEMS_CUSTOMIZATION_BUTTON"
+			showon="faqs_display_theme:model1[AND]faqs_display_search_form:1"
+            parentclass="reduce-br stack span-2-inline"
+		/>
+
+		<field
+			name="faqs_display_search_form_model2" 
+			type="nobossmodal" 
+			formsource="administrator/components/com_nobossfaq/models/forms/modals/model2_search_form.xml" 
+			label="COM_NOBOSSFAQ_SEARCH_FORM_LABEL"	
+			button="NOBOSS_EXTENSIONS_MODAL_ITEMS_CUSTOMIZATION_BUTTON"
+			showon="faqs_display_theme:model2[AND]faqs_display_search_form:1"
+            parentclass="reduce-br stack span-2-inline"
+		/>
+
+	</fieldset>
+
+	<!-- Aba perguntas e respostas -->
+	<fieldset name="questions" label="COM_NOBOSSFAQ_TAB_QUESTIONS_LABEL" description="COM_NOBOSSFAQ_TAB_QUESTIONS_INTRO">
+		<field
+			name="content_display_registered"
+			type="nobossradio"
+			class="btn-group btn-group-yesno"
+			label="COM_NOBOSSFAQ_CONTENT_DISPLAY_REGISTERED_LABEL"
+			description="COM_NOBOSSFAQ_CONTENT_DISPLAY_REGISTERED_DESC"
+			default="1"
+            parentclass="stack span-3-inline"
+        >
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+
+		<field
+			name="content_display_articles"
+			type="nobossradio"
+			class="btn-group btn-group-yesno"
+			label="COM_NOBOSSFAQ_CONTENT_DISPLAY_ARTICLES_LABEL"
+			description="COM_NOBOSSFAQ_CONTENT_DISPLAY_ARTICLES_DESC"
+			default="0"
+            parentclass="stack span-3-inline"
+        >
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+
+		<field 
+			name="content_categories_articles"
+			type="category"
+			extension="com_content"
+			multiple="1"
+			showon="content_display_articles:1"
+			parentclass="stack span-3-inline"
+			label="COM_NOBOSSFAQ_CONTENT_CATEGORIES_ARTICLES_LABEL"
+			description="COM_NOBOSSFAQ_CONTENT_CATEGORIES_ARTICLES_DESC" />
+	</fieldset>
+
+	<!-- Aba titulo e subtitulo -->
+	<fieldset name="external_area" label="COM_NOBOSSFAQ_TAB_EXTERNAL_LABEL" description="COM_NOBOSSFAQ_TAB_EXTERNAL_INTRO">
+		<field
+			name="faqs_display_show_title"
+			type="nobossradio"
+			class="btn-group btn-group-yesno"
+			label="NOBOSS_EXTENSIONS_TITLE_AND_SUPPORT_DISPLAY_TITLE_LABEL"
+			description="NOBOSS_EXTENSIONS_TITLE_AND_SUPPORT_DISPLAY_TITLE_DESC"
+			default="1"
+            parentclass="stack span-2-inline"
+        >
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+
+		<field
+			name="faqs_display_title"
+			type="textarea"
+			rows="3"
+			label="NOBOSS_EXTENSIONS_TITLE_AND_SUPPORT_TITLE_LABEL"
+			description="NOBOSS_EXTENSIONS_TITLE_AND_SUPPORT_TITLE_DESC"
+			size="10"
+			showon="faqs_display_show_title:1"
+            parentclass="stack span-3-inline"
+		/>
+
+		<field
+			name="faqs_display_show_subtitle"
+			type="nobossradio"
+			class="btn-group btn-group-yesno"
+			label="NOBOSS_EXTENSIONS_TITLE_AND_SUPPORT_DISPLAY_SUPPORT_TEXT_LABEL"
+			description="NOBOSS_EXTENSIONS_TITLE_AND_SUPPORT_DISPLAY_SUPPORT_TEXT_DESC"
+			default="1"
+            parentclass="stack span-2-inline"
+			>
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+
+		<field
+			name="faqs_display_subtitle"
+			type="textarea"
+			rows="5"
+			label="NOBOSS_EXTENSIONS_TITLE_AND_SUPPORT_SUPPORT_TEXT_LABEL"
+			description="NOBOSS_EXTENSIONS_TITLE_AND_SUPPORT_SUPPORT_TEXT_DESC"
+			size="10"
+			showon="faqs_display_show_subtitle:1"
+            parentclass="stack span-3-inline"
+		/>
+    </fieldset>
+
+	<!-- Aba publicacao -->
+    <fieldset name="module" label="JGLOBAL_FIELDSET_PUBLISHING" description="COM_NOBOSSFAQ_TAB_MODULE_INTRO">
+		<field
+			name="state" type="list"
+			label="JSTATUS" description="JFIELD_PUBLISHED_DESC"
+			parentclass="stack span-3-inline"
+			class="chzn-color-state form-select-color-state" size="1" default="1">
+			<option value="1">
+				JPUBLISHED</option>
+			<option value="0">
+				JUNPUBLISHED</option>
+			<option value="2">
+				JARCHIVED</option>
+			<option value="-2">
+				JTRASHED</option>
+		</field>
+        <field
+			id="language"
+			name="language"
+			type="contentlanguage"
+			parentclass="stack span-3-inline"
+			description="JFIELD_MODULE_LANGUAGE_DESC"
+			label="JFIELD_LANGUAGE_LABEL"
+		>
+			<option value="*">JALL</option>
+		</field>
+
+		<field
+			id="created_by"
+			name="created_by"
+			type="user"
+			class="text"
+			parentclass="stack span-3-inline"
+			label="JGLOBAL_FIELD_CREATED_BY_LABEL"
+			description="JGLOBAL_FIELD_CREATED_BY_DESC"
+			readonly="true" />
+
+		<field
+			id="created"
+			name="created"
+			type="text"
+			class="text"
+			parentclass="stack span-3-inline"
+			label="JGLOBAL_FIELD_CREATED_LABEL"
+			description="JGLOBAL_FIELD_CREATED_DESC"
+			readonly="true" />
+	
+		<field
+			id="modified_by"
+			name="modified_by"
+			type="user"
+			class="text"
+			parentclass="stack span-3-inline"
+			label="JGLOBAL_FIELD_MODIFIED_BY_LABEL"
+			description="JGLOBAL_FIELD_MODIFIED_BY_DESC"
+			readonly="true" />
+
+		<field
+			id="modified"
+			name="modified"
+			type="text"
+			class="text"
+			parentclass="stack span-3-inline"
+			label="JGLOBAL_FIELD_MODIFIED_LABEL"
+			readonly="true" />
+		<field
+			id="id_faqs_group"
+			name="id_faqs_group"
+			type="text"
+			default="0"
+			readonly="true"
+			class="readonly"
+			parentclass="stack span-3-inline"
+			label="JGLOBAL_FIELD_ID_LABEL"
+			description ="JGLOBAL_FIELD_ID_DESC" />
+
+        <field 
+            name="nobossembed" 
+            type="nobossmodal" 
+            formsource="libraries/noboss/forms/fields/nobossembed/modal.xml" 
+            label="NOBOSS_EXTENSIONS_EMBED_MODAL_LABEL"
+            description="NOBOSS_EXTENSIONS_EMBED_MODAL_DESC"
+            button="NOBOSS_EXTENSIONS_EMBED_MODAL_BTN"
+            aliasfieldid="id_module_faqs_display"
+            parentclass="stack span-3-inline"
+        />
+
+        <field
+			id="position_module_faqs_display"
+			name="position_module_faqs_display"
+			type="nobossmodulesposition"
+			label="COM_NOBOSSFAQ_POSITION_MODULE_LABEL"
+			description="COM_NOBOSSFAQ_POSITION_MODULE_DESC"
+            parentclass="stack span-3"
+		/>
+
+        <field name="assignment_module_faqs_display" type="hidden" module="assigment" />
+		<field name="assigned_module_faqs_display" type="hidden" module="assigned" />
+        
+        <field
+			id="id_module_faqs_display"
+			name="id_module_faqs_display"
+			type="hidden"
+			readonly="true"
+			class="readonly"
+			label="JGLOBAL_FIELD_ID_LABEL"
+			description ="JGLOBAL_FIELD_ID_DESC"
+		/>
+    </fieldset>
+
+	<!-- Aba CSS e JS -->
+	<fieldset name="style_js" label="NOBOSS_EXTENSIONS_TAB_CSS_JS_LABEL" description="NOBOSS_EXTENSIONS_TAB_CSS_JS_DESCRIPTION" breakblock="1">
+    	<field
+			type="note"
+			label="NOBOSS_EXTENSIONS_CSS_SECTION_LABEL"
+		/>
+
+		<field
+			name="faqs_display_load_css"
+			type="nobossradio"
+			label="NOBOSS_EXTENSIONS_CSS_LOAD_FILE_LABEL"
+			description="NOBOSS_EXTENSIONS_CSS_LOAD_FILE_DESC"
+			class="btn-group btn-group-yesno"
+            parentclass="stack reduce-br"
+			default="1">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		
+		<field
+			name="faqs_display_overwriting_css"
+			type="nobosscustomeditor" 
+            editor_type="css"
+            parentclass="stack span-4"
+            filter="safehtml"
+			label="NOBOSS_EXTENSIONS_CSS_OVERWRITE_LABEL"
+			description="NOBOSS_EXTENSIONS_CSS_OVERWRITE_DESC"
+		/>
+
+        <field
+			type="spacer"
+		/>
+
+		<field
+			type="note"
+			label="NOBOSS_EXTENSIONS_JS_SECTION_LABEL"
+		/>
+
+		<field
+			name="faqs_display_load_js"
+			type="nobossradio"
+			label="NOBOSS_EXTENSIONS_JS_LOAD_FILE_LABEL"
+			description="NOBOSS_EXTENSIONS_JS_LOAD_FILE_DESC"
+			class="btn-group btn-group-yesno"
+            parentclass="stack reduce-br"
+			default="1">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+
+		<field
+			name="faqs_display_overwriting_js"
+			type="nobosscustomeditor" 
+            editor_type="js"
+            filter="safehtml"
+			class_name="nobossfaq"
+            parentclass="stack span-4 reduce-br" 
+			label="NOBOSS_EXTENSIONS_JS_OVERWRITE_LABEL"
+			description="NOBOSS_EXTENSIONS_JS_OVERWRITE_DESC"
+		/>
+
+	</fieldset>
+
+	<!-- Aba Licenca -->
+    <fieldset name="license" label="NOBOSS_EXTENSIONS_TAB_LICENSE_LABEL">
+        <field
+            type="nobosslicense"
+            name="license"
+            label="NOBOSS_EXTENSIONS_LICENSE_LABEL"
+            description="NOBOSS_EXTENSIONS_LICENSE_DESC"
+            default="2"
+        />
+    </fieldset>
+</form>

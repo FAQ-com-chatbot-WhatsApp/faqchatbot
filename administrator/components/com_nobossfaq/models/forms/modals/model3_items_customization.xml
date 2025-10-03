@@ -1,0 +1,547 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form label="NOBOSS_EXTENSIONS_MODAL_INNER_ITEMS_CUSTOMIZATION_LABEL" extension="com_nobossfaq" admin="true">
+	<fieldset name="basic" addfieldpath="libraries/noboss/forms/fields" label="NOBOSS_EXTENSIONS_MODAL_ITEMS_CUSTOMIZATION_BASIC_TAB"> 
+        <field
+            name="open_questions"
+            type="nobossradio"
+            class="btn-group btn-group-yesno"
+            label="COM_NOBOSSFAQ_OPEN_QUESTIONS_LABEL"
+            description="COM_NOBOSSFAQ_OPEN_QUESTIONS_DESC"
+            default="1">
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <!-- Separar pergunta da resposta S/N -->
+        <field
+            name="separate_questions_answers"
+            type="nobossradio"
+            class="btn-group btn-group-yesno"
+            label="COM_NOBOSSFAQ_SEPARATE_QUESTIONS_ANSWERS_LABEL"
+            description="COM_NOBOSSFAQ_SEPARATE_QUESTIONS_ANSWERS_DESC"
+            default="1">
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>      
+
+        <field
+            name="border_radius"
+            type="nobossrange"
+            min="0"
+            max="50"
+            step="1"
+            label="COM_NOBOSSFAQ_ITEMS_BORDER_RADIUS_SIZE_LABEL"
+            description="COM_NOBOSSFAQ_ITEMS_BORDER_RADIUS_SIZE_DESC"
+            size="10"
+            maxlength="5"
+            default="5"
+        />
+
+		<field
+            name="background_color"
+            type="color"
+            format="rgba"
+            position="bottom"
+            label="NOBOSS_EXTENSIONS_COLORS_BACKGROUND_COLOR_LABEL"
+            description="NOBOSS_EXTENSIONS_COLORS_BACKGROUND_COLOR_DESC"
+        />
+
+        <field
+            type="note"
+            label="NOBOSS_EXTENSIONS_ITEMS_SPACING_SECTION_NAME_LABEL"
+        />
+
+
+        <field
+            name="items_outer_space"
+            type="nobossmultipleinputs"
+            label="NOBOSS_EXTENSIONS_ITEMS_OUTER_SPACE_LABEL"
+            description="NOBOSS_EXTENSIONS_ITEMS_OUTER_SPACE_DESC"
+            unit="px" >
+            <nbfield
+                label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_SPACING_ABOVE"
+                type="text"
+                default="0"
+            />
+            <nbfield
+                label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_SPACING_SIDES"
+                type="text"
+                default="0"
+            />
+            <nbfield
+                label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_SPACING_BELOW"
+                type="text"
+                default="20"
+            />
+        </field>
+
+        <field
+            name="items_outer_space_mobile"
+            type="nobossmultipleinputs"
+            label="NOBOSS_EXTENSIONS_ITEMS_OUTER_SPACE_MOBILE_LABEL"
+            description="NOBOSS_EXTENSIONS_ITEMS_OUTER_SPACE_MOBILE_DESC"
+            unit="px" >
+            <nbfield
+                label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_SPACING_ABOVE"
+                type="text"
+                default="0"
+            />
+            <nbfield
+                label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_SPACING_SIDES"
+                type="text"
+                default="0"
+            />
+            <nbfield
+                label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_SPACING_BELOW"
+                type="text"
+                default="15"
+            />
+        </field>    
+
+         <field
+            type="note"
+            label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_BORDER_LABEL"
+        /> 
+
+        <field
+            name="show_border"
+            type="nobossradio"
+            class="btn-group btn-group-yesno"
+            label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_BORDER_LABEL"
+            description="NOBOSS_EXTENSIONS_GLOBAL_FIELD_BORDER_DESC"
+            default="1">
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field
+            name="border_size"
+            type="nobossrange"
+            min="0"
+            max="10"
+            step="1"
+            label="NOBOSS_EXTENSIONS_BORDER_SIZE_LABEL"
+            description="NOBOSS_EXTENSIONS_BORDER_SIZE_DESC"
+            size="10"
+            maxlength="5"
+            default="1"
+            showon="show_border:1"
+        />
+
+        <field
+            name="border_color"
+            type="color"
+            format="rgba"
+            position="bottom"
+            label="NOBOSS_EXTENSIONS_COLORS_BORDER_COLOR_LABEL"
+            description="NOBOSS_EXTENSIONS_COLORS_BORDER_COLOR_DESC"
+            showon="show_border:1"
+        />        
+        
+    </fieldset>
+
+    <fieldset name="questions" label="COM_NOBOSSFAQ_QUESTIONS">
+    
+        <field 
+            name="questions_text_font"
+            type="nobossfontlist"
+            label="LIB_NOBOSS_FIELD_NOBOSSFONTLIST_FONT_LABEL"
+            
+            defaultfont="Lato_Regular.ttf"
+            defaultfontstyle="Regular"
+        />
+        
+        <field
+            name="questions_text_tag_html"
+            type="list"
+            label="NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_HTML_TAG_LABEL"
+            description="NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_HTML_TAG_DESC"
+            default="h2">
+            <option value="h1">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_HTML_TAG_OPT_1</option>
+            <option value="h2">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_HTML_TAG_OPT_2</option>
+            <option value="h3">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_HTML_TAG_OPT_3</option>
+            <option value="h4">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_HTML_TAG_OPT_4</option>
+            <option value="h5">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_HTML_TAG_OPT_5</option>
+            <option value="p">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_HTML_TAG_OPT_6</option>
+            <option value="span">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_HTML_TAG_OPT_7</option>
+            <option value="div">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_HTML_TAG_OPT_8</option>
+        </field>
+
+        <field
+            name="questions_text_alignment"
+            type="list"
+            label="NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_ALIGNMENT_LABEL"
+            description="NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_ALIGNMENT_DESC"
+            default="left">
+            <option value="left">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_ALIGNMENT_OPT_LEFT</option>
+            <option value="center">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_ALIGNMENT_OPT_CENTER</option>
+            <option value="right">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_ALIGNMENT_OPT_RIGHT</option>
+        </field>
+
+        <field
+            name="questions_text_transform"
+            type="list"
+            label="NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_TRANFORMATION_TEXT_LABEL"
+            description="NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_TRANFORMATION_TEXT_DESC"
+            default="none">
+            <option value="capitalize">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_TRANFORMATION_CAPITALIZE</option>
+            <option value="lowercase">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_TRANFORMATION_LOWERCASE</option>
+            <option value="none">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_TRANFORMATION_NONE</option>
+            <option value="uppercase">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_TRANFORMATION_UPPERCASE</option>
+        </field>
+
+        <field
+            name="questions_text_size"
+            type="nobossrange"
+            min="0"
+            max="200"
+            step="1"
+            label="NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_SIZE_LABEL"
+            description="NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_SIZE_DESC"
+            size="10"
+            maxlength="5"
+            default="18"
+        />
+
+        <field
+            name="questions_text_size_mobile"
+            type="nobossrange"
+            min="0"
+            max="200"
+            step="1"
+            label="NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_SIZE_MOBILE_LABEL"
+            description="NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_SIZE_MOBILE_DESC"
+            size="10"
+            maxlength="5"
+            default="16"
+        />
+
+        <field
+            name="questions_space"
+            type="nobossmultipleinputs"
+            label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_SPACING_LABEL"
+            description="NOBOSS_EXTENSIONS_GLOBAL_FIELD_SPACING_DESC"
+            unit="px">
+            <nbfield
+                label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_SPACING_ABOVE"
+                type="text"
+                default="15"
+            />
+            <nbfield
+                label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_SPACING_SIDES"
+                type="text"
+                default="20"
+            />
+            <nbfield
+                label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_SPACING_BELOW"
+                type="text"
+                default="15"
+            />
+        </field>
+
+        <field
+            name="questions_text_color"
+            type="color"
+            format="rgba"
+            position="bottom"
+            label="NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_COLOR_LABEL"
+            description="NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_COLOR_DESC"
+        />
+
+        <field
+            name="questions_background_color"
+            type="color"
+            format="rgba"
+            position="bottom"
+            label="NOBOSS_EXTENSIONS_COLORS_BACKGROUND_COLOR_LABEL"
+            description="NOBOSS_EXTENSIONS_COLORS_BACKGROUND_COLOR_DESC"
+            showon="separate_questions_answers:1"
+        />	
+
+        <field
+            name="questions_active_background_color"
+            type="color"
+            format="rgba"
+            position="bottom"
+            label="COM_NOBOSSFAQ_ITEMS_ACTIVE_BACKGROUND_COLOR_LABEL"
+            description="COM_NOBOSSFAQ_ITEMS_ACTIVE_BACKGROUND_COLOR_DESC"
+            showon="separate_questions_answers:1"
+        />	
+
+        <field
+            type="note"
+            label="COM_NOBOSSFAQ_QUESTIONS_ICON_NOTE_LABEL"
+        />
+
+        <field
+            name="questions_icon"
+            type="list"
+            label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_ICON_LABEL"
+            description="NOBOSS_EXTENSIONS_GLOBAL_FIELD_ICON_DESC"
+            default="fa-plus-circle;fa-minus-circle">
+            <option value="fa-sort-desc;fa-sort-asc">COM_NOBOSSFAQ_QUESTIONS_ICON_OPT_1</option>
+            <option value="fa-chevron-down;fa-chevron-up">NOBOSS_EXTENSIONS_ARROWS_ICON_OPT_8</option>
+            <option value="fa-chevron-circle-down;fa-chevron-circle-up">NOBOSS_EXTENSIONS_ARROWS_ICON_OPT_7</option>
+            <option value="fa-question-circle;fa-question-circle-o">COM_NOBOSSFAQ_QUESTIONS_ICON_OPT_3</option>
+            <option value="fa-plus;fa-minus">COM_NOBOSSFAQ_QUESTIONS_ICON_OPT_4</option>
+            <option value="fa-plus-circle;fa-minus-circle">COM_NOBOSSFAQ_QUESTIONS_ICON_OPT_5</option>
+            <option value="fa-plus-square;fa-minus-square">COM_NOBOSSFAQ_QUESTIONS_ICON_OPT_6</option>
+            <option value="fa-plus-square-o;fa-minus-square-o">COM_NOBOSSFAQ_QUESTIONS_ICON_OPT_7</option>
+        </field>
+
+        <field
+            name="note_option1"
+            type="note"
+            label="COM_NOBOSSFAQ_QUESTIONS_ICON_NOTE_OPT_LABEL"
+            description="COM_NOBOSSFAQ_QUESTIONS_ICON_NOTE_OPT1"
+            showon="questions_icon:fa-sort-desc;fa-sort-asc"
+        />
+
+        <field
+            name="note_option2"
+            type="note"
+            label="COM_NOBOSSFAQ_QUESTIONS_ICON_NOTE_OPT_LABEL"
+            description="COM_NOBOSSFAQ_QUESTIONS_ICON_NOTE_OPT2"
+            showon="questions_icon:fa-chevron-circle-down;fa-chevron-circle-up"
+        />
+
+        <field
+            name="note_option3"
+            type="note"
+            label="COM_NOBOSSFAQ_QUESTIONS_ICON_NOTE_OPT_LABEL"
+            description="COM_NOBOSSFAQ_QUESTIONS_ICON_NOTE_OPT3"
+            showon="questions_icon:fa-question-circle;fa-question-circle-o"
+        />
+        
+        <field
+            name="note_option4"
+            type="note"
+            label="COM_NOBOSSFAQ_QUESTIONS_ICON_NOTE_OPT_LABEL"
+            description="COM_NOBOSSFAQ_QUESTIONS_ICON_NOTE_OPT4"
+            showon="questions_icon:fa-plus;fa-minus"
+        />
+        
+        <field
+            name="note_option5"
+            type="note"
+            label="COM_NOBOSSFAQ_QUESTIONS_ICON_NOTE_OPT_LABEL"
+            description="COM_NOBOSSFAQ_QUESTIONS_ICON_NOTE_OPT5"
+            showon="questions_icon:fa-plus-circle;fa-minus-circle"
+        />
+
+        <field
+            name="note_option6"
+            type="note"
+            label="COM_NOBOSSFAQ_QUESTIONS_ICON_NOTE_OPT_LABEL"
+            description="COM_NOBOSSFAQ_QUESTIONS_ICON_NOTE_OPT6"
+            showon="questions_icon:fa-plus-square;fa-minus-square"
+        />
+
+        <field
+            name="note_option7"
+            type="note"
+            label="COM_NOBOSSFAQ_QUESTIONS_ICON_NOTE_OPT_LABEL"
+            description="COM_NOBOSSFAQ_QUESTIONS_ICON_NOTE_OPT7"
+            showon="questions_icon:fa-plus-square-o;fa-minus-square-o"
+        />
+
+        <field
+            name="note_option8"
+            type="note"
+            label="COM_NOBOSSFAQ_QUESTIONS_ICON_NOTE_OPT_LABEL"
+            description="COM_NOBOSSFAQ_QUESTIONS_ICON_NOTE_OPT8"
+            showon="questions_icon:fa-chevron-down;fa-chevron-up"
+        />
+
+        <field
+            name="questions_icons_alignment"
+            type="list"
+            label="NOBOSS_EXTENSIONS_ICONS_ALIGNMENT_LABEL"
+            description="NOBOSS_EXTENSIONS_ICONS_ALIGNMENT_DESC"
+            default="left">
+            <option value="left">NOBOSS_EXTENSIONS_GLOBAL_FIELD_POSITION_LEFT</option>
+            <option value="right">NOBOSS_EXTENSIONS_GLOBAL_FIELD_POSITION_RIGHT</option>
+        </field>
+
+        <field
+            name="questions_icons_size"
+            type="nobossrange"
+            min="0"
+            max="200"
+            step="1"
+            label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_SIZE_LABEL"
+            description="NOBOSS_EXTENSIONS_ICONS_SIZE_DESC"
+            size="10"
+            maxlength="5"
+            default="20"
+        />
+
+        <field
+            name="questions_icons_color"
+            type="color"
+            format="rgba"
+            position="bottom"
+            label="NOBOSS_EXTENSIONS_COLORS_COLOR_LABEL"
+            description="NOBOSS_EXTENSIONS_ICONS_COLOR_DESC"
+            
+        />
+
+        <field
+            name="questions_icons_spacing"
+            type="nobossmultipleinputs"
+            label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_SPACING_LABEL"
+            description="NOBOSS_EXTENSIONS_ICONS_SPACING_DESC"
+            unit="px" 
+            showon="questions_show_icons_border_radius:0[AND]questions_icons_background_type!:none">
+            <nbfield
+                label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_SPACING_ABOVE"
+                type="text"
+                default="0"
+            />
+            <nbfield
+                label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_SPACING_SIDES"
+                type="text"
+                default="0"
+            />
+            <nbfield
+                label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_SPACING_BELOW"
+                type="text"
+                default="0"
+            />
+        </field>
+
+        <field
+            name="questions_icons_background_type"
+            type="list"
+            label="COM_NOBOSSFAQ_ICON_BACKGROUND_TYPE_LABEL"
+            description="COM_NOBOSSFAQ_ICON_BACKGROUND_TYPE_DESC"
+            default="none">
+            <option value="border">COM_NOBOSSFAQ_ICON_BACKGROUND_TYPE_1</option>
+            <option value="background">COM_NOBOSSFAQ_ICON_BACKGROUND_TYPE_2</option>
+            <option value="both">COM_NOBOSSFAQ_ICON_BACKGROUND_TYPE_3</option>
+            <option value="none">COM_NOBOSSFAQ_ICON_BACKGROUND_TYPE_4</option>
+        </field>
+    
+        <field
+            name="questions_icons_border_color"
+            type="color"
+            format="rgba"
+            position="bottom"
+            label="NOBOSS_EXTENSIONS_COLORS_BORDER_COLOR_LABEL"
+            description="NOBOSS_EXTENSIONS_ICONS_BORDER_COLOR_DESC"
+            showon="questions_icons_background_type:border,both"
+        />
+
+        <field
+            name="questions_icons_background_color"
+            type="color"
+            format="rgba"
+            position="bottom"
+            label="NOBOSS_EXTENSIONS_COLORS_BACKGROUND_COLOR_LABEL"
+            description="NOBOSS_EXTENSIONS_ICONS_BACKGROUND_COLOR_DESC"
+            showon="questions_icons_background_type:background,both"
+        />
+
+        <field
+            name="questions_icons_background_hover"
+            type="color"
+            format="rgba"
+            position="bottom"
+            label="NOBOSS_EXTENSIONS_COLORS_BACKGROUND_COLOR_HOVER_LABEL"
+            description="NOBOSS_EXTENSIONS_ICONS_BACKGROUND_HOVER_DESC"
+            showon="questions_icons_background_type:background,both"
+        />
+
+        <field
+            name="questions_show_icons_border_radius"
+            type="nobossradio"
+            class="btn-group btn-group-yesno"
+            label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_ROUNDED_BORDER_LABEL"
+            description="NOBOSS_EXTENSIONS_ICONS_DISPLAY_BORDER_RADIUS_DESC"
+            showon="questions_icons_background_type!:none">
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field
+            name="questions_icons_border_radius"
+            type="nobossrange"
+            min="0"
+            max="99"
+            step="1"
+            label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_BORDER_RADIUS_LABEL"
+            description="NOBOSS_EXTENSIONS_ICONS_BORDER_RADIUS_DESC"
+            size="10"
+            maxlength="5"
+            showon="questions_icons_background_type!:none[AND]questions_show_icons_border_radius:1"
+        />
+
+    </fieldset>
+    
+    <fieldset name="answers" label="COM_NOBOSSFAQ_ANSWERS">
+        <field 
+            name="answers_text_font"
+            type="nobossfontlist"
+            label="LIB_NOBOSS_FIELD_NOBOSSFONTLIST_FONT_LABEL"
+            
+            defaultfont="Open-Sans_Regular.ttf"
+            defaultfontstyle="Regular"
+        />
+
+        <field
+            name="answers_background_color"
+            type="color"
+            format="rgba"
+            position="bottom"
+            label="NOBOSS_EXTENSIONS_COLORS_BACKGROUND_COLOR_LABEL"
+            description="NOBOSS_EXTENSIONS_COLORS_BACKGROUND_COLOR_DESC"
+            showon="separate_questions_answers:1"
+        />
+
+        <field
+            name="answers_space"
+            type="nobossmultipleinputs"
+            label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_SPACING_LABEL"
+            description="NOBOSS_EXTENSIONS_GLOBAL_FIELD_SPACING_DESC"
+            unit="px" >
+            <nbfield
+                label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_SPACING_ABOVE"
+                type="text"
+                default="15"
+            />
+            <nbfield
+                label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_SPACING_SIDES"
+                type="text"
+                default="15"
+            />
+            <nbfield
+                label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_SPACING_BELOW"
+                type="text"
+                default="15"
+            />
+        </field>
+
+    </fieldset>
+
+    <fieldset name="results" label="COM_NOBOSSFAQ_RESULTS_TAB">
+        <field
+            name="ordering_questions"
+            type="list"
+            label="COM_NOBOSSFAQ_ORDERING_QUESTIONS_LABEL"
+            description="COM_NOBOSSFAQ_ORDERING_QUESTIONS_DESC"
+            default="alphabetical">
+            <option value="alphabetical">COM_NOBOSSFAQ_ORDERING_QUESTIONS_OPT_ALPHABETICAL</option>
+            <option value="manually">COM_NOBOSSFAQ_ORDERING_QUESTIONS_OPT_MANUALLY</option>
+        </field>
+        <field
+            name="group_by_category"
+            type="nobossradio"
+            class="btn-group btn-group-yesno"
+            label="COM_NOBOSSFAQ_ORDERING_CATEGORY_LABEL"
+            description="COM_NOBOSSFAQ_ORDERING_CATEGORY_DESC"
+            default="1">
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+    </fieldset>
+</form>

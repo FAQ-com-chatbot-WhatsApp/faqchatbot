@@ -1,0 +1,41 @@
+<?php return array(
+    'root' => array(
+        'name' => 'joomshaper/helixultimate',
+        'pretty_version' => 'dev-master',
+        'version' => 'dev-master',
+        'reference' => 'c4ca4a27ae6a4b66e522bb58c26e1bd99c268126',
+        'type' => 'project',
+        'install_path' => __DIR__ . '/../../',
+        'aliases' => array(),
+        'dev' => true,
+    ),
+    'versions' => array(
+        'joomshaper/helixultimate' => array(
+            'pretty_version' => 'dev-master',
+            'version' => 'dev-master',
+            'reference' => 'c4ca4a27ae6a4b66e522bb58c26e1bd99c268126',
+            'type' => 'project',
+            'install_path' => __DIR__ . '/../../',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'scssphp/scssphp' => array(
+            'pretty_version' => 'v1.11.1',
+            'version' => '1.11.1.0',
+            'reference' => 'ace2503684bab0dcc817d7614c8a54b865122414',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../scssphp/scssphp',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'tedivm/jshrink' => array(
+            'pretty_version' => 'v1.7.0',
+            'version' => '1.7.0.0',
+            'reference' => '7a35f5a4651ca2ce77295eb8a3b4e133ba47e19e',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../tedivm/jshrink',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+    ),
+);

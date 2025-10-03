@@ -1,0 +1,11 @@
+/.htaccess
+/.htaccess.admintools
+/administrator/cache/*
+/administrator/logs/*
+/cache/*
+/tmp/*
+/configuration.php
+/LICENSE.txt
+/README.txt
+/web.config.txt
+.DS_Store

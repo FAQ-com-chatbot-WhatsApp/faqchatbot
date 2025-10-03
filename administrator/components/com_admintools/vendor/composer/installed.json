@@ -1,0 +1,110 @@
+{
+    "packages": [
+        {
+            "name": "akeeba/phpfinder",
+            "version": "1.0.0",
+            "version_normalized": "1.0.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/akeeba/phpfinder.git",
+                "reference": "2dd38e2cbd7ab95e1cb732ba0a246babc10f281e"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/akeeba/phpfinder/zipball/2dd38e2cbd7ab95e1cb732ba0a246babc10f281e",
+                "reference": "2dd38e2cbd7ab95e1cb732ba0a246babc10f281e",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.2.0 <=8.4"
+            },
+            "time": "2025-04-25T07:56:05+00:00",
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-4": {
+                    "Akeeba\\PHPFinder\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-3.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "Nicholas K. Dionysopoulos",
+                    "email": "nicholas_NO_SPAM_PLEASE@akeeba.com",
+                    "homepage": "http://www.dionysopoulos.me",
+                    "role": "Lead Developer"
+                }
+            ],
+            "description": "Locate the PHP CLI binary on the server",
+            "homepage": "https://github.com/akeeba/phpfinder",
+            "keywords": [
+                "cli",
+                "php"
+            ],
+            "support": {
+                "issues": "https://github.com/akeeba/phpfinder/issues",
+                "source": "https://github.com/akeeba/phpfinder/tree/1.0.0"
+            },
+            "install-path": "../akeeba/phpfinder"
+        },
+        {
+            "name": "akeeba/stats_collector",
+            "version": "dev-main",
+            "version_normalized": "dev-main",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/akeeba/stats_collector.git",
+                "reference": "22d56622bd2bb34c0c95d4493d7b6ea7032c8f25"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/akeeba/stats_collector/zipball/22d56622bd2bb34c0c95d4493d7b6ea7032c8f25",
+                "reference": "22d56622bd2bb34c0c95d4493d7b6ea7032c8f25",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.2|^8.0"
+            },
+            "suggest": {
+                "ext-curl": "For sending the usage stats to the server",
+                "ext-openssl": "Fallback when random_bytes is not available"
+            },
+            "time": "2025-04-03T22:18:25+00:00",
+            "default-branch": true,
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-4": {
+                    "Akeeba\\UsageStats\\Collector\\": "src"
+                }
+            },
+            "archive": {
+                "exclude": [
+                    ".idea/**",
+                    ".gitignore",
+                    "composer.lock"
+                ]
+            },
+            "license": [
+                "GPL-3.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "Nicholas K. Dionysopoulos",
+                    "email": "nicholas_NO_SPAM@akeeba.com"
+                }
+            ],
+            "description": "Usage Statistic collector",
+            "support": {
+                "source": "https://github.com/akeeba/stats_collector/tree/main",
+                "issues": "https://github.com/akeeba/stats_collector/issues"
+            },
+            "install-path": "../akeeba/stats_collector"
+        }
+    ],
+    "dev": false,
+    "dev-package-names": []
+}

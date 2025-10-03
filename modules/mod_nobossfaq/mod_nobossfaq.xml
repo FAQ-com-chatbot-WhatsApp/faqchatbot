@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="module" version="3.7.1" client="site" method="upgrade">
+	<name>MOD_NOBOSSFAQ</name>
+	<creationDate>2025-07-15</creationDate>
+    <author>No Boss Technology</author>
+    <autorURL>https://www.nobosstechnology.com/</autorURL>
+    <authorEmail>contact@nobosstechnology.com</authorEmail>
+    <copyright>© 2025 No Boss Technology</copyright>
+	<license>https://www.gnu.org/licenses/lgpl-3.0.en.html GNU/LGPL</license>
+	<version>4.0.5</version>
+	<description>MOD_NOBOSSFAQ_XML_DESCRIPTION</description>
+    <scriptfile>script.extension.php</scriptfile>
+	<files>
+		<folder>assets</folder>
+		<folder>language</folder>
+        <folder>fields</folder>
+		<folder>tmpl</folder>
+		<filename>helper.php</filename>
+		<filename module="mod_nobossfaq">mod_nobossfaq.php</filename>
+		<filename>mod_nobossfaq.xml</filename>
+	</files>
+	<config>
+		<fields name="params" addfieldpath="modules/mod_nobossfaq/fields">
+			<fieldset name="basic" addfieldpath="libraries/noboss/forms/fields">
+				
+                <field type="nobossnote" label="MOD_NOBOSSFAQ_INTRO"/>
+
+				<field type="nobossrequestjscss" filetype="jquery"/>
+				<field type="nobossrequestjscss" filetype="js" file="modules/mod_nobossfaq/assets/admin/js/mod_nobossfaq.min.js"/>
+				<field type="nobossrequestjscss" filetype="css" file="modules/mod_nobossfaq/assets/admin/css/mod_nobossfaq.min.css"/>
+				<field type="nobossloadtranslation"/>
+			</fieldset>
+		</fields>
+	</config>
+</extension>

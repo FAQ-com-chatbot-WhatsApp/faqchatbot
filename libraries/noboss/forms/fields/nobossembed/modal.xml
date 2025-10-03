@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form label="NOBOSS_EXTENSIONS_EMBED_MODAL_TITLE" bntcancelhidden="1" bntresethidden="1">
+    <fieldset name="basic" addfieldpath="libraries/noboss/forms/fields" >
+        <field 
+            type="note" 
+            description="NOBOSS_EXTENSIONS_EMBED_MODAL_INTRO" />
+        
+        <field 
+            type="nobossembed" 
+            label="NOBOSS_EXTENSIONS_EMBED_URL_LABEL"
+            description="NOBOSS_EXTENSIONS_EMBED_FIELDS_GENERAL_DESC"
+            embedtype="url"
+            parentclass="stack"
+            />
+
+        <field 
+            type="nobossembed" 
+            label="NOBOSS_EXTENSIONS_EMBED_JQUERY_LABEL"
+            description="NOBOSS_EXTENSIONS_EMBED_FIELDS_GENERAL_DESC"
+            embedtype="jquery"
+            parentclass="stack"
+            />
+
+        <field 
+            type="nobossembed" 
+            label="NOBOSS_EXTENSIONS_EMBED_IFRAME_LABEL"
+            description="NOBOSS_EXTENSIONS_EMBED_FIELDS_GENERAL_DESC"
+            embedtype="iframe"
+            parentclass="stack"
+            />
+
+        <field 
+            type="nobossembed" 
+            label="NOBOSS_EXTENSIONS_EMBED_IFRAME_HEIGHT_AUTO_LABEL"
+            description="NOBOSS_EXTENSIONS_EMBED_FIELDS_GENERAL_DESC"
+            embedtype="iframe-height-auto"
+            parentclass="stack"
+            />
+
+
+    </fieldset>
+</form>

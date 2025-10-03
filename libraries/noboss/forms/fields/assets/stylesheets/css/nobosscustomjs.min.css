@@ -1,0 +1,2 @@
+/* line 1, ../sass/nobosscustomjs.scss */
+textarea.nb-custom-editor-js,textarea.nb-custom-editor-js:focus{background:url(http://i.imgur.com/2cOaJ.png),#2b2a2a;background-attachment:local;background-repeat:no-repeat;padding-left:35px;padding-top:10px;border-color:#ccc;width:50%!important;height:253px!important;-moz-tab-size:4;tab-size:4;color:#fff}#wrapper #content textarea.nb-custom-editor-js,#wrapper #content textarea.nb-custom-editor-js:focus{font-size:14px;width:100%!important;height:400px!important}

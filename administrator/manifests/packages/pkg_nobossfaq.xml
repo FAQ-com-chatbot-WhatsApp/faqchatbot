@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.5.0" type="package" method="upgrade">
+    <name>No Boss FAQ</name>
+    <author>No Boss Technology</author>
+    <autorURL>https://www.nobosstechnology.com/</autorURL>
+    <authorEmail>contact@nobosstechnology.com</authorEmail>
+    <creationDate>2025-10-03</creationDate>
+    <packagename>nobossfaq</packagename>
+    <version>4.0.5</version>
+    <url>https://www.nobosstechnology.com/</url>
+    <packager>No Boss Technology</packager>
+    <packagerurl>https://www.nobosstechnology.com/</packagerurl>
+    <copyright>Copyright © 2021 No Boss Technology</copyright>
+    <license>GNU/LGPL license: http://www.gnu.org/licenses/lgpl-3.0.en.html</license>
+    <description>No Boss FAQ complete installation package</description>
+
+    <updateservers>
+        <server type="extension" priority="1" name="No Boss FAQ">https://www.nobossextensions.com/repository/extensions/nobossfaq/xml.xml</server>
+    </updateservers>
+
+    <!-- Installation script -->
+    <scriptfile>script.package.php</scriptfile>
+
+    <files><file type="component" id="com_nobossfaq">com_nobossfaq.zip</file><file type="module" id="mod_nobossfaq">mod_nobossfaq.zip</file></files>
+</extension>

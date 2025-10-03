@@ -1,0 +1,2 @@
+/* Esconde a identificacao do modulo na aba 'Modulos' */
+div#details hr,div#details .info-labels,div#details h3,div#details .info-labels + div{display:none}div#details hr{display:none}.popover-content{word-wrap:break-word}#details .col-lg-9 .control-label,#details .span9 .control-label,#details .col-lg-9 > h2,#details .span9 > h2,#details .info-labels,#details .col-lg-9 > hr{display:none}#details .controls{margin-left:0}
