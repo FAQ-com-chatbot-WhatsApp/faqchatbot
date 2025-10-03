@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--~
+  ~ @package   admintools
+  ~ @copyright Copyright (c)2010-2025 Nicholas K. Dionysopoulos / Akeeba Ltd
+  ~ @license   GNU General Public License version 3, or later
+  -->
+
+<extension type="plugin" group="system" method="upgrade">
+    <name>PLG_SYSTEM_ADMINTOOLS</name>
+    <version>7.8.1</version>
+    <creationDate>2025-07-04</creationDate>
+    <author>Nicholas K. Dionysopoulos</author>
+    <authorEmail>nicholas@akeeba.com</authorEmail>
+    <authorUrl>https://www.akeeba.com</authorUrl>
+    <copyright>Copyright (c)2010-2025 Nicholas K. Dionysopoulos / Akeeba Ltd</copyright>
+    <license>GNU General Public License version 3, or later</license>
+    <description>PLG_SYSTEM_ADMINTOOLS_XML_DESCRIPTION</description>
+    <namespace path="src">Akeeba\Plugin\System\AdminTools</namespace>
+
+    <files>
+        <folder>assets</folder>
+        <folder>forms</folder>
+        <folder>services</folder>
+        <folder>tmpl</folder>
+        <folder plugin="admintools">src</folder>
+
+        <filename>.htaccess</filename>
+        <filename>web.config</filename>
+    </files>
+
+    <media folder="media" destination="plg_system_admintools">
+        <folder>js</folder>
+
+        <filename>joomla.asset.json</filename>
+    </media>
+
+    <languages folder="language">
+        <language tag="en-GB">en-GB/plg_system_admintools.ini</language>
+        <language tag="en-GB">en-GB/plg_system_admintools.sys.ini</language>
+    </languages>
+
+    <config>
+        <fields name="params">
+            <fieldset name="basic">
+                <field
+                        name="heading1"
+                        type="note"
+                        label="PLG_ADMINTOOLS_HEADING_RESCUE_MODE"
+                        heading="h4"
+                />
+
+                <field name="rescueurl"
+                       type="radio"
+                       default="1"
+                       label="PLG_ADMINTOOLS_LBL_RESCUEURL"
+                       description="PLG_ADMINTOOLS_LBL_RESCUEURL_DESC"
+                       layout="joomla.form.field.radio.switcher"
+                >
+                    <option value="0">JNo</option>
+                    <option value="1">JYes</option>
+                </field>
+
+                <field name="rescueduration"
+                       type="number"
+                       default="15"
+                       label="PLG_ADMINTOOLS_LBL_RESCUEDURATION"
+                       description="PLG_ADMINTOOLS_LBL_RESCUEDURATION_DESC"
+                       min="1"
+                       max="3600"
+                       showon="rescueurl:1"
+                />
+
+                <field
+                        name="heading2"
+                        type="note"
+                        label="PLG_ADMINTOOLS_HEADING_BLOCKED_REQUESTS"
+                        heading="h4"
+                />
+
+                <field name="language_override"
+                       type="language"
+                       default=""
+                       label="PLG_ADMINTOOLS_LBL_OVERRIDE"
+                       description="PLG_ADMINTOOLS_LBL_OVERRIDE_DESC"
+                       multiple="0"
+                       useglobal="1"
+                />
+
+                <field name="maxlogentries"
+                       type="number"
+                       default="0"
+                       label="PLG_ADMINTOOLS_LBL_MAXLOGENTRIES"
+                       description="PLG_ADMINTOOLS_LBL_MAXLOGENTRIES_DESC"
+                       min="0"
+                       max="1000000"
+                />
+
+                <field
+                        name="heading3"
+                        type="note"
+                        label="PLG_ADMINTOOLS_HEADING_SCHEDULED_MAINTENANCE"
+                        heading="h4"
+                />
+
+                <field name="sesoptimizer"
+                       type="radio"
+                       default="0"
+                       label="PLG_ADMINTOOLS_LBL_SESOPT"
+                       description="PLG_ADMINTOOLS_LBL_SESOPT_DESC"
+                       layout="joomla.form.field.radio.switcher"
+                >
+                    <option value="0">JNo</option>
+                    <option value="1">JYes</option>
+                </field>
+
+                <field name="sesopt_freq"
+                       type="number"
+                       default="60"
+                       label="PLG_ADMINTOOLS_LBL_SESOPT_FREQ"
+                       description="PLG_ADMINTOOLS_LBL_SESOPT_FREQ_DESC"
+                       min="1"
+                       max="15552000"
+                       showon="sesoptimizer:1"
+                />
+
+                <field name="sescleaner"
+                       type="radio"
+                       default="0"
+                       label="PLG_ADMINTOOLS_LBL_SESCLEANER"
+                       description="PLG_ADMINTOOLS_LBL_SESCLEANER_DESC"
+                       layout="joomla.form.field.radio.switcher"
+                >
+                    <option value="0">JNo</option>
+                    <option value="1">JYes</option>
+                </field>
+
+                <field name="ses_freq"
+                       type="number"
+                       default="60"
+                       label="PLG_ADMINTOOLS_LBL_SES_FREQ"
+                       description="PLG_ADMINTOOLS_LBL_SES_FREQ_DESC"
+                       min="1"
+                       max="15552000"
+                       showon="sescleaner:1"
+                />
+
+                <field name="cachecleaner"
+                       type="radio"
+                       default="0"
+                       label="PLG_ADMINTOOLS_LBL_CACHECLEANER"
+                       description="PLG_ADMINTOOLS_LBL_CACHECLEANER_DESC"
+                       layout="joomla.form.field.radio.switcher"
+                >
+                    <option value="0">JNo</option>
+                    <option value="1">JYes</option>
+                </field>
+
+                <field name="cache_freq"
+                       type="number"
+                       default="1440"
+                       label="PLG_ADMINTOOLS_LBL_CACHE_FREQ"
+                       description="PLG_ADMINTOOLS_LBL_CACHE_FREQ_DESC"
+                       min="1"
+                       max="15552000"
+                       showon="cachecleaner:1"
+                />
+
+                <field name="cacheexpire"
+                       type="radio"
+                       default="0"
+                       label="PLG_ADMINTOOLS_LBL_CACHEEXPIRE"
+                       description="PLG_ADMINTOOLS_LBL_CACHEEXPIRE_DESC"
+                       layout="joomla.form.field.radio.switcher"
+                >
+                    <option value="0">JNo</option>
+                    <option value="1">JYes</option>
+                </field>
+
+                <field name="cacheexp_freq"
+                       type="text"
+                       default="60"
+                       label="PLG_ADMINTOOLS_LBL_CACHEEXP_FREQ"
+                       description="PLG_ADMINTOOLS_LBL_CACHEEXP_FREQ_DESC"
+                       min="1"
+                       max="15552000"
+                       showon="cacheexpire:1"
+                />
+
+                <field name="cleantemp"
+                       type="radio"
+                       default="0"
+                       label="PLG_ADMINTOOLS_LBL_CLEANTEMP"
+                       description="PLG_ADMINTOOLS_LBL_CLEANTEMP_DESC"
+                       layout="joomla.form.field.radio.switcher"
+                >
+                    <option value="0">JNo</option>
+                    <option value="1">JYes</option>
+                </field>
+
+                <field name="cleantemp_freq"
+                       type="text"
+                       default="60"
+                       label="PLG_ADMINTOOLS_LBL_CLEANTEMP_FREQ"
+                       description="PLG_ADMINTOOLS_LBL_CLEANTEMP_FREQ_DESC"
+                       min="1"
+                       max="15552000"
+                       showon="cleantemp:1"
+                />
+
+                <field name="deleteinactive"
+                       type="list"
+                       default="0"
+                       label="PLG_ADMINTOOLS_LBL_DELETEINACTIVE"
+                       description="PLG_ADMINTOOLS_LBL_DELETEINACTIVE_DESC"
+                >
+                    <option value="0">PLG_ADMINTOOLS_LBL_DELETEINACTIVE_NONE</option>
+                    <option value="1">PLG_ADMINTOOLS_LBL_DELETEINACTIVE_NOTACTIVATED</option>
+                    <option value="2">PLG_ADMINTOOLS_LBL_DELETEINACTIVE_BLOCKED</option>
+                    <option value="3">PLG_ADMINTOOLS_LBL_DELETEINACTIVE_BOTH</option>
+                </field>
+
+                <field name="deleteinactive_days"
+                       type="number"
+                       default="7"
+                       label="PLG_ADMINTOOLS_LBL_DELETEINACTIVE_DAYS"
+                       description="PLG_ADMINTOOLS_LBL_DELETEINACTIVE_DAYS_DESC"
+                       min="1"
+                       max="730"
+                       showon="deleteinactive!:0"
+                />
+
+                <field
+                        name="heading4"
+                        type="note"
+                        label="PLG_ADMINTOOLS_HEADING_AUTO_IMPORT"
+                        heading="h4"
+                />
+
+                <field name="autoimport_url"
+                       type="url"
+                       default=""
+                       label="PLG_ADMINTOOLS_LBL_AUTOIMPORTURL"
+                       description="PLG_ADMINTOOLS_LBL_AUTOIMPORTURL_DESC"
+                />
+
+                <field name="autoimport_freq"
+                       type="number"
+                       default="24"
+                       label="PLG_ADMINTOOLS_LBL_AUTOIMPORTFREQ"
+                       description="PLG_ADMINTOOLS_LBL_AUTOIMPORTFREQ_DESC"
+                       min="1"
+                       max="8760"
+                />
+
+                <field
+                        name="heading3"
+                        type="note"
+                        label="PLG_ADMINTOOLS_HEADING_NOTICES"
+                        heading="h4"
+                />
+
+                <field name="blockedrequestemailnotice"
+                       type="radio"
+                       default="1"
+                       label="PLG_ADMINTOOLS_LBL_BLOCKEDREQUESTEMAILNOTICE"
+                       description="PLG_ADMINTOOLS_LBL_BLOCKEDREQUESTEMAILNOTICE_DESC"
+                       layout="joomla.form.field.radio.switcher"
+                >
+                    <option value="0">JNo</option>
+                    <option value="1">JYes</option>
+                </field>
+
+            </fieldset>
+        </fields>
+    </config>
+</extension>

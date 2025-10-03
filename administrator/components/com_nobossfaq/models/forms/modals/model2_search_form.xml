@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form label="COM_NOBOSSFAQ_MODAL_SEARCH_FORM_AREA" extension="com_nobossfaq" admin="true">
+	
+    <fieldset name="basic"  addfieldpath="libraries/noboss/forms/fields" label="NOBOSS_EXTENSIONS_MODAL_ITEMS_CUSTOMIZATION_FIELDS_TAB">
+
+        <field 
+            name="inputs_text_font"
+            type="nobossfontlist"
+            label="LIB_NOBOSS_FIELD_NOBOSSFONTLIST_FONT_LABEL"
+            
+            defaultfont="Poppins_Regular.ttf"
+            defaultfontstyle="Regular" 
+        />
+        
+        <field
+            name="inputs_text_alignment"
+            type="list"
+            default="center"
+            label="NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_ALIGNMENT_LABEL"
+            description="NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_ALIGNMENT_DESC">
+            <option value="left">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_ALIGNMENT_OPT_LEFT</option>
+            <option value="center">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_ALIGNMENT_OPT_CENTER</option>
+            <option value="right">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_ALIGNMENT_OPT_RIGHT</option>
+        </field>
+
+        <field
+            name="inputs_text_transform"
+            type="list"
+            label="NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_TRANFORMATION_TEXT_LABEL"
+            description="NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_TRANFORMATION_TEXT_DESC"
+            default="none">
+            <option value="capitalize">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_TRANFORMATION_CAPITALIZE</option>
+            <option value="lowercase">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_TRANFORMATION_LOWERCASE</option>
+            <option value="none">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_TRANFORMATION_NONE</option>
+            <option value="uppercase">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_TRANFORMATION_UPPERCASE</option>
+        </field>
+
+        <field
+            name="inputs_text_size"
+            type="nobossrange"
+            min="0"
+            max="50"
+            step="1"
+            label="NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_SIZE_LABEL"
+            description="NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_SIZE_DESC"
+            size="10"
+            maxlength="5"
+            default="16"
+        />
+
+        <field
+            name="inputs_text_color"
+            type="color"
+            format="rgba"
+            position="bottom"
+            label="NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_COLOR_LABEL"
+            description="NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_COLOR_DESC"
+        />
+
+        <field
+            name="background_color"
+            type="color"
+            format="rgba"
+            position="bottom"
+            label="NOBOSS_EXTENSIONS_COLORS_BACKGROUND_COLOR_LABEL"
+            description="NOBOSS_EXTENSIONS_COLORS_BACKGROUND_COLOR_DESC"
+        />
+
+        <field
+            type="note"
+            label="COM_NOBOSSFAQ_FORM_BORDER_NOTE"
+        />    
+    
+        <field
+            name="show_inputs_border"
+            type="nobossradio"
+            class="btn-group btn-group-yesno"
+            label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_BORDER_LABEL"
+            description="NOBOSS_EXTENSIONS_GLOBAL_FIELD_BORDER_DESC"
+            default="1">
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+        <!-- 
+            * Borda apenas embaixo
+        -->
+        <field
+            name="inputs_one_line_border"
+            type="nobossradio"
+            class="btn-group btn-group-yesno"
+            label="COM_NOBOSSFAQ_ONE_LINE_BORDER_LABEL"
+            description="COM_NOBOSSFAQ_ONE_LINE_BORDER_DESC"
+            default="0"
+            showon="show_inputs_border:1">
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+        <!--	
+            * Espessura (px)
+		-->	
+        <field
+            name="border_size"
+            type="nobossrange"
+            min="1"
+            max="10"
+            step="1"
+            label="NOBOSS_EXTENSIONS_BORDER_SIZE_LABEL"
+            description="NOBOSS_EXTENSIONS_BORDER_SIZE_DESC"
+            size="10"
+            maxlength="5"
+            default="1"
+            showon="show_inputs_border:1"
+        />
+
+        <field
+            name="border_radius"
+            type="nobossrange"
+            min="0"
+            max="50"
+            step="1"
+            label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_BORDER_RADIUS_LABEL"
+            description="NOBOSS_EXTENSIONS_GLOBAL_FIELD_ROUNDING_BORDER_DESC"
+            size="10"
+            maxlength="5"
+            default="5"
+            showon="show_inputs_border:1[AND]inputs_one_line_border:0"
+        />
+
+        <field
+            name="border_color"
+            type="color"
+            format="rgba"
+            position="bottom"
+            label="NOBOSS_EXTENSIONS_COLORS_BORDER_COLOR_LABEL"
+            description="NOBOSS_EXTENSIONS_COLORS_BORDER_COLOR_DESC"
+            showon="show_inputs_border:1"
+        />
+        
+    </fieldset>
+
+    <fieldset name="buttons" label="NOBOSS_EXTENSIONS_MODAL_ITEMS_CUSTOMIZATION_BUTTONS_TAB">
+      
+        <field
+            name="buttons_style"
+            type="list"
+            required="true"
+            label="NOBOSS_EXTENSIONS_BUTTONS_MODEL_LABEL"
+            description="NOBOSS_EXTENSIONS_BUTTONS_MODEL_DESC"
+            default="rounded-button">
+            <option value="squared-button">NOBOSS_EXTENSIONS_BUTTONS_MODEL_OPT_SQUARE</option>
+            <option value="rounded-button">NOBOSS_EXTENSIONS_BUTTONS_MODEL_OPT_ROUND</option>
+            <option value="ghost-squared-button">NOBOSS_EXTENSIONS_BUTTONS_MODEL_OPT_TRANSPARENT_SQUARE</option>
+            <option value="ghost-rounded-button">NOBOSS_EXTENSIONS_BUTTONS_MODEL_OPT_TRANSPARENT_ROUND</option>
+        </field>   
+ 
+        <field 
+            name="buttons_font"
+            type="nobossfontlist"
+            label="NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_FONT_LABEL"
+            defaultfont="Poppins_Regular.ttf"
+            defaultfontstyle="Regular" 
+        />
+       
+        <field
+            name="buttons_position"
+            type="list"
+            label="NOBOSS_EXTENSIONS_BUTTONS_POSITION_LABEL"
+            description="NOBOSS_EXTENSIONS_BUTTONS_POSITION_DESC"
+            default="center">
+            <option value="left">NOBOSS_EXTENSIONS_BUTTONS_POSITION_OPT_LEFT</option>
+            <option value="center">NOBOSS_EXTENSIONS_BUTTONS_POSITION_OPT_CENTER</option>
+            <option value="right">NOBOSS_EXTENSIONS_BUTTONS_POSITION_OPT_RIGHT</option>
+        </field>
+
+        <field
+            name="buttons_text_transform"
+            type="list"
+            label="NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_TRANFORMATION_TEXT_LABEL"
+            description="NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_TRANFORMATION_TEXT_DESC"
+            default="none">
+            <option value="capitalize">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_TRANFORMATION_CAPITALIZE</option>
+            <option value="lowercase">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_TRANFORMATION_LOWERCASE</option>
+            <option value="none">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_TRANFORMATION_NONE</option>
+            <option value="uppercase">NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_TRANFORMATION_UPPERCASE</option>
+        </field>
+
+        <field
+            name="buttons_text_size"
+            type="nobossrange"
+            min="0"
+            max="100"
+            step="1"
+            label="NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_SIZE_LABEL"
+            description="NOBOSS_EXTENSIONS_CUSTOMIZATION_TEXT_SIZE_DESC"
+            size="10"
+            maxlength="5"
+            default="16"
+        />        
+
+        <field
+            name="buttons_border_radius_size"
+            type="nobossrange"
+            min="1"
+            max="50"
+            step="1"
+            label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_BORDER_RADIUS_LABEL"
+            description="NOBOSS_EXTENSIONS_BUTTONS_BORDER_RADIUS_DESC"
+            size="10"
+            maxlength="5"
+            default="5"
+            showon="buttons_style:rounded-button,ghost-rounded-button"
+        />
+
+        <field
+            name="buttons_text_color"
+            type="color"
+            format="rgba"
+            position="bottom"
+            label="NOBOSS_EXTENSIONS_BUTTONS_TEXT_COLOR_LABEL"
+            description="NOBOSS_EXTENSIONS_BUTTONS_TEXT_COLOR_DESC"
+        />
+
+        <field
+            name="buttons_border_color"
+            type="color"
+            format="rgba"
+            position="bottom"
+            label="NOBOSS_EXTENSIONS_BUTTONS_BORDER_COLOR_LABEL"
+            description="NOBOSS_EXTENSIONS_BUTTONS_BORDER_COLOR_DESC"
+            showon="buttons_style:ghost-squared-button,ghost-rounded-button"
+        />
+
+        <field
+            name="buttons_background_color"
+            type="color"
+            format="rgba"
+            position="bottom"
+            label="NOBOSS_EXTENSIONS_COLORS_BACKGROUND_COLOR_LABEL"
+            description="NOBOSS_EXTENSIONS_BUTTONS_BACKGROUND_COLOR_DESC"
+            showon="buttons_style:squared-button,rounded-button"
+        />
+
+        <field
+            name="buttons_hover_text_color"
+            type="color"
+            format="rgba"
+            position="bottom"
+            label="NOBOSS_EXTENSIONS_BUTTONS_TEXT_COLOR_HOVER_LABEL"
+            description="NOBOSS_EXTENSIONS_BUTTONS_TEXT_COLOR_HOVER_DESC"
+            showon="buttons_style:ghost-squared-button,ghost-rounded-button"
+        />
+
+        <field
+            name="buttons_hover_border_color"
+            type="color"
+            format="rgba"
+            position="bottom"
+            label="NOBOSS_EXTENSIONS_BUTTONS_BORDER_COLOR_HOVER_LABEL"
+            description="NOBOSS_EXTENSIONS_BUTTONS_BORDER_COLOR_HOVER_DESC"
+            showon="buttons_style:ghost-squared-button,ghost-rounded-button"
+        />
+
+        <field
+            name="buttons_background_hover_color"
+            type="color"
+            format="rgba"
+            position="bottom"
+            label="NOBOSS_EXTENSIONS_COLORS_BACKGROUND_COLOR_HOVER_LABEL"
+            description="NOBOSS_EXTENSIONS_BUTTONS_BACKGROUND_COLOR_HOVER_DESC"
+            showon="buttons_style:squared-button,rounded-button,ghost-squared-button,ghost-rounded-button"
+        />
+
+        <field
+            name="buttons_space"
+            type="nobossmultipleinputs"
+            label="NOBOSS_EXTENSIONS_BUTTONS_INNER_SPACE_LABEL"
+            description="NOBOSS_EXTENSIONS_BUTTONS_INNER_SPACE_DESC"
+            unit="px">
+            <nbfield
+                label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_SPACING_ABOVE_BELOW"
+                type="text"
+                default="12"
+            />
+            <nbfield
+                label="NOBOSS_EXTENSIONS_GLOBAL_FIELD_SPACING_SIDES"
+                type="text"
+                default="15"
+            />      
+        </field>
+
+    </fieldset>
+
+</form>

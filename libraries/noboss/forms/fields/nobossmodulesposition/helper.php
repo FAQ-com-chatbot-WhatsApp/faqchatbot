@@ -1,0 +1,20 @@
+<?php
+/**
+ * @package			No Boss Extensions
+ * @subpackage  	No Boss Library
+ * @author			No Boss Technology <contact@nobosstechnology.com>
+ * @copyright		Copyright (C) 2025 No Boss Technology. All rights reserved.
+ * @license			GNU Lesser General Public License version 3 or later; see <https://www.gnu.org/licenses/lgpl-3.0.en.html>
+ */
+
+// Carrega arquivo que esta no padrao Joomla 5
+use Noboss\Library\Form\Field\Nbmodulesposition\NbmodulespositionHelper;
+
+defined('_JEXEC') or die;
+
+/**
+ * Classe com funcoes de apoio para componentes que geram modulos automaticamente (Ex: 'no bossfaq' e 'no boss testimonials)
+ */
+class NobossModulePositionHelper extends NbmodulespositionHelper {
+
+}

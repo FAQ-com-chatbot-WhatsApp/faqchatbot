@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config>
+    <fieldset name="params" label="JGLOBAL_FIELDSET_OPTIONS" addfieldpath="libraries/noboss/forms/fields">
+        <!-- TODO: definir constantes na library para reaproveitar em outros locais (pagebuilder e blog) -->
+		<field
+            name="preferred_editor"
+            type="sql"
+            label="Preferred editor"
+            description="Choose one of the editor options that are available on the website. The 'use global' option will load the editor defined in the site's global settings."
+            query="SELECT element, name FROM #__extensions WHERE folder = 'editors' AND enabled = '1' AND element IN ('jce', 'tinymce', 'codemirror') ORDER BY element DESC"
+            key_field="element"
+            value_field="element"
+        >
+            <option>JGLOBAL_USE_GLOBAL</option>
+        </field>
+        <field
+            type="nobossloadtranslation"
+        />
+	</fieldset>
+	<fieldset name="license" label="COM_NOBOSSFAQ_TAB_LICENSE">
+
+		<field
+			type="nobosslicense"
+			name="license"
+			label="NOBOSS_EXTENSIONS_LICENSE_LABEL"
+			description="NOBOSS_EXTENSIONS_LICENSE_DESC"
+			default="2"
+			modal_display_notice_license="1"
+			modal_display_message="1"
+			view_license_info="1"
+		/>
+	</fieldset>
+
+	<fieldset
+		name="permissions"
+		label="JCONFIG_PERMISSIONS_LABEL"
+		description="JCONFIG_PERMISSIONS_DESC" >
+		
+		<field
+			name="rules"
+			type="rules"
+			label="JCONFIG_PERMISSIONS_LABEL"
+			filter="rules"
+			validate="rules"
+			component="com_nobossfaq"
+			section="component" />
+			
+	</fieldset>
+
+</config>
