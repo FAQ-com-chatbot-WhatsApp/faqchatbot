@@ -297,5 +297,3 @@ Se tiver problemas:
 3. Abra uma issue no GitHub: https://github.com/FAQ-com-chatbot-WhatsApp/faqchatbot/issues
 
 ---
-
-**Sistema desenvolvido para facilitar o atendimento ao cliente através de FAQs organizados**
