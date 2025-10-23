@@ -1,0 +1,59 @@
+services:
+  # Banco de dados MariaDB
+  mariadb:
+    image: mariadb:10.8
+    container_name: faqchatbot-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword123
+      MYSQL_DATABASE: faqchatbot
+      MYSQL_USER: faquser
+      MYSQL_PASSWORD: faqpass123
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./_dumps:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "3307:3306"
+    networks:
+      - faqchatbot_network
+    command: --default-authentication-plugin=mysql_native_password
+
+  # Servidor Web Apache + PHP
+  web:
+    build: .
+    container_name: faqchatbot-web
+    restart: unless-stopped
+    depends_on:
+      - mariadb
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+    environment:
+      - APACHE_DOCUMENT_ROOT=/var/www/html
+    networks:
+      - faqchatbot_network
+
+  # phpMyAdmin (opcional - para gerenciar banco)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:5.2
+    container_name: faqchatbot-phpmyadmin
+    restart: unless-stopped
+    depends_on:
+      - mariadb
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: mariadb
+      PMA_PORT: 3306
+      PMA_USER: faquser
+      PMA_PASSWORD: faqpass123
+    networks:
+      - faqchatbot_network
+
+volumes:
+  db_data:
+
+networks:
+  faqchatbot_network:
+    driver: bridge
