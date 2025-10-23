@@ -66,25 +66,28 @@ cd faqchatbot
 
 ### Passo 2: Dar permissão para executar scripts (Linux/Mac)
 
-**IMPORTANTE**: Se você está no Linux ou Mac, precisa executar este comando primeiro:
+Se você está no Linux ou Mac, precisa executar este comando primeiro:
 
 ```bash
 chmod +x start-faq.sh
 chmod +x reset-faq.sh
 ```
 
-**No Windows**: Não precisa fazer isso, pode pular este passo.
+No Windows: Não precisa fazer isso, pode pular este passo.
 
 ### Passo 3: Iniciar o sistema pela primeira vez
 
 ```bash
-# Linux/Mac - Execute o script
+# Linux/Mac
 ./start-faq.sh
 
-# Windows - Execute assim
+# Windows (Git Bash)
+./start-faq.sh
+
+# OU execute via bash
 bash start-faq.sh
 
-# OU execute manualmente (qualquer sistema)
+# OU execute manualmente
 docker-compose up -d
 ```
 
@@ -95,7 +98,7 @@ Na primeira vez, o sistema vai:
 - Baixar os programas necessários (2-5 minutos dependendo da internet)
 - Criar o banco de dados
 - Configurar o site
-- **AGUARDE ATÉ 5 MINUTOS** antes de testar
+- AGUARDE ATÉ 5 MINUTOS antes de testar
 
 ### Passo 5: Testar se funcionou
 
@@ -116,7 +119,6 @@ Se aparecer o site do FAQ, funcionou!
 ### Para LIGAR o sistema
 
 ```bash
-# Navegue até a pasta do projeto
 cd faqchatbot
 ```
 
@@ -126,28 +128,25 @@ docker-compose up -d
 ```
 
 ```bash
-# Após 'stop' (containers já existem)
+# Após 'stop'
 docker-compose start
 ```
 
 ### Para PARAR temporariamente
 
 ```bash
-# Para parar sem remover (mais rápido para religar)
 docker-compose stop
 ```
 
 ### Para DESLIGAR completamente
 
 ```bash
-# Para desligar e remover containers (fim do trabalho)
 docker-compose down
 ```
 
 ### Para REINICIAR o sistema
 
 ```bash
-# Se estiver com problemas
 docker-compose restart
 ```
 
@@ -166,42 +165,55 @@ docker-compose restart
 ### Ver se está funcionando
 
 ```bash
-# Ver status dos containers
 docker-compose ps
-
-# Ver logs em tempo real
 docker-compose logs -f
-
-# Ver logs só do site
 docker-compose logs -f web
 ```
 
 ### Fazer backup dos dados
 
 ```bash
-# Criar backup do banco de dados
 docker exec faqchatbot-db mysqldump -u faquser -pfaqpass123 faqchatbot > backup_$(date +%Y%m%d).sql
 ```
 
 ### Restaurar backup
 
 ```bash
-# Restaurar um backup (substitua backup.sql pelo seu arquivo)
 docker exec -i faqchatbot-db mysql -u faquser -pfaqpass123 faqchatbot < backup.sql
 ```
 
-### Recomeçar do zero (CUIDADO: Apaga tudo!)
+### Recomeçar do zero
 
 ```bash
-# Use o script que pede confirmação
 ./reset-faq.sh
+```
 
-# OU faça manualmente
+```bash
 docker-compose down -v
 docker-compose up -d
 ```
 
 ## Resolução de problemas comuns
+
+### Problema: "command not found" ao executar start-faq.sh
+
+**Sintaxe INCORRETA:**
+
+```bash
+start-faq.sh
+```
+
+**Sintaxe CORRETA:**
+
+```bash
+./start-faq.sh
+```
+
+**OU use:**
+
+```bash
+bash start-faq.sh
+```
 
 ### Problema: "Comando não encontrado" no Linux/Mac
 
@@ -224,13 +236,11 @@ chmod +x start-faq.sh
 **Solução**: Outro programa está usando a porta 8080 ou 8081
 
 ```bash
-# No Windows
+# Windows
 netstat -ano | findstr :8080
 
-# No Linux/Mac
+# Linux/Mac
 lsof -i :8080
-
-# Mate o processo ou use outras portas editando docker-compose.yml
 ```
 
 ### Problema: Site não carrega após 5 minutos
@@ -252,15 +262,15 @@ lsof -i :8080
 
 ```
 faqchatbot/
-├── docker/                    # Configurações do Docker
-├── _dumps/                   # Backups do banco de dados
-├── components/              # Componentes do Joomla (código do FAQ)
-├── modules/                # Módulos do Joomla (exibição do FAQ)
-├── administrator/          # Área administrativa do Joomla
-├── docker-compose.yml     # Configuração dos containers
-├── start-faq.sh          # Script para iniciar (Linux/Mac)
-├── reset-faq.sh         # Script para resetar tudo
-└── README.md           # Este arquivo de instruções
+├── docker/
+├── _dumps/
+├── components/
+├── modules/
+├── administrator/
+├── docker-compose.yml
+├── start-faq.sh
+├── reset-faq.sh
+└── README.md
 ```
 
 ## Diferença entre os comandos
@@ -276,7 +286,7 @@ faqchatbot/
 
 ## Configurações de segurança
 
-### ATENÇÃO: Senhas padrão (MUDE EM PRODUÇÃO!)
+### ATENÇÃO: Senhas padrão (MUDE EM PRODUÇÃO)
 
 - Joomla: admin / admin123
 - Banco: faquser / faqpass123
