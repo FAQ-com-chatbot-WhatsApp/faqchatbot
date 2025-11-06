@@ -1,3 +1,29 @@
+# Ambiente e segredos
+.env
+.env.*
+config/jwt/*.pem
+
+# Dependências do Composer
+/vendor/
+composer.phar
+
+# Cache e logs
+/storage/
+/cache/
+/logs/
+
+# Sist. operacionais / IDEs
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Arquivos temporários
+*.log
+*.tmp
+*.swp
+*.swo
+~$*
 /.htaccess
 /.htaccess.admintools
 /administrator/cache/*
@@ -9,4 +35,5 @@
 /README.txt
 /web.config.txt
 .DS_Store
-/docs
+# Permitir documentação do projeto (OpenAPI, guia de testes, etc.)
+!docs/
