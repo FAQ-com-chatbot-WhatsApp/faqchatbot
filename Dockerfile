@@ -42,5 +42,5 @@ WORKDIR /var/www/html
 # Expor porta 80
 EXPOSE 80
 
-# Executar script de inicialização
-CMD ["/usr/local/bin/init.sh"]
+# Iniciar Apache
+CMD ["apache2-foreground"]

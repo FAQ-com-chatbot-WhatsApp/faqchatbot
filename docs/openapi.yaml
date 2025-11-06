@@ -91,6 +91,62 @@ paths:
                   status: { type: string }
         "422": { description: Dados inválidos }
         "404": { description: Flow não encontrado }
+    get:
+      security:
+        - bearerAuth: []
+      summary: Listar conversas com paginação e filtros
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 100
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, completed, abandoned]
+        - name: contact_phone
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista de conversas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  conversations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        status: { type: string }
+                        contact_id: { type: string }
+                        phone: { type: string }
+                        contact_name: { type: string }
+                        flow_id: { type: string }
+                        flow_name: { type: string }
+                        created_at: { type: string }
+                        updated_at: { type: string }
+                        message_count: { type: integer }
+                        last_message_id: { type: string }
+                  pagination:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      total_pages: { type: integer }
   /messages:
     post:
       security:
@@ -174,6 +230,73 @@ paths:
                         status: { type: string }
                         created_at: { type: string }
         "404": { description: Conversa não encontrada }
+    patch:
+      security:
+        - bearerAuth: []
+      summary: Atualizar status da conversa
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [active, completed, abandoned]
+      responses:
+        "200":
+          description: Status atualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+                  updated: { type: boolean }
+        "404": { description: Conversa não encontrada }
+        "422": { description: Status inválido }
+  /conversations/{id}/status:
+    patch:
+      security:
+        - bearerAuth: []
+      summary: Atualizar status da conversa
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [active, completed, abandoned]
+      responses:
+        "200":
+          description: Status atualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+                  updated: { type: boolean }
+        "404": { description: Conversa não encontrada }
+        "422": { description: Status inválido }
 components:
   securitySchemes:
     bearerAuth:

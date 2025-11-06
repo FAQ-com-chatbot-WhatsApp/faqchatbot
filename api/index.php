@@ -443,6 +443,86 @@ try {
         return;
     }
 
+    // Listar conversas com paginação e filtros
+    if ($method === 'GET' && $path === '/conversations') {
+        $auth = requireAuth();
+
+        $page = (int)($_GET['page'] ?? 1);
+        $perPage = (int)($_GET['per_page'] ?? 10);
+        $status = trim(strval($_GET['status'] ?? ''));
+        $contactPhone = trim(strval($_GET['contact_phone'] ?? ''));
+
+        if ($page < 1) $page = 1;
+        if ($perPage < 1 || $perPage > 100) $perPage = 10;
+
+        $pdo = pdo();
+        $where = [];
+        $params = [];
+
+        if ($status !== '' && in_array($status, ['active', 'completed', 'abandoned'], true)) {
+            $where[] = 'c.status = :status';
+            $params[':status'] = $status;
+        }
+        if ($contactPhone !== '') {
+            $where[] = 'co.phone LIKE :phone';
+            $params[':phone'] = '%' . $contactPhone . '%';
+        }
+
+        $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+
+        // Contagem total
+        $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM conversations c LEFT JOIN contacts co ON c.contact_id = co.id $whereClause");
+        $stmt->execute($params);
+        $total = (int)$stmt->fetch()['total'];
+
+        $offset = ($page - 1) * $perPage;
+        $stmt = $pdo->prepare("SELECT c.id, c.status, c.created_at, c.updated_at, c.message_count, c.last_message_id, co.id AS contact_id, co.phone, co.name AS contact_name, f.id AS flow_id, f.name AS flow_name FROM conversations c LEFT JOIN contacts co ON c.contact_id = co.id LEFT JOIN flows f ON c.flow_id = f.id $whereClause ORDER BY c.updated_at DESC LIMIT :limit OFFSET :offset");
+        $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        foreach ($params as $k => $v) {
+            $stmt->bindValue($k, $v);
+        }
+        $stmt->execute();
+        $conversations = $stmt->fetchAll();
+
+        jsonResponse([
+            'conversations' => $conversations,
+            'pagination' => [
+                'page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'total_pages' => ceil($total / $perPage),
+            ],
+        ]);
+        return;
+    }
+
+    // Atualizar status da conversa
+    if ($method === 'PATCH' && preg_match('#^/conversations/([a-f0-9\-]{36})$#', $path, $m)) {
+        $auth = requireAuth();
+        $conversationId = $m[1];
+
+        $body = readJsonBody();
+        $newStatus = trim(strval($body['status'] ?? ''));
+
+        if (!in_array($newStatus, ['active', 'completed', 'abandoned'], true)) {
+            jsonResponse(['error' => ['code' => 'INVALID_STATUS', 'message' => 'Status deve ser active, completed ou abandoned']], 422);
+            return;
+        }
+
+        $pdo = pdo();
+        $stmt = $pdo->prepare('UPDATE conversations SET status = :status, updated_at = NOW() WHERE id = :id');
+        $affected = $stmt->execute([':status' => $newStatus, ':id' => $conversationId]);
+
+        if ($affected === 0) {
+            jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Conversa não encontrada']], 404);
+            return;
+        }
+
+        jsonResponse(['status' => $newStatus, 'updated' => true]);
+        return;
+    }
+
     // 404 padrão
     jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Rota não encontrada']], 404);
 } catch (Throwable $e) {

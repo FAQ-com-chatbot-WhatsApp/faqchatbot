@@ -242,15 +242,74 @@ docker exec -it whatsbot-db mysql -u botuser -ppwd123 botdb -e "SELECT * FROM me
 
 ---
 
+## 6. Listar Conversas (Requer autenticação)
+
+```bash
+curl -X GET "http://localhost:8080/api/conversations?page=1&per_page=10&status=active" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**Resposta esperada**:
+
+```json
+{
+	"conversations": [
+		{
+			"id": "...",
+			"status": "active",
+			"contact_id": "...",
+			"phone": "+5511999887766",
+			"contact_name": "João Silva",
+			"flow_id": "...",
+			"flow_name": "FAQ Suporte",
+			"created_at": "2025-11-06 19:30:00",
+			"updated_at": "2025-11-06 19:31:00",
+			"message_count": 2,
+			"last_message_id": "..."
+		}
+	],
+	"pagination": {
+		"page": 1,
+		"per_page": 10,
+		"total": 1,
+		"total_pages": 1
+	}
+}
+```
+
+---
+
+## 7. Atualizar Status da Conversa (Requer autenticação)
+
+```bash
+curl -X PATCH http://localhost:8080/api/conversations/$CONV_ID/status \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "status": "completed"
+  }'
+```
+
+**Resposta esperada**:
+
+```json
+{
+	"status": "completed",
+	"updated": true
+}
+```
+
+---
+
 ## Próximos Passos
 
-1. ✅ Endpoints funcionais: health, auth, conversations, messages
-2. [ ] Integrar rotas em `api/index.php` (atualmente em arquivo separado)
-3. [ ] Atualizar Postman collection com novos endpoints
-4. [ ] Implementar testes automatizados
-5. [ ] Adicionar endpoint `GET /conversations` (listar todas)
+1. ✅ Endpoints funcionais: health, auth, conversations, messages, list conversations, update status
+2. [ ] Implementar testes automatizados
+3. [ ] Adicionar endpoint `GET /flows` (listar flows)
+4. [ ] Implementar endpoint `POST /flows` (criar flow)
+5. [ ] Adicionar filtros avançados em listagens
 
 ---
 
 **Última atualização**: 06/11/2025  
-**Status**: Endpoints implementados, pendente integração final
+**Status**: Endpoints principais implementados
