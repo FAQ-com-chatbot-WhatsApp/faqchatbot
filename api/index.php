@@ -578,6 +578,61 @@ try {
         return;
     }
 
+    // Criar flow
+    if ($method === 'POST' && $path === '/flows') {
+        $body = readJsonBody();
+        $auth = requireAuth();
+
+        $name = trim(strval($body['name'] ?? ''));
+        $description = trim(strval($body['description'] ?? ''));
+        $definition = $body['definition'] ?? null;
+        $status = trim(strval($body['status'] ?? 'draft'));
+
+        // Validações
+        if (empty($name) || strlen($name) < 1 || strlen($name) > 191) {
+            jsonResponse(['error' => ['code' => 'INVALID_NAME', 'message' => 'Nome deve ter entre 1 e 191 caracteres']], 422);
+            return;
+        }
+        if ($definition === null || !is_array($definition)) {
+            jsonResponse(['error' => ['code' => 'INVALID_DEFINITION', 'message' => 'Definição deve ser um objeto JSON válido']], 422);
+            return;
+        }
+        if (!in_array($status, ['draft', 'active', 'archived'], true)) {
+            jsonResponse(['error' => ['code' => 'INVALID_STATUS', 'message' => 'Status deve ser draft, active ou archived']], 422);
+            return;
+        }
+        if ($description !== '' && strlen($description) > 65535) {
+            jsonResponse(['error' => ['code' => 'INVALID_DESCRIPTION', 'message' => 'Descrição muito longa']], 422);
+            return;
+        }
+
+        $pdo = pdo();
+        $flowId = \Ramsey\Uuid\Uuid::uuid4()->toString();
+        $definitionJson = json_encode($definition, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        $stmt = $pdo->prepare('INSERT INTO flows (id, name, version, status, description, definition, created_by, created_at, updated_at) VALUES (:id, :name, :version, :status, :description, :definition, :created_by, NOW(), NOW())');
+        $stmt->execute([
+            ':id' => $flowId,
+            ':name' => $name,
+            ':version' => 1,
+            ':status' => $status,
+            ':description' => $description ?: null,
+            ':definition' => $definitionJson,
+            ':created_by' => (int)$auth['sub'],
+        ]);
+
+        jsonResponse([
+            'flow_id' => $flowId,
+            'name' => $name,
+            'version' => 1,
+            'status' => $status,
+            'description' => $description,
+            'definition' => $definition,
+            'created_by' => (int)$auth['sub'],
+        ], 201);
+        return;
+    }
+
     // 404 padrão
     jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Rota não encontrada']], 404);
 } catch (Throwable $e) {

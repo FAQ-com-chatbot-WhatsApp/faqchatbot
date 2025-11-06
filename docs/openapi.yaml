@@ -351,6 +351,48 @@ paths:
                       per_page: { type: integer }
                       total: { type: integer }
                       total_pages: { type: integer }
+    post:
+      security:
+        - bearerAuth: []
+      summary: Criar novo flow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, definition]
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 191
+                description:
+                  type: string
+                  maxLength: 65535
+                definition:
+                  type: object
+                  description: Definição JSON do flow
+                status:
+                  type: string
+                  enum: [draft, active, archived]
+                  default: draft
+      responses:
+        "201":
+          description: Flow criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  flow_id: { type: string }
+                  name: { type: string }
+                  version: { type: integer }
+                  status: { type: string }
+                  description: { type: string }
+                  definition: { type: object }
+                  created_by: { type: integer }
+        "422": { description: Dados inválidos }
 components:
   securitySchemes:
     bearerAuth:

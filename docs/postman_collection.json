@@ -160,6 +160,25 @@
 					]
 				}
 			}
+		},
+		{
+			"name": "Create Flow",
+			"request": {
+				"method": "POST",
+				"header": [
+					{ "key": "Content-Type", "value": "application/json" },
+					{ "key": "Authorization", "value": "Bearer {{access_token}}" }
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Fluxo de Suporte Técnico\",\n  \"description\": \"Flow para atendimento de suporte técnico\",\n  \"definition\": {\n    \"steps\": [\n      {\n        \"id\": \"welcome\",\n        \"type\": \"message\",\n        \"content\": \"Olá! Como posso ajudar com suporte técnico?\"\n      }\n    ]\n  },\n  \"status\": \"draft\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/flows",
+					"host": ["{{base_url}}"],
+					"path": ["api", "flows"]
+				}
+			}
 		}
 	],
 	"variable": [

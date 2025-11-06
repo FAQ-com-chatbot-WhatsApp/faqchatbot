@@ -335,12 +335,58 @@ curl -X GET "http://localhost:8080/api/flows?page=1&per_page=10&status=active" \
 
 ---
 
+## 9. Criar Flow (Requer autenticação)
+
+```bash
+curl -X POST http://localhost:8080/api/flows \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "name": "Fluxo de Suporte Técnico",
+    "description": "Flow para atendimento de suporte técnico",
+    "definition": {
+      "steps": [
+        {
+          "id": "welcome",
+          "type": "message",
+          "content": "Olá! Como posso ajudar com suporte técnico?"
+        }
+      ]
+    },
+    "status": "draft"
+  }'
+```
+
+**Resposta esperada**:
+
+```json
+{
+	"flow_id": "uuid-do-flow-...",
+	"name": "Fluxo de Suporte Técnico",
+	"version": 1,
+	"status": "draft",
+	"description": "Flow para atendimento de suporte técnico",
+	"definition": {
+		"steps": [
+			{
+				"id": "welcome",
+				"type": "message",
+				"content": "Olá! Como posso ajudar com suporte técnico?"
+			}
+		]
+	},
+	"created_by": 1
+}
+```
+
+---
+
 ## Próximos Passos
 
 1. ✅ Endpoints funcionais: health, auth, conversations, messages, list conversations, update status
 2. [ ] Implementar testes automatizados
 3. ✅ Adicionar endpoint `GET /flows` (listar flows)
-4. [ ] Implementar endpoint `POST /flows` (criar flow)
+4. ✅ Implementar endpoint `POST /flows` (criar flow)
 5. [ ] Adicionar filtros avançados em listagens
 
 ---
