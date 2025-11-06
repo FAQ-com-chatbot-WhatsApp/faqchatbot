@@ -98,7 +98,7 @@ class NblicenseHelper {
             exit(json_encode($isValidToken));
         }
 
-        if(!empty($isValidToken->data->token))){
+        if(!empty($isValidToken->data->token)){
             // Monta um array com as parametros para atualizar a coluna extra_query da tabela #__update_sites
             $extra_query = array('token' => $isValidToken->data->token);
     
