@@ -282,7 +282,7 @@ curl -X GET "http://localhost:8080/api/conversations?page=1&per_page=10&status=a
 ## 7. Atualizar Status da Conversa (Requer autenticação)
 
 ```bash
-curl -X PATCH http://localhost:8080/api/conversations/$CONV_ID/status \
+curl -X PATCH http://localhost:8080/api/conversations/$CONV_ID \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{
@@ -301,11 +301,45 @@ curl -X PATCH http://localhost:8080/api/conversations/$CONV_ID/status \
 
 ---
 
+## 8. Listar Flows (Requer autenticação)
+
+```bash
+curl -X GET "http://localhost:8080/api/flows?page=1&per_page=10&status=active" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**Resposta esperada**:
+
+```json
+{
+	"flows": [
+		{
+			"id": "...",
+			"name": "FAQ Suporte",
+			"version": 1,
+			"status": "active",
+			"description": "Flow para suporte ao cliente",
+			"created_by": 1,
+			"created_at": "2025-11-06 19:00:00",
+			"updated_at": "2025-11-06 19:00:00"
+		}
+	],
+	"pagination": {
+		"page": 1,
+		"per_page": 10,
+		"total": 1,
+		"total_pages": 1
+	}
+}
+```
+
+---
+
 ## Próximos Passos
 
 1. ✅ Endpoints funcionais: health, auth, conversations, messages, list conversations, update status
 2. [ ] Implementar testes automatizados
-3. [ ] Adicionar endpoint `GET /flows` (listar flows)
+3. ✅ Adicionar endpoint `GET /flows` (listar flows)
 4. [ ] Implementar endpoint `POST /flows` (criar flow)
 5. [ ] Adicionar filtros avançados em listagens
 

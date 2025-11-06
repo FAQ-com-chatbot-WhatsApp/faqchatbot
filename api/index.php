@@ -523,6 +523,61 @@ try {
         return;
     }
 
+    // ---------------- Flows ----------------
+    // Listar flows com paginação e filtros
+    if ($method === 'GET' && $path === '/flows') {
+        $auth = requireAuth();
+
+        $page = (int)($_GET['page'] ?? 1);
+        $perPage = (int)($_GET['per_page'] ?? 10);
+        $status = trim(strval($_GET['status'] ?? ''));
+        $name = trim(strval($_GET['name'] ?? ''));
+
+        if ($page < 1) $page = 1;
+        if ($perPage < 1 || $perPage > 100) $perPage = 10;
+
+        $pdo = pdo();
+        $where = [];
+        $params = [];
+
+        if ($status !== '' && in_array($status, ['draft', 'active', 'archived'], true)) {
+            $where[] = 'status = :status';
+            $params[':status'] = $status;
+        }
+        if ($name !== '') {
+            $where[] = 'name LIKE :name';
+            $params[':name'] = '%' . $name . '%';
+        }
+
+        $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+
+        // Contagem total
+        $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM flows $whereClause");
+        $stmt->execute($params);
+        $total = (int)$stmt->fetch()['total'];
+
+        $offset = ($page - 1) * $perPage;
+        $stmt = $pdo->prepare("SELECT id, name, version, status, description, created_by, created_at, updated_at FROM flows $whereClause ORDER BY updated_at DESC LIMIT :limit OFFSET :offset");
+        $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        foreach ($params as $k => $v) {
+            $stmt->bindValue($k, $v);
+        }
+        $stmt->execute();
+        $flows = $stmt->fetchAll();
+
+        jsonResponse([
+            'flows' => $flows,
+            'pagination' => [
+                'page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'total_pages' => ceil($total / $perPage),
+            ],
+        ]);
+        return;
+    }
+
     // 404 padrão
     jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Rota não encontrada']], 404);
 } catch (Throwable $e) {

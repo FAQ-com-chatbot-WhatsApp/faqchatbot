@@ -297,6 +297,60 @@ paths:
                   updated: { type: boolean }
         "404": { description: Conversa não encontrada }
         "422": { description: Status inválido }
+  /flows:
+    get:
+      security:
+        - bearerAuth: []
+      summary: Listar flows com paginação e filtros
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 100
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, active, archived]
+        - name: name
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista de flows
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  flows:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        name: { type: string }
+                        version: { type: integer }
+                        status: { type: string }
+                        description: { type: string }
+                        created_by: { type: integer }
+                        created_at: { type: string }
+                        updated_at: { type: string }
+                  pagination:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      total_pages: { type: integer }
 components:
   securitySchemes:
     bearerAuth:
