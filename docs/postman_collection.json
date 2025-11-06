@@ -179,6 +179,39 @@
 					"path": ["api", "flows"]
 				}
 			}
+		},
+		{
+			"name": "Update Flow",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{ "key": "Content-Type", "value": "application/json" },
+					{ "key": "Authorization", "value": "Bearer {{access_token}}" }
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Fluxo de Suporte Atualizado\",\n  \"status\": \"active\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/flows/{{flow_id}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "flows", "{{flow_id}}"]
+				}
+			}
+		},
+		{
+			"name": "Delete Flow",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{ "key": "Authorization", "value": "Bearer {{access_token}}" }
+				],
+				"url": {
+					"raw": "{{base_url}}/api/flows/{{flow_id}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "flows", "{{flow_id}}"]
+				}
+			}
 		}
 	],
 	"variable": [

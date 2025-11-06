@@ -381,13 +381,81 @@ curl -X POST http://localhost:8080/api/flows \
 
 ---
 
+## 10. Atualizar Flow (Requer autenticação)
+
+```bash
+# Primeiro, obter um flow_id existente
+FLOW_ID=$(curl -X GET "http://localhost:8080/api/flows?page=1&per_page=1&status=draft" \
+  -H "Authorization: Bearer $TOKEN" \
+  -s | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+
+echo "Flow ID: $FLOW_ID"
+
+# Atualizar o flow
+curl -X PATCH http://localhost:8080/api/flows/$FLOW_ID \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{
+    "name": "Fluxo Atualizado",
+    "status": "active",
+    "description": "Descrição atualizada"
+  }'
+```
+
+**Resposta esperada**:
+
+```json
+{
+	"updated": true,
+	"flow_id": "uuid-do-flow"
+}
+```
+
+---
+
+## 11. Remover Flow (Requer autenticação)
+
+```bash
+# Criar um flow de teste para remoção
+CREATE_RESPONSE=$(curl -X POST http://localhost:8080/api/flows \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -s \
+  -d '{
+    "name": "Flow para Teste de Remoção",
+    "definition": {"steps": [{"id": "test", "type": "message", "content": "Teste"}]}
+  }')
+
+FLOW_ID=$(echo $CREATE_RESPONSE | grep -o '"flow_id":"[^"]*"' | cut -d'"' -f4)
+echo "Flow criado para teste: $FLOW_ID"
+
+# Remover o flow
+curl -X DELETE http://localhost:8080/api/flows/$FLOW_ID \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+**Resposta esperada**:
+
+```json
+{
+	"deleted": true,
+	"flow_id": "uuid-do-flow"
+}
+```
+
+**Nota**: Flows em uso por conversas ativas não podem ser removidos.
+
+---
+
 ## Próximos Passos
 
 1. ✅ Endpoints funcionais: health, auth, conversations, messages, list conversations, update status
 2. [ ] Implementar testes automatizados
 3. ✅ Adicionar endpoint `GET /flows` (listar flows)
 4. ✅ Implementar endpoint `POST /flows` (criar flow)
-5. [ ] Adicionar filtros avançados em listagens
+5. ✅ Implementar endpoint `PATCH /flows/{id}` (atualizar flow)
+6. ✅ Implementar endpoint `DELETE /flows/{id}` (remover flow)
+7. [ ] Adicionar filtros avançados em listagens
 
 ---
 

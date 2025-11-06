@@ -633,6 +633,124 @@ try {
         return;
     }
 
+    // Atualizar flow
+    if ($method === 'PATCH' && preg_match('#^/flows/([a-f0-9\-]{36})$#', $path, $m)) {
+        $body = readJsonBody();
+        $auth = requireAuth();
+        $flowId = $m[1];
+
+        $name = isset($body['name']) ? trim(strval($body['name'])) : null;
+        $description = isset($body['description']) ? trim(strval($body['description'])) : null;
+        $definition = $body['definition'] ?? null;
+        $status = isset($body['status']) ? trim(strval($body['status'])) : null;
+
+        // Validações
+        if ($name !== null && (empty($name) || strlen($name) < 1 || strlen($name) > 191)) {
+            jsonResponse(['error' => ['code' => 'INVALID_NAME', 'message' => 'Nome deve ter entre 1 e 191 caracteres']], 422);
+            return;
+        }
+        if ($definition !== null && !is_array($definition)) {
+            jsonResponse(['error' => ['code' => 'INVALID_DEFINITION', 'message' => 'Definição deve ser um objeto JSON válido']], 422);
+            return;
+        }
+        if ($status !== null && !in_array($status, ['draft', 'active', 'archived'], true)) {
+            jsonResponse(['error' => ['code' => 'INVALID_STATUS', 'message' => 'Status deve ser draft, active ou archived']], 422);
+            return;
+        }
+        if ($description !== null && strlen($description) > 65535) {
+            jsonResponse(['error' => ['code' => 'INVALID_DESCRIPTION', 'message' => 'Descrição muito longa']], 422);
+            return;
+        }
+
+        $pdo = pdo();
+
+        // Verificar se flow existe
+        $stmt = $pdo->prepare('SELECT id FROM flows WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $flowId]);
+        if (!$stmt->fetch()) {
+            jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Flow não encontrado']], 404);
+            return;
+        }
+
+        // Construir query de atualização dinâmica
+        $updates = [];
+        $params = [':id' => $flowId];
+
+        if ($name !== null) {
+            $updates[] = 'name = :name';
+            $params[':name'] = $name;
+        }
+        if ($description !== null) {
+            $updates[] = 'description = :description';
+            $params[':description'] = $description;
+        }
+        if ($definition !== null) {
+            $updates[] = 'definition = :definition';
+            $params[':definition'] = json_encode($definition, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }
+        if ($status !== null) {
+            $updates[] = 'status = :status';
+            $params[':status'] = $status;
+        }
+
+        if (empty($updates)) {
+            jsonResponse(['error' => ['code' => 'NO_CHANGES', 'message' => 'Nenhum campo para atualizar']], 400);
+            return;
+        }
+
+        $updates[] = 'updated_at = NOW()';
+        $sql = 'UPDATE flows SET ' . implode(', ', $updates) . ' WHERE id = :id';
+
+        $stmt = $pdo->prepare($sql);
+        $affected = $stmt->execute($params);
+
+        if ($affected === 0) {
+            jsonResponse(['error' => ['code' => 'UPDATE_FAILED', 'message' => 'Falha ao atualizar flow']], 500);
+            return;
+        }
+
+        jsonResponse(['updated' => true, 'flow_id' => $flowId]);
+        return;
+    }
+
+    // Remover flow
+    if ($method === 'DELETE' && preg_match('#^/flows/([a-f0-9\-]{36})$#', $path, $m)) {
+        $auth = requireAuth();
+        $flowId = $m[1];
+
+        $pdo = pdo();
+
+        // Verificar se flow existe
+        $stmt = $pdo->prepare('SELECT id FROM flows WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $flowId]);
+        if (!$stmt->fetch()) {
+            jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Flow não encontrado']], 404);
+            return;
+        }
+
+        // Verificar se flow está sendo usado em conversas ativas
+        $stmt = $pdo->prepare('SELECT COUNT(*) as count FROM conversations WHERE flow_id = :flow_id AND status = "active"');
+        $stmt->execute([':flow_id' => $flowId]);
+        $activeConversations = (int)$stmt->fetch()['count'];
+
+        if ($activeConversations > 0) {
+            jsonResponse(['error' => ['code' => 'FLOW_IN_USE', 'message' => 'Flow não pode ser removido pois está sendo usado em conversas ativas']], 409);
+            return;
+        }
+
+        // Remover flow
+        $stmt = $pdo->prepare('DELETE FROM flows WHERE id = :id');
+        $affected = $stmt->execute([':id' => $flowId]);
+
+        if ($affected === 0) {
+            jsonResponse(['error' => ['code' => 'DELETE_FAILED', 'message' => 'Falha ao remover flow']], 500);
+            return;
+        }
+
+        jsonResponse(['deleted' => true, 'flow_id' => $flowId]);
+        return;
+    }
+
     // 404 padrão
     jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Rota não encontrada']], 404);
 } catch (Throwable $e) {

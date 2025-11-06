@@ -393,6 +393,71 @@ paths:
                   definition: { type: object }
                   created_by: { type: integer }
         "422": { description: Dados inválidos }
+  /flows/{id}:
+    patch:
+      security:
+        - bearerAuth: []
+      summary: Atualizar flow
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 191
+                description:
+                  type: string
+                  maxLength: 65535
+                definition:
+                  type: object
+                  description: Definição JSON do flow
+                status:
+                  type: string
+                  enum: [draft, active, archived]
+      responses:
+        "200":
+          description: Flow atualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  updated: { type: boolean }
+                  flow_id: { type: string }
+        "404": { description: Flow não encontrado }
+        "422": { description: Dados inválidos }
+    delete:
+      security:
+        - bearerAuth: []
+      summary: Remover flow
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Flow removido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted: { type: boolean }
+                  flow_id: { type: string }
+        "404": { description: Flow não encontrado }
+        "409": { description: Flow em uso }
 components:
   securitySchemes:
     bearerAuth:
