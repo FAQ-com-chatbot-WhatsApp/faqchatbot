@@ -1,0 +1,182 @@
+openapi: 3.1.0
+info:
+  title: WhatsBot Conversational API
+  version: 0.1.0
+  description: API sobre Joomla para conversações de chatbot.
+servers:
+  - url: http://localhost:8080/api
+security:
+  - bearerAuth: []
+paths:
+  /health/ping:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  time:
+                    type: string
+                  app:
+                    type: string
+  /auth/login:
+    post:
+      summary: Login e obtenção de JWT
+      description: |
+        Retorna um token JWT para autenticação. Limite de tentativas por IP (padrão 10 em 5 minutos).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Token gerado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  expires_in:
+                    type: integer
+                  token_type:
+                    type: string
+        "401":
+          description: Credenciais inválidas
+  /conversations:
+    post:
+      security:
+        - bearerAuth: []
+      summary: Criar nova conversa
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [contact_phone, contact_name, flow_id]
+              properties:
+                contact_phone:
+                  type: string
+                contact_name:
+                  type: string
+                flow_id:
+                  type: string
+      responses:
+        "201":
+          description: Conversa criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  conversation_id: { type: string }
+                  contact_id: { type: string }
+                  flow_id: { type: string }
+                  status: { type: string }
+        "422": { description: Dados inválidos }
+        "404": { description: Flow não encontrado }
+  /messages:
+    post:
+      security:
+        - bearerAuth: []
+      summary: Inserir mensagem na conversa
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [conversation_id, sender, content]
+              properties:
+                conversation_id: { type: string }
+                sender:
+                  type: string
+                  enum: [user, bot]
+                content: { type: string }
+      responses:
+        "201":
+          description: Mensagem criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message_id: { type: string }
+                  conversation_id: { type: string }
+                  direction: { type: string }
+                  type: { type: string }
+                  content:
+                    type: object
+                    properties:
+                      text: { type: string }
+                  status: { type: string }
+        "404": { description: Conversa não encontrada }
+        "422": { description: Dados inválidos }
+  /conversations/{id}:
+    get:
+      security:
+        - bearerAuth: []
+      summary: Obter conversa e histórico
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Conversa e mensagens
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  conversation:
+                    type: object
+                    properties:
+                      id: { type: string }
+                      status: { type: string }
+                      contact_id: { type: string }
+                      phone: { type: string }
+                      contact_name: { type: string }
+                      flow_id: { type: string }
+                      flow_name: { type: string }
+                      created_at: { type: string }
+                      updated_at: { type: string }
+                  messages:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: string }
+                        direction: { type: string }
+                        type: { type: string }
+                        content:
+                          type: object
+                          properties:
+                            text: { type: string }
+                        status: { type: string }
+                        created_at: { type: string }
+        "404": { description: Conversa não encontrada }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
