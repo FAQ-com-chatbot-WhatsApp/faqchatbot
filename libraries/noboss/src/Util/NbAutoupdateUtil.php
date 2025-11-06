@@ -33,7 +33,11 @@ class NbAutoupdateUtil {
         // Instancia o model de instalacao do Joomla
         // JModelLegacy::addIncludePath(JPATH_ADMINISTRATOR.'/components/com_installer/models');
         // $model = JModelLegacy::getInstance("Update", "InstallerModel");
-        $model = Factory::getApplication()->bootComponent('com_installer')->getMVCFactory($app)->createModel('Update', 'Administrator');
+        $app = Factory::getApplication();
+        /** @var \Joomla\CMS\Extension\MVCComponent $component */
+        $component = $app->bootComponent('com_installer');
+        /** @var \Joomla\Component\Installer\Administrator\Model\UpdateModel $model */
+        $model = $component->getMVCFactory()->createModel('Update', 'Administrator');
 
         // Pega os parametros do plugin de autoupdate para saber se deve enviar
         $plugin = PluginHelper::getPlugin('system', 'nobossautoupdate');
@@ -127,7 +131,7 @@ class NbAutoupdateUtil {
         $sitename = $config->get('sitename');
         
         // Houve atualizacao de extensao no boss
-        if (count($updatesNoBoss) > 0){
+        if (count($updates) > 0){
             // Verifica se a pasta da library existe
             $librayFolderExists = is_dir(JPATH_LIBRARIES.'/noboss');
             
@@ -136,7 +140,10 @@ class NbAutoupdateUtil {
                 // Adiciona diretorio de models do componente installer do Joomla
                 // JModelLegacy::addIncludePath(JPATH_ADMINISTRATOR . '/components/com_installer/models');
                 // $modelInstaller = JModelLegacy::getInstance('install', 'InstallerModel');
-                $modelInstaller = Factory::getApplication()->bootComponent('com_installer')->getMVCFactory($app)->createModel('Install', 'Administrator');
+                /** @var \Joomla\CMS\Extension\MVCComponent $componentInstaller */
+                $componentInstaller = $app->bootComponent('com_installer');
+                /** @var \Joomla\Component\Installer\Administrator\Model\InstallModel $modelInstaller */
+                $modelInstaller = $componentInstaller->getMVCFactory()->createModel('Install', 'Administrator');
 
                 $input = Factory::getApplication()->input;
 
@@ -179,7 +186,7 @@ class NbAutoupdateUtil {
         }
         else{
             $totalError = count($messagesReturn['error']);
-            $messagesError = ('<br /><br />', $messagesReturn['error']);
+            $messagesError = implode('<br /><br />', $messagesReturn['error']);
         }
 
         if(empty($messagesReturn['success'])){
