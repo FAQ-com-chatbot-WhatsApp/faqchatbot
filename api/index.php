@@ -873,6 +873,20 @@ try {
         $nextStep = $steps[$nextIndex] ?? null;
         $completed = $nextStep === null;
 
+        // Timeout de conversa: se não houve atualização em 24h, marcar como abandoned e retornar
+        $updatedAtRaw = $conv['updated_at'] ?? null;
+        $updatedAt = $updatedAtRaw ? strtotime($updatedAtRaw) : null;
+        if ($updatedAt !== null && (time() - $updatedAt) > 86400) {
+            try {
+                $pdo->prepare('UPDATE conversations SET status = "abandoned", updated_at = NOW() WHERE id = :id')
+                    ->execute([':id' => $conversationId]);
+            } catch (Throwable $e) {
+                // ignore
+            }
+            jsonResponse(['conversation_id' => $conversationId, 'next_step' => null, 'completed' => true, 'status' => 'abandoned']);
+            return;
+        }
+
         // Se a step referencia uma message via message_id, expandir o conteúdo da mensagem
         if ($nextStep !== null && is_array($nextStep) && !empty($nextStep['message_id'])) {
             try {
@@ -886,6 +900,25 @@ try {
                 }
             } catch (Throwable $e) {
                 // não bloquear se falhar ao buscar a message; retornar step sem expansão
+            }
+        }
+        // Se completou (não há next step), finalizar a conversa e tentar logar transição
+        if ($completed) {
+            try {
+                $pdo->prepare('UPDATE conversations SET status = "completed", updated_at = NOW() WHERE id = :id')
+                    ->execute([':id' => $conversationId]);
+            } catch (Throwable $e) {
+                // ignore
+            }
+            // Logar transição em conversation_transitions se tabela existir (best-effort)
+            try {
+                $tableCheck = $pdo->query("SHOW TABLES LIKE 'conversation_transitions'")->fetch();
+                if ($tableCheck) {
+                    $ins = $pdo->prepare('INSERT INTO conversation_transitions (conversation_id, from_step, to_step, step_id, action, payload) VALUES (:cid, :from, :to, :step_id, :action, :payload)');
+                    $ins->execute([':cid' => $conversationId, ':from' => $nextIndex, ':to' => null, ':step_id' => null, ':action' => 'complete', ':payload' => json_encode($nextStep)]);
+                }
+            } catch (Throwable $e) {
+                // não bloquear
             }
         }
 
