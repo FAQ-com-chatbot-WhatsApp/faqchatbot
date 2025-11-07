@@ -872,12 +872,28 @@ try {
         return;
     }
 
+    // Identificar conversa ativa por telefone
+    if ($method === 'GET' && preg_match('#^/conversations/active/phone/(.+)$#', $path, $m)) {
+        $auth = requireAuth();
+        $phone = rawurldecode($m[1]);
+        $pdo = pdo();
+        $stmt = $pdo->prepare('SELECT c.id, c.status, c.current_step, c.message_count, c.updated_at, c.created_at, co.id as contact_id, co.name as contact_name, co.phone, f.id as flow_id, f.name as flow_name FROM conversations c JOIN contacts co ON co.id = c.contact_id LEFT JOIN flows f ON f.id = c.flow_id WHERE co.phone = :phone AND c.status = "active" ORDER BY c.updated_at DESC LIMIT 1');
+        $stmt->execute([':phone' => $phone]);
+        $row = $stmt->fetch();
+        if (!$row) {
+            jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Conversa ativa não encontrada para este telefone']], 404);
+            return;
+        }
+        jsonResponse(['conversation' => $row]);
+        return;
+    }
+
     // ---------------- Conversations: next step ----------------
     if ($method === 'POST' && preg_match('#^/conversations/([a-f0-9\\-]{36})/next$#', $path, $m)) {
         $auth = requireAuth();
         $conversationId = $m[1];
         $pdo = pdo();
-        $stmt = $pdo->prepare('SELECT id, flow_id, message_count FROM conversations WHERE id = :id LIMIT 1');
+        $stmt = $pdo->prepare('SELECT id, flow_id, message_count, current_step, updated_at, status FROM conversations WHERE id = :id LIMIT 1');
         $stmt->execute([':id' => $conversationId]);
         $conv = $stmt->fetch();
         if (!$conv) {
@@ -907,7 +923,8 @@ try {
             });
         }
 
-        $nextIndex = max(0, (int)$conv['message_count']);
+        // Próximo índice baseado no estado persistido
+        $nextIndex = max(0, (int)($conv['current_step'] ?? 0));
         $nextStep = $steps[$nextIndex] ?? null;
         $completed = $nextStep === null;
 
@@ -958,9 +975,28 @@ try {
             } catch (Throwable $e) {
                 // não bloquear
             }
+        } else {
+            // Avançar estado: current_step + 1, message_count + 1 e logar transição
+            try {
+                $pdo->prepare('UPDATE conversations SET current_step = current_step + 1, message_count = message_count + 1, updated_at = NOW() WHERE id = :id')
+                    ->execute([':id' => $conversationId]);
+            } catch (Throwable $e) {
+                // ignorar falha de atualização, mas tentar prosseguir
+            }
+            // Logar transição "next"
+            try {
+                $tableCheck = $pdo->query("SHOW TABLES LIKE 'conversation_transitions'")->fetch();
+                if ($tableCheck) {
+                    $stepId = is_array($nextStep) && isset($nextStep['id']) ? strval($nextStep['id']) : null;
+                    $ins = $pdo->prepare('INSERT INTO conversation_transitions (conversation_id, from_step, to_step, step_id, action, payload) VALUES (:cid, :from, :to, :step_id, :action, :payload)');
+                    $ins->execute([':cid' => $conversationId, ':from' => $nextIndex, ':to' => $nextIndex + 1, ':step_id' => $stepId, ':action' => 'next', ':payload' => json_encode($nextStep)]);
+                }
+            } catch (Throwable $e) {
+                // não bloquear
+            }
         }
 
-        jsonResponse(['conversation_id' => $conversationId, 'next_step' => $nextStep, 'completed' => $completed]);
+        jsonResponse(['conversation_id' => $conversationId, 'next_step' => $nextStep, 'completed' => $completed, 'status' => $completed ? 'completed' : ($conv['status'] ?? 'active')]);
         return;
     }
 
