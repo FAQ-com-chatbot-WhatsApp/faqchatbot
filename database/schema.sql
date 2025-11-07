@@ -21,11 +21,13 @@ CREATE TABLE IF NOT EXISTS flows (
   version INT NOT NULL DEFAULT 1,
   status ENUM('draft','active','archived') NOT NULL DEFAULT 'draft',
   description TEXT NULL,
+  hook_id CHAR(36) NULL,
   definition JSON NOT NULL,
   created_by INT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  KEY idx_flows_status (status)
+  KEY idx_flows_status (status),
+  CONSTRAINT fk_flows_hook FOREIGN KEY (hook_id) REFERENCES hooks(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS conversations (
@@ -62,3 +64,17 @@ CREATE TABLE IF NOT EXISTS messages (
 
 -- Índices adicionais críticos
 CREATE INDEX IF NOT EXISTS idx_messages_direction ON messages(direction);
+
+CREATE TABLE IF NOT EXISTS hooks (
+  id CHAR(36) PRIMARY KEY,
+  description TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS hooks (
+  id CHAR(36) PRIMARY KEY,
+  description TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -1075,6 +1075,158 @@ try {
         return;
     }
 
+    // ---------------- Hooks ----------------
+    // Listar hooks com paginação
+    if ($method === 'GET' && $path === '/hooks') {
+        $auth = requireAuth();
+
+        $page = (int)($_GET['page'] ?? 1);
+        $perPage = (int)($_GET['per_page'] ?? 10);
+
+        if ($page < 1) $page = 1;
+        if ($perPage < 1 || $perPage > 100) $perPage = 10;
+
+        $pdo = pdo();
+
+        // Contagem total
+        $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM hooks");
+        $stmt->execute();
+        $total = (int)$stmt->fetch()['total'];
+
+        $offset = ($page - 1) * $perPage;
+        $stmt = $pdo->prepare("SELECT id, description, created_at, updated_at FROM hooks ORDER BY updated_at DESC LIMIT :limit OFFSET :offset");
+        $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        $hooks = $stmt->fetchAll();
+
+        jsonResponse([
+            'hooks' => $hooks,
+            'pagination' => [
+                'page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'total_pages' => ceil($total / $perPage),
+            ],
+        ]);
+        return;
+    }
+
+    // Obter hook específico
+    if ($method === 'GET' && preg_match('#^/hooks/([a-f0-9\-]{36})$#', $path, $m)) {
+        $auth = requireAuth();
+        $hookId = $m[1];
+
+        $pdo = pdo();
+        $stmt = $pdo->prepare('SELECT id, description, created_at, updated_at FROM hooks WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $hookId]);
+        $hook = $stmt->fetch();
+
+        if (!$hook) {
+            jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Hook não encontrado']], 404);
+            return;
+        }
+
+        jsonResponse($hook);
+        return;
+    }
+
+    // Criar hook
+    if ($method === 'POST' && $path === '/hooks') {
+        $body = readJsonBody();
+        $auth = requireAuth();
+
+        $description = trim(strval($body['description'] ?? ''));
+
+        // Validações
+        if ($description !== '' && strlen($description) > 65535) {
+            jsonResponse(['error' => ['code' => 'INVALID_DESCRIPTION', 'message' => 'Descrição muito longa']], 422);
+            return;
+        }
+
+        $pdo = pdo();
+        $hookId = \Ramsey\Uuid\Uuid::uuid4()->toString();
+
+        $stmt = $pdo->prepare('INSERT INTO hooks (id, description, created_at, updated_at) VALUES (:id, :description, NOW(), NOW())');
+        $stmt->execute([
+            ':id' => $hookId,
+            ':description' => $description ?: null,
+        ]);
+
+        jsonResponse([
+            'hook_id' => $hookId,
+            'description' => $description,
+        ], 201);
+        return;
+    }
+
+    // Atualizar hook
+    if ($method === 'PUT' && preg_match('#^/hooks/([a-f0-9\-]{36})$#', $path, $m)) {
+        $body = readJsonBody();
+        $auth = requireAuth();
+        $hookId = $m[1];
+
+        $description = trim(strval($body['description'] ?? ''));
+
+        // Validações
+        if ($description !== '' && strlen($description) > 65535) {
+            jsonResponse(['error' => ['code' => 'INVALID_DESCRIPTION', 'message' => 'Descrição muito longa']], 422);
+            return;
+        }
+
+        $pdo = pdo();
+        // Verificar se existe
+        $stmt = $pdo->prepare('SELECT id FROM hooks WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $hookId]);
+        if (!$stmt->fetch()) {
+            jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Hook não encontrado']], 404);
+            return;
+        }
+
+        $stmt = $pdo->prepare('UPDATE hooks SET description = :description, updated_at = NOW() WHERE id = :id');
+        $stmt->execute([
+            ':description' => $description ?: null,
+            ':id' => $hookId,
+        ]);
+
+        jsonResponse([
+            'hook_id' => $hookId,
+            'description' => $description,
+            'updated' => true,
+        ]);
+        return;
+    }
+
+    // Deletar hook
+    if ($method === 'DELETE' && preg_match('#^/hooks/([a-f0-9\-]{36})$#', $path, $m)) {
+        $auth = requireAuth();
+        $hookId = $m[1];
+
+        $pdo = pdo();
+        // Verificar se existe
+        $stmt = $pdo->prepare('SELECT id FROM hooks WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $hookId]);
+        if (!$stmt->fetch()) {
+            jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Hook não encontrado']], 404);
+            return;
+        }
+
+        // Verificar se há flows usando este hook
+        $stmt = $pdo->prepare('SELECT COUNT(*) as count FROM flows WHERE hook_id = :hook_id');
+        $stmt->execute([':hook_id' => $hookId]);
+        $count = (int)$stmt->fetch()['count'];
+        if ($count > 0) {
+            jsonResponse(['error' => ['code' => 'CONSTRAINT_VIOLATION', 'message' => 'Não é possível deletar hook que está sendo usado por flows']], 422);
+            return;
+        }
+
+        $stmt = $pdo->prepare('DELETE FROM hooks WHERE id = :id');
+        $stmt->execute([':id' => $hookId]);
+
+        jsonResponse(['deleted' => true]);
+        return;
+    }
+
     // ---------------- Flows ----------------
     // Listar flows com paginação e filtros
     if ($method === 'GET' && $path === '/flows') {
@@ -1120,7 +1272,7 @@ try {
         $total = (int)$stmt->fetch()['total'];
 
         $offset = ($page - 1) * $perPage;
-        $stmt = $pdo->prepare("SELECT id, name, version, status, description, created_by, created_at, updated_at FROM flows $whereClause ORDER BY updated_at DESC LIMIT :limit OFFSET :offset");
+        $stmt = $pdo->prepare("SELECT id, name, version, status, description, hook_id, created_by, created_at, updated_at FROM flows $whereClause ORDER BY updated_at DESC LIMIT :limit OFFSET :offset");
         $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         foreach ($params as $k => $v) {
@@ -1154,7 +1306,7 @@ try {
         $flowId = $m[1];
 
         $pdo = pdo();
-        $stmt = $pdo->prepare('SELECT id, name, version, status, description, definition, created_by, created_at, updated_at FROM flows WHERE id = :id LIMIT 1');
+        $stmt = $pdo->prepare('SELECT id, name, version, status, description, hook_id, definition, created_by, created_at, updated_at FROM flows WHERE id = :id LIMIT 1');
         $stmt->execute([':id' => $flowId]);
         $flow = $stmt->fetch();
 
@@ -1187,6 +1339,7 @@ try {
 
         $name = trim(strval($body['name'] ?? ''));
         $description = trim(strval($body['description'] ?? ''));
+        $hookId = trim(strval($body['hook_id'] ?? ''));
         // Aceitar tanto 'definition' quanto 'steps' no payload (compatibilidade com novo modelo)
         $definition = $body['definition'] ?? null;
         if ($definition === null && isset($body['steps']) && is_array($body['steps'])) {
@@ -1216,8 +1369,21 @@ try {
             jsonResponse(['error' => ['code' => 'INVALID_DESCRIPTION', 'message' => 'Descrição muito longa']], 422);
             return;
         }
+        if ($hookId !== '' && !preg_match('/^[a-f0-9\-]{36}$/', $hookId)) {
+            jsonResponse(['error' => ['code' => 'INVALID_HOOK_ID', 'message' => 'hook_id deve ser um UUID válido']], 422);
+            return;
+        }
 
         $pdo = pdo();
+        // validar hook_id se fornecido
+        if ($hookId !== '') {
+            $check = $pdo->prepare('SELECT id FROM hooks WHERE id = :id LIMIT 1');
+            $check->execute([':id' => $hookId]);
+            if (!$check->fetch()) {
+                jsonResponse(['error' => ['code' => 'INVALID_REFERENCE', 'message' => 'hook_id referenciado não encontrado: ' . $hookId]], 422);
+                return;
+            }
+        }
         // validar referências message_id nas steps (se houver)
         $steps = isset($definition['steps']) && is_array($definition['steps']) ? $definition['steps'] : [];
         foreach ($steps as $s) {
@@ -1236,13 +1402,14 @@ try {
         $flowId = \Ramsey\Uuid\Uuid::uuid4()->toString();
         $definitionJson = json_encode($definition, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
-        $stmt = $pdo->prepare('INSERT INTO flows (id, name, version, status, description, definition, created_by, created_at, updated_at) VALUES (:id, :name, :version, :status, :description, :definition, :created_by, NOW(), NOW())');
+        $stmt = $pdo->prepare('INSERT INTO flows (id, name, version, status, description, hook_id, definition, created_by, created_at, updated_at) VALUES (:id, :name, :version, :status, :description, :hook_id, :definition, :created_by, NOW(), NOW())');
         $stmt->execute([
             ':id' => $flowId,
             ':name' => $name,
             ':version' => 1,
             ':status' => $status,
             ':description' => $description ?: null,
+            ':hook_id' => $hookId ?: null,
             ':definition' => $definitionJson,
             ':created_by' => (int)$auth['sub'],
         ]);
@@ -1253,6 +1420,7 @@ try {
             'version' => 1,
             'status' => $status === 'archived' ? 'inactive' : $status,
             'description' => $description,
+            'hook_id' => $hookId ?: null,
             'definition' => $definition,
             'created_by' => (int)$auth['sub'],
         ], 201);
@@ -1267,6 +1435,7 @@ try {
 
         $name = trim(strval($body['name'] ?? ''));
         $description = trim(strval($body['description'] ?? ''));
+        $hookId = trim(strval($body['hook_id'] ?? ''));
         $definition = $body['definition'] ?? null;
         // compatibility: accept top-level steps
         if ($definition === null && isset($body['steps']) && is_array($body['steps'])) {
@@ -1291,6 +1460,10 @@ try {
             jsonResponse(['error' => ['code' => 'INVALID_STATUS', 'message' => 'Status deve ser draft, active ou archived']], 422);
             return;
         }
+        if ($hookId !== '' && !preg_match('/^[a-f0-9\-]{36}$/', $hookId)) {
+            jsonResponse(['error' => ['code' => 'INVALID_HOOK_ID', 'message' => 'hook_id deve ser um UUID válido']], 422);
+            return;
+        }
 
         $pdo = pdo();
         // Verificar se existe
@@ -1299,6 +1472,16 @@ try {
         if (!$stmt->fetch()) {
             jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Flow não encontrado']], 404);
             return;
+        }
+
+        // validar hook_id se fornecido
+        if ($hookId !== '') {
+            $check = $pdo->prepare('SELECT id FROM hooks WHERE id = :id LIMIT 1');
+            $check->execute([':id' => $hookId]);
+            if (!$check->fetch()) {
+                jsonResponse(['error' => ['code' => 'INVALID_REFERENCE', 'message' => 'hook_id referenciado não encontrado: ' . $hookId]], 422);
+                return;
+            }
         }
 
         // Validar referências message_id nas steps
@@ -1319,8 +1502,8 @@ try {
 
         $definitionJson = json_encode($definition, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         // Incrementar versão ao substituir
-        $stmt = $pdo->prepare('UPDATE flows SET name = :name, description = :description, definition = :definition, status = :status, version = version + 1, updated_at = NOW() WHERE id = :id');
-        $affected = $stmt->execute([':name' => $name, ':description' => $description ?: null, ':definition' => $definitionJson, ':status' => $status, ':id' => $flowId]);
+        $stmt = $pdo->prepare('UPDATE flows SET name = :name, description = :description, hook_id = :hook_id, definition = :definition, status = :status, version = version + 1, updated_at = NOW() WHERE id = :id');
+        $affected = $stmt->execute([':name' => $name, ':description' => $description ?: null, ':hook_id' => $hookId ?: null, ':definition' => $definitionJson, ':status' => $status, ':id' => $flowId]);
 
         if ($affected === 0) {
             jsonResponse(['error' => ['code' => 'UPDATE_FAILED', 'message' => 'Falha ao substituir flow']], 500);
