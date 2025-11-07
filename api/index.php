@@ -456,7 +456,9 @@ try {
         $page = (int)($_GET['page'] ?? 1);
         $perPage = (int)($_GET['per_page'] ?? 20);
         $conversationId = trim(strval($_GET['conversation_id'] ?? ''));
-        $direction = trim(strval($_GET['direction'] ?? ''));
+    $direction = trim(strval($_GET['direction'] ?? ''));
+    $typeFilter = trim(strval($_GET['type'] ?? ''));
+    $statusFilter = trim(strval($_GET['status'] ?? ''));
 
         if ($page < 1) $page = 1;
         if ($perPage < 1 || $perPage > 200) $perPage = 20;
@@ -471,6 +473,14 @@ try {
         if ($direction !== '' && in_array($direction, ['in','out'], true)) {
             $where[] = 'direction = :direction';
             $params[':direction'] = $direction;
+        }
+        if ($typeFilter !== '') {
+            $where[] = 'type = :type';
+            $params[':type'] = $typeFilter;
+        }
+        if ($statusFilter !== '') {
+            $where[] = 'status = :status';
+            $params[':status'] = $statusFilter;
         }
 
         $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
@@ -553,8 +563,19 @@ try {
             jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Message não encontrado']], 404);
             return;
         }
-        $stmt = $pdo->prepare('DELETE FROM messages WHERE id = :id');
-        $stmt->execute([':id' => $id]);
+        // Prefer soft-delete if coluna deleted_at existe
+        try {
+            $colCheck = $pdo->query("SHOW COLUMNS FROM messages LIKE 'deleted_at'")->fetch();
+        } catch (Throwable $e) {
+            $colCheck = false;
+        }
+        if ($colCheck) {
+            $stmt = $pdo->prepare('UPDATE messages SET deleted_at = NOW() WHERE id = :id');
+            $stmt->execute([':id' => $id]);
+        } else {
+            $stmt = $pdo->prepare('DELETE FROM messages WHERE id = :id');
+            $stmt->execute([':id' => $id]);
+        }
         jsonResponse(['deleted' => true, 'message_id' => $id]);
         return;
     }
@@ -737,6 +758,33 @@ try {
             return;
         }
         jsonResponse($contact);
+        return;
+    }
+
+    // Remover contact (soft-delete if available)
+    if ($method === 'DELETE' && preg_match('#^/contacts/([a-f0-9\\-]{36})$#', $path, $m)) {
+        $auth = requireAuth();
+        $id = $m[1];
+        $pdo = pdo();
+        $stmt = $pdo->prepare('SELECT id FROM contacts WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $id]);
+        if (!$stmt->fetch()) {
+            jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Contact não encontrado']], 404);
+            return;
+        }
+        try {
+            $colCheck = $pdo->query("SHOW COLUMNS FROM contacts LIKE 'deleted_at'")->fetch();
+        } catch (Throwable $e) {
+            $colCheck = false;
+        }
+        if ($colCheck) {
+            $stmt = $pdo->prepare('UPDATE contacts SET deleted_at = NOW() WHERE id = :id');
+            $stmt->execute([':id' => $id]);
+        } else {
+            $stmt = $pdo->prepare('DELETE FROM contacts WHERE id = :id');
+            $stmt->execute([':id' => $id]);
+        }
+        jsonResponse(['deleted' => true, 'contact_id' => $id]);
         return;
     }
 
@@ -1235,9 +1283,20 @@ try {
             return;
         }
 
-        // Remover flow
-        $stmt = $pdo->prepare('DELETE FROM flows WHERE id = :id');
-        $affected = $stmt->execute([':id' => $flowId]);
+        // Prefer soft-delete if coluna deleted_at existe
+        try {
+            $colCheck = $pdo->query("SHOW COLUMNS FROM flows LIKE 'deleted_at'")->fetch();
+        } catch (Throwable $e) {
+            $colCheck = false;
+        }
+        if ($colCheck) {
+            $stmt = $pdo->prepare('UPDATE flows SET deleted_at = NOW() WHERE id = :id');
+            $affected = $stmt->execute([':id' => $flowId]);
+        } else {
+            // Remover flow
+            $stmt = $pdo->prepare('DELETE FROM flows WHERE id = :id');
+            $affected = $stmt->execute([':id' => $flowId]);
+        }
 
         if ($affected === 0) {
             jsonResponse(['error' => ['code' => 'DELETE_FAILED', 'message' => 'Falha ao remover flow']], 500);

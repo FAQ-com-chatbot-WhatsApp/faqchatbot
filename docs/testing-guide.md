@@ -50,7 +50,7 @@ curl -X POST http://localhost:8080/api/auth/login \
 Listar mensagens (filtros: conversation_id, sender/direction, page/per_page):
 
 ```bash
-curl -X GET "http://localhost:8080/api/messages?page=1&per_page=20" \
+curl -X GET "http://localhost:8080/api/messages?page=1&per_page=20&type=text&status=processed" \
 	-H "Authorization: Bearer $TOKEN"
 ````
 
