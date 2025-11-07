@@ -226,12 +226,183 @@
 					"path": ["api", "flows", "{{flow_id}}"]
 				}
 			}
+		},
+		{
+			"name": "List Messages",
+			"request": {
+				"method": "GET",
+				"header": [
+					{ "key": "Authorization", "value": "Bearer {{access_token}}" }
+				],
+				"url": {
+					"raw": "{{base_url}}/api/messages?page=1&per_page=20",
+					"host": ["{{base_url}}"],
+					"path": ["api", "messages"],
+					"query": [
+						{ "key": "page", "value": "1" },
+						{ "key": "per_page", "value": "20" }
+					]
+				}
+			}
+		},
+		{
+			"name": "Get Message",
+			"request": {
+				"method": "GET",
+				"header": [
+					{ "key": "Authorization", "value": "Bearer {{access_token}}" }
+				],
+				"url": {
+					"raw": "{{base_url}}/api/messages/{{message_id}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "messages", "{{message_id}}"]
+				}
+			}
+		},
+		{
+			"name": "Update Message (PUT)",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{ "key": "Content-Type", "value": "application/json" },
+					{ "key": "Authorization", "value": "Bearer {{access_token}}" }
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"sender\": \"bot\",\n  \"content\": \"Mensagem atualizada pelo test\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/messages/{{message_id}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "messages", "{{message_id}}"]
+				}
+			}
+		},
+		{
+			"name": "Delete Message",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{ "key": "Authorization", "value": "Bearer {{access_token}}" }
+				],
+				"url": {
+					"raw": "{{base_url}}/api/messages/{{message_id}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "messages", "{{message_id}}"]
+				}
+			}
+		},
+		{
+			"name": "List Contacts",
+			"request": {
+				"method": "GET",
+				"header": [
+					{ "key": "Authorization", "value": "Bearer {{access_token}}" }
+				],
+				"url": {
+					"raw": "{{base_url}}/api/contacts?page=1&per_page=20",
+					"host": ["{{base_url}}"],
+					"path": ["api", "contacts"],
+					"query": [
+						{ "key": "page", "value": "1" },
+						{ "key": "per_page", "value": "20" }
+					]
+				}
+			}
+		},
+		{
+			"name": "Create Contact",
+			"request": {
+				"method": "POST",
+				"header": [
+					{ "key": "Content-Type", "value": "application/json" },
+					{ "key": "Authorization", "value": "Bearer {{access_token}}" }
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Contato Teste\",\n  \"phone\": \"+5511999000111\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/contacts",
+					"host": ["{{base_url}}"],
+					"path": ["api", "contacts"]
+				}
+			}
+		},
+		{
+			"name": "Get Contact",
+			"request": {
+				"method": "GET",
+				"header": [
+					{ "key": "Authorization", "value": "Bearer {{access_token}}" }
+				],
+				"url": {
+					"raw": "{{base_url}}/api/contacts/{{contact_id}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "contacts", "{{contact_id}}"]
+				}
+			}
+		},
+		{
+			"name": "Update Contact (PUT)",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{ "key": "Content-Type", "value": "application/json" },
+					{ "key": "Authorization", "value": "Bearer {{access_token}}" }
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Contato Atualizado\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/contacts/{{contact_id}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "contacts", "{{contact_id}}"]
+				}
+			}
+		},
+		{
+			"name": "Get Contact by Phone",
+			"request": {
+				"method": "GET",
+				"header": [
+					{ "key": "Authorization", "value": "Bearer {{access_token}}" }
+				],
+				"url": {
+					"raw": "{{base_url}}/api/contacts/phone/{{phone}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "contacts", "phone", "{{phone}}"]
+				}
+			}
+		},
+		{
+			"name": "Conversations - Next Step",
+			"request": {
+				"method": "POST",
+				"header": [
+					{ "key": "Content-Type", "value": "application/json" },
+					{ "key": "Authorization", "value": "Bearer {{access_token}}" }
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{}"
+				},
+				"url": {
+					"raw": "{{base_url}}/api/conversations/{{conversation_id}}/next",
+					"host": ["{{base_url}}"],
+					"path": ["api", "conversations", "{{conversation_id}}", "next"]
+				}
+			}
 		}
 	],
 	"variable": [
 		{ "key": "base_url", "value": "http://localhost:8080" },
 		{ "key": "access_token", "value": "" },
 		{ "key": "flow_id", "value": "" },
-		{ "key": "conversation_id", "value": "" }
+		{ "key": "conversation_id", "value": "" },
+		{ "key": "message_id", "value": "" },
+		{ "key": "contact_id", "value": "" },
+		{ "key": "phone", "value": "+5511999000111" }
 	]
 }

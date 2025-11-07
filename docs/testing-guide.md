@@ -40,19 +40,134 @@ curl -X POST http://localhost:8080/api/auth/login \
 
 **Resposta esperada**:
 
-```json
+````json
 {
 	"access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
-	"expires_in": 900,
-	"token_type": "Bearer"
+---
+
+## 12. Messages - CRUD (Requer autenticação)
+
+Listar mensagens (filtros: conversation_id, sender/direction, page/per_page):
+
+```bash
+curl -X GET "http://localhost:8080/api/messages?page=1&per_page=20" \
+	-H "Authorization: Bearer $TOKEN"
+````
+
+Resposta esperada (pagina):
+
+```json
+{
+	"messages": [
+		/* array de mensagens com campos id, conversation_id, sender, content, created_at */
+	],
+	"pagination": { "page": 1, "per_page": 20, "total": 0 }
 }
 ```
+
+Obter mensagem por id:
+
+```bash
+curl -X GET http://localhost:8080/api/messages/$MESSAGE_ID \
+	-H "Authorization: Bearer $TOKEN"
+```
+
+Atualizar mensagem (PUT) — substitui conteúdo da mensagem:
+
+```bash
+curl -X PUT http://localhost:8080/api/messages/$MESSAGE_ID \
+	-H "Content-Type: application/json" \
+	-H "Authorization: Bearer $TOKEN" \
+	-d '{"sender":"bot","content":"Resposta atualizada pelo teste"}'
+```
+
+Remover mensagem:
+
+```bash
+curl -X DELETE http://localhost:8080/api/messages/$MESSAGE_ID \
+	-H "Authorization: Bearer $TOKEN"
+```
+
+---
+
+## 13. Contacts - CRUD e busca por telefone (Requer autenticação)
+
+Listar contatos:
+
+```bash
+curl -X GET "http://localhost:8080/api/contacts?page=1&per_page=20" \
+	-H "Authorization: Bearer $TOKEN"
+```
+
+Criar contato:
+
+```bash
+curl -X POST http://localhost:8080/api/contacts \
+	-H "Content-Type: application/json" \
+	-H "Authorization: Bearer $TOKEN" \
+	-d '{"name":"Contato Teste","phone":"+5511999000111"}'
+```
+
+Obter contato por id:
+
+```bash
+curl -X GET http://localhost:8080/api/contacts/$CONTACT_ID \
+	-H "Authorization: Bearer $TOKEN"
+```
+
+Atualizar contato (PUT):
+
+```bash
+curl -X PUT http://localhost:8080/api/contacts/$CONTACT_ID \
+	-H "Content-Type: application/json" \
+	-H "Authorization: Bearer $TOKEN" \
+	-d '{"name":"Contato Atualizado"}'
+```
+
+Buscar contato por telefone (URL encode se necessário):
+
+```bash
+curl -X GET "http://localhost:8080/api/contacts/phone/%2B5511999000111" \
+	-H "Authorization: Bearer $TOKEN"
+```
+
+---
+
+## 14. Conversations - Próximo passo (Requer autenticação)
+
+Dispara a lógica que retorna o próximo passo do flow para uma conversa ativa:
+
+```bash
+curl -X POST http://localhost:8080/api/conversations/$CONV_ID/next \
+	-H "Content-Type: application/json" \
+	-H "Authorization: Bearer $TOKEN" \
+	-d '{}'
+```
+
+Resposta esperada:
+
+```json
+{
+	"conversation_id": "...",
+	"next_step": { "id": "welcome", "type": "message", "content": "..." },
+	"completed": false
+}
+```
+
+---
+
+    "expires_in": 900,
+    "token_type": "Bearer"
+
+}
+
+````
 
 **Salvar o token para próximas requisições**:
 
 ```bash
 export TOKEN="seu_token_aqui"
-```
+````
 
 ---
 
