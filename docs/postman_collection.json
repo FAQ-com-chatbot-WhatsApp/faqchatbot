@@ -181,6 +181,20 @@
 			}
 		},
 		{
+			"name": "Get Flow",
+			"request": {
+				"method": "GET",
+				"header": [
+					{ "key": "Authorization", "value": "Bearer {{access_token}}" }
+				],
+				"url": {
+					"raw": "{{base_url}}/api/flows/{{flow_id}}",
+					"host": ["{{base_url}}"],
+					"path": ["api", "flows", "{{flow_id}}"]
+				}
+			}
+		},
+		{
 			"name": "Update Flow",
 			"request": {
 				"method": "PATCH",
