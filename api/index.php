@@ -231,56 +231,7 @@ try {
         return;
     }
 
-    // ---------------- Flows ----------------
-    // Listar flows (com paginação e filtros)
-    if ($method === 'GET' && $path === '/flows') {
-        $auth = requireAuth();
-        $page = (int)($_GET['page'] ?? 1);
-        $perPage = (int)($_GET['per_page'] ?? 20);
-        $status = trim(strval($_GET['status'] ?? ''));
-        $name = trim(strval($_GET['name'] ?? ''));
-
-        if ($page < 1) $page = 1;
-        if ($perPage < 1 || $perPage > 200) $perPage = 20;
-
-        $pdo = pdo();
-        $where = [];
-        $params = [];
-        if ($status !== '' && in_array($status, ['draft','active','archived'], true)) {
-            $where[] = 'status = :status';
-            $params[':status'] = $status;
-        }
-        if ($name !== '') {
-            $where[] = 'name LIKE :name';
-            $params[':name'] = '%' . $name . '%';
-        }
-
-        $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
-        // Se existir coluna deleted_at, filtrar registros soft-deleted
-        try {
-            $col = $pdo->query("SHOW COLUMNS FROM flows LIKE 'deleted_at'")->fetch();
-        } catch (Throwable $e) {
-            $col = false;
-        }
-        if ($col) {
-            $whereClause = $whereClause === '' ? 'WHERE deleted_at IS NULL' : ($whereClause . ' AND deleted_at IS NULL');
-        }
-
-        $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM flows $whereClause");
-        $stmt->execute($params);
-        $total = (int)$stmt->fetch()['total'];
-
-        $offset = ($page - 1) * $perPage;
-        $stmt = $pdo->prepare("SELECT id, name, version, status, description, created_at, updated_at FROM flows $whereClause ORDER BY updated_at DESC LIMIT :limit OFFSET :offset");
-        $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
-        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-        foreach ($params as $k => $v) $stmt->bindValue($k, $v);
-        $stmt->execute();
-        $flows = $stmt->fetchAll();
-
-        jsonResponse(['flows' => $flows, 'pagination' => ['page' => $page, 'per_page' => $perPage, 'total' => $total, 'total_pages' => ceil($total / $perPage)]]);
-        return;
-    }
+    // (Removido bloco duplicado de listagem de flows - ver seção consolidada mais abaixo)
 
     if ($method === 'POST' && $path === '/auth/login') {
         $body = readJsonBody();
@@ -1056,6 +1007,8 @@ try {
         $where = [];
         $params = [];
 
+        // aceitar 'inactive' como alias de 'archived'
+        if ($status === 'inactive') { $status = 'archived'; }
         if ($status !== '' && in_array($status, ['draft', 'active', 'archived'], true)) {
             $where[] = 'status = :status';
             $params[':status'] = $status;
@@ -1090,6 +1043,13 @@ try {
         }
         $stmt->execute();
         $flows = $stmt->fetchAll();
+        // mapear status 'archived' -> 'inactive' para resposta
+        foreach ($flows as &$f) {
+            if (($f['status'] ?? '') === 'archived') {
+                $f['status'] = 'inactive';
+            }
+        }
+        unset($f);
 
         jsonResponse([
             'flows' => $flows,
@@ -1127,6 +1087,10 @@ try {
             $flow['definition'] = null;
         }
 
+        // mapear status para 'inactive' se vier 'archived'
+        if (($flow['status'] ?? '') === 'archived') {
+            $flow['status'] = 'inactive';
+        }
         jsonResponse($flow);
         return;
     }
@@ -1143,7 +1107,8 @@ try {
         if ($definition === null && isset($body['steps']) && is_array($body['steps'])) {
             $definition = ['steps' => $body['steps']];
         }
-        $status = trim(strval($body['status'] ?? 'draft'));
+    $status = trim(strval($body['status'] ?? 'draft'));
+    if ($status === 'inactive') { $status = 'archived'; }
 
         // Validações
         if (empty($name) || strlen($name) < 1 || strlen($name) > 191) {
@@ -1152,6 +1117,10 @@ try {
         }
         if ($definition === null || !is_array($definition)) {
             jsonResponse(['error' => ['code' => 'INVALID_DEFINITION', 'message' => 'Definição deve ser um objeto JSON válido']], 422);
+            return;
+        }
+        if (!array_key_exists('steps', $definition) || !is_array($definition['steps'])) {
+            jsonResponse(['error' => ['code' => 'INVALID_STEPS', 'message' => 'Definição deve conter steps (array)']], 422);
             return;
         }
         if (!in_array($status, ['draft', 'active', 'archived'], true)) {
@@ -1197,7 +1166,7 @@ try {
             'flow_id' => $flowId,
             'name' => $name,
             'version' => 1,
-            'status' => $status,
+            'status' => $status === 'archived' ? 'inactive' : $status,
             'description' => $description,
             'definition' => $definition,
             'created_by' => (int)$auth['sub'],
@@ -1218,7 +1187,8 @@ try {
         if ($definition === null && isset($body['steps']) && is_array($body['steps'])) {
             $definition = ['steps' => $body['steps']];
         }
-        $status = trim(strval($body['status'] ?? 'draft'));
+    $status = trim(strval($body['status'] ?? 'draft'));
+    if ($status === 'inactive') { $status = 'archived'; }
 
         if (empty($name) || strlen($name) < 1 || strlen($name) > 191) {
             jsonResponse(['error' => ['code' => 'INVALID_NAME', 'message' => 'Nome deve ter entre 1 e 191 caracteres']], 422);
@@ -1226,6 +1196,10 @@ try {
         }
         if ($definition === null || !is_array($definition)) {
             jsonResponse(['error' => ['code' => 'INVALID_DEFINITION', 'message' => 'Definição deve ser um objeto JSON válido']], 422);
+            return;
+        }
+        if (!array_key_exists('steps', $definition) || !is_array($definition['steps'])) {
+            jsonResponse(['error' => ['code' => 'INVALID_STEPS', 'message' => 'Definição deve conter steps (array)']], 422);
             return;
         }
         if (!in_array($status, ['draft', 'active', 'archived'], true)) {
@@ -1281,7 +1255,8 @@ try {
         $name = isset($body['name']) ? trim(strval($body['name'])) : null;
         $description = isset($body['description']) ? trim(strval($body['description'])) : null;
         $definition = $body['definition'] ?? null;
-        $status = isset($body['status']) ? trim(strval($body['status'])) : null;
+    $status = isset($body['status']) ? trim(strval($body['status'])) : null;
+    if ($status === 'inactive') { $status = 'archived'; }
 
         // Validações
         if ($name !== null && (empty($name) || strlen($name) < 1 || strlen($name) > 191)) {
@@ -1316,6 +1291,10 @@ try {
         if ($definition !== null) {
             if (!is_array($definition)) {
                 jsonResponse(['error' => ['code' => 'INVALID_DEFINITION', 'message' => 'Definição deve ser um objeto JSON válido']], 422);
+                return;
+            }
+            if (!array_key_exists('steps', $definition) || !is_array($definition['steps'])) {
+                jsonResponse(['error' => ['code' => 'INVALID_STEPS', 'message' => 'Definição deve conter steps (array)']], 422);
                 return;
             }
             $stmt = $pdo->prepare('SELECT definition, version FROM flows WHERE id = :id LIMIT 1');
@@ -1433,6 +1412,67 @@ try {
         }
 
         jsonResponse(['deleted' => true, 'flow_id' => $flowId]);
+        return;
+    }
+
+    // Ativar flow
+    if ($method === 'POST' && preg_match('#^/flows/([a-f0-9\-]{36})/activate$#', $path, $m)) {
+        $auth = requireAuth();
+        $flowId = $m[1];
+        $pdo = pdo();
+
+        $stmt = $pdo->prepare('UPDATE flows SET status = "active", updated_at = NOW() WHERE id = :id');
+        $affected = $stmt->execute([':id' => $flowId]);
+        if (!$affected) {
+            jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Flow não encontrado']], 404);
+            return;
+        }
+        jsonResponse(['flow_id' => $flowId, 'status' => 'active']);
+        return;
+    }
+
+    // Desativar flow (status interno 'archived', exposto como 'inactive')
+    if ($method === 'POST' && preg_match('#^/flows/([a-f0-9\-]{36})/deactivate$#', $path, $m)) {
+        $auth = requireAuth();
+        $flowId = $m[1];
+        $pdo = pdo();
+
+        $stmt = $pdo->prepare('UPDATE flows SET status = "archived", updated_at = NOW() WHERE id = :id');
+        $affected = $stmt->execute([':id' => $flowId]);
+        if (!$affected) {
+            jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Flow não encontrado']], 404);
+            return;
+        }
+        jsonResponse(['flow_id' => $flowId, 'status' => 'inactive']);
+        return;
+    }
+
+    // Duplicar flow
+    if ($method === 'POST' && preg_match('#^/flows/([a-f0-9\-]{36})/duplicate$#', $path, $m)) {
+        $auth = requireAuth();
+        $flowId = $m[1];
+        $pdo = pdo();
+
+        $stmt = $pdo->prepare('SELECT name, description, definition FROM flows WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $flowId]);
+        $orig = $stmt->fetch();
+        if (!$orig) {
+            jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Flow não encontrado']], 404);
+            return;
+        }
+        $newId = \Ramsey\Uuid\Uuid::uuid4()->toString();
+        $newName = rtrim(strval($orig['name'])) . ' (copy)';
+        $stmt = $pdo->prepare('INSERT INTO flows (id, name, version, status, description, definition, created_by, created_at, updated_at) VALUES (:id, :name, :version, :status, :description, :definition, :created_by, NOW(), NOW())');
+        $stmt->execute([
+            ':id' => $newId,
+            ':name' => $newName,
+            ':version' => 1,
+            ':status' => 'draft',
+            ':description' => $orig['description'] ?? null,
+            ':definition' => $orig['definition'] ?? null,
+            ':created_by' => (int)$auth['sub'],
+        ]);
+        jsonResponse(['flow_id' => $newId, 'name' => $newName, 'version' => 1, 'status' => 'draft']);
         return;
     }
 
