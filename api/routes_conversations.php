@@ -114,31 +114,10 @@ if (!defined('__WHATS_BOT_ROUTES_DEPRECATED__')) {
         $pdo = pdo();
         
         $stmt = $pdo->prepare('
-            SELECT c.id, c.status, c.created_at, c.updated_at,
-                   co.id as contact_id, co.phone, co.name as contact_name,
-                   f.id as flow_id, f.name as flow_name
-            FROM conversations c
-            JOIN contacts co ON c.contact_id = co.id
-            JOIN flows f ON c.flow_id = f.id
-            WHERE c.id = :id
-            LIMIT 1
-        ');
-        $stmt->execute([':id' => $conversationId]);
-        $conversation = $stmt->fetch();
-        
-        if (!$conversation) {
-            jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Conversa não encontrada']], 404);
-            return;
-        }
-        
-        // Buscar mensagens
-        $stmt = $pdo->prepare('SELECT id, sender, content, created_at FROM messages WHERE conversation_id = :id ORDER BY created_at ASC');
-        $stmt->execute([':id' => $conversationId]);
-        $messages = $stmt->fetchAll();
-        
-        jsonResponse([
-            'conversation' => $conversation,
-            'messages' => $messages,
-        ]);
-        return;
-    }
+            <?php
+            // Arquivo obsoleto: as rotas foram integradas em api/index.php.
+            // Mantido vazio intencionalmente para evitar inclusões antigas.
+            if (!defined('__WHATS_BOT_ROUTES_DEPRECATED__')) {
+                define('__WHATS_BOT_ROUTES_DEPRECATED__', true);
+                // Sem conteúdo.
+            }
