@@ -403,7 +403,7 @@ try {
 
         $pdo = pdo();
         // Verificar conversa
-        $stmt = $pdo->prepare('SELECT id, message_count FROM conversations WHERE id = :id LIMIT 1');
+    $stmt = $pdo->prepare('SELECT id, message_count, contact_id FROM conversations WHERE id = :id LIMIT 1');
         $stmt->execute([':id' => $conversationId]);
         $conversation = $stmt->fetch();
         if (!$conversation) {
@@ -427,6 +427,16 @@ try {
         // Atualizar conversa (contagem + last_message_id + updated_at)
         $pdo->prepare('UPDATE conversations SET message_count = message_count + 1, last_message_id = :mid, updated_at = NOW() WHERE id = :id')
             ->execute([':mid' => $messageId, ':id' => $conversationId]);
+
+        // Atualizar last interaction do contato (updated_at) se possível
+        if (!empty($conversation['contact_id'])) {
+            try {
+                $pdo->prepare('UPDATE contacts SET updated_at = NOW() WHERE id = :id')
+                    ->execute([':id' => $conversation['contact_id']]);
+            } catch (Throwable $e) {
+                // não bloquear a inserção se falhar ao atualizar contato
+            }
+        }
 
         jsonResponse([
             'message_id' => $messageId,
@@ -693,6 +703,20 @@ try {
         }
 
         $pdo = pdo();
+        // Evitar duplicatas por telefone: se existir, retornar existente (200) e atualizar nome se diferente
+        $stmt = $pdo->prepare('SELECT id, name, phone FROM contacts WHERE phone = :phone LIMIT 1');
+        $stmt->execute([':phone' => $phone]);
+        $existing = $stmt->fetch();
+        if ($existing) {
+            // Atualizar nome se necessário
+            if ($existing['name'] !== $name) {
+                $pdo->prepare('UPDATE contacts SET name = :name, updated_at = NOW() WHERE id = :id')
+                    ->execute([':name' => $name, ':id' => $existing['id']]);
+            }
+            jsonResponse(['contact_id' => $existing['id'], 'name' => $name, 'phone' => $phone], 200);
+            return;
+        }
+
         $id = \Ramsey\Uuid\Uuid::uuid4()->toString();
         $stmt = $pdo->prepare('INSERT INTO contacts (id, name, phone, created_at, updated_at) VALUES (:id, :name, :phone, NOW(), NOW())');
         $stmt->execute([':id' => $id, ':name' => $name, ':phone' => $phone]);
@@ -963,6 +987,21 @@ try {
         }
 
         $pdo = pdo();
+        // validar referências message_id nas steps (se houver)
+        $steps = isset($definition['steps']) && is_array($definition['steps']) ? $definition['steps'] : [];
+        foreach ($steps as $s) {
+            if (is_array($s) && !empty($s['message_id'])) {
+                $mid = trim(strval($s['message_id']));
+                if ($mid !== '') {
+                    $check = $pdo->prepare('SELECT id FROM messages WHERE id = :id LIMIT 1');
+                    $check->execute([':id' => $mid]);
+                    if (!$check->fetch()) {
+                        jsonResponse(['error' => ['code' => 'INVALID_REFERENCE', 'message' => 'message_id referenciado não encontrado: ' . $mid]], 422);
+                        return;
+                    }
+                }
+            }
+        }
         $flowId = \Ramsey\Uuid\Uuid::uuid4()->toString();
         $definitionJson = json_encode($definition, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
@@ -986,6 +1025,73 @@ try {
             'definition' => $definition,
             'created_by' => (int)$auth['sub'],
         ], 201);
+        return;
+    }
+
+    // Substituir flow (PUT)
+    if ($method === 'PUT' && preg_match('#^/flows/([a-f0-9\-]{36})$#', $path, $m)) {
+        $body = readJsonBody();
+        $auth = requireAuth();
+        $flowId = $m[1];
+
+        $name = trim(strval($body['name'] ?? ''));
+        $description = trim(strval($body['description'] ?? ''));
+        $definition = $body['definition'] ?? null;
+        // compatibility: accept top-level steps
+        if ($definition === null && isset($body['steps']) && is_array($body['steps'])) {
+            $definition = ['steps' => $body['steps']];
+        }
+        $status = trim(strval($body['status'] ?? 'draft'));
+
+        if (empty($name) || strlen($name) < 1 || strlen($name) > 191) {
+            jsonResponse(['error' => ['code' => 'INVALID_NAME', 'message' => 'Nome deve ter entre 1 e 191 caracteres']], 422);
+            return;
+        }
+        if ($definition === null || !is_array($definition)) {
+            jsonResponse(['error' => ['code' => 'INVALID_DEFINITION', 'message' => 'Definição deve ser um objeto JSON válido']], 422);
+            return;
+        }
+        if (!in_array($status, ['draft', 'active', 'archived'], true)) {
+            jsonResponse(['error' => ['code' => 'INVALID_STATUS', 'message' => 'Status deve ser draft, active ou archived']], 422);
+            return;
+        }
+
+        $pdo = pdo();
+        // Verificar se existe
+        $stmt = $pdo->prepare('SELECT id FROM flows WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $flowId]);
+        if (!$stmt->fetch()) {
+            jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Flow não encontrado']], 404);
+            return;
+        }
+
+        // Validar referências message_id nas steps
+        $steps = isset($definition['steps']) && is_array($definition['steps']) ? $definition['steps'] : [];
+        foreach ($steps as $s) {
+            if (is_array($s) && !empty($s['message_id'])) {
+                $mid = trim(strval($s['message_id']));
+                if ($mid !== '') {
+                    $check = $pdo->prepare('SELECT id FROM messages WHERE id = :id LIMIT 1');
+                    $check->execute([':id' => $mid]);
+                    if (!$check->fetch()) {
+                        jsonResponse(['error' => ['code' => 'INVALID_REFERENCE', 'message' => 'message_id referenciado não encontrado: ' . $mid]], 422);
+                        return;
+                    }
+                }
+            }
+        }
+
+        $definitionJson = json_encode($definition, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        // Incrementar versão ao substituir
+        $stmt = $pdo->prepare('UPDATE flows SET name = :name, description = :description, definition = :definition, status = :status, version = version + 1, updated_at = NOW() WHERE id = :id');
+        $affected = $stmt->execute([':name' => $name, ':description' => $description ?: null, ':definition' => $definitionJson, ':status' => $status, ':id' => $flowId]);
+
+        if ($affected === 0) {
+            jsonResponse(['error' => ['code' => 'UPDATE_FAILED', 'message' => 'Falha ao substituir flow']], 500);
+            return;
+        }
+
+        jsonResponse(['updated' => true, 'flow_id' => $flowId]);
         return;
     }
 
@@ -1028,6 +1134,37 @@ try {
             return;
         }
 
+        // Se definition presente, validar referências message_id e preparar incremento de versão se mudou
+        $shouldIncrementVersion = false;
+        if ($definition !== null) {
+            if (!is_array($definition)) {
+                jsonResponse(['error' => ['code' => 'INVALID_DEFINITION', 'message' => 'Definição deve ser um objeto JSON válido']], 422);
+                return;
+            }
+            $stmt = $pdo->prepare('SELECT definition, version FROM flows WHERE id = :id LIMIT 1');
+            $stmt->execute([':id' => $flowId]);
+            $existing = $stmt->fetch();
+            $existingDef = json_decode($existing['definition'] ?? 'null', true);
+            if (json_encode($existingDef, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !== json_encode($definition, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) {
+                $shouldIncrementVersion = true;
+            }
+
+            $steps = isset($definition['steps']) && is_array($definition['steps']) ? $definition['steps'] : [];
+            foreach ($steps as $s) {
+                if (is_array($s) && !empty($s['message_id'])) {
+                    $mid = trim(strval($s['message_id']));
+                    if ($mid !== '') {
+                        $check = $pdo->prepare('SELECT id FROM messages WHERE id = :id LIMIT 1');
+                        $check->execute([':id' => $mid]);
+                        if (!$check->fetch()) {
+                            jsonResponse(['error' => ['code' => 'INVALID_REFERENCE', 'message' => 'message_id referenciado não encontrado: ' . $mid]], 422);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
         // Construir query de atualização dinâmica
         $updates = [];
         $params = [':id' => $flowId];
@@ -1054,6 +1191,10 @@ try {
             return;
         }
 
+        // Se a definição mudou e detectamos que deve incrementar versão, incrementar
+        if (!empty($shouldIncrementVersion)) {
+            $updates[] = 'version = version + 1';
+        }
         $updates[] = 'updated_at = NOW()';
         $sql = 'UPDATE flows SET ' . implode(', ', $updates) . ' WHERE id = :id';
 
