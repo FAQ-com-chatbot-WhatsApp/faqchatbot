@@ -1,8 +1,22 @@
-# FAQ Chatbot - Sistema Completo
+# WhatsBot - Sistema Completo
 
 ## O que é este projeto?
 
-Sistema de perguntas e respostas (FAQ) desenvolvido em Joomla que funciona como um site onde visitantes podem consultar perguntas frequentes organizadas por categorias. O sistema roda dentro de containers Docker para facilitar a instalação e uso.
+Sistema de chatbot conversacional integrado com WhatsApp Business API, desenvolvido sobre estrutura Joomla com API REST customizada. Permite criar fluxos conversacionais, gerenciar contatos, mensagens e conversas. O sistema roda dentro de containers Docker para facilitar a instalação e uso.
+
+## Documentação Completa
+
+- **[Setup do Banco de Dados](docs/DB_SETUP.md)** - Configuração, migrations, models e repositories
+- **[API Reference](docs/API.md)** - Documentação dos endpoints REST
+- **[Fluxos Conversacionais](docs/FLOWS.md)** - Como criar e gerenciar flows
+
+## Tecnologias Principais
+
+- PHP 8.1+
+- MariaDB 10.8
+- Docker & Docker Compose
+- Joomla 4.x (base)
+- API REST customizada (sem framework externo)
 
 ## Preparação do ambiente - Windows
 
@@ -91,20 +105,32 @@ bash start-faq.sh
 docker-compose up -d
 ```
 
-### Passo 4: Aguarde a instalação
+### Passo 4: Configurar o Banco de Dados
 
-Na primeira vez, o sistema vai:
+Na primeira vez, você precisa aplicar as migrations:
 
-- Baixar os programas necessários (2-5 minutos dependendo da internet)
-- Criar o banco de dados
-- Configurar o site
-- AGUARDE ATÉ 5 MINUTOS antes de testar
+```bash
+# Criar database
+docker exec whatsbot-db mysql -uroot -prootpassword123 -e "CREATE DATABASE IF NOT EXISTS botdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON botdb.* TO 'bot_user'@'%';"
+
+# Aplicar schema e migrations
+docker exec webcore php scripts/apply_migrations.php
+```
+
+**Veja documentação completa**: [docs/DB_SETUP.md](docs/DB_SETUP.md)
 
 ### Passo 5: Testar se funcionou
 
-Abra seu navegador e acesse: http://localhost:8080
+```bash
+# Executar smoke tests
+docker exec webcore php scripts/smoke_tests.php
+```
 
-Se aparecer o site do FAQ, funcionou!
+Ou abra seu navegador:
+
+- Site Joomla: http://localhost:8080
+- API Health: http://localhost:8080/api/health/ping
+- phpMyAdmin: http://localhost:8081
 
 ## Como acessar o sistema
 
