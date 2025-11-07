@@ -364,6 +364,7 @@ try {
         $contentRaw     = $body['content'] ?? null;
         $type           = trim(strval($body['type'] ?? 'text'));
         $metadata       = $body['metadata'] ?? null;
+        $waitRaw        = $body['wait'] ?? null; // chave comum opcional: { start: int, end: int }
 
         if (!v::uuid()->validate($conversationId)) {
             jsonResponse(['error' => ['code' => 'INVALID_CONVERSATION', 'message' => 'ID de conversa inválido']], 422);
@@ -401,6 +402,26 @@ try {
         // Mesclar metadata se fornecido (no modelo solicitado metadata vem separada)
         if (is_array($metadata) && $metadata !== []) {
             $contentArr['metadata'] = $metadata;
+        }
+
+        // Validar e aplicar 'wait' se fornecido no payload (comum a todos os tipos)
+        if ($waitRaw !== null) {
+            if (!is_array($waitRaw)) {
+                jsonResponse(['error' => ['code' => 'INVALID_WAIT', 'message' => 'wait deve ser um objeto {start,end}']], 422);
+                return;
+            }
+            $ws = $waitRaw['start'] ?? null;
+            $we = $waitRaw['end'] ?? null;
+            if (!is_numeric($ws) || !is_numeric($we)) {
+                jsonResponse(['error' => ['code' => 'INVALID_WAIT', 'message' => 'wait.start e wait.end devem ser números']], 422);
+                return;
+            }
+            $ws = (int)$ws; $we = (int)$we;
+            if ($ws < 0 || $we < 0 || $we < $ws) {
+                jsonResponse(['error' => ['code' => 'INVALID_WAIT', 'message' => 'wait deve atender: start >= 0, end >= start']], 422);
+                return;
+            }
+            $contentArr['wait'] = ['start' => $ws, 'end' => $we];
         }
 
         $pdo = pdo();
@@ -444,8 +465,8 @@ try {
             'message_id' => $messageId,
             'conversation_id' => $conversationId,
             'direction' => $direction,
-            'type' => 'text',
-            'content' => ['text' => $textContent],
+            'type' => $type,
+            'content' => $contentArr,
             'status' => 'processed'
         ], 201);
         return;
@@ -542,6 +563,7 @@ try {
         $content = $body['content'] ?? null;
         $type = trim(strval($body['type'] ?? 'text'));
         $status = trim(strval($body['status'] ?? ''));
+        $waitRaw = $body['wait'] ?? null;
 
         if ($content === null) {
             jsonResponse(['error' => ['code' => 'INVALID_CONTENT', 'message' => 'Content obrigatório']], 422);
@@ -556,7 +578,34 @@ try {
             return;
         }
 
-        $contentJson = is_string($content) ? json_encode(['text' => $content], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : json_encode($content, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        // Normalizar e mesclar 'wait' se fornecido
+        if (is_string($content)) {
+            $normalized = ['body' => $content];
+        } elseif (is_array($content)) {
+            $normalized = $content;
+        } else {
+            jsonResponse(['error' => ['code' => 'INVALID_CONTENT', 'message' => 'Content deve ser string ou objeto']], 422);
+            return;
+        }
+        if ($waitRaw !== null) {
+            if (!is_array($waitRaw)) {
+                jsonResponse(['error' => ['code' => 'INVALID_WAIT', 'message' => 'wait deve ser um objeto {start,end}']], 422);
+                return;
+            }
+            $ws = $waitRaw['start'] ?? null;
+            $we = $waitRaw['end'] ?? null;
+            if (!is_numeric($ws) || !is_numeric($we)) {
+                jsonResponse(['error' => ['code' => 'INVALID_WAIT', 'message' => 'wait.start e wait.end devem ser números']], 422);
+                return;
+            }
+            $ws = (int)$ws; $we = (int)$we;
+            if ($ws < 0 || $we < 0 || $we < $ws) {
+                jsonResponse(['error' => ['code' => 'INVALID_WAIT', 'message' => 'wait deve atender: start >= 0, end >= start']], 422);
+                return;
+            }
+            $normalized['wait'] = ['start' => $ws, 'end' => $we];
+        }
+        $contentJson = json_encode($normalized, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $stmt = $pdo->prepare('UPDATE messages SET content = :content, type = :type, status = :status WHERE id = :id');
         $stmt->execute([':content' => $contentJson, ':type' => $type, ':status' => $status, ':id' => $id]);
         jsonResponse(['updated' => true, 'message_id' => $id]);

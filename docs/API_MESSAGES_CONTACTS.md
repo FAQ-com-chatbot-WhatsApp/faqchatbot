@@ -24,26 +24,30 @@ Authorization: Bearer {token}
 Content-Type: application/json
 
 {
-  "conversation_id": "550e8400-e29b-41d4-a716-446655440000",
-  "sender": "user",
-  "content": "Olá, preciso de ajuda!",
-  "type": "text",
-  "metadata": {
-    "source": "whatsapp",
-    "timestamp": "2025-11-07T10:30:00Z"
-  }
+	"conversation_id": "550e8400-e29b-41d4-a716-446655440000",
+	"sender": "user",
+	"content": "Olá, preciso de ajuda!",
+	"type": "text",
+	"wait": { "start": 10, "end": 30 },
+	"metadata": {
+		"source": "whatsapp",
+		"timestamp": "2025-11-07T10:30:00Z"
+	}
 }
 ```
 
 **Parâmetros**
 
-| Campo             | Tipo          | Obrigatório | Descrição                              |
-| ----------------- | ------------- | ----------- | -------------------------------------- |
-| `conversation_id` | UUID          | Sim         | ID da conversa                         |
-| `sender`          | string        | Sim         | `user` ou `bot`                        |
-| `content`         | string/object | Sim         | Texto da mensagem ou objeto com `body` |
-| `type`            | string        | Não         | Tipo da mensagem (padrão: `text`)      |
-| `metadata`        | object        | Não         | Metadados adicionais                   |
+| Campo             | Tipo          | Obrigatório | Descrição                                                        |
+| ----------------- | ------------- | ----------- | ---------------------------------------------------------------- |
+| `conversation_id` | UUID          | Sim         | ID da conversa                                                   |
+| `sender`          | string        | Sim         | `user` ou `bot`                                                  |
+| `content`         | string/object | Sim         | Texto da mensagem ou objeto com `body`                           |
+| `type`            | string        | Não         | Tipo da mensagem (padrão: `text`)                                |
+| `wait`            | object        | Não         | `{ start: int>=0, end: int>=start }` (aplicado a todos os tipos) |
+| `metadata`        | object        | Não         | Metadados adicionais                                             |
+
+> Observação: `wait` é mesclado em `content.wait` no armazenamento e na resposta.
 
 **Response (201 Created)**
 
@@ -54,7 +58,8 @@ Content-Type: application/json
 	"direction": "in",
 	"type": "text",
 	"content": {
-		"text": "Olá, preciso de ajuda!"
+		"body": "Olá, preciso de ajuda!",
+		"wait": { "start": 10, "end": 30 }
 	},
 	"status": "processed"
 }
@@ -103,20 +108,14 @@ Authorization: Bearer {token}
 			"type": "text",
 			"content": {
 				"body": "Olá, preciso de ajuda!",
-				"metadata": {
-					"source": "whatsapp"
-				}
+				"wait": { "start": 10, "end": 30 },
+				"metadata": { "source": "whatsapp" }
 			},
 			"status": "processed",
 			"created_at": "2025-11-07 10:30:15"
 		}
 	],
-	"pagination": {
-		"page": 1,
-		"per_page": 20,
-		"total": 150,
-		"total_pages": 8
-	}
+	"pagination": { "page": 1, "per_page": 20, "total": 150, "total_pages": 8 }
 }
 ```
 
@@ -142,7 +141,8 @@ Authorization: Bearer {token}
 	"direction": "in",
 	"type": "text",
 	"content": {
-		"body": "Olá, preciso de ajuda!"
+		"body": "Olá, preciso de ajuda!",
+		"wait": { "start": 10, "end": 30 }
 	},
 	"status": "processed",
 	"created_at": "2025-11-07 10:30:15"
@@ -167,9 +167,10 @@ Authorization: Bearer {token}
 Content-Type: application/json
 
 {
-  "content": "Mensagem corrigida",
-  "type": "text",
-  "status": "delivered"
+	"content": { "body": "Mensagem corrigida" },
+	"type": "text",
+	"status": "delivered",
+	"wait": { "start": 5, "end": 15 }
 }
 ```
 
@@ -186,6 +187,7 @@ Content-Type: application/json
 
 - `404 NOT_FOUND` - Mensagem não encontrada
 - `422 INVALID_CONTENT` - Conteúdo obrigatório
+- `422 INVALID_WAIT` - Objeto `wait` inválido
 
 ---
 
