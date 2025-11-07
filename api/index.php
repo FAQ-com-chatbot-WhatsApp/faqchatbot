@@ -358,7 +358,10 @@ try {
 
         $conversationId = trim(strval($body['conversation_id'] ?? ''));
         $sender         = trim(strval($body['sender'] ?? ''));
-        $textContent    = trim(strval($body['content'] ?? ''));
+        // Novo formato: content pode ser string ou objeto: { "body": "..." }
+        $contentRaw     = $body['content'] ?? null;
+        $type           = trim(strval($body['type'] ?? 'text'));
+        $metadata       = $body['metadata'] ?? null;
 
         if (!v::uuid()->validate($conversationId)) {
             jsonResponse(['error' => ['code' => 'INVALID_CONVERSATION', 'message' => 'ID de conversa inválido']], 422);
@@ -368,9 +371,34 @@ try {
             jsonResponse(['error' => ['code' => 'INVALID_SENDER', 'message' => 'Sender deve ser user ou bot']], 422);
             return;
         }
-        if (!v::stringType()->length(1, 5000)->validate($textContent)) {
-            jsonResponse(['error' => ['code' => 'INVALID_CONTENT', 'message' => 'Conteúdo inválido']], 422);
+
+        // Normalizar conteúdo
+        $contentArr = null;
+        if (is_string($contentRaw)) {
+            $textContent = trim($contentRaw);
+            if (!v::stringType()->length(1, 5000)->validate($textContent)) {
+                jsonResponse(['error' => ['code' => 'INVALID_CONTENT', 'message' => 'Conteúdo inválido']], 422);
+                return;
+            }
+            $contentArr = ['body' => $textContent];
+        } elseif (is_array($contentRaw)) {
+            // Esperamos ao menos content.body quando type=text
+            if ($type === 'text') {
+                $bodyText = isset($contentRaw['body']) ? trim(strval($contentRaw['body'])) : null;
+                if (!v::stringType()->length(1, 5000)->validate($bodyText)) {
+                    jsonResponse(['error' => ['code' => 'INVALID_CONTENT', 'message' => 'Content.body inválido']], 422);
+                    return;
+                }
+            }
+            $contentArr = $contentRaw;
+        } else {
+            jsonResponse(['error' => ['code' => 'INVALID_CONTENT', 'message' => 'Content obrigatório']], 422);
             return;
+        }
+
+        // Mesclar metadata se fornecido (no modelo solicitado metadata vem separada)
+        if (is_array($metadata) && $metadata !== []) {
+            $contentArr['metadata'] = $metadata;
         }
 
         $pdo = pdo();
@@ -385,13 +413,13 @@ try {
 
         $direction = $sender === 'user' ? 'in' : 'out';
         $messageId = \Ramsey\Uuid\Uuid::uuid4()->toString();
-        $contentJson = json_encode(['text' => $textContent], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $contentJson = json_encode($contentArr, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $stmt = $pdo->prepare('INSERT INTO messages (id, conversation_id, direction, type, content, status, created_at) VALUES (:id, :conversation_id, :direction, :type, :content, :status, NOW())');
         $stmt->execute([
             ':id' => $messageId,
             ':conversation_id' => $conversationId,
             ':direction' => $direction,
-            ':type' => 'text',
+            ':type' => $type,
             ':content' => $contentJson,
             ':status' => 'processed',
         ]);
@@ -408,6 +436,116 @@ try {
             'content' => ['text' => $textContent],
             'status' => 'processed'
         ], 201);
+        return;
+    }
+
+    // ---------------- Messages (CRUD) ----------------
+    // Listar messages (com filtros opcionais)
+    if ($method === 'GET' && $path === '/messages') {
+        $auth = requireAuth();
+        $page = (int)($_GET['page'] ?? 1);
+        $perPage = (int)($_GET['per_page'] ?? 20);
+        $conversationId = trim(strval($_GET['conversation_id'] ?? ''));
+        $direction = trim(strval($_GET['direction'] ?? ''));
+
+        if ($page < 1) $page = 1;
+        if ($perPage < 1 || $perPage > 200) $perPage = 20;
+
+        $pdo = pdo();
+        $where = [];
+        $params = [];
+        if ($conversationId !== '' && v::uuid()->validate($conversationId)) {
+            $where[] = 'conversation_id = :conversation_id';
+            $params[':conversation_id'] = $conversationId;
+        }
+        if ($direction !== '' && in_array($direction, ['in','out'], true)) {
+            $where[] = 'direction = :direction';
+            $params[':direction'] = $direction;
+        }
+
+        $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+        $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM messages $whereClause");
+        $stmt->execute($params);
+        $total = (int)$stmt->fetch()['total'];
+
+        $offset = ($page - 1) * $perPage;
+        $stmt = $pdo->prepare("SELECT id, conversation_id, direction, type, content, status, created_at FROM messages $whereClause ORDER BY created_at DESC LIMIT :limit OFFSET :offset");
+        $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        foreach ($params as $k => $v) $stmt->bindValue($k, $v);
+        $stmt->execute();
+        $messages = $stmt->fetchAll();
+        foreach ($messages as &$m) {
+            $decoded = json_decode($m['content'], true);
+            if (json_last_error() === JSON_ERROR_NONE) $m['content'] = $decoded;
+        }
+        unset($m);
+
+        jsonResponse(['messages' => $messages, 'pagination' => ['page' => $page, 'per_page' => $perPage, 'total' => $total, 'total_pages' => ceil($total / $perPage)]]);
+        return;
+    }
+
+    // Obter message por id
+    if ($method === 'GET' && preg_match('#^/messages/([a-f0-9\\-]{36})$#', $path, $m)) {
+        $auth = requireAuth();
+        $id = $m[1];
+        $pdo = pdo();
+        $stmt = $pdo->prepare('SELECT id, conversation_id, direction, type, content, status, created_at FROM messages WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $id]);
+        $msg = $stmt->fetch();
+        if (!$msg) {
+            jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Message não encontrado']], 404);
+            return;
+        }
+        $decoded = json_decode($msg['content'], true);
+        if (json_last_error() === JSON_ERROR_NONE) $msg['content'] = $decoded;
+        jsonResponse($msg);
+        return;
+    }
+
+    // Substituir/atualizar message (PUT)
+    if ($method === 'PUT' && preg_match('#^/messages/([a-f0-9\\-]{36})$#', $path, $m)) {
+        $auth = requireAuth();
+        $id = $m[1];
+        $body = readJsonBody();
+        $content = $body['content'] ?? null;
+        $type = trim(strval($body['type'] ?? 'text'));
+        $status = trim(strval($body['status'] ?? ''));
+
+        if ($content === null) {
+            jsonResponse(['error' => ['code' => 'INVALID_CONTENT', 'message' => 'Content obrigatório']], 422);
+            return;
+        }
+
+        $pdo = pdo();
+        $stmt = $pdo->prepare('SELECT id FROM messages WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $id]);
+        if (!$stmt->fetch()) {
+            jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Message não encontrado']], 404);
+            return;
+        }
+
+        $contentJson = is_string($content) ? json_encode(['text' => $content], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : json_encode($content, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $stmt = $pdo->prepare('UPDATE messages SET content = :content, type = :type, status = :status WHERE id = :id');
+        $stmt->execute([':content' => $contentJson, ':type' => $type, ':status' => $status, ':id' => $id]);
+        jsonResponse(['updated' => true, 'message_id' => $id]);
+        return;
+    }
+
+    // Remover message
+    if ($method === 'DELETE' && preg_match('#^/messages/([a-f0-9\\-]{36})$#', $path, $m)) {
+        $auth = requireAuth();
+        $id = $m[1];
+        $pdo = pdo();
+        $stmt = $pdo->prepare('SELECT id FROM messages WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $id]);
+        if (!$stmt->fetch()) {
+            jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Message não encontrado']], 404);
+            return;
+        }
+        $stmt = $pdo->prepare('DELETE FROM messages WHERE id = :id');
+        $stmt->execute([':id' => $id]);
+        jsonResponse(['deleted' => true, 'message_id' => $id]);
         return;
     }
 
@@ -497,6 +635,192 @@ try {
         return;
     }
 
+    // ---------------- Contacts ----------------
+    // Listar contacts
+    if ($method === 'GET' && $path === '/contacts') {
+        $auth = requireAuth();
+        $page = (int)($_GET['page'] ?? 1);
+        $perPage = (int)($_GET['per_page'] ?? 20);
+        $phone = trim(strval($_GET['phone'] ?? ''));
+        $name = trim(strval($_GET['name'] ?? ''));
+
+        if ($page < 1) $page = 1;
+        if ($perPage < 1 || $perPage > 200) $perPage = 20;
+
+        $pdo = pdo();
+        $where = [];
+        $params = [];
+        if ($phone !== '') {
+            $where[] = 'phone LIKE :phone';
+            $params[':phone'] = '%' . $phone . '%';
+        }
+        if ($name !== '') {
+            $where[] = 'name LIKE :name';
+            $params[':name'] = '%' . $name . '%';
+        }
+
+        $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+        $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM contacts $whereClause");
+        $stmt->execute($params);
+        $total = (int)$stmt->fetch()['total'];
+
+        $offset = ($page - 1) * $perPage;
+        $stmt = $pdo->prepare("SELECT id, name, phone, created_at, updated_at FROM contacts $whereClause ORDER BY updated_at DESC LIMIT :limit OFFSET :offset");
+        $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        foreach ($params as $k => $v) $stmt->bindValue($k, $v);
+        $stmt->execute();
+        $contacts = $stmt->fetchAll();
+
+        jsonResponse(['contacts' => $contacts, 'pagination' => ['page' => $page, 'per_page' => $perPage, 'total' => $total, 'total_pages' => ceil($total / $perPage)]]);
+        return;
+    }
+
+    // Criar contact
+    if ($method === 'POST' && $path === '/contacts') {
+        $auth = requireAuth();
+        $body = readJsonBody();
+        $name = trim(strval($body['name'] ?? ''));
+        $phone = trim(strval($body['phone'] ?? ''));
+
+        if (!v::stringType()->length(1,191)->validate($name)) {
+            jsonResponse(['error' => ['code' => 'INVALID_NAME', 'message' => 'Nome inválido']], 422);
+            return;
+        }
+        if (!preg_match('/^\+?[0-9][0-9\-\s]{5,31}$/', $phone)) {
+            jsonResponse(['error' => ['code' => 'INVALID_PHONE', 'message' => 'Telefone inválido']], 422);
+            return;
+        }
+
+        $pdo = pdo();
+        $id = \Ramsey\Uuid\Uuid::uuid4()->toString();
+        $stmt = $pdo->prepare('INSERT INTO contacts (id, name, phone, created_at, updated_at) VALUES (:id, :name, :phone, NOW(), NOW())');
+        $stmt->execute([':id' => $id, ':name' => $name, ':phone' => $phone]);
+        jsonResponse(['contact_id' => $id, 'name' => $name, 'phone' => $phone], 201);
+        return;
+    }
+
+    // Obter contact por id
+    if ($method === 'GET' && preg_match('#^/contacts/([a-f0-9\\-]{36})$#', $path, $m)) {
+        $auth = requireAuth();
+        $id = $m[1];
+        $pdo = pdo();
+        $stmt = $pdo->prepare('SELECT id, name, phone, created_at, updated_at FROM contacts WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $id]);
+        $contact = $stmt->fetch();
+        if (!$contact) {
+            jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Contact não encontrado']], 404);
+            return;
+        }
+        jsonResponse($contact);
+        return;
+    }
+
+    // Atualizar contact
+    if ($method === 'PUT' && preg_match('#^/contacts/([a-f0-9\\-]{36})$#', $path, $m)) {
+        $auth = requireAuth();
+        $id = $m[1];
+        $body = readJsonBody();
+        $name = trim(strval($body['name'] ?? ''));
+        $phone = trim(strval($body['phone'] ?? ''));
+
+        if (!v::stringType()->length(1,191)->validate($name)) {
+            jsonResponse(['error' => ['code' => 'INVALID_NAME', 'message' => 'Nome inválido']], 422);
+            return;
+        }
+        if (!preg_match('/^\+?[0-9][0-9\-\s]{5,31}$/', $phone)) {
+            jsonResponse(['error' => ['code' => 'INVALID_PHONE', 'message' => 'Telefone inválido']], 422);
+            return;
+        }
+
+        $pdo = pdo();
+        $stmt = $pdo->prepare('SELECT id FROM contacts WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $id]);
+        if (!$stmt->fetch()) {
+            jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Contact não encontrado']], 404);
+            return;
+        }
+        $stmt = $pdo->prepare('UPDATE contacts SET name = :name, phone = :phone, updated_at = NOW() WHERE id = :id');
+        $stmt->execute([':name' => $name, ':phone' => $phone, ':id' => $id]);
+        jsonResponse(['updated' => true, 'contact_id' => $id]);
+        return;
+    }
+
+    // Buscar contact por telefone (URL-encoded)
+    if ($method === 'GET' && preg_match('#^/contacts/phone/(.+)$#', $path, $m)) {
+        $auth = requireAuth();
+        $phoneRaw = rawurldecode($m[1]);
+        $pdo = pdo();
+        $stmt = $pdo->prepare('SELECT id, name, phone, created_at, updated_at FROM contacts WHERE phone = :phone LIMIT 1');
+        $stmt->execute([':phone' => $phoneRaw]);
+        $contact = $stmt->fetch();
+        if (!$contact) {
+            jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Contact não encontrado']], 404);
+            return;
+        }
+        jsonResponse($contact);
+        return;
+    }
+
+    // ---------------- Conversations: next step ----------------
+    if ($method === 'POST' && preg_match('#^/conversations/([a-f0-9\\-]{36})/next$#', $path, $m)) {
+        $auth = requireAuth();
+        $conversationId = $m[1];
+        $pdo = pdo();
+        $stmt = $pdo->prepare('SELECT id, flow_id, message_count FROM conversations WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $conversationId]);
+        $conv = $stmt->fetch();
+        if (!$conv) {
+            jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Conversa não encontrada']], 404);
+            return;
+        }
+        $stmt = $pdo->prepare('SELECT definition FROM flows WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $conv['flow_id']]);
+        $flow = $stmt->fetch();
+        if (!$flow) {
+            jsonResponse(['error' => ['code' => 'FLOW_NOT_FOUND', 'message' => 'Flow não encontrado']], 404);
+            return;
+        }
+        $def = json_decode($flow['definition'] ?? 'null', true);
+        $steps = is_array($def) && isset($def['steps']) && is_array($def['steps']) ? $def['steps'] : [];
+
+        // Se as steps usam campo 'order', ordenar por ele (compatibilidade com modelo solicitado)
+        $hasOrder = false;
+        foreach ($steps as $s) {
+            if (is_array($s) && array_key_exists('order', $s)) { $hasOrder = true; break; }
+        }
+        if ($hasOrder) {
+            usort($steps, function($a, $b) {
+                $oa = isset($a['order']) ? (int)$a['order'] : 0;
+                $ob = isset($b['order']) ? (int)$b['order'] : 0;
+                return $oa <=> $ob;
+            });
+        }
+
+        $nextIndex = max(0, (int)$conv['message_count']);
+        $nextStep = $steps[$nextIndex] ?? null;
+        $completed = $nextStep === null;
+
+        // Se a step referencia uma message via message_id, expandir o conteúdo da mensagem
+        if ($nextStep !== null && is_array($nextStep) && !empty($nextStep['message_id'])) {
+            try {
+                $stmt = $pdo->prepare('SELECT id, type, content, status, created_at FROM messages WHERE id = :id LIMIT 1');
+                $stmt->execute([':id' => $nextStep['message_id']]);
+                $msgRow = $stmt->fetch();
+                if ($msgRow) {
+                    $decoded = json_decode($msgRow['content'], true);
+                    if (json_last_error() === JSON_ERROR_NONE) $msgRow['content'] = $decoded;
+                    $nextStep['message'] = $msgRow;
+                }
+            } catch (Throwable $e) {
+                // não bloquear se falhar ao buscar a message; retornar step sem expansão
+            }
+        }
+
+        jsonResponse(['conversation_id' => $conversationId, 'next_step' => $nextStep, 'completed' => $completed]);
+        return;
+    }
+
     // Atualizar status da conversa
     if ($method === 'PATCH' && preg_match('#^/conversations/([a-f0-9\-]{36})$#', $path, $m)) {
         $auth = requireAuth();
@@ -578,6 +902,34 @@ try {
         return;
     }
 
+    // Obter flow específico
+    if ($method === 'GET' && preg_match('#^/flows/([a-f0-9\-]{36})$#', $path, $m)) {
+        $auth = requireAuth();
+        $flowId = $m[1];
+
+        $pdo = pdo();
+        $stmt = $pdo->prepare('SELECT id, name, version, status, description, definition, created_by, created_at, updated_at FROM flows WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $flowId]);
+        $flow = $stmt->fetch();
+
+        if (!$flow) {
+            jsonResponse(['error' => ['code' => 'NOT_FOUND', 'message' => 'Flow não encontrado']], 404);
+            return;
+        }
+
+        // Decodificar definition se existir
+        if (!empty($flow['definition'])) {
+            $decoded = json_decode($flow['definition'], true);
+            // Se json_decode falhar, devolver definição bruta (evita erro 500 por dados inválidos)
+            $flow['definition'] = $decoded === null ? $flow['definition'] : $decoded;
+        } else {
+            $flow['definition'] = null;
+        }
+
+        jsonResponse($flow);
+        return;
+    }
+
     // Criar flow
     if ($method === 'POST' && $path === '/flows') {
         $body = readJsonBody();
@@ -585,7 +937,11 @@ try {
 
         $name = trim(strval($body['name'] ?? ''));
         $description = trim(strval($body['description'] ?? ''));
+        // Aceitar tanto 'definition' quanto 'steps' no payload (compatibilidade com novo modelo)
         $definition = $body['definition'] ?? null;
+        if ($definition === null && isset($body['steps']) && is_array($body['steps'])) {
+            $definition = ['steps' => $body['steps']];
+        }
         $status = trim(strval($body['status'] ?? 'draft'));
 
         // Validações

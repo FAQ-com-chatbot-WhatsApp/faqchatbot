@@ -148,6 +148,50 @@ paths:
                       total: { type: integer }
                       total_pages: { type: integer }
   /messages:
+    get:
+      security:
+        - bearerAuth: []
+      summary: Listar mensagens (filtros: conversation_id, direction)
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 200
+        - name: conversation_id
+          in: query
+          schema:
+            type: string
+        - name: direction
+          in: query
+          schema:
+            type: string
+            enum: [in, out]
+      responses:
+        "200":
+          description: Lista de mensagens
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+                  pagination:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      total_pages: { type: integer }
     post:
       security:
         - bearerAuth: []
@@ -164,7 +208,23 @@ paths:
                 sender:
                   type: string
                   enum: [user, bot]
-                content: { type: string }
+                # content pode ser string (texto) ou objeto com body + metadata
+                content:
+                  oneOf:
+                    - type: string
+                    - type: object
+                      properties:
+                        body:
+                          type: string
+                        metadata:
+                          type: object
+                          additionalProperties: true
+                type:
+                  type: string
+                  description: "Tipo da mensagem, ex: text, image"
+                metadata:
+                  type: object
+                  description: "Metadados opcionais (categoria, tags, etc.)"
       responses:
         "201":
           description: Mensagem criada
@@ -184,6 +244,63 @@ paths:
                   status: { type: string }
         "404": { description: Conversa não encontrada }
         "422": { description: Dados inválidos }
+
+  /messages/{id}:
+    get:
+      security:
+        - bearerAuth: []
+      summary: Obter mensagem por id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Mensagem
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        "404": { description: Mensagem não encontrada }
+    put:
+      security:
+        - bearerAuth: []
+      summary: Substituir mensagem (PUT)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content: { type: object }
+                type: { type: string }
+                status: { type: string }
+      responses:
+        "200": { description: Mensagem atualizada }
+        "404": { description: Mensagem não encontrada }
+    delete:
+      security:
+        - bearerAuth: []
+      summary: Remover mensagem
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200": { description: Mensagem removida }
+        "404": { description: Mensagem não encontrada }
   /conversations/{id}:
     get:
       security:
@@ -394,6 +511,47 @@ paths:
                   created_by: { type: integer }
         "422": { description: Dados inválidos }
   /flows/{id}:
+    put:
+      security:
+        - bearerAuth: []
+      summary: Substituir flow (PUT) - substitui todo o recurso
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, definition]
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 191
+                description:
+                  type: string
+                definition:
+                  type: object
+                status:
+                  type: string
+                  enum: [draft, active, archived]
+      responses:
+        "200":
+          description: Flow substituído
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  updated: { type: boolean }
+                  flow_id: { type: string }
+        "404": { description: Flow não encontrado }
+        "422": { description: Dados inválidos }
     patch:
       security:
         - bearerAuth: []
@@ -458,9 +616,225 @@ paths:
                   flow_id: { type: string }
         "404": { description: Flow não encontrado }
         "409": { description: Flow em uso }
+
+  /conversations/{id}/next:
+    post:
+      security:
+        - bearerAuth: []
+      summary: Calcular/retornar próximo passo do flow para a conversa
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Próximo passo do flow
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  conversation_id: { type: string }
+                  next_step:
+                    type: object
+                    nullable: true
+                  completed: { type: boolean }
+        "404": { description: Conversa ou flow não encontrado }
+
+  /contacts:
+    get:
+      security:
+        - bearerAuth: []
+      summary: Listar contatos
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 200
+        - name: phone
+          in: query
+          schema:
+            type: string
+        - name: name
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista de contatos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  contacts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Contact'
+                  pagination:
+                    type: object
+                    properties:
+                      page: { type: integer }
+                      per_page: { type: integer }
+                      total: { type: integer }
+                      total_pages: { type: integer }
+    post:
+      security:
+        - bearerAuth: []
+      summary: Criar contato
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, phone]
+              properties:
+                name: { type: string }
+                phone: { type: string }
+      responses:
+        "201":
+          description: Contato criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
+
+  /contacts/{id}:
+    get:
+      security:
+        - bearerAuth: []
+      summary: Obter contato por id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Contato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
+        "404": { description: Contato não encontrado }
+    put:
+      security:
+        - bearerAuth: []
+      summary: Atualizar contato
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, phone]
+              properties:
+                name: { type: string }
+                phone: { type: string }
+      responses:
+        "200": { description: Contato atualizado }
+        "404": { description: Contato não encontrado }
+
+  /contacts/phone/{phone}:
+    get:
+      security:
+        - bearerAuth: []
+      summary: Obter contato por telefone
+      parameters:
+        - name: phone
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Contato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
+        "404": { description: Contato não encontrado }
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+  schemas:
+    Message:
+      type: object
+      properties:
+        id: { type: string }
+        conversation_id: { type: string }
+        direction: { type: string }
+        type: { type: string }
+        content:
+          type: object
+          properties:
+            body: { type: string }
+            metadata:
+              type: object
+              additionalProperties: true
+        status: { type: string }
+        created_at: { type: string }
+    Flow:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        version: { type: integer }
+        status: { type: string }
+        description: { type: string }
+        # definition é livre, mas o modelo recomendado possui steps
+        definition:
+          type: object
+          properties:
+            steps:
+              type: array
+              items:
+                type: object
+                properties:
+                  order: { type: integer }
+                  message_id: { type: string }
+                  type: { type: string }
+        created_by: { type: integer }
+        created_at: { type: string }
+        updated_at: { type: string }
+    Conversation:
+      type: object
+      properties:
+        id: { type: string }
+        status: { type: string }
+        contact_id: { type: string }
+        phone: { type: string }
+        contact_name: { type: string }
+        flow_id: { type: string }
+        flow_name: { type: string }
+        created_at: { type: string }
+        updated_at: { type: string }
+        message_count: { type: integer }
+    Contact:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        phone: { type: string }
+        created_at: { type: string }
+        updated_at: { type: string }
