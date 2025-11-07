@@ -131,6 +131,26 @@ curl -X GET "http://localhost:8080/api/contacts/phone/%2B5511999000111" \
 	-H "Authorization: Bearer $TOKEN"
 ```
 
+Remover contato (DELETE) - comportamento: soft-delete quando disponível
+
+```bash
+curl -X DELETE http://localhost:8080/api/contacts/$CONTACT_ID \
+	-H "Authorization: Bearer $TOKEN"
+```
+
+Resposta esperada (com o esquema de soft-delete presente):
+
+- Status 200 com JSON indicando o id e `deleted_at` atualizado, por exemplo:
+
+```json
+{
+	"id": "xxxxxxxx-xxxx-....",
+	"deleted_at": "2025-11-06T20:00:00Z"
+}
+```
+
+Se a coluna `deleted_at` não existir no seu banco (migração não aplicada), o endpoint pode realizar um delete físico e retornar `204 No Content` ou `200 OK` dependendo da versão da API instalada. Verifique o comportamento no seu ambiente.
+
 ---
 
 ## 14. Conversations - Próximo passo (Requer autenticação)
@@ -153,6 +173,58 @@ Resposta esperada:
 	"completed": false
 }
 ```
+
+Casos especiais / comportamento esperado
+
+- 1. Conversa inativa por mais de 24 horas (timeout -> abandonada)
+
+Descrição: se a última interação da conversa tiver ocorrido há mais de ~24h, a chamada a `/conversations/{id}/next` marcará a conversa como `abandoned` (status) e não retornará um próximo passo acionável.
+
+Exemplo:
+
+```bash
+curl -X POST http://localhost:8080/api/conversations/$CONV_ID/next \
+	-H "Content-Type: application/json" \
+	-H "Authorization: Bearer $TOKEN" \
+	-d '{}'
+```
+
+Resposta esperada (exemplo):
+
+```json
+{
+	"conversation_id": "...",
+	"status": "abandoned",
+	"message": "conversation timed out due to inactivity",
+	"completed": false
+}
+```
+
+- 2. Fluxo já concluído (sem próximo passo)
+
+Descrição: quando o fluxo chegou ao fim (não há mais steps), a chamada a `/conversations/{id}/next` sinaliza que a conversa foi finalizada e define `completed: true`.
+
+Exemplo:
+
+```bash
+curl -X POST http://localhost:8080/api/conversations/$CONV_ID/next \
+	-H "Content-Type: application/json" \
+	-H "Authorization: Bearer $TOKEN" \
+	-d '{}'
+```
+
+Resposta esperada (exemplo):
+
+```json
+{
+	"conversation_id": "...",
+	"status": "completed",
+	"next_step": null,
+	"completed": true
+}
+```
+
+Observação: o comportamento exato (mensagens e campos) pode variar conforme versão da API; porém os efeitos esperados são: alteração de `status` para `abandoned` ou `completed` e `completed: true/false` no payload retornado.
 
 ---
 

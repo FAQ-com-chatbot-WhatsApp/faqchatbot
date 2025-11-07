@@ -231,6 +231,57 @@ try {
         return;
     }
 
+    // ---------------- Flows ----------------
+    // Listar flows (com paginação e filtros)
+    if ($method === 'GET' && $path === '/flows') {
+        $auth = requireAuth();
+        $page = (int)($_GET['page'] ?? 1);
+        $perPage = (int)($_GET['per_page'] ?? 20);
+        $status = trim(strval($_GET['status'] ?? ''));
+        $name = trim(strval($_GET['name'] ?? ''));
+
+        if ($page < 1) $page = 1;
+        if ($perPage < 1 || $perPage > 200) $perPage = 20;
+
+        $pdo = pdo();
+        $where = [];
+        $params = [];
+        if ($status !== '' && in_array($status, ['draft','active','archived'], true)) {
+            $where[] = 'status = :status';
+            $params[':status'] = $status;
+        }
+        if ($name !== '') {
+            $where[] = 'name LIKE :name';
+            $params[':name'] = '%' . $name . '%';
+        }
+
+        $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+        // Se existir coluna deleted_at, filtrar registros soft-deleted
+        try {
+            $col = $pdo->query("SHOW COLUMNS FROM flows LIKE 'deleted_at'")->fetch();
+        } catch (Throwable $e) {
+            $col = false;
+        }
+        if ($col) {
+            $whereClause = $whereClause === '' ? 'WHERE deleted_at IS NULL' : ($whereClause . ' AND deleted_at IS NULL');
+        }
+
+        $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM flows $whereClause");
+        $stmt->execute($params);
+        $total = (int)$stmt->fetch()['total'];
+
+        $offset = ($page - 1) * $perPage;
+        $stmt = $pdo->prepare("SELECT id, name, version, status, description, created_at, updated_at FROM flows $whereClause ORDER BY updated_at DESC LIMIT :limit OFFSET :offset");
+        $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        foreach ($params as $k => $v) $stmt->bindValue($k, $v);
+        $stmt->execute();
+        $flows = $stmt->fetchAll();
+
+        jsonResponse(['flows' => $flows, 'pagination' => ['page' => $page, 'per_page' => $perPage, 'total' => $total, 'total_pages' => ceil($total / $perPage)]]);
+        return;
+    }
+
     if ($method === 'POST' && $path === '/auth/login') {
         $body = readJsonBody();
         $username = trim(strval($body['username'] ?? ''));
@@ -484,6 +535,15 @@ try {
         }
 
         $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+        // Se existir coluna deleted_at, filtrar registros soft-deleted
+        try {
+            $col = $pdo->query("SHOW COLUMNS FROM messages LIKE 'deleted_at'")->fetch();
+        } catch (Throwable $e) {
+            $col = false;
+        }
+        if ($col) {
+            $whereClause = $whereClause === '' ? 'WHERE deleted_at IS NULL' : ($whereClause . ' AND deleted_at IS NULL');
+        }
         $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM messages $whereClause");
         $stmt->execute($params);
         $total = (int)$stmt->fetch()['total'];
@@ -639,8 +699,26 @@ try {
 
         $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
+        // Se existir coluna deleted_at em contacts ou flows, filtrar registros soft-deleted
+        try {
+            $colCo = $pdo->query("SHOW COLUMNS FROM contacts LIKE 'deleted_at'")->fetch();
+        } catch (Throwable $e) {
+            $colCo = false;
+        }
+        try {
+            $colF = $pdo->query("SHOW COLUMNS FROM flows LIKE 'deleted_at'")->fetch();
+        } catch (Throwable $e) {
+            $colF = false;
+        }
+        if ($colCo) {
+            $whereClause = $whereClause === '' ? 'WHERE co.deleted_at IS NULL' : ($whereClause . ' AND co.deleted_at IS NULL');
+        }
+        if ($colF) {
+            $whereClause = $whereClause === '' ? 'WHERE f.deleted_at IS NULL' : ($whereClause . ' AND f.deleted_at IS NULL');
+        }
+
         // Contagem total
-        $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM conversations c LEFT JOIN contacts co ON c.contact_id = co.id $whereClause");
+        $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM conversations c LEFT JOIN contacts co ON c.contact_id = co.id LEFT JOIN flows f ON c.flow_id = f.id $whereClause");
         $stmt->execute($params);
         $total = (int)$stmt->fetch()['total'];
 
@@ -691,6 +769,15 @@ try {
         }
 
         $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+        // Se existir coluna deleted_at, filtrar registros soft-deleted
+        try {
+            $col = $pdo->query("SHOW COLUMNS FROM contacts LIKE 'deleted_at'")->fetch();
+        } catch (Throwable $e) {
+            $col = false;
+        }
+        if ($col) {
+            $whereClause = $whereClause === '' ? 'WHERE deleted_at IS NULL' : ($whereClause . ' AND deleted_at IS NULL');
+        }
         $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM contacts $whereClause");
         $stmt->execute($params);
         $total = (int)$stmt->fetch()['total'];
@@ -979,6 +1066,15 @@ try {
         }
 
         $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+        // Se existir coluna deleted_at, filtrar registros soft-deleted
+        try {
+            $col = $pdo->query("SHOW COLUMNS FROM flows LIKE 'deleted_at'")->fetch();
+        } catch (Throwable $e) {
+            $col = false;
+        }
+        if ($col) {
+            $whereClause = $whereClause === '' ? 'WHERE deleted_at IS NULL' : ($whereClause . ' AND deleted_at IS NULL');
+        }
 
         // Contagem total
         $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM flows $whereClause");
