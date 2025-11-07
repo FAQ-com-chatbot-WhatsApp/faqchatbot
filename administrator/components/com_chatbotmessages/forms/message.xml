@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+  <fieldset name="message" label="COM_CHATBOTMESSAGES_MESSAGE_DETAILS">
+    <field
+      name="id"
+      type="hidden"
+    />
+
+    <field
+      name="conversation_id"
+      type="text"
+      label="COM_CHATBOTMESSAGES_FIELD_CONVERSATION_ID_LABEL"
+      description="COM_CHATBOTMESSAGES_FIELD_CONVERSATION_ID_DESC"
+      required="true"
+    />
+
+    <field
+      name="direction"
+      type="list"
+      label="COM_CHATBOTMESSAGES_FIELD_DIRECTION_LABEL"
+      description="COM_CHATBOTMESSAGES_FIELD_DIRECTION_DESC"
+      required="true"
+      default="out"
+    >
+      <option value="in">COM_CHATBOTMESSAGES_DIRECTION_IN</option>
+      <option value="out">COM_CHATBOTMESSAGES_DIRECTION_OUT</option>
+    </field>
+
+    <field
+      name="type"
+      type="list"
+      label="COM_CHATBOTMESSAGES_FIELD_TYPE_LABEL"
+      description="COM_CHATBOTMESSAGES_FIELD_TYPE_DESC"
+      required="true"
+      default="text"
+    >
+      <option value="text">COM_CHATBOTMESSAGES_TYPE_TEXT</option>
+      <option value="image">COM_CHATBOTMESSAGES_TYPE_IMAGE</option>
+      <option value="audio">COM_CHATBOTMESSAGES_TYPE_AUDIO</option>
+      <option value="video">COM_CHATBOTMESSAGES_TYPE_VIDEO</option>
+      <option value="document">COM_CHATBOTMESSAGES_TYPE_DOCUMENT</option>
+      <option value="interactive">COM_CHATBOTMESSAGES_TYPE_INTERACTIVE</option>
+    </field>
+
+    <field
+      name="content"
+      type="textarea"
+      label="COM_CHATBOTMESSAGES_FIELD_CONTENT_LABEL"
+      description="COM_CHATBOTMESSAGES_FIELD_CONTENT_DESC"
+      required="true"
+      rows="5"
+    />
+
+    <field
+      name="wait_start"
+      type="number"
+      label="COM_CHATBOTMESSAGES_FIELD_WAIT_START_LABEL"
+      description="COM_CHATBOTMESSAGES_FIELD_WAIT_START_DESC"
+      min="0"
+      default="0"
+    />
+
+    <field
+      name="wait_end"
+      type="number"
+      label="COM_CHATBOTMESSAGES_FIELD_WAIT_END_LABEL"
+      description="COM_CHATBOTMESSAGES_FIELD_WAIT_END_DESC"
+      min="0"
+      default="0"
+    />
+  </fieldset>
+</form>
