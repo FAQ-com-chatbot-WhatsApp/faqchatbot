@@ -60,14 +60,10 @@ PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 SET @tbl := 'conversation_transitions';
 SELECT COUNT(1) INTO @tbl_exists FROM information_schema.TABLES
  WHERE TABLE_SCHEMA = @schema AND TABLE_NAME = @tbl;
-IF @tbl_exists = 1 THEN
-	SET @idx := 'idx_ct_conversation';
-	SELECT COUNT(1) INTO @exists FROM information_schema.STATISTICS
-	 WHERE TABLE_SCHEMA = @schema AND TABLE_NAME = @tbl AND INDEX_NAME = @idx;
-	SET @sql = IF(@exists = 0,
-		CONCAT('ALTER TABLE ', @tbl, ' ADD INDEX ', @idx, ' (conversation_id);'),
-		'SELECT "index exists"');
-	PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-END IF;
+SET @idx := 'idx_ct_conversation';
+SET @sql = IF(@tbl_exists = 1,
+	(SELECT IF(COUNT(1)=0, CONCAT('ALTER TABLE ', @tbl, ' ADD INDEX ', @idx, ' (conversation_id);'), 'SELECT "index exists"') FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = @schema AND TABLE_NAME = @tbl AND INDEX_NAME = @idx),
+	'SELECT "table missing"');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- End of migration 003
