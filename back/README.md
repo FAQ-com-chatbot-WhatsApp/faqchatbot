@@ -148,6 +148,25 @@ cd /d/_projects/clinica_go
 # - Faz commits e antes do push espera 3s (Ctrl+C evita push)
 ```
 
+**Para PowerShell (Windows):**
+
+```powershell
+# 1) Liberar execução de scripts (primeira vez apenas)
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+
+# 2) Revisar mudanças
+git status
+git diff
+
+# 3) Executar o script
+cd D:\_projects\clinica_go
+.\auto_commit.ps1
+
+# Durante a execução
+# - Mostra plano de commits e aguarda 5s (Ctrl+C aborta)
+# - Faz commits e antes do push espera 3s (Ctrl+C evita push)
+```
+
 Tipos aplicados automaticamente (exemplos):
 | Tipo | Exemplo |
 |------|---------|
