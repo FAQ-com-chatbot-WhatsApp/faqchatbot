@@ -332,10 +332,12 @@ if [[ -n "${GROUPS[$GROUP_KEY_CHORE_TESTS]}" ]]; then
 fi
 
 # Commits individuais
-for idx in "${!SOLO_FILES[@]}"; do
-  f="${SOLO_FILES[$idx]}"; typ="${SOLO_TYPES[$idx]}"; msg="${SOLO_MSGS[$idx]}"
-  _commit_files "$typ" "$msg" "$f"
-done
+if ((${#SOLO_FILES[@]} > 0)); then
+  for idx in "${!SOLO_FILES[@]}"; do
+    f="${SOLO_FILES[$idx]}"; typ="${SOLO_TYPES[$idx]}"; msg="${SOLO_MSGS[$idx]}"
+    _commit_files "$typ" "$msg" "$f"
+  done
+fi
 
 hr
 say "Commits locais concluídos. Push único em 3s… (Ctrl+C para abortar)"
