@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# auto-commit-refactor.sh
+# auto_commit.sh
 # Refatorado: analisa diffs, gera commits padronizados e executa um único push.
 # Mantém comportamento original: agrupa docs/style/tests (chore), cria commits individuais para outros tipos.
 
