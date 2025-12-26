@@ -12,10 +12,17 @@ class UserStatus(str, Enum):
 
 
 class ConversationStatus(str, Enum):
-    ACTIVE = "ACTIVE"
-    WAITING_SECRETARY = "WAITING_SECRETARY"
-    TRANSFERRED = "TRANSFERRED"
-    CLOSED = "CLOSED"
+    ACTIVE_BOT = "ACTIVE_BOT"  # Bot conversando ativamente
+    PENDING_HANDOFF = "PENDING_HANDOFF"  # Aguardando atendente assumir
+    ACTIVE_HUMAN = "ACTIVE_HUMAN"  # Atendente conversando
+    COMPLETED = "COMPLETED"  # Agendamento confirmado
+    ESCALATED = "ESCALATED"  # Escalado (bot confuso)
+    CLOSED = "CLOSED"  # Conversa finalizada
+    
+    # Mantido para compatibilidade
+    ACTIVE = "ACTIVE_BOT"
+    WAITING_SECRETARY = "PENDING_HANDOFF"
+    TRANSFERRED = "ACTIVE_HUMAN"
 
 
 class LeadStatus(str, Enum):
@@ -44,3 +51,10 @@ class LLMProvider(str, Enum):
     GEMINI = "GEMINI"
     OPENAI = "OPENAI"
     ANTHROPIC = "ANTHROPIC"
+
+
+class InteractionType(str, Enum):
+    NOTE = "NOTE"
+    STATUS_CHANGE = "STATUS_CHANGE"
+    CALL = "CALL"
+    EMAIL = "EMAIL"
