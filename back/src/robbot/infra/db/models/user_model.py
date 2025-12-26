@@ -1,6 +1,7 @@
 """UserModel ORM for application users."""
 
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from robbot.infra.db.base import Base
@@ -19,3 +20,23 @@ class UserModel(Base):
     role = Column(String(50), default=Role.USER.value)
     created_at = Column(DateTime(timezone=True),
                         server_default=func.now(), nullable=False)
+    
+    # Relationships
+    assigned_leads = relationship(
+        "LeadModel",
+        back_populates="assigned_to",
+        foreign_keys="LeadModel.assigned_to_user_id"
+    )
+    
+    # Relationships for authentication and credentials
+    credential = relationship(
+        "CredentialModel",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan"
+    )
+    auth_sessions = relationship(
+        "AuthSessionModel",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
