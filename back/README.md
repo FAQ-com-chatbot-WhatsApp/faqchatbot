@@ -191,9 +191,11 @@ git branch -a
 **Git Bash**
 
 ```bash
-# Navegar para a raiz do projeto
+# Navegar para a RAIZ do projeto (onde está o .git)
 cd <seu-diretorio>/bot_wpp
-chmod +x scripts/auto-commit.sh
+
+# O script auto-commit.sh já está aqui e tem permissão de execução
+# Verifique: ls -la | grep auto-commit
 ```
 
 </td>
@@ -205,9 +207,11 @@ chmod +x scripts/auto-commit.sh
 # Liberar execução de scripts (primeira vez)
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 
-# Navegar para a raiz do projeto
+# Navegar para a RAIZ do projeto (onde está o .git)
 cd <seu-diretorio>\bot_wpp
-# O arquivo scripts\auto-commit.ps1 já está pronto
+
+# O script auto-commit.ps1 já está aqui
+# Verifique: Get-ChildItem -Filter auto-commit.*
 ```
 
 </td>
@@ -223,7 +227,8 @@ cd <seu-diretorio>\bot_wpp
 **Git Bash**
 
 ```bash
-# Já na raiz do projeto
+# Navegar para a pasta back (onde está o pyproject.toml)
+cd <seu-diretorio>/bot_wpp/back
 
 # Criar ambiente e instalar dependências
 uv sync
@@ -238,7 +243,8 @@ source .venv/Scripts/activate
 **PowerShell**
 
 ```powershell
-# Já na raiz do projeto
+# Navegar para a pasta back (onde está o pyproject.toml)
+cd <seu-diretorio>\bot_wpp\back
 
 # Criar ambiente e instalar dependências
 uv sync
@@ -260,16 +266,21 @@ uv sync
 ### 📂 Estrutura
 
 ```
-bot_wpp/
-├── docker-compose.yml      ← Configuração dos serviços
-├── Dockerfile              ← Imagem da API
-├── Dockerfile.worker       ← Imagem dos workers
-├── src/
-│   └── robbot/             ← Código fonte
-└── ...
+clinica_go/                   ← RAIZ (execute auto-commit aqui)
+├── .git/
+├── auto-commit.ps1
+├── auto-commit.sh
+└── back/                     ← BACK (execute docker/uv aqui)
+    ├── docker-compose.yml
+    ├── Dockerfile
+    ├── Dockerfile.worker
+    ├── pyproject.toml
+    ├── .venv/
+    └── src/
+        └── robbot/           ← Código fonte
 ```
 
-> ⚠️ **Importante**: Todos os comandos docker devem ser executados a partir da **raiz do projeto**
+> ⚠️ **Importante**: Comandos **docker** e **uv** devem ser executados de dentro da pasta **`back/`**
 
 ### 🚀 Comandos Principais
 
@@ -378,6 +389,8 @@ docker system prune -a --volumes
 
 > Sistema automatizado de commits seguindo [Conventional Commits](https://www.conventionalcommits.org/)
 
+> ⚠️ **IMPORTANTE**: Execute o auto-commit **DA RAIZ DO PROJETO** (onde está o `.git`), NÃO da pasta `back/`!
+
 ### Como Funciona
 
 1. 🔍 Analisa mudanças no repositório
@@ -410,8 +423,9 @@ docker system prune -a --volumes
 git status
 git diff
 
-# 2. Executar o script (na raiz do projeto)
-./scripts/auto-commit.sh
+# 2. Executar o script (DA RAIZ do projeto, não de back/)
+cd ..
+./auto-commit.sh
 
 # Durante execução:
 # ⏱️ Aguarda 5s → Ctrl+C para abortar
@@ -431,8 +445,9 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 git status
 git diff
 
-# 3. Executar o script (na raiz do projeto)
-.\scripts\auto-commit.ps1
+# 3. Executar o script (DA RAIZ do projeto, não de back/)
+cd ..
+.\auto-commit.ps1
 
 # Durante execução:
 # ⏱️ Aguarda 5s → Ctrl+C para abortar
@@ -481,18 +496,20 @@ git push origin nome-da-branch --force
 ### 🌅 Começando o Dia
 
 ```bash
-# 1. Atualizar repositório
+# 1. Atualizar repositório (DA RAIZ do projeto)
+cd D:/_projects/clinica_go  # ou seu caminho
 git checkout main
 git pull origin main
 git checkout sua-branch
 git merge main  # ou git rebase main
 
-# 2. Subir Docker (com workers)
+# 2. Ir para a pasta back e subir Docker
+cd back
 docker compose up -d --scale worker=2
 sleep 5
 docker compose ps
 
-# 3. Ativar ambiente Python (se for trabalhar localmente)
+# 3. Ativar ambiente Python (já em back/)
 source .venv/Scripts/activate  # Git Bash
 # .\.venv\Scripts\Activate.ps1  # PowerShell
 
@@ -504,7 +521,8 @@ docker compose logs -f worker  # Logs dos workers
 ### 💼 Durante o Dia
 
 ```bash
-# Ver status dos containers
+# Ver status dos containers (executar de back/)
+cd D:/_projects/clinica_go/back
 docker compose ps
 
 # Logs de um serviço
@@ -516,7 +534,8 @@ docker compose logs -f worker
 # Reiniciar serviço após mudanças
 docker compose restart api
 
-# Verificar mudanças Git
+# Verificar mudanças Git (executar da RAIZ)
+cd ..
 git status
 git diff
 ```
@@ -524,11 +543,13 @@ git diff
 ### 🌙 Encerrando o Dia
 
 ```bash
-# 1. Commitar mudanças (na raiz do projeto)
-./scripts/auto-commit.sh  # Git Bash
-# .\scripts\auto-commit.ps1  # PowerShell
+# 1. Voltar para a RAIZ e commitar mudanças
+cd D:/_projects/clinica_go  # ou seu caminho
+./auto-commit.sh  # Git Bash
+# .\auto-commit.ps1  # PowerShell
 
-# 2. Parar Docker
+# 2. Ir para back/ e parar Docker
+cd back
 docker compose down
 
 # 3. Desativar ambiente Python
@@ -565,7 +586,8 @@ git stash pop
 ### Executar Aplicação sem Docker
 
 ```bash
-# 1. Ativar ambiente (na raiz do projeto)
+# 1. Navegar para a pasta back e ativar ambiente
+cd D:/_projects/clinica_go/back  # ou seu caminho
 source .venv/Scripts/activate  # Git Bash
 # .\.venv\Scripts\Activate.ps1  # PowerShell
 
@@ -673,7 +695,11 @@ docker compose up -d --scale worker=2
 **Solução**:
 
 ```bash
-chmod +x scripts/auto-commit.sh
+# Navegue para a RAIZ do projeto primeiro
+cd D:/_projects/clinica_go  # ou seu caminho
+
+# Dê permissão de execução
+chmod +x auto-commit.sh
 ```
 
 </details>
