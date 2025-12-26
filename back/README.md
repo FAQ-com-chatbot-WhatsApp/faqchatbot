@@ -751,3 +751,5 @@ Depois, reinicie o terminal.
 <sub>Feito com ❤️ pela equipe FAQ Chatbot WhatsApp</sub>
 
 </div>
+
+<- ✅ Sem breaking Teste auto-commit -->
