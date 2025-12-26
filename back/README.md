@@ -127,7 +127,7 @@ ls -la
 rm -rf * .* 2>/dev/null || true
 
 # 3. Clonar o repositório
-git clone https://github.com/edyoCampos/bot_wpp.git .
+git clone https://github.com/FAQ-com-chatbot-WhatsApp/faqchatbot.git .
 
 # 4. Ajustar para Windows (NTFS)
 git config core.protectNTFS false
@@ -157,7 +157,7 @@ Get-ChildItem -Force
 Remove-Item * -Recurse -Force
 
 # 3. Clonar o repositório
-git clone https://github.com/edyoCampos/bot_wpp.git .
+git clone https://github.com/FAQ-com-chatbot-WhatsApp/faqchatbot.git .
 
 # 4. Ajustar para Windows (NTFS)
 git config core.protectNTFS false
@@ -192,7 +192,7 @@ git branch -a
 
 ```bash
 # Navegar para a RAIZ do projeto (onde está o .git)
-cd <seu-diretorio>/bot_wpp
+cd <seu-diretorio>/clinica_go
 
 # O script auto-commit.sh já está aqui e tem permissão de execução
 # Verifique: ls -la | grep auto-commit
@@ -208,7 +208,7 @@ cd <seu-diretorio>/bot_wpp
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 
 # Navegar para a RAIZ do projeto (onde está o .git)
-cd <seu-diretorio>\bot_wpp
+cd <seu-diretorio>\clinica_go
 
 # O script auto-commit.ps1 já está aqui
 # Verifique: Get-ChildItem -Filter auto-commit.*
@@ -228,7 +228,7 @@ cd <seu-diretorio>\bot_wpp
 
 ```bash
 # Navegar para a pasta back (onde está o pyproject.toml)
-cd <seu-diretorio>/bot_wpp/back
+cd <seu-diretorio>/clinica_go/back
 
 # Criar ambiente e instalar dependências
 uv sync
@@ -244,7 +244,7 @@ source .venv/Scripts/activate
 
 ```powershell
 # Navegar para a pasta back (onde está o pyproject.toml)
-cd <seu-diretorio>\bot_wpp\back
+cd <seu-diretorio>\clinica_go\back
 
 # Criar ambiente e instalar dependências
 uv sync
@@ -751,5 +751,3 @@ Depois, reinicie o terminal.
 <sub>Feito com ❤️ pela equipe FAQ Chatbot WhatsApp</sub>
 
 </div>
-
-<- ✅ Sem breaking Teste auto-commit -->
