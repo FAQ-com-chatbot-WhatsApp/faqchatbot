@@ -1,0 +1,229 @@
+name: tic
+
+services:
+  # ---------------------------------------------------------------------------
+  # Banco de Dados (PostgreSQL 18)
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:18-alpine
+    container_name: postgres
+    restart: unless-stopped
+
+    # Carrega variáveis do .env (caso você use)
+    env_file:
+      - .env
+
+    environment:
+      TZ: ${POSTGRES_TZ:-UTC}
+      POSTGRES_USER: dba
+      POSTGRES_PASSWORD: dba
+      POSTGRES_DB: BotDB
+
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-15432}:5432"
+
+    # Volume correto para PostgreSQL >= 18
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dba -d BotDB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Cache e Filas (Redis)
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Interface do Banco (Adminer)
+  # ---------------------------------------------------------------------------
+  adminer:
+    image: adminer:4
+    container_name: adminer
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      - db
+
+  # ---------------------------------------------------------------------------
+  # WhatsApp API (Waha)
+  # ---------------------------------------------------------------------------
+  waha:
+    image: devlikeapro/waha:chrome
+    container_name: waha
+    restart: unless-stopped
+    
+    env_file:
+      - .env
+    
+    environment:
+      WAHA_API_KEY: ${WAHA_API_KEY:-your-secret-api-key}
+      WAHA_DASHBOARD_USERNAME: ${WAHA_DASHBOARD_USERNAME:-admin}
+      WAHA_DASHBOARD_PASSWORD: ${WAHA_DASHBOARD_PASSWORD:-admin}
+      WHATSAPP_SWAGGER_USERNAME: ${WHATSAPP_SWAGGER_USERNAME:-admin}
+      WHATSAPP_SWAGGER_PASSWORD: ${WHATSAPP_SWAGGER_PASSWORD:-admin}
+    
+    ports:
+      - "127.0.0.1:3000:3000"
+    
+    volumes:
+      - waha_data:/app/.sessions
+    
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000/ping || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # Aplicação Principal (API)
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: api
+    restart: unless-stopped
+    env_file:
+      - .env
+
+    environment:
+      PYTHONPATH: ${PYTHONPATH:-/app/src}
+      AUTO_MIGRATE: ${AUTO_MIGRATE:-false}
+
+      # Database Config
+      DATABASE_URL: postgresql+psycopg2://dba:dba@db:5432/BotDB
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: dba
+      POSTGRES_PASSWORD: dba
+      POSTGRES_DB: BotDB
+
+      # Redis Config
+      REDIS_URL: redis://redis:6379/0
+
+      # SMTP (Maildev em desenvolvimento)
+      SMTP_HOST: ${SMTP_HOST:-maildev}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_TLS: ${SMTP_TLS:-false}
+      SMTP_SENDER: ${SMTP_SENDER:-no-reply@example.local}
+
+      # Recomendação profissional:
+      # SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
+
+    ports:
+      - "127.0.0.1:3333:3333"
+
+    volumes:
+      - .:/app
+
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      maildev:
+        condition: service_started
+      waha:
+        condition: service_healthy
+
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl -fsS http://localhost:3333/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 2s
+      retries: 3
+
+  # ---------------------------------------------------------------------------
+  # RQ Workers (Processamento Assíncrono)
+  # ---------------------------------------------------------------------------
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    # container_name removido porque replicas > 1
+    restart: unless-stopped
+    
+    env_file:
+      - .env
+
+    environment:
+      PYTHONPATH: /app/src
+      DATABASE_URL: postgresql+psycopg2://dba:dba@db:5432/BotDB
+      REDIS_URL: redis://redis:6379/0
+      SMTP_HOST: ${SMTP_HOST:-maildev}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_TLS: ${SMTP_TLS:-false}
+      SMTP_SENDER: ${SMTP_SENDER:-no-reply@example.local}
+
+    volumes:
+      - .:/app
+
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      waha:
+        condition: service_healthy
+
+    # Escalar workers conforme necessário:
+    # docker compose up -d --scale worker=2
+    
+    # NOTA: 'deploy.replicas' é ignorado em docker compose standalone
+    # Use --scale worker=N para múltiplos workers em dev
+    # Em produção (Swarm/K8s), descomente 'deploy' abaixo
+    
+    # deploy:
+    #   replicas: 2
+    #   restart_policy:
+    #     condition: on-failure
+    #     delay: 5s
+    #     max_attempts: 3
+
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'from robbot.infra.redis.client import get_redis_client; get_redis_client().ping()' || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ---------------------------------------------------------------------------
+  # Maildev (SMTP fake para desenvolvimento)
+  # ---------------------------------------------------------------------------
+  maildev:
+    image: maildev/maildev:latest
+    container_name: maildev
+    restart: unless-stopped
+    environment:
+      - MAILDEV_WEB_PORT=1080
+      - MAILDEV_SMTP_PORT=1025
+    ports:
+      - "127.0.0.1:1080:1080"  # UI web
+      - "127.0.0.1:1025:1025"  # SMTP
+
+volumes:
+  db_data:
+  redis_data:
+  waha_data:
