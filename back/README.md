@@ -127,7 +127,7 @@ ls -la
 rm -rf * .* 2>/dev/null || true
 
 # 3. Clonar o repositório
-git clone https://github.com/FAQ-com-chatbot-WhatsApp/faqchatbot.git .
+git clone https://github.com/edyoCampos/bot_wpp.git .
 
 # 4. Ajustar para Windows (NTFS)
 git config core.protectNTFS false
@@ -157,7 +157,7 @@ Get-ChildItem -Force
 Remove-Item * -Recurse -Force
 
 # 3. Clonar o repositório
-git clone https://github.com/FAQ-com-chatbot-WhatsApp/faqchatbot.git .
+git clone https://github.com/edyoCampos/bot_wpp.git .
 
 # 4. Ajustar para Windows (NTFS)
 git config core.protectNTFS false
@@ -191,8 +191,9 @@ git branch -a
 **Git Bash**
 
 ```bash
-cd /d/_projects/clinica_go
-chmod +x auto_commit.sh
+# Navegar para a raiz do projeto
+cd <seu-diretorio>/bot_wpp
+chmod +x scripts/auto-commit.sh
 ```
 
 </td>
@@ -204,8 +205,9 @@ chmod +x auto_commit.sh
 # Liberar execução de scripts (primeira vez)
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 
-cd D:\_projects\clinica_go
-# O arquivo auto_commit.ps1 já está pronto
+# Navegar para a raiz do projeto
+cd <seu-diretorio>\bot_wpp
+# O arquivo scripts\auto-commit.ps1 já está pronto
 ```
 
 </td>
@@ -221,7 +223,7 @@ cd D:\_projects\clinica_go
 **Git Bash**
 
 ```bash
-cd back
+# Já na raiz do projeto
 
 # Criar ambiente e instalar dependências
 uv sync
@@ -236,7 +238,7 @@ source .venv/Scripts/activate
 **PowerShell**
 
 ```powershell
-cd back
+# Já na raiz do projeto
 
 # Criar ambiente e instalar dependências
 uv sync
@@ -258,15 +260,16 @@ uv sync
 ### 📂 Estrutura
 
 ```
-back/
-├── docker/
-│   ├── docker-compose.yml  ← Configuração dos serviços
-│   ├── Dockerfile          ← Imagem da aplicação
-│   └── entrypoint.sh       ← Script de inicialização
+bot_wpp/
+├── docker-compose.yml      ← Configuração dos serviços
+├── Dockerfile              ← Imagem da API
+├── Dockerfile.worker       ← Imagem dos workers
+├── src/
+│   └── robbot/             ← Código fonte
 └── ...
 ```
 
-> ⚠️ **Importante**: Todos os comandos docker devem ser executados a partir da pasta `back/`
+> ⚠️ **Importante**: Todos os comandos docker devem ser executados a partir da **raiz do projeto**
 
 ### 🚀 Comandos Principais
 
@@ -275,13 +278,16 @@ back/
 
 ```bash
 # Subir todos os serviços em background
-docker-compose -f docker/docker-compose.yml up -d
+docker compose up -d
+
+# Subir com 2 workers (recomendado)
+docker compose up -d --scale worker=2
 
 # Verificar status
-docker ps
+docker compose ps
 
 # Ver logs em tempo real
-docker-compose -f docker/docker-compose.yml logs -f
+docker compose logs -f
 ```
 
 </details>
@@ -291,10 +297,10 @@ docker-compose -f docker/docker-compose.yml logs -f
 
 ```bash
 # Opção A: Parar e remover containers (recomendado)
-docker-compose -f docker/docker-compose.yml down
+docker compose down
 
 # Opção B: Apenas parar (mantém containers)
-docker-compose -f docker/docker-compose.yml stop
+docker compose stop
 ```
 
 </details>
@@ -304,10 +310,10 @@ docker-compose -f docker/docker-compose.yml stop
 
 ```bash
 # Se usou 'stop' → use 'start' (mais rápido)
-docker-compose -f docker/docker-compose.yml start
+docker compose start
 
 # Se usou 'down' → use 'up -d' (recria containers)
-docker-compose -f docker/docker-compose.yml up -d
+docker compose up -d --scale worker=2
 ```
 
 </details>
@@ -317,10 +323,10 @@ docker-compose -f docker/docker-compose.yml up -d
 
 ```bash
 # Reconstruir do zero (sem cache)
-docker-compose -f docker/docker-compose.yml build --no-cache
+docker compose build --no-cache
 
 # Subir com as novas imagens
-docker-compose -f docker/docker-compose.yml up -d
+docker compose up -d --scale worker=2
 ```
 
 </details>
@@ -351,13 +357,16 @@ docker-compose -f docker/docker-compose.yml up -d
 
 ```bash
 # Ver logs de um serviço específico
-docker-compose -f docker/docker-compose.yml logs -f api_app
+docker compose logs -f api
+
+# Ver logs dos workers
+docker compose logs -f worker
 
 # Reiniciar apenas um serviço
-docker-compose -f docker/docker-compose.yml restart api_app
+docker compose restart api
 
 # Executar comando dentro do container
-docker exec -it api_app bash
+docker exec -it api bash
 
 # Limpar tudo (containers, volumes, imagens não usadas)
 docker system prune -a --volumes
@@ -401,9 +410,8 @@ docker system prune -a --volumes
 git status
 git diff
 
-# 2. Executar o script
-cd /d/_projects/clinica_go
-./auto_commit.sh
+# 2. Executar o script (na raiz do projeto)
+./scripts/auto-commit.sh
 
 # Durante execução:
 # ⏱️ Aguarda 5s → Ctrl+C para abortar
@@ -423,9 +431,8 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 git status
 git diff
 
-# 3. Executar o script
-cd D:\_projects\clinica_go
-.\auto_commit.ps1
+# 3. Executar o script (na raiz do projeto)
+.\scripts\auto-commit.ps1
 
 # Durante execução:
 # ⏱️ Aguarda 5s → Ctrl+C para abortar
@@ -452,6 +459,7 @@ cd D:\_projects\clinica_go
 - Revise o plano de commits durante os 5s de espera
 - Use `Ctrl+C` se algo estiver errado
 - Mantenha o .gitignore atualizado
+- Scripts detectam automaticamente arquivos deletados, renomeados e modificados
 
 ### 🔄 Reverter Commits (Se Necessário)
 
@@ -479,31 +487,34 @@ git pull origin main
 git checkout sua-branch
 git merge main  # ou git rebase main
 
-# 2. Subir Docker
-cd back
-docker-compose -f docker/docker-compose.yml up -d
+# 2. Subir Docker (com workers)
+docker compose up -d --scale worker=2
 sleep 5
-docker ps
+docker compose ps
 
 # 3. Ativar ambiente Python (se for trabalhar localmente)
 source .venv/Scripts/activate  # Git Bash
 # .\.venv\Scripts\Activate.ps1  # PowerShell
 
 # 4. Ver logs
-docker-compose -f docker/docker-compose.yml logs -f api_app
+docker compose logs -f api
+docker compose logs -f worker  # Logs dos workers
 ```
 
 ### 💼 Durante o Dia
 
 ```bash
 # Ver status dos containers
-docker ps
+docker compose ps
 
 # Logs de um serviço
-docker-compose -f docker/docker-compose.yml logs -f api_app
+docker compose logs -f api
+
+# Logs dos workers
+docker compose logs -f worker
 
 # Reiniciar serviço após mudanças
-docker-compose -f docker/docker-compose.yml restart api_app
+docker compose restart api
 
 # Verificar mudanças Git
 git status
@@ -513,13 +524,12 @@ git diff
 ### 🌙 Encerrando o Dia
 
 ```bash
-# 1. Commitar mudanças
-cd /d/_projects/clinica_go
-./auto_commit.sh  # ou .\auto_commit.ps1
+# 1. Commitar mudanças (na raiz do projeto)
+./scripts/auto-commit.sh  # Git Bash
+# .\scripts\auto-commit.ps1  # PowerShell
 
 # 2. Parar Docker
-cd back
-docker-compose -f docker/docker-compose.yml down
+docker compose down
 
 # 3. Desativar ambiente Python
 deactivate
@@ -555,8 +565,7 @@ git stash pop
 ### Executar Aplicação sem Docker
 
 ```bash
-# 1. Ativar ambiente
-cd back
+# 1. Ativar ambiente (na raiz do projeto)
 source .venv/Scripts/activate  # Git Bash
 # .\.venv\Scripts\Activate.ps1  # PowerShell
 
@@ -607,16 +616,16 @@ pytest --cov=robbot
 <details>
 <summary><b>❌ Erro: "no configuration file provided"</b></summary>
 
-**Problema**: Docker Compose não encontra o arquivo de configuração.
+**Problema**: Comando docker-compose não funciona.
 
 **Solução**:
 
 ```bash
-# ❌ Errado
+# ❌ Antigo (Docker Compose V1)
 docker-compose down
 
-# ✅ Correto (especificar o caminho)
-docker-compose -f docker/docker-compose.yml down
+# ✅ Novo (Docker Compose V2 - recomendado)
+docker compose down
 ```
 
 </details>
@@ -634,7 +643,7 @@ netstat -ano | findstr :3333  # Windows
 lsof -i :3333                 # Linux/Mac
 
 # Parar todos os containers
-docker-compose -f docker/docker-compose.yml down
+docker compose down
 ```
 
 </details>
@@ -646,25 +655,25 @@ docker-compose -f docker/docker-compose.yml down
 
 ```bash
 # Ver logs detalhados
-docker-compose -f docker/docker-compose.yml logs api_app
+docker compose logs api
 
 # Verificar saúde do container
-docker inspect api_app
+docker inspect api
 
 # Reconstruir sem cache
-docker-compose -f docker/docker-compose.yml build --no-cache api_app
-docker-compose -f docker/docker-compose.yml up -d
+docker compose build --no-cache api
+docker compose up -d --scale worker=2
 ```
 
 </details>
 
 <details>
-<summary><b>❌ Erro: "permission denied" ao executar auto_commit.sh</b></summary>
+<summary><b>❌ Erro: "permission denied" ao executar auto-commit.sh</b></summary>
 
 **Solução**:
 
 ```bash
-chmod +x auto_commit.sh
+chmod +x scripts/auto-commit.sh
 ```
 
 </details>
