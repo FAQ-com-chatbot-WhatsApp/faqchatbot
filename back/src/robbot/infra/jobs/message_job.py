@@ -6,7 +6,7 @@ import logging
 from typing import Any, Optional
 
 from robbot.adapters.repositories.message_repository import MessageRepository
-from robbot.infra.db.base import SessionLocal
+from robbot.infra.db.session import get_sync_session
 from robbot.infra.jobs.base_job import BaseJob, JobRetryableError
 
 logger = logging.getLogger(__name__)
@@ -174,9 +174,9 @@ class MessageProcessingJob(BaseJob):
     
     def _persist_outbound_message(self) -> dict[str, Any]:
         """Persistir mensagem outbound (apenas registro)."""
-        db = SessionLocal()
         try:
-            message_repo = MessageRepository(db)
+            with get_sync_session() as db:
+                message_repo = MessageRepository(db)
             
             message_record = message_repo.create(
                 conversation_id=self.conversation_id,
@@ -228,8 +228,6 @@ class MessageProcessingJob(BaseJob):
             if "database" in str(e).lower() or "connection" in str(e).lower():
                 raise JobRetryableError(f"Erro de BD: {e}") from e
             raise JobRetryableError(f"Erro inesperado: {e}") from e
-        finally:
-            db.close()
 
 
 class MessageBatchProcessingJob(BaseJob):
