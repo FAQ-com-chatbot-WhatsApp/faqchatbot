@@ -14,7 +14,7 @@ from robbot.api.v1.dependencies import initialize_rate_limiter
 from robbot.api.v1.routers.api import api_router
 from robbot.config.settings import get_settings
 from robbot.core.logging_setup import configure_logging
-from robbot.infra.db.base import SessionLocal
+from robbot.infra.db.session import get_sync_session
 from robbot.services.alert_service import AlertService
 
 
@@ -66,7 +66,7 @@ def create_app() -> FastAPI:
 
         # Tenta persistir um alerta no banco; não deve impedir resposta ao cliente.
         try:
-            with SessionLocal() as db:
+            with get_sync_session() as db:
                 alert_svc = AlertService(db)
                 alert_svc.create_alert(
                     level="critical",
