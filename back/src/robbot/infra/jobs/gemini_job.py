@@ -8,7 +8,7 @@ from typing import Any, Optional
 from robbot.adapters.repositories.conversation_repository import ConversationRepository
 from robbot.adapters.repositories.message_repository import MessageRepository
 from robbot.core.custom_exceptions import DatabaseError
-from robbot.infra.db.base import SessionLocal
+from robbot.infra.db.session import get_sync_session
 from robbot.infra.jobs.base_job import BaseJob, JobRetryableError, JobFailureError
 
 logger = logging.getLogger(__name__)
@@ -73,40 +73,40 @@ class GeminiAIProcessingJob(BaseJob):
             extra=self._log_context(),
         )
         
-        db = SessionLocal()
         try:
-            conversation_context = self._get_conversation_context()
-            
-            ai_response = self._call_gemini(conversation_context)
-            
-            self._validate_ai_response(ai_response)
-            
-            message_repo = MessageRepository(db)
-            response_record = message_repo.create(
-                conversation_id=self.conversation_id,
-                direction="outbound",
-                content=ai_response,
-                message_type="text",
-                phone=self.phone,
-                metadata={
-                    "generated_by": "gemini_ai",
-                    "triggerd_by_message_id": self.message_id,
-                },
-            )
-            
-            logger.info(
-                f"✓ Resposta IA persistida: {response_record.id}",
-                extra=self._log_context(),
-            )
-            
-            return {
-                "status": "success",
-                "response_id": response_record.id,
-                "response_text": ai_response[:100],  # Preview
-                "conversation_id": self.conversation_id,
-                "phone": self.phone,
-                "ready_for_sending": True,
-            }
+            with get_sync_session() as db:
+                conversation_context = self._get_conversation_context()
+                
+                ai_response = self._call_gemini(conversation_context)
+                
+                self._validate_ai_response(ai_response)
+                
+                message_repo = MessageRepository(db)
+                response_record = message_repo.create(
+                    conversation_id=self.conversation_id,
+                    direction="outbound",
+                    content=ai_response,
+                    message_type="text",
+                    phone=self.phone,
+                    metadata={
+                        "generated_by": "gemini_ai",
+                        "triggerd_by_message_id": self.message_id,
+                    },
+                )
+                
+                logger.info(
+                    f"✓ Resposta IA persistida: {response_record.id}",
+                    extra=self._log_context(),
+                )
+                
+                return {
+                    "status": "success",
+                    "response_id": response_record.id,
+                    "response_text": ai_response[:100],  # Preview
+                    "conversation_id": self.conversation_id,
+                    "phone": self.phone,
+                    "ready_for_sending": True,
+                }
 
         except ValueError as e:
             logger.error(
@@ -123,8 +123,6 @@ class GeminiAIProcessingJob(BaseJob):
             if any(x in str(e).lower() for x in ["timeout", "rate", "api", "503", "429"]):
                 raise JobRetryableError(f"Erro de API IA: {e}") from e
             raise JobFailureError(str(e)) from e
-        finally:
-            db.close()
 
     def _get_conversation_context(self) -> str:
         """
@@ -133,8 +131,7 @@ class GeminiAIProcessingJob(BaseJob):
         Returns:
             String com contexto formatado para envio ao Gemini
         """
-        db = SessionLocal()
-        try:
+        with get_sync_session() as db:
             conv_repo = ConversationRepository(db)
             msg_repo = MessageRepository(db)
             
@@ -153,17 +150,6 @@ class GeminiAIProcessingJob(BaseJob):
                 context_lines.append(f"{direction}: {msg.content}")
             
             return "\n".join(context_lines)
-
-        except DatabaseError:
-            raise
-        except Exception as e:
-            logger.warning(
-                f"Não foi possível recuperar contexto: {e}",
-                extra=self._log_context(),
-            )
-            raise DatabaseError(f"Failed to retrieve context: {e}")
-        finally:
-            db.close()
 
     def _call_gemini(self, context: str) -> str:
         """
