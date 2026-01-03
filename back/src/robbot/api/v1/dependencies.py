@@ -13,8 +13,8 @@ from robbot.adapters.repositories.user_repository import UserRepository
 from robbot.core import security
 from robbot.core.exceptions import AuthException
 from robbot.core.rate_limiting import init_rate_limiter
-from robbot.infra.db.base import SessionLocal
 from robbot.infra.db.models.user_model import UserModel
+from robbot.infra.db.session import get_db as session_get_db
 from robbot.infra.redis.client import get_redis_client
 
 # OAuth2 scheme for documentation (tokens now in cookies, not Authorization header)
@@ -37,14 +37,15 @@ def initialize_rate_limiter() -> None:
 
 
 def get_db() -> Generator[Session, None, None]:
+    """Dependency that provides a SQLAlchemy session.
+    
+    Delegates to infra.db.session.get_db() for consistency.
+    Auto-commits on success, rollbacks on exception.
+    
+    Yields:
+        SQLAlchemy Session with automatic transaction management
     """
-    Dependency that provides a SQLAlchemy session.
-    """
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    yield from session_get_db()
 
 
 def get_current_user(
