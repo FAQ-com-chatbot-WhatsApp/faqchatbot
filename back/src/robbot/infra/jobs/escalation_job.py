@@ -7,7 +7,7 @@ from typing import Any, Optional
 
 from robbot.adapters.repositories.conversation_repository import ConversationRepository
 from robbot.domain.enums import ConversationStatus, LeadStatus
-from robbot.infra.db.base import SessionLocal
+from robbot.infra.db.session import get_sync_session
 from robbot.infra.jobs.base_job import BaseJob, JobRetryableError, JobFailureError
 
 logger = logging.getLogger(__name__)
@@ -73,45 +73,45 @@ class EscalationJob(BaseJob):
             extra=self._log_context(),
         )
         
-        db = SessionLocal()
         try:
-            # Atualizar status da conversa
-            conv_repo = ConversationRepository(db)
-            conversation = conv_repo.get_by_id(self.conversation_id)
-            
-            if not conversation:
-                raise JobFailureError(f"Conversa {self.conversation_id} não encontrada")
-            
-            # Atualizar status
-            conv_repo.update(
-                self.conversation_id,
-                {
-                    "status": ConversationStatus.WAITING_SECRETARY,
-                    "lead_status": LeadStatus.READY,
-                    "escalated_at": None,  # Timestamp será preenchido pelo BD
-                    "escalation_reason": self.reason,
+            with get_sync_session() as db:
+                # Atualizar status da conversa
+                conv_repo = ConversationRepository(db)
+                conversation = conv_repo.get_by_id(self.conversation_id)
+                
+                if not conversation:
+                    raise JobFailureError(f"Conversa {self.conversation_id} não encontrada")
+                
+                # Atualizar status
+                conv_repo.update(
+                    self.conversation_id,
+                    {
+                        "status": ConversationStatus.WAITING_SECRETARY,
+                        "lead_status": LeadStatus.READY,
+                        "escalated_at": None,  # Timestamp será preenchido pelo BD
+                        "escalation_reason": self.reason,
+                    }
+                )
+                
+                logger.info(
+                    f"✓ Conversa marcada como aguardando secretária",
+                    extra=self._log_context(),
+                )
+                
+                # Criar notificação para secretária
+                notification_id = self._create_secretary_notification(conversation)
+                
+                # Atualizar lead status em sistema externo se necessário (CRM, analytics, etc)
+                
+                return {
+                    "status": "success",
+                    "conversation_id": self.conversation_id,
+                    "notification_id": notification_id,
+                    "secretary_assignment": "next_available",
+                    "context_prepared": True,
+                    "phone": self.phone,
+                    "user_name": self.user_name,
                 }
-            )
-            
-            logger.info(
-                f"✓ Conversa marcada como aguardando secretária",
-                extra=self._log_context(),
-            )
-            
-            # Criar notificação para secretária
-            notification_id = self._create_secretary_notification(conversation)
-            
-            # Atualizar lead status em sistema externo se necessário (CRM, analytics, etc)
-            
-            return {
-                "status": "success",
-                "conversation_id": self.conversation_id,
-                "notification_id": notification_id,
-                "secretary_assignment": "next_available",
-                "context_prepared": True,
-                "phone": self.phone,
-                "user_name": self.user_name,
-            }
 
         except (ValueError, JobFailureError) as e:
             logger.error(
@@ -128,8 +128,6 @@ class EscalationJob(BaseJob):
             if "database" in str(e).lower() or "connection" in str(e).lower():
                 raise JobRetryableError(f"Erro de BD: {e}") from e
             raise JobRetryableError(f"Erro inesperado: {e}") from e
-        finally:
-            db.close()
 
     def _create_secretary_notification(self, conversation: Any) -> str:
         """
