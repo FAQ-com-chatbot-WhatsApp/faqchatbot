@@ -10,23 +10,21 @@ from robbot.core.custom_exceptions import NotFoundException
 from robbot.services.vision_service import get_vision_service
 
 logger = logging.getLogger(__name__)
-
-
 class DescriptionService:
     """
     Service to generate metadata for media messages using BLIP-2.
-    
+
     LOCAL analysis with no API costs:
     - Images: BLIP-2 (Salesforce) - image captioning + VQA
     - Videos: Frame extraction + BLIP-2 analysis
     - Documents/Voice: Metadata based on filename/caption
-    
+
     Model: Salesforce/blip-image-captioning-base
     - Open source (BSD-3 License)
     - ~990MB initial download
     - Runs on CPU (local inference)
     - Zero API cost
-    
+
     Returns:
     - title: Short title (max 50 chars)
     - description: Detailed visual analysis description
@@ -46,14 +44,14 @@ class DescriptionService:
     ) -> dict[str, str | None]:
         """
         Generate metadata for a message using BLIP-2 or basic metadata.
-        
+
         Args:
             message_id: Message ID to analyze
             use_vision: If True, use BLIP-2 for images/videos (default)
-            
+
         Returns:
             Dict with keys: generated_title, generated_description, suggested_tags
-            
+
         Raises:
             NotFoundException: If message not found
         """
@@ -82,7 +80,7 @@ class DescriptionService:
             # Para outros tipos ou se vision desabilitado, usar metadata básico
             return self.generate_file_metadata(filename, caption, message.type)
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("[ERROR] Error generating description for message %s: %s", message_id, e)
             # Fallback to basic metadata
             return self.generate_file_metadata(filename, caption, message.type)
@@ -90,13 +88,13 @@ class DescriptionService:
     def analyze_image_with_blip(self, image_url: str, caption: str) -> dict[str, str | None]:
         """
         Analyze image using BLIP-2 (local, no cost).
-        
+
         PUBLIC METHOD - used by message_service.py
-        
+
         Args:
             image_url: Image URL
             caption: User-provided caption
-            
+
         Returns:
             Dict com title, description, tags
         """
@@ -125,7 +123,7 @@ class DescriptionService:
                 "suggested_tags": tags
             }
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("[ERROR] Error using BLIP-2: %s", e)
             # Fallback to basic metadata
             logger.warning("[WARNING] Using fallback to basic metadata")
@@ -138,15 +136,15 @@ class DescriptionService:
     def generate_file_metadata(self, filename: str, caption: str, file_type: str) -> dict[str, str | None]:
         """
         Gerar metadata básico SEM usar API (zero custo).
-        
+
         PUBLIC METHOD - usado por message_service.py
-        
+
         Baseado em:
         - Extensão do arquivo
         - Nome do arquivo
         - Caption fornecido pelo usuário
         - Tipo de mídia
-        
+
         Retorna metadata estruturado simples.
         """
         import os
