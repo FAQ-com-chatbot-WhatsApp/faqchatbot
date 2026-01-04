@@ -2,11 +2,11 @@
 
 from sqlalchemy.orm import Session
 
+from robbot.adapters.repositories.auth_session_repository import AuthSessionRepository
 from robbot.adapters.repositories.user_repository import UserRepository
-from robbot.core.exceptions import NotFoundException
+from robbot.core.custom_exceptions import NotFoundException
 from robbot.infra.db.models.user_model import UserModel
 from robbot.schemas.user import UserOut, UserUpdate
-from robbot.adapters.repositories.auth_session_repository import AuthSessionRepository
 from robbot.services.audit_service import AuditService
 
 
