@@ -1,7 +1,6 @@
 """Topic schemas for API requests and responses."""
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -11,8 +10,8 @@ class TopicCreate(BaseModel):
     """Schema for creating topics."""
 
     name: str = Field(..., min_length=1, max_length=255, description="Topic name (unique)")
-    description: Optional[str] = Field(None, description="Detailed description")
-    category: Optional[str] = Field(None, max_length=100, description="Category for grouping")
+    description: str | None = Field(None, description="Detailed description")
+    category: str | None = Field(None, max_length=100, description="Category for grouping")
     active: bool = Field(True, description="Whether topic is active")
 
 
@@ -20,10 +19,10 @@ class TopicCreate(BaseModel):
 class TopicUpdate(BaseModel):
     """Schema for updating topics."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = None
-    category: Optional[str] = Field(None, max_length=100)
-    active: Optional[bool] = None
+    name: str | None = Field(None, min_length=1, max_length=255)
+    description: str | None = None
+    category: str | None = Field(None, max_length=100)
+    active: bool | None = None
 
 
 # Output schemas
@@ -32,8 +31,8 @@ class TopicOut(BaseModel):
 
     id: str
     name: str
-    description: Optional[str]
-    category: Optional[str]
+    description: str | None
+    category: str | None
     active: bool
     created_at: datetime
     updated_at: datetime
