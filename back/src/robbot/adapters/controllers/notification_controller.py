@@ -8,8 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
-from robbot.api.v1.dependencies import get_db, get_current_user
-from robbot.core.exceptions import NotFoundException
+from robbot.api.v1.dependencies import get_current_user, get_db
+from robbot.core.custom_exceptions import NotFoundException
 from robbot.services.notification_service import NotificationService
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
 class NotificationOut(BaseModel):
     """Response de notificação."""
-    
+
     id: str
     user_id: int
     type: str
@@ -27,7 +27,7 @@ class NotificationOut(BaseModel):
     message: str
     read: bool
     created_at: str
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -46,7 +46,7 @@ class MarkReadRequest(BaseModel):
     summary="Listar notificações do usuário",
     description="""
     Retorna notificações do usuário autenticado.
-    
+
     Query params:
     - unread_only: Retornar apenas não lidas (default: false)
     - limit: Número máximo de resultados (default: 50, max: 100)
@@ -60,28 +60,28 @@ async def list_notifications(
 ) -> list[NotificationOut]:
     """
     Listar notificações do usuário autenticado.
-    
+
     Args:
         unread_only: Filtrar apenas não lidas
         limit: Número máximo de resultados
         db: Sessão do banco
         current_user: Usuário autenticado
-        
+
     Returns:
         Lista de notificações
     """
     # Validar limit
     if limit > 100:
         limit = 100
-    
+
     service = NotificationService(db)
-    
+
     notifications = service.get_user_notifications(
         user_id=current_user.id,
         unread_only=unread_only,
         limit=limit,
     )
-    
+
     return [
         NotificationOut(
             id=n.id,
@@ -108,17 +108,17 @@ async def count_unread_notifications(
 ) -> dict:
     """
     Contar notificações não lidas do usuário.
-    
+
     Args:
         db: Sessão do banco
         current_user: Usuário autenticado
-        
+
     Returns:
         Dict com contagem: {"count": 5}
     """
     service = NotificationService(db)
     count = service.count_unread(user_id=current_user.id)
-    
+
     return {"count": count}
 
 
@@ -135,46 +135,39 @@ async def mark_notification_as_read(
 ) -> NotificationOut:
     """
     Marcar notificação como lida.
-    
+
     Args:
         notification_id: ID da notificação
         db: Sessão do banco
         current_user: Usuário autenticado
-        
+
     Returns:
         Notificação atualizada
-        
+
     Raises:
         HTTPException 404: Se notificação não existir
         HTTPException 403: Se notificação não pertencer ao usuário
     """
     service = NotificationService(db)
-    
+
     try:
-        # Buscar notificação
-        notification = (
-            db.query(service.db.query(NotificationService.NotificationModel).filter_by(
-                id=notification_id
-            ).first())
-        )
-        
-        # Alternativa: usar query direta
-        from robbot.services.notification_service import NotificationModel
+        # Buscar notificação usando o modelo importado
+        from robbot.infra.db.models.notification_model import NotificationModel
         notification = db.query(NotificationModel).filter_by(id=notification_id).first()
-        
+
         if not notification:
             raise NotFoundException(f"Notification {notification_id} not found")
-        
+
         # Verificar se pertence ao usuário
         if notification.user_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You don't have permission to access this notification",
             )
-        
+
         # Marcar como lida
         updated = service.mark_as_read(notification_id)
-        
+
         return NotificationOut(
             id=updated.id,
             user_id=updated.user_id,
@@ -184,13 +177,13 @@ async def mark_notification_as_read(
             read=updated.read,
             created_at=updated.created_at.isoformat(),
         )
-        
+
     except NotFoundException:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Notification {notification_id} not found",
         )
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to mark notification as read: {str(e)}",
