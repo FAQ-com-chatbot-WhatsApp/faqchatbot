@@ -3,12 +3,12 @@ Job para escalar conversa para secretária.
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from robbot.adapters.repositories.conversation_repository import ConversationRepository
 from robbot.domain.enums import ConversationStatus, LeadStatus
 from robbot.infra.db.session import get_sync_session
-from robbot.infra.jobs.base_job import BaseJob, JobRetryableError, JobFailureError
+from robbot.infra.jobs.base_job import BaseJob, JobFailureError, JobRetryableError
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class EscalationJob(BaseJob):
     """
     Job para transferir conversa para atendimento humano.
-    
+
     Responsabilidades:
     - Validar maturidade do lead
     - Marcar conversa como aguardando secretária
@@ -30,12 +30,12 @@ class EscalationJob(BaseJob):
         conversation_id: str,
         reason: str,
         phone: str,
-        user_name: Optional[str] = None,
+        user_name: str | None = None,
         **kwargs,
     ):
         """
         Inicializar job de escalação.
-        
+
         Args:
             conversation_id: ID da conversa
             reason: Motivo da escalação ("scheduling_request", "issue", "sentiment")
@@ -44,12 +44,12 @@ class EscalationJob(BaseJob):
             **kwargs: Argumentos herdados
         """
         super().__init__(**kwargs)
-        
+
         self.conversation_id = conversation_id
         self.reason = reason
         self.phone = phone
         self.user_name = user_name or "Usuário"
-        
+
         self.metadata.update({
             "conversation_id": conversation_id,
             "reason": reason,
@@ -59,50 +59,47 @@ class EscalationJob(BaseJob):
     def execute(self) -> dict[str, Any]:
         """
         Executar escalação.
-        
+
         Returns:
             Dict com status, ID da notificação, contexto para secretária
-            
+
         Raises:
             JobRetryableError: Se BD indisponível
             JobFailureError: Se conversa não pode ser escalada
         """
         logger.info(
-            f"Escalando conversa {self.conversation_id} para secretária. "
-            f"Motivo: {self.reason}",
+            "Escalando conversa %s para secretária. Motivo: %s",
+            self.conversation_id,
+            self.reason,
             extra=self._log_context(),
         )
-        
+
         try:
             with get_sync_session() as db:
                 # Atualizar status da conversa
                 conv_repo = ConversationRepository(db)
                 conversation = conv_repo.get_by_id(self.conversation_id)
-                
+
                 if not conversation:
                     raise JobFailureError(f"Conversa {self.conversation_id} não encontrada")
-                
+
                 # Atualizar status
-                conv_repo.update(
-                    self.conversation_id,
-                    {
-                        "status": ConversationStatus.WAITING_SECRETARY,
-                        "lead_status": LeadStatus.READY,
-                        "escalated_at": None,  # Timestamp será preenchido pelo BD
-                        "escalation_reason": self.reason,
-                    }
-                )
-                
+                conversation.status = ConversationStatus.WAITING_SECRETARY
+                conversation.lead_status = LeadStatus.READY
+                conversation.escalated_at = None  # Timestamp será preenchido pelo BD
+                conversation.escalation_reason = self.reason
+                conv_repo.update(conversation)
+
                 logger.info(
-                    f"✓ Conversa marcada como aguardando secretária",
+                    "[SUCCESS] Conversation marked as waiting for secretary",
                     extra=self._log_context(),
                 )
-                
+
                 # Criar notificação para secretária
-                notification_id = self._create_secretary_notification(conversation)
-                
+                notification_id = self._create_secretary_notification()
+
                 # Atualizar lead status em sistema externo se necessário (CRM, analytics, etc)
-                
+
                 return {
                     "status": "success",
                     "conversation_id": self.conversation_id,
@@ -115,13 +112,17 @@ class EscalationJob(BaseJob):
 
         except (ValueError, JobFailureError) as e:
             logger.error(
-                f"Erro ao escalar conversa: {type(e).__name__}: {e}",
+                "Erro ao escalar conversa: %s: %s",
+                type(e).__name__,
+                e,
                 extra=self._log_context(),
             )
             raise
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(
-                f"Erro inesperado ao escalar conversa: {type(e).__name__}: {e}",
+                "Erro inesperado ao escalar conversa: %s: %s",
+                type(e).__name__,
+                e,
                 extra=self._log_context(),
             )
             # Se for erro de BD, pode retryar
@@ -129,26 +130,23 @@ class EscalationJob(BaseJob):
                 raise JobRetryableError(f"Erro de BD: {e}") from e
             raise JobRetryableError(f"Erro inesperado: {e}") from e
 
-    def _create_secretary_notification(self, conversation: Any) -> str:
+    def _create_secretary_notification(self) -> str:
         """
         Criar notificação para secretária.
-        
-        Args:
-            conversation: Objeto de conversa
-            
+
         Returns:
             ID da notificação criada
         """
         logger.debug(
-            f"Criando notificação para secretária",
+            "Criando notificação para secretária",
             extra=self._log_context(),
         )
-        
+
         # Implementação futura:
         # - Criar registro em BD (notifications/tasks table)
         # - Enviar push notification via Firebase/OneSignal
         # - Enviar webhook para dashboard real-time
-        
+
         notification_id = f"notif_{self.conversation_id}_{int(self.metadata.get('created_at', 0))}"
         return notification_id
 
@@ -156,7 +154,7 @@ class EscalationJob(BaseJob):
 class MultipleEscalationJob(BaseJob):
     """
     Job para escalar múltiplas conversas.
-    
+
     Útil para: roubo de leads, transferência em lote, etc.
     """
 
@@ -168,7 +166,7 @@ class MultipleEscalationJob(BaseJob):
     ):
         """Inicializar job de escalação em lote."""
         super().__init__(**kwargs)
-        
+
         self.conversation_ids = conversation_ids
         self.reason = reason
 
@@ -176,12 +174,14 @@ class MultipleEscalationJob(BaseJob):
         """Escalar múltiplas conversas."""
         escalated = 0
         failed = 0
-        
+
         logger.info(
-            f"Escalando {len(self.conversation_ids)} conversas. Motivo: {self.reason}",
+            "Escalando %s conversas. Motivo: %s",
+            len(self.conversation_ids),
+            self.reason,
             extra=self._log_context(),
         )
-        
+
         for conv_id in self.conversation_ids:
             try:
                 job = EscalationJob(
@@ -192,19 +192,23 @@ class MultipleEscalationJob(BaseJob):
                 )
                 job.run()
                 escalated += 1
-                
+
             except (JobFailureError, JobRetryableError, ValueError) as e:
                 logger.warning(
-                    f"Falha ao escalar {conv_id}: {e}",
+                    "Falha ao escalar %s: %s",
+                    conv_id,
+                    e,
                     extra=self._log_context(),
                 )
                 failed += 1
-        
+
         logger.info(
-            f"Escalação em lote concluída: {escalated} OK, {failed} falhadas",
+            "Escalação em lote concluída: %s OK, %s falhadas",
+            escalated,
+            failed,
             extra=self._log_context(),
         )
-        
+
         return {
             "status": "completed",
             "escalated": escalated,
