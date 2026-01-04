@@ -117,7 +117,7 @@ class CredentialRepository(BaseRepository[CredentialModel]):
             self.db.query(CredentialModel)
             .filter(
                 CredentialModel.reset_token == token,
-                CredentialModel.reset_token_used == False,
+                not CredentialModel.reset_token_used,
                 CredentialModel.reset_token_expires_at > now_naive,
             )
             .first()
