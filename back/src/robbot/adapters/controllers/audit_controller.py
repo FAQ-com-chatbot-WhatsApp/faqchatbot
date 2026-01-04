@@ -1,8 +1,6 @@
 """
 Audit Log Controller - REST endpoints for audit logs.
 """
-
-
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
@@ -13,8 +11,6 @@ from robbot.infra.db.session import get_db
 from robbot.services.audit_service import AuditService
 
 router = APIRouter()
-
-
 # ===== SCHEMAS =====
 
 class AuditLogOut(BaseModel):
@@ -30,8 +26,6 @@ class AuditLogOut(BaseModel):
     created_at: str
 
     model_config = ConfigDict(from_attributes=True)
-
-
 # ===== ENDPOINTS =====
 
 @router.get("/audit-logs", response_model=list[AuditLogOut], tags=["Audit"])
@@ -45,9 +39,9 @@ def list_audit_logs(
 ):
     """
     List audit logs (admin only).
-    
+
     Requires JWT authentication and admin role.
-    
+
     Filters:
     - entity_type: Filter by entity type (Lead, Conversation, etc.)
     - entity_id: Filter by specific entity ID
@@ -81,8 +75,6 @@ def list_audit_logs(
         )
         for log in logs
     ]
-
-
 @router.get("/audit-logs/entity/{entity_type}/{entity_id}", response_model=list[AuditLogOut], tags=["Audit"])
 def get_entity_audit_trail(
     entity_type: str,
@@ -93,9 +85,9 @@ def get_entity_audit_trail(
 ):
     """
     Get audit trail for a specific entity (admin only).
-    
+
     Requires JWT authentication and admin role.
-    
+
     Shows complete history of actions on the entity.
     """
     # Check admin permission
