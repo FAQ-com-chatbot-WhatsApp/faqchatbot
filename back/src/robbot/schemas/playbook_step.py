@@ -1,7 +1,6 @@
 """PlaybookStep schemas for API requests and responses."""
 
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -13,23 +12,23 @@ class PlaybookStepCreate(BaseModel):
 
     playbook_id: str = Field(..., description="Associated playbook ID")
     message_id: UUID = Field(..., description="Associated message ID")
-    step_order: Optional[int] = Field(None, description="Sequential order (auto-assigned if None)")
-    context_hint: Optional[str] = Field(None, description="When to use this step (LLM guidance)")
+    step_order: int | None = Field(None, description="Sequential order (auto-assigned if None)")
+    context_hint: str | None = Field(None, description="When to use this step (LLM guidance)")
 
 
 # Update schemas
 class PlaybookStepUpdate(BaseModel):
     """Schema for updating playbook steps."""
 
-    step_order: Optional[int] = None
-    context_hint: Optional[str] = None
+    step_order: int | None = None
+    context_hint: str | None = None
 
 
 class PlaybookStepReorder(BaseModel):
     """Schema for reordering multiple steps."""
 
     step_id_order: list[tuple[str, int]] = Field(
-        ..., 
+        ...,
         description="List of (step_id, new_order) tuples",
         examples=[[("step1", 1), ("step2", 2), ("step3", 3)]]
     )
@@ -43,7 +42,7 @@ class PlaybookStepOut(BaseModel):
     playbook_id: str
     message_id: str
     step_order: int
-    context_hint: Optional[str]
+    context_hint: str | None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
@@ -53,8 +52,8 @@ class PlaybookStepWithMessage(PlaybookStepOut):
     """Response schema for playbook steps with message details."""
 
     message_type: str
-    message_title: Optional[str]
-    message_description: Optional[str]
+    message_title: str | None
+    message_description: str | None
 
 
 class PlaybookStepList(BaseModel):
