@@ -19,12 +19,10 @@ from robbot.config.settings import settings
 from robbot.core.custom_exceptions import VectorDBError
 
 logger = logging.getLogger(__name__)
-
-
 class ChromaClient:
     """
     Client para ChromaDB com persistência local.
-    
+
     Responsabilidades:
     - Gerenciar coleções ChromaDB
     - Adicionar documentos com embeddings
@@ -35,7 +33,7 @@ class ChromaClient:
     def __init__(self, collection_name: str = "conversations"):
         """
         Inicializar cliente ChromaDB com persistência.
-        
+
         Args:
             collection_name: Nome da coleção para armazenar conversas
         """
@@ -59,7 +57,7 @@ class ChromaClient:
                 f"path={settings.CHROMA_PERSIST_DIR}, count={self.collection.count()})"
             )
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(f"[ERROR] Falha ao inicializar ChromaClient: {e}", exc_info=True)
             raise VectorDBError(f"Initialization failed: {e}", original_error=e)
 
@@ -72,16 +70,16 @@ class ChromaClient:
     ) -> str:
         """
         Adicionar conversa ao ChromaDB com embedding automático.
-        
+
         Args:
             conversation_id: ID da conversa
             text: Texto para criar embedding
             metadata: Metadados adicionais (timestamp, phone, etc.)
             doc_id: ID do documento (opcional, será gerado se não fornecido)
-            
+
         Returns:
             ID do documento adicionado
-            
+
         Raises:
             DatabaseError: Se falhar ao adicionar
         """
@@ -112,7 +110,7 @@ class ChromaClient:
 
             return doc_id
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(
                 f"[ERROR] Falha ao adicionar conversa ao ChromaDB: {e}",
                 exc_info=True,
@@ -128,12 +126,12 @@ class ChromaClient:
     ) -> list[dict[str, Any]]:
         """
         Buscar contextos similares semanticamente.
-        
+
         Args:
             query: Texto para buscar similaridade
             conversation_id: Filtrar por conversa específica (opcional)
             n_results: Número máximo de resultados
-            
+
         Returns:
             Lista de resultados similares:
             [
@@ -144,7 +142,7 @@ class ChromaClient:
                     "distance": float
                 }
             ]
-            
+
         Raises:
             DatabaseError: Se falhar ao buscar
         """
@@ -180,7 +178,7 @@ class ChromaClient:
 
             return formatted_results
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(
                 f"[ERROR] Falha ao buscar no ChromaDB: {e}",
                 exc_info=True,
@@ -195,11 +193,11 @@ class ChromaClient:
     ) -> list[dict[str, Any]]:
         """
         Obter contexto de uma conversa específica.
-        
+
         Args:
             conversation_id: ID da conversa
             limit: Número máximo de documentos
-            
+
         Returns:
             Lista de documentos da conversa:
             [
@@ -209,7 +207,7 @@ class ChromaClient:
                     "metadata": dict
                 }
             ]
-            
+
         Raises:
             DatabaseError: Se falhar ao obter contexto
         """
@@ -238,7 +236,7 @@ class ChromaClient:
 
             return formatted_results
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(
                 f"[ERROR] Falha ao obter contexto do ChromaDB: {e}",
                 exc_info=True,
@@ -249,13 +247,13 @@ class ChromaClient:
     def delete_conversation(self, conversation_id: str) -> int:
         """
         Deletar todos os documentos de uma conversa.
-        
+
         Args:
             conversation_id: ID da conversa
-            
+
         Returns:
             Número de documentos deletados
-            
+
         Raises:
             DatabaseError: Se falhar ao deletar
         """
@@ -277,7 +275,7 @@ class ChromaClient:
 
             return count
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(
                 f"[ERROR] Falha ao deletar contexto do ChromaDB: {e}",
                 exc_info=True,
@@ -288,7 +286,7 @@ class ChromaClient:
     def count(self) -> int:
         """
         Contar total de documentos na coleção.
-        
+
         Returns:
             Total de documentos
         """
@@ -297,7 +295,7 @@ class ChromaClient:
     def reset(self) -> None:
         """
         Limpar todos os dados da coleção.
-        
+
         CUIDADO: Esta operação é irreversível!
         """
         try:
@@ -312,19 +310,15 @@ class ChromaClient:
 
             logger.warning("[WARNING] ChromaDB collection resetada: %s", self.collection.name)
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(f"[ERROR] Falha ao resetar ChromaDB: {e}", exc_info=True)
             raise VectorDBError(f"Reset failed: {e}", original_error=e)
-
-
 # Singleton global
 _chroma_client: ChromaClient | None = None
-
-
 def get_chroma_client() -> ChromaClient:
     """
     Obter instância singleton do cliente ChromaDB.
-    
+
     Returns:
         ChromaClient singleton
     """
@@ -335,8 +329,6 @@ def get_chroma_client() -> ChromaClient:
         logger.info("🎯 ChromaClient inicializado como singleton")
 
     return _chroma_client
-
-
 def close_chroma_client() -> None:
     """Fechar cliente (cleanup)."""
     global _chroma_client
