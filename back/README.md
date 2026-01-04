@@ -94,15 +94,26 @@ $env:PATH -split ';' | Select-String -Pattern "uv"
 # 1. Verifique se o executável existe
 Test-Path "$env:USERPROFILE\.cargo\bin\uv.exe"
 
-# 2. Se existir mas não funcionar, adicione manualmente ao PATH (temporário):
+# 2. Se existir mas não funcionar, adicione ao PATH:
+
+# Opção A: Adicionar PERMANENTEMENTE via PowerShell (recomendado) ⭐
+[Environment]::SetEnvironmentVariable(
+    "Path",
+    "$env:USERPROFILE\.cargo\bin;$([Environment]::GetEnvironmentVariable('Path', 'User'))",
+    "User"
+)
+
+# Opção B: Adicionar TEMPORARIAMENTE (só para a sessão atual)
 $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
 
-# 3. Teste novamente
-uv --version
-
-# 4. Para tornar permanente, adicione às variáveis de ambiente do Windows:
+# Opção C: Via GUI do Windows
 # Painel de Controle → Sistema → Configurações avançadas → Variáveis de Ambiente
 # Adicione: %USERPROFILE%\.cargo\bin ao PATH do usuário
+
+# 3. IMPORTANTE: Feche e abra novamente o PowerShell
+
+# 4. Teste novamente
+uv --version
 ```
 
 </details>
