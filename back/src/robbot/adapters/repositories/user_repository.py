@@ -1,6 +1,4 @@
 """Repository for user persistence and retrieval operations."""
-
-
 from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.base_repository import BaseRepository
