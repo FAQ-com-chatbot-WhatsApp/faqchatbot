@@ -1,6 +1,5 @@
 """PlaybookStepModel ORM for ordered message sequences."""
 
-from datetime import datetime
 from uuid import uuid4
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
@@ -23,16 +22,17 @@ class PlaybookStepModel(Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid4()))
     playbook_id = Column(
-        String(36), 
-        ForeignKey('playbooks.id', ondelete='CASCADE'), 
-        nullable=False, 
+        String(36),
+        ForeignKey('playbooks.id', ondelete='CASCADE'),
+        nullable=False,
         index=True
     )
     message_id = Column(
-        UUID(as_uuid=True), 
-        ForeignKey('messages.id', ondelete='CASCADE'), 
-        nullable=False, 
-        index=True
+        UUID(as_uuid=True),
+        ForeignKey('messages.id', ondelete='CASCADE'),
+        nullable=False,
+        index=True,
+        comment="Template message ID"
     )
     step_order = Column(Integer, nullable=False)  # 1, 2, 3...
     context_hint = Column(Text, nullable=True)  # When to use this step (for LLM)
