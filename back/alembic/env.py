@@ -6,7 +6,7 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
-from robbot.infra.db import models  # noqa: F401 - import to register models
+from robbot.infra.db import models  # noqa: F401 (imported but unused) - import to register models
 from robbot.infra.db.base import Base
 
 # this is the Alembic Config object, which provides access to the values within the .ini file
@@ -26,8 +26,6 @@ if db_url:
 # Ensure robbot.infra.db.base.Base is importable from the image (same PYTHONPATH)
 
 target_metadata = getattr(Base, "metadata", None)
-
-
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode (generate SQL without DB connection)."""
     url = config.get_main_option("sqlalchemy.url")
@@ -40,8 +38,6 @@ def run_migrations_offline() -> None:
 
     with context.begin_transaction():
         context.run_migrations()
-
-
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode (apply to DB)."""
     configuration = config.get_section(config.config_ini_section, {})
@@ -60,8 +56,6 @@ def run_migrations_online() -> None:
 
         with context.begin_transaction():
             context.run_migrations()
-
-
 if context.is_offline_mode():
     run_migrations_offline()
 else:
