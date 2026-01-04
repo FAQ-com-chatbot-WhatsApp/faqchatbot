@@ -17,12 +17,10 @@ from robbot.infra.jobs.scheduler_job import ScheduledJob
 from robbot.infra.redis.queue import get_queue_manager
 
 logger = logging.getLogger(__name__)
-
-
 class QueueService:
     """
     Service para gerenciar jobs assíncronos.
-    
+
     Responsabilidades:
     - Enfileirar jobs em fila apropriada
     - Monitorar progresso
@@ -48,12 +46,12 @@ class QueueService:
     ) -> str:
         """
         Enfileirar mensagem para processamento.
-        
+
         Args:
             message_data: Payload da mensagem
             conversation_id: ID da conversa (se conhecida)
             message_direction: "inbound" ou "outbound"
-            
+
         Returns:
             Job ID para rastreamento
         """
@@ -91,13 +89,13 @@ class QueueService:
     ) -> str:
         """
         Enfileirar mensagem para processamento com IA.
-        
+
         Args:
             conversation_id: ID da conversa
             message_id: ID da mensagem
             user_input: Texto a processar
             phone: Telefone do usuário
-            
+
         Returns:
             Job ID
         """
@@ -136,13 +134,13 @@ class QueueService:
     ) -> str:
         """
         Enfileirar escalação para secretária.
-        
+
         Args:
             conversation_id: ID da conversa
             reason: Motivo da escalação
             phone: Telefone do usuário
             user_name: Nome do usuário
-            
+
         Returns:
             Job ID
         """
@@ -179,10 +177,10 @@ class QueueService:
     ) -> str:
         """
         Enfileirar job agendado.
-        
+
         Args:
             scheduled_job: Instância de ScheduledJob
-            
+
         Returns:
             Job ID
         """
@@ -216,10 +214,10 @@ class QueueService:
     def get_job_status(self, job_id: str) -> dict[str, Any]:
         """
         Obter status de um job.
-        
+
         Args:
             job_id: ID do job
-            
+
         Returns:
             Dict com status, resultado, erros
         """
@@ -254,7 +252,7 @@ class QueueService:
     def get_queue_stats(self) -> dict[str, Any]:
         """
         Obter estatísticas de todas as filas.
-        
+
         Returns:
             Dict com contagem, workers, failed jobs
         """
@@ -266,10 +264,10 @@ class QueueService:
     def get_failed_jobs(self, limit: int = 10) -> list[dict[str, Any]]:
         """
         Obter jobs falhados (DLQ).
-        
+
         Args:
             limit: Número máximo de jobs a retornar
-            
+
         Returns:
             Lista de jobs falhados com detalhes
         """
@@ -299,10 +297,10 @@ class QueueService:
     def retry_job(self, job_id: str) -> bool:
         """
         Retryar job falhado.
-        
+
         Args:
             job_id: ID do job
-            
+
         Returns:
             True se conseguiu enfileirar novamente
         """
@@ -330,14 +328,14 @@ class QueueService:
 
         except QueueError:
             raise
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("Erro ao retryar job %s: %s", job_id, e)
             raise QueueError(f"Failed to retry job {job_id}: {e}")
 
     def retry_all_failed(self) -> int:
         """
         Retryar todos os jobs falhados.
-        
+
         Returns:
             Número de jobs retentados
         """
@@ -354,9 +352,9 @@ class QueueService:
     def clear_failed_queue(self) -> int:
         """
         Limpar todos os jobs falhados (DLQ).
-        
+
         [WARNING] OPERAÇÃO IRREVERSÍVEL!
-        
+
         Returns:
             Número de jobs removidos
         """
@@ -377,10 +375,10 @@ class QueueService:
     def cancel_job(self, job_id: str) -> bool:
         """
         Cancelar job.
-        
+
         Args:
             job_id: ID do job
-            
+
         Returns:
             True se conseguiu cancelar
         """
@@ -400,7 +398,7 @@ class QueueService:
 
         except QueueError:
             raise
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("Erro ao cancelar job %s: %s", job_id, e)
             raise QueueError(f"Failed to cancel job {job_id}: {e}")
 
@@ -411,7 +409,7 @@ class QueueService:
     def health_check(self) -> dict[str, Any]:
         """
         Verificar saúde do sistema de filas.
-        
+
         Returns:
             Dict com status de cada componente
         """
@@ -420,12 +418,8 @@ class QueueService:
             "queues": self.queue_manager.health_check(),
             "queue_manager": "ok",
         }
-
-
 # Singleton
 _queue_service: QueueService | None = None
-
-
 def get_queue_service() -> QueueService:
     """Obter instância singleton de QueueService."""
     global _queue_service
