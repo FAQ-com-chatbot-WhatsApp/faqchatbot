@@ -1,17 +1,16 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import Any, Dict
+from typing import Any
 from uuid import uuid4
 
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from passlib.context import CryptContext
-from sqlalchemy.orm import Session
 
 from robbot.config.settings import settings
-from robbot.core.exceptions import AuthException
+from robbot.core.custom_exceptions import AuthException
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security_scheme = HTTPBearer()
@@ -31,9 +30,9 @@ def parse_device_name(user_agent: str | None) -> str:
     """
     if not user_agent:
         return "Unknown Device"
-    
+
     ua = user_agent.lower()
-    
+
     # Detect browser
     browser = "Unknown Browser"
     if "edg/" in ua or "edge/" in ua:
@@ -46,7 +45,7 @@ def parse_device_name(user_agent: str | None) -> str:
         browser = "Safari"
     elif "opera/" in ua or "opr/" in ua:
         browser = "Opera"
-    
+
     # Detect OS/Device
     os_name = "Unknown OS"
     if "iphone" in ua:
@@ -61,7 +60,7 @@ def parse_device_name(user_agent: str | None) -> str:
         os_name = "macOS"
     elif "linux" in ua:
         os_name = "Linux"
-    
+
     return f"{browser} on {os_name}"
 
 
@@ -82,7 +81,7 @@ def create_token_for_subject(subject: str, minutes: int, token_type: str, jti: s
     Generic token generator used for refresh, access and other short-lived tokens.
     """
     expire = datetime.now(UTC) + timedelta(minutes=minutes)
-    to_encode: Dict[str, Any] = {
+    to_encode: dict[str, Any] = {
         "exp": expire,
         "iat": datetime.now(UTC),
         "sub": str(subject),
@@ -96,7 +95,7 @@ def create_token_for_subject(subject: str, minutes: int, token_type: str, jti: s
     return token
 
 
-def create_access_refresh_tokens(subject: str) -> Dict[str, str]:
+def create_access_refresh_tokens(subject: str) -> dict[str, str]:
     """
     Create access and refresh tokens for subject.
     """
@@ -112,7 +111,7 @@ def create_access_refresh_tokens(subject: str) -> Dict[str, str]:
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 
-def decode_token(token: str, verify_exp: bool = True) -> Dict[str, Any]:
+def decode_token(token: str, verify_exp: bool = True) -> dict[str, Any]:
     """
     Decode and verify JWT token. Raises AuthException on failures.
     """
@@ -157,11 +156,11 @@ def get_current_user(
             detail="Missing authentication credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     try:
         token = credentials.credentials
         payload = decode_token(token, verify_exp=True)
-        
+
         # Validate token type
         if payload.get("type") != "access":
             raise HTTPException(
@@ -169,7 +168,7 @@ def get_current_user(
                 detail="Invalid token type. Expected access token.",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        
+
         # Extract user_id from subject
         user_id = payload.get("sub")
         if not user_id:
@@ -178,14 +177,14 @@ def get_current_user(
                 detail="Token payload invalid",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        
+
         # Return user context (can be extended with DB validation)
         return {
             "user_id": int(user_id),
             "exp": payload.get("exp"),
             "iat": payload.get("iat"),
         }
-    
+
     except AuthException as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
