@@ -12,8 +12,6 @@ from robbot.infra.db.session import get_sync_session
 from robbot.infra.jobs.base_job import BaseJob, JobRetryableError
 
 logger = logging.getLogger(__name__)
-
-
 class MessageProcessingJob(BaseJob):
     """
     Job para processar mensagens WhatsApp (entrada/saída).
@@ -169,7 +167,7 @@ class MessageProcessingJob(BaseJob):
                 "maturity_score": result["maturity_score"],
             }
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(
                 "[ERROR] Erro ao processar com orchestrator: %s",
                 e,
@@ -228,7 +226,7 @@ class MessageProcessingJob(BaseJob):
                 extra=self._log_context(),
             )
             raise
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(
                 "Erro ao processar mensagem: %s: %s",
                 type(e).__name__,
@@ -240,8 +238,6 @@ class MessageProcessingJob(BaseJob):
             if "database" in str(e).lower() or "connection" in str(e).lower():
                 raise JobRetryableError(f"Erro de BD: {e}") from e
             raise JobRetryableError(f"Erro inesperado: {e}") from e
-
-
 class MessageBatchProcessingJob(BaseJob):
     """
     Job para processar lote de mensagens (útil para sincronização).
