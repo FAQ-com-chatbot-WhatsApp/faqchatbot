@@ -1,6 +1,4 @@
 """Repository for topic persistence and retrieval operations."""
-
-
 from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.base_repository import BaseRepository
@@ -21,22 +19,22 @@ class TopicRepository(BaseRepository[TopicModel]):
         """List all topics with optional filtering."""
         query = self.db.query(TopicModel)
         if active_only:
-            query = query.filter(TopicModel.active == True)
+            query = query.filter(TopicModel.active)
         return query.offset(skip).limit(limit).all()
 
     def list_by_category(self, category: str, active_only: bool = False, limit: int = 100, offset: int = 0) -> list[TopicModel]:
         """List topics by category with pagination.
-        
+
         Args:
             category: Topic category to filter by
             active_only: If True, return only active topics (default: False)
             limit: Maximum number of records to return (default: 100)
             offset: Number of records to skip (default: 0)
-        
+
         Returns:
             List of topic model instances
         """
         query = self.db.query(TopicModel).filter(TopicModel.category == category)
         if active_only:
-            query = query.filter(TopicModel.active == True)
+            query = query.filter(TopicModel.active)
         return query.limit(limit).offset(offset).all()
