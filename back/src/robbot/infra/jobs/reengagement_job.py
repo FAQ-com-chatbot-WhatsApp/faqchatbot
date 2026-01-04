@@ -15,11 +15,10 @@ from robbot.adapters.repositories.conversation_message_repository import Convers
 from robbot.adapters.repositories.conversation_repository import ConversationRepository
 from robbot.core.custom_exceptions import DatabaseError, JobError, WAHAError
 from robbot.domain.enums import ConversationStatus, MessageDirection
+from robbot.infra.db.models.conversation_message_model import ConversationMessageModel as ConversationMessage
 from robbot.infra.db.session import SessionLocal
 
 logger = logging.getLogger(__name__)
-
-
 class ReEngagementJob:
     """
     Job para reativar conversas inativas.
@@ -98,7 +97,7 @@ class ReEngagementJob:
 
         except JobError:
             raise
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("[ERROR] Erro fatal no job de re-engagement: %s", e)
             stats["status"] = "error"
             stats["error_message"] = str(e)
@@ -168,7 +167,7 @@ class ReEngagementJob:
             logger.info(
                 f"[SUCCESS] Mensagem de re-engagement enviada (conv_id={conversation.id})"
             )
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("[ERROR] Falha ao enviar via WAHA: %s", e)
             raise
 
@@ -195,8 +194,6 @@ class ReEngagementJob:
             f"[SUCCESS] Conversa reengajada (id={conversation.id}, "
             f"status={conversation.status.value})"
         )
-
-
 def run_reengagement_job():
     """
     Entry point para executar o job.
