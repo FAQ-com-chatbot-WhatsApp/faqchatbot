@@ -7,8 +7,6 @@ from robbot.schemas.health import HealthOut
 from robbot.services.health_service import HealthService
 
 router = APIRouter()
-
-
 @router.get("/health", response_model=HealthOut)
 async def health_check(response: Response, db: Session = Depends(get_db)):
     """
