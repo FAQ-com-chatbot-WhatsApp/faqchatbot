@@ -76,7 +76,7 @@ class WebhookLogRepository:
         """
         stmt = (
             select(WebhookLog)
-            .where(WebhookLog.processed == False)
+            .where(not WebhookLog.processed)
             .order_by(WebhookLog.created_at.asc())
             .limit(limit)
         )
@@ -98,7 +98,7 @@ class WebhookLogRepository:
         cutoff_date = datetime.now(UTC) - timedelta(days=days)
         stmt = (
             select(WebhookLog)
-            .where(WebhookLog.processed == True)
+            .where(WebhookLog.processed)
             .where(WebhookLog.created_at < cutoff_date)
         )
         logs = list(self.db.scalars(stmt).all())
