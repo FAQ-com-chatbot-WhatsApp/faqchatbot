@@ -11,15 +11,13 @@ from robbot.core.custom_exceptions import LLMError
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
-
-
 class TranscriptionService:
     """
     Serviço de transcrição de áudio usando Faster-Whisper (inferência local).
-    
+
     Faster-Whisper: 4x mais rápido que Whisper original, roda localmente (SEM CUSTO DE API).
     Suporta formatos comuns do WhatsApp: ogg, mp3, mp4, m4a, wav.
-    
+
     Dependência: faster-whisper (instalado via uv add faster-whisper)
     """
 
@@ -48,20 +46,20 @@ class TranscriptionService:
                     "faster-whisper not installed. Run: uv add faster-whisper",
                     original_error=e
                 )
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:  # noqa: BLE001 (blind exception)
                 raise LLMError("Whisper", f"Failed to load model: {e}", original_error=e)
 
     async def transcribe_audio(self, audio_url: str, language: str = "pt") -> str | None:
         """
         Transcrever áudio de URL usando Faster-Whisper (local, sem custo de API).
-        
+
         Args:
             audio_url: URL do arquivo de áudio (do WAHA ou storage)
             language: Código do idioma (padrão: "pt" para Português)
-            
+
         Returns:
             Texto transcrito ou None se falhar
-            
+
         Raises:
             ExternalAPIError: Se transcrição falhar
         """
@@ -101,7 +99,7 @@ class TranscriptionService:
 
         except LLMError:
             raise
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(f"[ERROR] Transcription failed: {e}", exc_info=True)
             raise LLMError("Whisper", f"Audio transcription failed: {e}", original_error=e)
 
