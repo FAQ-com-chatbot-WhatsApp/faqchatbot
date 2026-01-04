@@ -20,13 +20,9 @@ from robbot.services.handoff_service import HandoffService
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/conversations", tags=["Handoff"])
-
-
 # ============================================================================
 # SCHEMAS
 # ============================================================================
-
-
 class TriggerHandoffRequest(BaseModel):
     """Request para disparar handoff."""
 
@@ -38,14 +34,10 @@ class TriggerHandoffRequest(BaseModel):
         None,
         description="Contexto adicional opcional"
     )
-
-
 class AssignConversationRequest(BaseModel):
     """Request para atribuir conversa."""
 
     user_id: str = Field(..., description="UUID do atendente")
-
-
 class HandoffResponse(BaseModel):
     """Response padrão de handoff."""
 
@@ -53,8 +45,6 @@ class HandoffResponse(BaseModel):
     conversation_id: str
     message: str | None = None
     reason: str | None = None
-
-
 class PendingHandoffConversation(BaseModel):
     """Conversa aguardando handoff."""
 
@@ -66,13 +56,9 @@ class PendingHandoffConversation(BaseModel):
     is_urgent: bool
     waiting_time_minutes: int
     last_message: str
-
-
 # ============================================================================
 # ENDPOINTS
 # ============================================================================
-
-
 @router.post("/{conversation_id}/handoff", response_model=HandoffResponse)
 async def trigger_handoff(
     conversation_id: str,
@@ -82,12 +68,12 @@ async def trigger_handoff(
 ) -> Any:
     """
     Disparar handoff bot→humano.
-    
+
     **Motivos válidos:**
     - `score_high`: Lead com score >= 85 (pronto para agendamento)
     - `bot_confused`: Bot não conseguiu entender (3+ intents OUTRO)
     - `manual`: Atendente decidiu assumir manualmente
-    
+
     **Permissões:** Admin ou Agent
     """
     try:
@@ -128,14 +114,12 @@ async def trigger_handoff(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         logger.error("[ERROR] Erro ao disparar handoff: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to trigger handoff: {str(e)}"
         )
-
-
 @router.post("/{conversation_id}/assign", response_model=HandoffResponse)
 async def assign_conversation(
     conversation_id: str,
@@ -145,10 +129,10 @@ async def assign_conversation(
 ) -> Any:
     """
     Atribuir conversa para atendente humano.
-    
+
     Conversa passa de PENDING_HANDOFF → ACTIVE_HUMAN.
     Bot silencia e todas as mensagens são direcionadas ao atendente.
-    
+
     **Permissões:** Admin ou Agent
     """
     try:
@@ -157,7 +141,7 @@ async def assign_conversation(
             LeadRepository(db)
         )
 
-        conversation = await handoff_service.assign_to_human(
+        await handoff_service.assign_to_human(
             session=db,
             conversation_id=conversation_id,
             user_id=request.user_id,
@@ -179,14 +163,12 @@ async def assign_conversation(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         logger.error("[ERROR] Erro ao atribuir conversa: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to assign conversation: {str(e)}"
         )
-
-
 @router.post("/{conversation_id}/complete", response_model=dict)
 async def complete_conversation(
     conversation_id: str,
@@ -195,11 +177,11 @@ async def complete_conversation(
 ) -> Any:
     """
     Marcar conversa como concluída após agendamento confirmado.
-    
+
     Conversa passa de ACTIVE_HUMAN → COMPLETED.
     Lead é marcado como SCHEDULED com score 100.
     Métricas de conversão são calculadas.
-    
+
     **Permissões:** Apenas o atendente atribuído ou Admin
     """
     try:
@@ -226,14 +208,12 @@ async def complete_conversation(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         logger.error("[ERROR] Erro ao completar conversa: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to complete conversation: {str(e)}"
         )
-
-
 @router.post("/{conversation_id}/return-to-bot", response_model=HandoffResponse)
 async def return_conversation_to_bot(
     conversation_id: str,
@@ -242,12 +222,12 @@ async def return_conversation_to_bot(
 ) -> Any:
     """
     Devolver conversa ao bot.
-    
+
     Conversa passa de ACTIVE_HUMAN → ACTIVE_BOT.
     Bot volta a responder automaticamente.
-    
+
     **Uso:** Quando atendente percebe que bot consegue resolver.
-    
+
     **Permissões:** Apenas o atendente atribuído ou Admin
     """
     try:
@@ -256,7 +236,7 @@ async def return_conversation_to_bot(
             LeadRepository(db)
         )
 
-        conversation = await handoff_service.return_to_bot(
+        await handoff_service.return_to_bot(
             session=db,
             conversation_id=conversation_id,
             user_id=str(current_user["user_id"]),
@@ -278,14 +258,12 @@ async def return_conversation_to_bot(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         logger.error("[ERROR] Erro ao devolver conversa: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to return conversation: {str(e)}"
         )
-
-
 @router.get("/pending-handoff", response_model=list[PendingHandoffConversation])
 async def get_pending_handoffs(
     db: Session = Depends(get_db),
@@ -293,13 +271,13 @@ async def get_pending_handoffs(
 ) -> Any:
     """
     Listar conversas aguardando handoff.
-    
+
     Retorna todas as conversas em status PENDING_HANDOFF,
     ordenadas por:
     1. Urgência (is_urgent=true primeiro)
     2. Score (maior primeiro)
     3. Tempo aguardando (mais antigo primeiro)
-    
+
     **Permissões:** Admin ou Agent
     """
     try:
@@ -353,7 +331,7 @@ async def get_pending_handoffs(
 
         return result
 
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         logger.error("[ERROR] Erro ao buscar pending handoffs: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
