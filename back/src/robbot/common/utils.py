@@ -3,9 +3,24 @@ import smtplib
 from email.mime.text import MIMEText
 from email.utils import formatdate
 
+from pydantic import BaseModel
+
 from robbot.config.settings import settings
 
 logger = logging.getLogger(__name__)
+
+
+def filter_none_values(pydantic_model: BaseModel) -> dict:
+    """
+    Remove None values from Pydantic model dump for partial updates.
+    
+    Args:
+        pydantic_model: Pydantic model instance
+        
+    Returns:
+        Dict with only non-None values
+    """
+    return {k: v for k, v in pydantic_model.model_dump().items() if v is not None}
 
 
 def send_email(to: str, subject: str, body: str) -> None:
