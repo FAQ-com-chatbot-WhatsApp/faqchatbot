@@ -3,10 +3,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from robbot.api.v1.dependencies import get_db, get_current_user, require_role
-from robbot.core.exceptions import NotFoundException
-from robbot.schemas.user import MessageResponse, UserList, UserOut, UserUpdate
+from robbot.api.v1.dependencies import get_current_user, get_db, require_role
+from robbot.core.custom_exceptions import NotFoundException
 from robbot.schemas.auth import BlockUserRequest, UnblockUserRequest
+from robbot.schemas.user import MessageResponse, UserList, UserOut, UserUpdate
 from robbot.services.user_service import UserService
 
 router = APIRouter()
