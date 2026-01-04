@@ -29,17 +29,15 @@ except ImportError:
     logger.warning("NumPy não instalado - usando estatísticas básicas")
 
 try:
-    import sklearn
+    from sklearn import ensemble  # noqa: F401 (imported but unused)
     HAS_SKLEARN = True
 except ImportError:
     HAS_SKLEARN = False
     logger.warning("scikit-learn não instalado - ML features limitados")
-
-
 class ForecastService:
     """
     Service para análise preditiva e forecasting.
-    
+
     Implementa modelos básicos de ML quando bibliotecas estão disponíveis.
     Fallback para estatísticas descritivas caso contrário.
     """
@@ -58,14 +56,14 @@ class ForecastService:
     ) -> dict[str, Any]:
         """
         Previsão de demanda (volume de mensagens futuras).
-        
+
         Usa médias móveis e padrões históricos para projetar volume futuro.
         Para ML avançado, instalar: pip install prophet
-        
+
         Args:
             historical_data: Lista de {"date": "YYYY-MM-DD", "volume": int}
             days_ahead: Número de dias para prever
-        
+
         Returns:
             Forecast com volume previsto, bounds inferior/superior
         """
@@ -129,7 +127,7 @@ class ForecastService:
                 "note": "Para ML avançado, instalar: pip install prophet"
             }
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(f"Erro ao gerar forecast: {e}", exc_info=True)
             return {
                 "status": "error",
@@ -142,13 +140,13 @@ class ForecastService:
     ) -> dict[str, Any]:
         """
         Probabilidade de conversão de um lead específico.
-        
+
         Usa features do lead para calcular probabilidade de conversão.
         Com scikit-learn: Random Forest. Sem: scoring heurístico.
-        
+
         Args:
             lead_data: Dict com maturity_score, message_count, response_time_avg_seconds, etc.
-        
+
         Returns:
             Probabilidade e fatores de influência
         """
@@ -205,7 +203,7 @@ class ForecastService:
                 "factors": sorted(factors, key=lambda x: x["impact"], reverse=True),
                 "model": "heuristic" if not HAS_SKLEARN else "hybrid"
             }
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(f"Erro ao calcular conversion probability: {e}", exc_info=True)
             return {"status": "error", "message": str(e)}
 
@@ -217,14 +215,14 @@ class ForecastService:
     ) -> list[dict[str, Any]]:
         """
         Detecta anomalias em séries temporais usando Z-score.
-        
+
         Anomalia se: |z_score| > threshold_sigma (padrão: 2.5 = 99% confiança)
-        
+
         Args:
             time_series_data: [{"date": "YYYY-MM-DD", "value": float}, ...]
             metric_name: Nome da métrica
             threshold_sigma: Limiar de desvios padrão
-        
+
         Returns:
             Lista de anomalias detectadas
         """
@@ -266,7 +264,7 @@ class ForecastService:
             if anomalies:
                 logger.warning("[WARNING] %s anomalias detectadas em %s", len(anomalies), metric_name)
             return sorted(anomalies, key=lambda x: abs(x["z_score"]), reverse=True)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(f"Erro ao detectar anomalias: {e}", exc_info=True)
             return []
 
@@ -277,13 +275,13 @@ class ForecastService:
     ) -> dict[str, Any]:
         """
         Recomenda melhor horário para reengajar lead inativo.
-        
+
         Analisa padrões históricos de resposta para sugerir timing ideal.
-        
+
         Args:
             lead_id: ID do lead
             interaction_history: [{"timestamp": datetime, "responded": bool}, ...]
-        
+
         Returns:
             Recomendação de dia e horário ideal
         """
@@ -331,6 +329,6 @@ class ForecastService:
                 "reason": reason,
                 "response_rate": round(total_responses / len(interaction_history), 2) if interaction_history else 0
             }
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(f"Erro ao recomendar reengagement time: {e}", exc_info=True)
             return {"status": "error", "message": str(e)}
