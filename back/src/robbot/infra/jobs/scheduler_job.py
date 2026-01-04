@@ -4,7 +4,7 @@ Job para agendamentos/tarefas futuras.
 
 import logging
 from datetime import UTC, datetime, timedelta
-from typing import Any, Callable, Optional
+from typing import Any
 
 from robbot.infra.jobs.base_job import BaseJob, JobRetryableError
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class ScheduledJob(BaseJob):
     """
     Job base para execução agendada.
-    
+
     Responsabilidades:
     - Executar tarefa em data/hora específica
     - Logging de execução
@@ -30,7 +30,7 @@ class ScheduledJob(BaseJob):
     ):
         """
         Inicializar job agendado.
-        
+
         Args:
             scheduled_for: Data/hora para executar
             task_type: Tipo de tarefa ("reminder", "cleanup", "sync", "webhook")
@@ -38,15 +38,15 @@ class ScheduledJob(BaseJob):
             **kwargs: Argumentos herdados
         """
         super().__init__(**kwargs)
-        
+
         self.scheduled_for = scheduled_for
         self.task_type = task_type
         self.task_data = task_data
-        
+
         # Validação
         if scheduled_for < datetime.now(UTC):
             raise ValueError(f"Agendamento no passado: {scheduled_for}")
-        
+
         self.metadata.update({
             "scheduled_for": scheduled_for.isoformat(),
             "task_type": task_type,
@@ -55,7 +55,7 @@ class ScheduledJob(BaseJob):
     def execute(self) -> dict[str, Any]:
         """
         Executar tarefa agendada.
-        
+
         Returns:
             Dict com resultado da execução
         """
@@ -63,7 +63,7 @@ class ScheduledJob(BaseJob):
             f"Executando tarefa agendada: {self.task_type}",
             extra=self._log_context(),
         )
-        
+
         # Validar que não expirou
         now = datetime.now(UTC)
         if now < self.scheduled_for:
@@ -73,19 +73,19 @@ class ScheduledJob(BaseJob):
                 extra=self._log_context(),
             )
             return {"status": "scheduled", "seconds_until": delay}
-        
+
         try:
             # Executar tarefa conforme tipo
             result = self._execute_task()
-            
+
             logger.info(
-                f"✓ Tarefa agendada concluída",
+                "[SUCCESS] Tarefa agendada concluída",
                 extra=self._log_context(),
             )
-            
+
             return result
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(
                 f"Erro em tarefa agendada: {type(e).__name__}: {e}",
                 extra=self._log_context(),
@@ -101,7 +101,7 @@ class ScheduledJob(BaseJob):
 class ReminderJob(ScheduledJob):
     """
     Job para lembrete de consulta.
-    
+
     Envia mensagem WhatsApp lembrando about agendamento.
     """
 
@@ -125,7 +125,7 @@ class ReminderJob(ScheduledJob):
             },
             **kwargs,
         )
-        
+
         self.conversation_id = conversation_id
         self.appointment_id = appointment_id
         self.phone = phone
@@ -137,12 +137,12 @@ class ReminderJob(ScheduledJob):
             f"Enviando lembrete de consulta para {self.phone}",
             extra=self._log_context(),
         )
-        
+
         # TODO: Implementar:
         # - Recuperar dados da consulta
         # - Formatar mensagem
         # - Enfileirar para envio via WAHA
-        
+
         return {
             "status": "reminder_sent",
             "conversation_id": self.conversation_id,
@@ -154,7 +154,7 @@ class ReminderJob(ScheduledJob):
 class CleanupJob(ScheduledJob):
     """
     Job para limpeza periódica de dados.
-    
+
     Tasks:
     - Remover conversas antigas (> 90 dias)
     - Limpar cache do ChromaDB
@@ -169,7 +169,7 @@ class CleanupJob(ScheduledJob):
     ):
         """
         Inicializar job de cleanup.
-        
+
         Args:
             cleanup_type: "all", "conversations", "chroma", "jobs"
             days_threshold: Número de dias para considerar "antigo"
@@ -183,7 +183,7 @@ class CleanupJob(ScheduledJob):
             },
             **kwargs,
         )
-        
+
         self.cleanup_type = cleanup_type
         self.days_threshold = days_threshold
 
@@ -193,25 +193,25 @@ class CleanupJob(ScheduledJob):
             f"Executando cleanup: {self.cleanup_type}",
             extra=self._log_context(),
         )
-        
+
         cutoff_date = datetime.now(UTC) - timedelta(days=self.days_threshold)
-        
+
         results = {
             "status": "completed",
             "cleanup_type": self.cleanup_type,
             "cutoff_date": cutoff_date.isoformat(),
             "items_removed": 0,
         }
-        
+
         # TODO: Implementar cleanup por tipo
-        
+
         return results
 
 
 class SyncJob(ScheduledJob):
     """
     Job para sincronização com sistemas externos.
-    
+
     Tasks:
     - Sync de agendamentos com calendário
     - Sync de leads com CRM
@@ -230,7 +230,7 @@ class SyncJob(ScheduledJob):
             task_data={"sync_target": sync_target},
             **kwargs,
         )
-        
+
         self.sync_target = sync_target
 
     def _execute_task(self) -> dict[str, Any]:
@@ -239,9 +239,9 @@ class SyncJob(ScheduledJob):
             f"Sincronizando com {self.sync_target}",
             extra=self._log_context(),
         )
-        
+
         # TODO: Implementar sync conforme target
-        
+
         return {
             "status": "synced",
             "sync_target": self.sync_target,
