@@ -5,12 +5,11 @@ Business logic for creating and managing user notifications.
 """
 
 import logging
-from typing import List
 
 from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.notification_repository import NotificationRepository
-from robbot.core.exceptions import NotFoundException
+from robbot.core.custom_exceptions import NotFoundException
 from robbot.infra.db.models.notification_model import NotificationModel
 
 logger = logging.getLogger(__name__)
@@ -62,12 +61,12 @@ class NotificationService:
             title=title,
             message=message,
         )
-        
+
         logger.info(
-            f"✓ Notification created (id={notification.id}, "
+            f"[SUCCESS] Notification created (id={notification.id}, "
             f"user_id={user_id}, type={notification_type})"
         )
-        
+
         return notification
 
     def mark_as_read(self, notification_id: str) -> NotificationModel:
@@ -84,12 +83,12 @@ class NotificationService:
             NotFoundException: If notification does not exist
         """
         notification = self.repo.mark_as_read(notification_id)
-        
+
         if not notification:
             raise NotFoundException(f"Notification {notification_id} not found")
-        
-        logger.info(f"✓ Notification marked as read (id={notification_id})")
-        
+
+        logger.info("[SUCCESS] Notification marked as read (id=%s)", notification_id)
+
         return notification
 
     def get_user_notifications(
@@ -97,7 +96,7 @@ class NotificationService:
         user_id: int,
         unread_only: bool = False,
         limit: int = 50,
-    ) -> List[NotificationModel]:
+    ) -> list[NotificationModel]:
         """
         Get notifications for a user.
         
@@ -114,12 +113,12 @@ class NotificationService:
             unread_only=unread_only,
             limit=limit,
         )
-        
+
         logger.info(
-            f"✓ Notifications retrieved (user_id={user_id}, "
+            f"[SUCCESS] Notifications retrieved (user_id={user_id}, "
             f"count={len(notifications)}, unread_only={unread_only})"
         )
-        
+
         return notifications
 
     def count_unread(self, user_id: int) -> int:
@@ -202,6 +201,30 @@ class NotificationService:
         return self.create_notification(
             user_id=user_id,
             notification_type="URGENT_MESSAGE",
-            title="⚠️ Urgent Message",
+            title="[WARNING] Urgent Message",
             message=f"[URGENT] Conversation {conversation_id[:8]}: {message_text[:100]}",
+        )
+
+    def notify_transfer_received(
+        self,
+        user_id: int,
+        conversation_id: str,
+        from_user_name: str,
+    ) -> NotificationModel:
+        """
+        Notify user about receiving a transferred conversation.
+        
+        Args:
+            user_id: ID of the receiving user
+            conversation_id: UUID of the conversation
+            from_user_name: Name of the user who transferred
+            
+        Returns:
+            Created notification model
+        """
+        return self.create_notification(
+            user_id=user_id,
+            notification_type="TRANSFER_RECEIVED",
+            title="🔄 Conversation Transferred",
+            message=f"You received a conversation from {from_user_name} (ID: {conversation_id[:8]})",
         )
