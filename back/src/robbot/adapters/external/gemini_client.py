@@ -16,12 +16,10 @@ from robbot.config.settings import settings
 from robbot.core.custom_exceptions import LLMError
 
 logger = logging.getLogger(__name__)
-
-
 class GeminiClient:
     """
     Client para Google Gemini API com retry logic e error handling.
-    
+
     Responsabilidades:
     - Configurar conexão com Gemini API
     - Gerar respostas com contexto
@@ -47,7 +45,7 @@ class GeminiClient:
                 f"[SUCCESS] GeminiClient inicializado (model={settings.GEMINI_MODEL}, "
                 f"temp={settings.GEMINI_TEMPERATURE}, tools={len(tools) if tools else 0})"
             )
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("[ERROR] Falha ao inicializar GeminiClient: %s", e)
             raise LLMError("Gemini", f"Initialization failed: {e}", original_error=e)
 
@@ -59,12 +57,12 @@ class GeminiClient:
     ) -> dict[str, Any]:
         """
         Gerar resposta do Gemini com retry logic.
-        
+
         Args:
             prompt: Prompt principal para o LLM
             context: Contexto adicional (histórico, docs, etc.)
             max_retries: Número máximo de tentativas
-            
+
         Returns:
             Dict com resposta e metadados:
             {
@@ -74,7 +72,7 @@ class GeminiClient:
                 "model": str,
                 "finish_reason": str
             }
-            
+
         Raises:
             ExternalServiceError: Se todas as tentativas falharem
         """
@@ -145,7 +143,7 @@ class GeminiClient:
                     continue
                 raise LLMError("Gemini", f"API error: {e}", original_error=e)
 
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:  # noqa: BLE001 (blind exception)
                 # Erro inesperado
                 logger.error(f"[ERROR] Erro inesperado ao chamar Gemini: {e}", exc_info=True)
                 if attempt < max_retries:
@@ -159,11 +157,11 @@ class GeminiClient:
     def _build_full_prompt(self, prompt: str, context: str | None) -> str:
         """
         Montar prompt completo com contexto.
-        
+
         Args:
             prompt: Prompt principal
             context: Contexto adicional
-            
+
         Returns:
             Prompt formatado
         """
@@ -174,10 +172,10 @@ class GeminiClient:
     def _extract_token_count(self, response: Any) -> int:
         """
         Extrair contagem de tokens da resposta.
-        
+
         Args:
             response: Resposta do Gemini
-            
+
         Returns:
             Número de tokens usados
         """
@@ -199,10 +197,10 @@ class GeminiClient:
     def _extract_finish_reason(self, response: Any) -> str:
         """
         Extrair finish_reason da resposta.
-        
+
         Args:
             response: Resposta do Gemini
-            
+
         Returns:
             Motivo de término
         """
@@ -215,19 +213,15 @@ class GeminiClient:
             pass
 
         return "UNKNOWN"
-
-
 # Singleton global
 _gemini_client: GeminiClient | None = None
-
-
 def get_gemini_client(tools: list | None = None) -> GeminiClient:
     """
     Obter instância singleton do cliente Gemini.
-    
+
     Args:
         tools: Lista de tools para function calling (opcional)
-    
+
     Returns:
         GeminiClient singleton
     """
@@ -238,8 +232,6 @@ def get_gemini_client(tools: list | None = None) -> GeminiClient:
         logger.info("🎯 GeminiClient inicializado como singleton")
 
     return _gemini_client
-
-
 def close_gemini_client() -> None:
     """Fechar cliente (cleanup)."""
     global _gemini_client
