@@ -6,13 +6,12 @@ Suporta múltiplas estratégias de chave (IP, user_id, email).
 
 import functools
 import hashlib
-from typing import Callable, Literal
+import logging
+from collections.abc import Callable
+from typing import Literal
 
 from fastapi import HTTPException, Request, status
 from redis import Redis
-
-import logging
-from robbot.config.settings import settings
 
 
 class RateLimiter:
@@ -91,7 +90,7 @@ class RateLimiter:
 
             return is_allowed, current, ttl
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             # If Redis fails, allow request (fail open)
             logging.getLogger(__name__).exception("Rate limiter error: %s", e)
             return True, 0, 0
