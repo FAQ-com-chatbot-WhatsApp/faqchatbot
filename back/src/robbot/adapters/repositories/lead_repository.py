@@ -1,6 +1,4 @@
 """Repository for Lead entity."""
-
-
 from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.base_repository import BaseRepository
@@ -17,10 +15,10 @@ class LeadRepository(BaseRepository[LeadModel]):
     def get_by_phone(self, phone_number: str) -> LeadModel | None:
         """
         Get lead by phone number.
-        
+
         Args:
             phone_number: Phone number
-            
+
         Returns:
             LeadModel or None
         """
