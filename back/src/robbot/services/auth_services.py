@@ -9,24 +9,24 @@ Responsabilidades:
 """
 
 import logging
-from typing import Optional
+from datetime import UTC, datetime
 
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.auth_session_repository import AuthSessionRepository
 from robbot.adapters.repositories.token_repository import TokenRepository
 from robbot.adapters.repositories.user_repository import UserRepository
 from robbot.common.utils import send_email
 from robbot.core import security
-from robbot.core.exceptions import AuthException
-from robbot.schemas.token import Token
+from robbot.core.custom_exceptions import AuthException
 from robbot.schemas.auth import SignupRequest
-from robbot.services.email_verification_service import EmailVerificationService
+from robbot.schemas.token import Token
 from robbot.schemas.user import UserOut
-from robbot.services.credential_service import CredentialService
-from datetime import UTC, datetime
 from robbot.services.audit_service import AuditService
+from robbot.services.credential_service import CredentialService
+from robbot.services.email_verification_service import EmailVerificationService
+from robbot.services.mfa_service import MfaService
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +45,7 @@ class AuthService:
         self.session_repo = AuthSessionRepository(db)
         self.audit_svc = AuditService(db)
         self.email_verification_svc = EmailVerificationService(db)
+        self.mfa_service = MfaService(db)
 
     def signup(self, payload: SignupRequest) -> UserOut:
         """Registra um novo usuário com validação de senha e persistência.
@@ -66,7 +67,7 @@ class AuthService:
         if existing:
             raise AuthException("User already exists")
         security.validate_password_policy(payload.password)
-        
+
         from robbot.schemas.user import UserCreate
         user_data = UserCreate(
             email=payload.email,
@@ -76,13 +77,13 @@ class AuthService:
         )
         hashed = security.get_password_hash(payload.password)
         user = self.repo.create_user(user_data, hashed)
-        
+
         self.credential_svc.set_password(user.id, payload.password)
-        
+
         verification_token = self.email_verification_svc.generate_verification_token(user.id)
-        
-        logger.info(f"User registered: {user.email} (verification token: {verification_token[:8]}...)")
-        
+
+        logger.info("User registered: %s (verification token: %s...)", user.email, verification_token[:8])
+
         return UserOut.model_validate(user)
 
     def authenticate_user(
@@ -91,7 +92,7 @@ class AuthService:
         password: str,
         user_agent: str | None = None,
         ip_address: str | None = None,
-    ) -> Optional[Token]:
+    ) -> Token | None:
         """Valida credenciais e retorna tokens com dados do usuário.
         
         Bloqueia login se email não verificado.
@@ -111,20 +112,20 @@ class AuthService:
         """
         user = self.repo.get_by_email(email)
         if not user:
-            logger.warning(f"Login failed: user not found for email {email}")
+            logger.warning("Login failed: user not found for email %s", email)
             return None
         if not user.is_active:
-            logger.warning(f"Login failed: user {email} is inactive")
+            logger.warning("Login failed: user %s is inactive", email)
             return None
-        
+
         if not self.email_verification_svc.is_email_verified(user.id):
-            logger.warning(f"Login failed: email not verified for user {email}")
+            logger.warning("Login failed: email not verified for user %s", email)
             raise AuthException("Email not verified. Please check your email for verification link.")
-        
-        
+
+
         # Verificar senha via CredentialService
         if not self.credential_svc.verify_password(user.id, password):
-            logger.warning(f"Login failed: invalid password for user {email}")
+            logger.warning("Login failed: invalid password for user %s", email)
             try:
                 self.audit_svc.log_action(
                     action="login_failure",
@@ -136,19 +137,19 @@ class AuthService:
             except SQLAlchemyError:
                 logger.warning("Audit log failed for login_failure")
             return None
-        
+
         from robbot.adapters.repositories.credential_repository import CredentialRepository
         credential_repo = CredentialRepository(self.repo.db)
         credential = credential_repo.get_by_user_id(user.id)
         mfa_enabled = credential.mfa_enabled if credential else False
-        
+
         if mfa_enabled:
             # Return temporary tokens that require MFA verification
-            logger.info(f"Login successful (MFA required): user {email} (id={user.id})")
+            logger.info("Login successful (MFA required): user %s (id=%s)", email, user.id)
             # Create temporary tokens with short expiration (5 minutes)
             temporary_tokens = security.create_token_for_subject(
-                str(user.id), 
-                minutes=5, 
+                str(user.id),
+                minutes=5,
                 token_type="mfa-pending"
             )
             # Don't create session yet - will be created after MFA verification
@@ -158,9 +159,9 @@ class AuthService:
                 mfa_required=True,
                 user=user
             )
-        
+
         # Normal login flow (MFA disabled)
-        logger.info(f"Login successful: user {email} (id={user.id})")
+        logger.info("Login successful: user %s (id=%s)", email, user.id)
         try:
             self.audit_svc.log_action(
                 action="login_success",
@@ -172,7 +173,7 @@ class AuthService:
         except SQLAlchemyError:
             logger.warning("Audit log failed for login_success")
         tokens = security.create_access_refresh_tokens(str(user.id))
-        # Criar sessão atrelada ao JTI do refresh
+        # Create session linked to refresh JTI
         payload = security.decode_token(tokens["refresh_token"], verify_exp=True)
         jti = payload.get("jti")
         exp = payload.get("exp")
@@ -214,12 +215,12 @@ class AuthService:
         if payload.get("type") != "refresh":
             raise AuthException("Invalid token type")
         subject = payload.get("sub")
-        # Validar sessão via JTI
+        # Validate session via JTI
         jti = payload.get("jti")
         sess = self.session_repo.get_by_jti(jti)
         if not sess or sess.is_revoked or sess.is_expired:
             raise AuthException("Session invalid or revoked")
-        # Atualizar metadados da sessão (last_used + device info se fornecido)
+        # Update session metadata (last_used + device info if provided)
         device_name = security.parse_device_name(user_agent) if user_agent else None
         self.session_repo.update_last_used(
             sess,
@@ -246,13 +247,13 @@ class AuthService:
         Revoke token (refresh or access) by persisting it to DB.
         """
         self.token_repo.revoke(token)
-        logger.info(f"Token revoked successfully")
+        logger.info("Token revoked successfully")
 
     def logout(
         self,
         user_id: int,
-        access_token: Optional[str] = None,
-        refresh_token: Optional[str] = None,
+        access_token: str | None = None,
+        refresh_token: str | None = None,
     ) -> None:
         """
         Logout current session: revoke provided tokens and mark session revoked.
@@ -322,9 +323,9 @@ class AuthService:
         user = self.repo.get_by_id(int(user_id))
         if not user:
             raise AuthException("User not found")
-        
+
         security.validate_password_policy(new_password)
-        # Atualizar via service
+        # Update via service
         self.credential_svc.set_password(user.id, new_password)
         # Revogar todas as sessões ativas após troca de senha
         self.session_repo.revoke_all_for_user(user.id, reason="password_reset")
@@ -398,31 +399,28 @@ class AuthService:
         try:
             payload = security.decode_token(temporary_token, verify_exp=True)
         except AuthException as e:
-            logger.warning(f"MFA login failed: invalid temporary token - {e}")
+            logger.warning("MFA login failed: invalid temporary token - %s", e)
             raise AuthException("Invalid or expired temporary token")
-        
+
         if payload.get("type") != "mfa-pending":
             raise AuthException("Invalid token type for MFA verification")
-        
+
         user_id = payload.get("sub")
         if not user_id:
             raise AuthException("Invalid token")
-        
+
         user = self.repo.get_by_id(int(user_id))
         if not user:
             raise AuthException("User not found")
-        
+
         # Verify MFA code
-        from robbot.services.mfa_service import MfaService
-        mfa_service = MfaService(self.repo.db)
-        
         # Try TOTP first, then backup code
-        verified = mfa_service.verify_mfa(user.id, code)
+        verified = self.mfa_service.verify_mfa(user.id, code)
         if not verified:
-            verified = mfa_service.verify_backup_code(user.id, code)
-        
+            verified = self.mfa_service.verify_backup_code(user.id, code)
+
         if not verified:
-            logger.warning(f"MFA verification failed for user {user.email}")
+            logger.warning("MFA verification failed for user %s", user.email)
             try:
                 self.audit_svc.log_action(
                     action="mfa_verification_failed",
@@ -433,9 +431,9 @@ class AuthService:
             except SQLAlchemyError:
                 logger.warning("Audit log failed for mfa_verification_failed")
             raise AuthException("Invalid MFA code")
-        
+
         # MFA verified - create final tokens and session
-        logger.info(f"MFA verification successful: user {user.email} (id={user.id})")
+        logger.info("MFA verification successful: user %s (id=%s)", user.email, user.id)
         try:
             self.audit_svc.log_action(
                 action="mfa_login_success",
@@ -446,9 +444,9 @@ class AuthService:
             )
         except SQLAlchemyError:
             logger.warning("Audit log failed for mfa_login_success")
-        
+
         tokens = security.create_access_refresh_tokens(str(user.id))
-        
+
         # Create session
         payload = security.decode_token(tokens["refresh_token"], verify_exp=True)
         jti = payload.get("jti")
@@ -463,5 +461,5 @@ class AuthService:
             device_name=device_name,
             expires_at=expires_at,
         )
-        
+
         return Token(**tokens, user=user)
