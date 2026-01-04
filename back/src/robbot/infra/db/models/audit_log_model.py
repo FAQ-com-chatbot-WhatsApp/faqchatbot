@@ -1,6 +1,4 @@
 """Audit Log ORM model."""
-
-
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import relationship
 
@@ -10,7 +8,7 @@ from robbot.infra.db.base import Base
 class AuditLogModel(Base):
     """
     Audit Log model for tracking system actions.
-    
+
     Tracks all important actions in the system with before/after state.
     """
 
