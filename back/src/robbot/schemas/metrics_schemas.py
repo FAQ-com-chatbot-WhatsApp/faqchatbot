@@ -4,12 +4,9 @@ Metrics Schemas
 Pydantic schemas para validação e serialização de métricas.
 """
 
-from datetime import datetime, date
-from typing import Dict, List, Optional
-from uuid import UUID
+from datetime import date
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
-
+from pydantic import BaseModel, ConfigDict, Field
 
 # =============================================================================
 # COMMON SCHEMAS
@@ -75,14 +72,14 @@ class ConversionMetricsSchema(BaseModel):
 class ConversionSegmentSchema(ConversionMetricsSchema):
     """Segmento de conversão"""
     segment_name: str
-    segment_id: Optional[str] = None
+    segment_id: str | None = None
 
 
 class ConversionRateResponse(BaseModel):
     """Response da taxa de conversão"""
     period: PeriodSchema
-    conversion: Optional[ConversionMetricsSchema] = None
-    segments: Optional[List[ConversionSegmentSchema]] = None
+    conversion: ConversionMetricsSchema | None = None
+    segments: list[ConversionSegmentSchema] | None = None
 
 
 class FunnelStageSchema(BaseModel):
@@ -97,7 +94,7 @@ class FunnelStageSchema(BaseModel):
 class ConversionFunnelResponse(BaseModel):
     """Response do funil de conversão"""
     period: PeriodSchema
-    funnel: Dict[str, List[FunnelStageSchema]] = Field(..., description="Stages do funil")
+    funnel: dict[str, list[FunnelStageSchema]] = Field(..., description="Stages do funil")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -157,7 +154,7 @@ class ResponseTimeStatsSchema(BaseModel):
 class ResponseTimeResponse(BaseModel):
     """Response do tempo de resposta"""
     period: PeriodSchema
-    user_id: Optional[str] = Field(None, description="UUID do usuário (null = global)")
+    user_id: str | None = Field(None, description="UUID do usuário (null = global)")
     response_time: ResponseTimeStatsSchema
 
 
@@ -173,7 +170,7 @@ class MessageVolumeResponse(BaseModel):
     """Response do volume de mensagens"""
     period: PeriodSchema
     granularity: str = Field(..., description="hour, day, ou week")
-    data_points: List[MessageVolumeDataPointSchema]
+    data_points: list[MessageVolumeDataPointSchema]
 
 
 # =============================================================================
@@ -219,6 +216,6 @@ class ForecastDataPointSchema(BaseModel):
 
 class DemandForecastResponse(BaseModel):
     """Response da previsão de demanda"""
-    forecast: List[ForecastDataPointSchema]
+    forecast: list[ForecastDataPointSchema]
     status: str = Field(default="not_implemented")
-    message: Optional[str] = None
+    message: str | None = None
