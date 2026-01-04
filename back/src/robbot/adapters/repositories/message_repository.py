@@ -1,6 +1,5 @@
 """Repository for message persistence and retrieval operations."""
 
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy.orm import Session, joinedload
@@ -25,16 +24,16 @@ class MessageRepository:
         return msg
 
     def create_media(
-        self, 
-        msg_type: str, 
-        mimetype: str, 
-        filename: str, 
-        url: str, 
-        caption: Optional[str],
-        transcription: Optional[str] = None,
-        title: Optional[str] = None,
-        description: Optional[str] = None,
-        tags: Optional[str] = None
+        self,
+        msg_type: str,
+        mimetype: str,
+        filename: str,
+        url: str,
+        caption: str | None,
+        transcription: str | None = None,
+        title: str | None = None,
+        description: str | None = None,
+        tags: str | None = None
     ) -> MessageModel:
         """
         Criar mensagem de mídia com metadados do arquivo.
@@ -54,7 +53,7 @@ class MessageRepository:
             MessageModel com mídia criada
         """
         msg = MessageModel(
-            type=msg_type, 
+            type=msg_type,
             caption=caption,
             has_audio=(msg_type in ["voice", "video"]),
             audio_url=url if msg_type in ["voice", "video"] else None,
@@ -75,7 +74,7 @@ class MessageRepository:
         return msg
 
     def create_location(
-        self, latitude: float, longitude: float, title: Optional[str]
+        self, latitude: float, longitude: float, title: str | None
     ) -> MessageModel:
         """Create a location message."""
         msg = MessageModel(type="location")
@@ -90,7 +89,7 @@ class MessageRepository:
         self.db.refresh(msg)
         return msg
 
-    def get_by_id(self, message_id: UUID) -> Optional[MessageModel]:
+    def get_by_id(self, message_id: UUID) -> MessageModel | None:
         """Retrieve message with eager-loaded relationships."""
         return (
             self.db.query(MessageModel)
@@ -99,11 +98,21 @@ class MessageRepository:
             .first()
         )
 
-    def list_all(self) -> list[MessageModel]:
-        """Retrieve all messages with relationships."""
+    def list_all(self, limit: int = 100, offset: int = 0) -> list[MessageModel]:
+        """Retrieve all messages with relationships and pagination.
+        
+        Args:
+            limit: Maximum number of records to return (default: 100)
+            offset: Number of records to skip (default: 0)
+        
+        Returns:
+            List of message model instances
+        """
         return (
             self.db.query(MessageModel)
             .options(joinedload(MessageModel.media), joinedload(MessageModel.location))
+            .limit(limit)
+            .offset(offset)
             .all()
         )
 
@@ -142,9 +151,9 @@ class MessageRepository:
     def update_location(
         self,
         msg: MessageModel,
-        latitude: Optional[float],
-        longitude: Optional[float],
-        title: Optional[str],
+        latitude: float | None,
+        longitude: float | None,
+        title: str | None,
     ) -> MessageModel:
         """Update location coordinates and title."""
         location = msg.location
