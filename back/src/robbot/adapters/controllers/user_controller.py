@@ -10,20 +10,16 @@ from robbot.schemas.user import MessageResponse, UserList, UserOut, UserUpdate
 from robbot.services.user_service import UserService
 
 router = APIRouter()
-
-
 @router.get("/users/me", response_model=UserOut)
 def get_current_user_profile(
     current_user=Depends(get_current_user),
 ):
     """Obtém perfil do usuário autenticado atual.
-    
+
     Retorna dados de perfil do usuário (nome, email, role).
     Para informações de sessão de autenticação, use GET /auth/me.
     """
     return current_user
-
-
 @router.patch("/users/me", response_model=UserOut)
 def update_current_user_profile(
     payload: UserUpdate,
@@ -31,7 +27,7 @@ def update_current_user_profile(
     current_user=Depends(get_current_user),
 ):
     """Atualiza perfil do usuário autenticado atual.
-    
+
     Permite usuários atualizarem seus próprios campos de perfil (ex: full_name).
     Não pode atualizar email, password, is_active ou role - use endpoints dedicados.
     """
@@ -41,8 +37,6 @@ def update_current_user_profile(
     except NotFoundException as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
-
-
 @router.get("/users", response_model=UserList)
 def list_users(
     skip: int = Query(0, ge=0),
@@ -54,8 +48,6 @@ def list_users(
     service = UserService(db)
     users, total = service.list_users(skip=skip, limit=limit)
     return UserList(users=users, total=total, skip=skip, limit=limit)
-
-
 @router.get("/users/{user_id}", response_model=UserOut)
 def get_user(
     user_id: int,
@@ -69,8 +61,6 @@ def get_user(
     except NotFoundException as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
-
-
 @router.patch("/users/{user_id}", response_model=UserOut)
 def update_user(
     user_id: int,
@@ -85,8 +75,6 @@ def update_user(
     except NotFoundException as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
-
-
 @router.delete("/users/{user_id}", response_model=MessageResponse)
 def deactivate_user(
     user_id: int,
@@ -101,8 +89,6 @@ def deactivate_user(
     except NotFoundException as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
-
-
 @router.post("/users/{user_id}/block", response_model=UserOut)
 def block_user(
     user_id: int,
@@ -117,8 +103,6 @@ def block_user(
     except NotFoundException as exc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
-
-
 @router.post("/users/{user_id}/unblock", response_model=UserOut)
 def unblock_user(
     user_id: int,
