@@ -10,12 +10,10 @@ from robbot.adapters.repositories.audit_log_repository import AuditLogRepository
 from robbot.infra.db.models.audit_log_model import AuditLogModel
 
 logger = logging.getLogger(__name__)
-
-
 class AuditService:
     """
     Service for audit logging.
-    
+
     Automatically logs critical actions:
     - CREATE: Entity creation
     - UPDATE: Entity updates
@@ -40,7 +38,7 @@ class AuditService:
     ) -> AuditLogModel:
         """
         Log an action to audit trail.
-        
+
         Args:
             action: Action type (CREATE, UPDATE, DELETE, etc.)
             entity_type: Type of entity (Lead, Conversation, User, etc.)
@@ -49,7 +47,7 @@ class AuditService:
             old_value: Dictionary with old values (will be JSON encoded)
             new_value: Dictionary with new values (will be JSON encoded)
             ip_address: IP address of the request
-            
+
         Returns:
             Created AuditLog model
         """
