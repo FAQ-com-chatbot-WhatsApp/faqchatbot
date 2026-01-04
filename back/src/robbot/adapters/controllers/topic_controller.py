@@ -9,8 +9,6 @@ from robbot.schemas.topic import DeletedResponse, TopicCreate, TopicList, TopicO
 from robbot.services.playbook_service import PlaybookService
 
 router = APIRouter()
-
-
 @router.post("/", response_model=TopicOut, status_code=status.HTTP_201_CREATED)
 def create_topic(
     payload: TopicCreate,
@@ -19,10 +17,10 @@ def create_topic(
 ):
     """
     Create a new topic.
-    
+
     Topics are generic containers for organizing playbooks by subject/context.
     Examples: "Botox", "Preenchimento Labial", "Clareamento Dental".
-    
+
     Requires authentication.
     """
     service = PlaybookService(db)
@@ -33,8 +31,6 @@ def create_topic(
         active=payload.active,
     )
     return TopicOut.model_validate(created)
-
-
 @router.get("/{topic_id}", response_model=TopicOut)
 def get_topic(
     topic_id: str,
@@ -47,8 +43,6 @@ def get_topic(
     if not topic:
         raise HTTPException(status_code=404, detail=f"Topic {topic_id} not found")
     return TopicOut.model_validate(topic)
-
-
 @router.get("/", response_model=TopicList)
 def list_topics(
     active_only: bool = False,
@@ -59,7 +53,7 @@ def list_topics(
 ):
     """
     List all topics.
-    
+
     Query params:
     - active_only: Filter only active topics
     - skip: Pagination offset
@@ -71,8 +65,6 @@ def list_topics(
         topics=[TopicOut.model_validate(t) for t in topics],
         total=len(topics)
     )
-
-
 @router.patch("/{topic_id}", response_model=TopicOut)
 def update_topic(
     topic_id: str,
@@ -82,7 +74,7 @@ def update_topic(
 ):
     """
     Update topic fields.
-    
+
     Only provided fields will be updated.
     """
     service = PlaybookService(db)
@@ -95,8 +87,6 @@ def update_topic(
         raise HTTPException(status_code=404, detail=f"Topic {topic_id} not found")
 
     return TopicOut.model_validate(updated)
-
-
 @router.delete("/{topic_id}", response_model=DeletedResponse)
 def delete_topic(
     topic_id: str,
@@ -105,7 +95,7 @@ def delete_topic(
 ):
     """
     Delete topic.
-    
+
     Cascades deletion to all associated playbooks and steps.
     """
     service = PlaybookService(db)
