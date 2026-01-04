@@ -23,6 +23,7 @@ from robbot.adapters.controllers import (
     waha_controller,
     webhook_controller,
 )
+from robbot.api.v1 import worker_routes
 
 api_router = APIRouter()
 api_router.include_router(auth_controller.router,
@@ -48,3 +49,4 @@ api_router.include_router(playbook_controller.router, prefix="/playbooks", tags=
 api_router.include_router(playbook_step_controller.router, prefix="/playbook-steps", tags=["Playbook Steps"])
 api_router.include_router(handoff_controller.router, prefix="", tags=["Handoff"])
 api_router.include_router(dashboard_controller.router, prefix="", tags=["Metrics & Dashboard"])
+api_router.include_router(worker_routes.router, prefix="", tags=["Workers"])
