@@ -4,10 +4,10 @@ Audit Service - business logic for audit logging.
 
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from robbot.adapters.repositories.audit_log_repository import AuditLogRepository
-from robbot.domain.entities.audit_log import AuditLog
+from robbot.infra.db.models.audit_log_model import AuditLogModel
 
 logger = logging.getLogger(__name__)
 
@@ -33,11 +33,11 @@ class AuditService:
         action: str,
         entity_type: str,
         entity_id: str,
-        user_id: Optional[int] = None,
-        old_value: Optional[Dict[str, Any]] = None,
-        new_value: Optional[Dict[str, Any]] = None,
-        ip_address: Optional[str] = None,
-    ) -> AuditLog:
+        user_id: int | None = None,
+        old_value: dict[str, Any] | None = None,
+        new_value: dict[str, Any] | None = None,
+        ip_address: str | None = None,
+    ) -> AuditLogModel:
         """
         Log an action to audit trail.
         
@@ -51,13 +51,13 @@ class AuditService:
             ip_address: IP address of the request
             
         Returns:
-            Created AuditLog entity
+            Created AuditLog model
         """
         # Serialize values to JSON
         old_json = json.dumps(old_value) if old_value else None
         new_json = json.dumps(new_value) if new_value else None
-        
-        audit_log = AuditLog(
+
+        audit_log = AuditLogModel(
             user_id=user_id,
             action=action,
             entity_type=entity_type,
@@ -66,25 +66,25 @@ class AuditService:
             new_value=new_json,
             ip_address=ip_address,
         )
-        
+
         self.repo.create(audit_log)
         self.session.flush()
-        
+
         logger.info(
-            f"✓ Audit log created (action={action}, entity={entity_type}:{entity_id}, "
+            f"[SUCCESS] Audit log created (action={action}, entity={entity_type}:{entity_id}, "
             f"user={user_id})"
         )
-        
+
         return audit_log
 
     def log_create(
         self,
         entity_type: str,
         entity_id: str,
-        user_id: Optional[int] = None,
-        entity_data: Optional[Dict[str, Any]] = None,
-        ip_address: Optional[str] = None,
-    ) -> AuditLog:
+        user_id: int | None = None,
+        entity_data: dict[str, Any] | None = None,
+        ip_address: str | None = None,
+    ) -> AuditLogModel:
         """Log entity creation."""
         return self.log_action(
             action="CREATE",
@@ -99,11 +99,11 @@ class AuditService:
         self,
         entity_type: str,
         entity_id: str,
-        user_id: Optional[int] = None,
-        old_data: Optional[Dict[str, Any]] = None,
-        new_data: Optional[Dict[str, Any]] = None,
-        ip_address: Optional[str] = None,
-    ) -> AuditLog:
+        user_id: int | None = None,
+        old_data: dict[str, Any] | None = None,
+        new_data: dict[str, Any] | None = None,
+        ip_address: str | None = None,
+    ) -> AuditLogModel:
         """Log entity update."""
         return self.log_action(
             action="UPDATE",
@@ -119,10 +119,10 @@ class AuditService:
         self,
         entity_type: str,
         entity_id: str,
-        user_id: Optional[int] = None,
-        entity_data: Optional[Dict[str, Any]] = None,
-        ip_address: Optional[str] = None,
-    ) -> AuditLog:
+        user_id: int | None = None,
+        entity_data: dict[str, Any] | None = None,
+        ip_address: str | None = None,
+    ) -> AuditLogModel:
         """Log entity deletion."""
         return self.log_action(
             action="DELETE",
@@ -133,7 +133,7 @@ class AuditService:
             ip_address=ip_address,
         )
 
-    def get_user_logs(self, user_id: int, limit: int = 100) -> List[AuditLog]:
+    def get_user_logs(self, user_id: int, limit: int = 100) -> list[AuditLogModel]:
         """Get audit logs for a specific user."""
         return self.repo.get_by_user(user_id, limit)
 
@@ -142,10 +142,10 @@ class AuditService:
         entity_type: str,
         entity_id: str,
         limit: int = 100
-    ) -> List[AuditLog]:
+    ) -> list[AuditLogModel]:
         """Get audit logs for a specific entity."""
         return self.repo.get_by_entity(entity_type, entity_id, limit)
 
-    def get_recent_logs(self, limit: int = 100) -> List[AuditLog]:
+    def get_recent_logs(self, limit: int = 100) -> list[AuditLogModel]:
         """Get most recent audit logs (admin only)."""
         return self.repo.get_recent(limit)
