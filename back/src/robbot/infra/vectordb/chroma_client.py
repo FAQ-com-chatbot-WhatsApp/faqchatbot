@@ -9,14 +9,14 @@ Este módulo fornece interface para ChromaDB, permitindo:
 
 import logging
 import uuid
-from datetime import datetime, UTC
-from typing import Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 import chromadb
 from chromadb.config import Settings as ChromaSettings
 
 from robbot.config.settings import settings
-from robbot.core.exceptions import DatabaseError
+from robbot.core.custom_exceptions import VectorDBError
 
 logger = logging.getLogger(__name__)
 
@@ -47,28 +47,28 @@ class ChromaClient:
                     anonymized_telemetry=False,
                 )
             )
-            
+
             # Obter ou criar coleção
             self.collection = self.client.get_or_create_collection(
                 name=collection_name,
                 metadata={"description": "WhatsApp conversation contexts"}
             )
-            
+
             logger.info(
-                f"✓ ChromaClient inicializado (collection={collection_name}, "
+                f"[SUCCESS] ChromaClient inicializado (collection={collection_name}, "
                 f"path={settings.CHROMA_PERSIST_DIR}, count={self.collection.count()})"
             )
-            
-        except Exception as e:
-            logger.error(f"✗ Falha ao inicializar ChromaClient: {e}", exc_info=True)
-            raise DatabaseError(f"ChromaDB initialization failed: {e}") from e
+
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"[ERROR] Falha ao inicializar ChromaClient: {e}", exc_info=True)
+            raise VectorDBError(f"Initialization failed: {e}", original_error=e)
 
     def add_conversation(
         self,
         conversation_id: str,
         text: str,
-        metadata: Optional[dict[str, Any]] = None,
-        doc_id: Optional[str] = None,
+        metadata: dict[str, Any] | None = None,
+        doc_id: str | None = None,
     ) -> str:
         """
         Adicionar conversa ao ChromaDB com embedding automático.
@@ -89,14 +89,14 @@ class ChromaClient:
             # Gerar ID único se não fornecido
             if doc_id is None:
                 doc_id = f"{conversation_id}_{uuid.uuid4().hex[:8]}"
-            
+
             # Preparar metadados
             final_metadata = {
                 "conversation_id": conversation_id,
                 "timestamp": datetime.now(UTC).isoformat(),
                 **(metadata or {})
             }
-            
+
             # Adicionar ao ChromaDB
             # ChromaDB gera embeddings automaticamente
             self.collection.add(
@@ -104,26 +104,26 @@ class ChromaClient:
                 metadatas=[final_metadata],
                 ids=[doc_id],
             )
-            
+
             logger.info(
-                f"✓ Conversa adicionada ao ChromaDB (id={doc_id}, "
+                f"[SUCCESS] Conversa adicionada ao ChromaDB (id={doc_id}, "
                 f"conv_id={conversation_id}, length={len(text)})"
             )
-            
+
             return doc_id
-            
-        except Exception as e:
+
+        except Exception as e:  # noqa: BLE001
             logger.error(
-                f"✗ Falha ao adicionar conversa ao ChromaDB: {e}",
+                f"[ERROR] Falha ao adicionar conversa ao ChromaDB: {e}",
                 exc_info=True,
                 extra={"conversation_id": conversation_id}
             )
-            raise DatabaseError(f"Failed to add conversation to ChromaDB: {e}") from e
+            raise VectorDBError(f"Failed to add conversation: {e}", original_error=e)
 
     def search_similar(
         self,
         query: str,
-        conversation_id: Optional[str] = None,
+        conversation_id: str | None = None,
         n_results: int = 5,
     ) -> list[dict[str, Any]]:
         """
@@ -153,17 +153,17 @@ class ChromaClient:
             where_filter = None
             if conversation_id:
                 where_filter = {"conversation_id": conversation_id}
-            
+
             # Buscar no ChromaDB
             results = self.collection.query(
                 query_texts=[query],
                 n_results=n_results,
                 where=where_filter,
             )
-            
+
             # Formatar resultados
             formatted_results = []
-            
+
             if results and results['documents']:
                 for i in range(len(results['ids'][0])):
                     formatted_results.append({
@@ -172,21 +172,21 @@ class ChromaClient:
                         "metadata": results['metadatas'][0][i],
                         "distance": results['distances'][0][i] if results.get('distances') else None,
                     })
-            
+
             logger.info(
-                f"✓ Busca ChromaDB concluída (query_length={len(query)}, "
+                f"[SUCCESS] Busca ChromaDB concluída (query_length={len(query)}, "
                 f"n_results={len(formatted_results)}, conv_id={conversation_id})"
             )
-            
+
             return formatted_results
-            
-        except Exception as e:
+
+        except Exception as e:  # noqa: BLE001
             logger.error(
-                f"✗ Falha ao buscar no ChromaDB: {e}",
+                f"[ERROR] Falha ao buscar no ChromaDB: {e}",
                 exc_info=True,
                 extra={"query": query[:100]}
             )
-            raise DatabaseError(f"Failed to search ChromaDB: {e}") from e
+            raise VectorDBError(f"Search failed: {e}", original_error=e)
 
     def get_context(
         self,
@@ -219,10 +219,10 @@ class ChromaClient:
                 where={"conversation_id": conversation_id},
                 limit=limit,
             )
-            
+
             # Formatar resultados
             formatted_results = []
-            
+
             if results and results['documents']:
                 for i in range(len(results['ids'])):
                     formatted_results.append({
@@ -230,21 +230,21 @@ class ChromaClient:
                         "text": results['documents'][i],
                         "metadata": results['metadatas'][i],
                     })
-            
+
             logger.info(
-                f"✓ Contexto obtido do ChromaDB (conv_id={conversation_id}, "
+                f"[SUCCESS] Contexto obtido do ChromaDB (conv_id={conversation_id}, "
                 f"count={len(formatted_results)})"
             )
-            
+
             return formatted_results
-            
-        except Exception as e:
+
+        except Exception as e:  # noqa: BLE001
             logger.error(
-                f"✗ Falha ao obter contexto do ChromaDB: {e}",
+                f"[ERROR] Falha ao obter contexto do ChromaDB: {e}",
                 exc_info=True,
                 extra={"conversation_id": conversation_id}
             )
-            raise DatabaseError(f"Failed to get context from ChromaDB: {e}") from e
+            raise VectorDBError(f"Failed to get context: {e}", original_error=e)
 
     def delete_conversation(self, conversation_id: str) -> int:
         """
@@ -264,26 +264,26 @@ class ChromaClient:
             results = self.collection.get(
                 where={"conversation_id": conversation_id},
             )
-            
+
             if not results or not results['ids']:
-                logger.warning(f"Nenhum documento encontrado para conv_id={conversation_id}")
+                logger.warning("Nenhum documento encontrado para conv_id=%s", conversation_id)
                 return 0
-            
+
             # Deletar documentos
             self.collection.delete(ids=results['ids'])
-            
+
             count = len(results['ids'])
-            logger.info(f"✓ Contexto deletado do ChromaDB (conv_id={conversation_id}, count={count})")
-            
+            logger.info("[SUCCESS] Contexto deletado do ChromaDB (conv_id=%s, count=%s)", conversation_id, count)
+
             return count
-            
-        except Exception as e:
+
+        except Exception as e:  # noqa: BLE001
             logger.error(
-                f"✗ Falha ao deletar contexto do ChromaDB: {e}",
+                f"[ERROR] Falha ao deletar contexto do ChromaDB: {e}",
                 exc_info=True,
                 extra={"conversation_id": conversation_id}
             )
-            raise DatabaseError(f"Failed to delete from ChromaDB: {e}") from e
+            raise VectorDBError(f"Delete failed: {e}", original_error=e)
 
     def count(self) -> int:
         """
@@ -303,22 +303,22 @@ class ChromaClient:
         try:
             # Deletar coleção
             self.client.delete_collection(name=self.collection.name)
-            
+
             # Recriar coleção vazia
             self.collection = self.client.get_or_create_collection(
                 name=self.collection.name,
                 metadata={"description": "WhatsApp conversation contexts"}
             )
-            
-            logger.warning(f"⚠️ ChromaDB collection resetada: {self.collection.name}")
-            
-        except Exception as e:
-            logger.error(f"✗ Falha ao resetar ChromaDB: {e}", exc_info=True)
-            raise DatabaseError(f"Failed to reset ChromaDB: {e}") from e
+
+            logger.warning("[WARNING] ChromaDB collection resetada: %s", self.collection.name)
+
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"[ERROR] Falha ao resetar ChromaDB: {e}", exc_info=True)
+            raise VectorDBError(f"Reset failed: {e}", original_error=e)
 
 
 # Singleton global
-_chroma_client: Optional[ChromaClient] = None
+_chroma_client: ChromaClient | None = None
 
 
 def get_chroma_client() -> ChromaClient:
@@ -329,11 +329,11 @@ def get_chroma_client() -> ChromaClient:
         ChromaClient singleton
     """
     global _chroma_client
-    
+
     if _chroma_client is None:
         _chroma_client = ChromaClient()
         logger.info("🎯 ChromaClient inicializado como singleton")
-    
+
     return _chroma_client
 
 
