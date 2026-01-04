@@ -1,17 +1,15 @@
 """HandoffService - Manages seamless bot→human transition."""
 
 import logging
-from datetime import datetime, timezone
-from typing import Optional
-from uuid import UUID
+from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.conversation_repository import ConversationRepository
 from robbot.adapters.repositories.lead_repository import LeadRepository
-from robbot.core.exceptions import NotFoundException, BusinessRuleError
-from robbot.domain.entities.conversation import Conversation
+from robbot.core.custom_exceptions import BusinessRuleError, NotFoundException
 from robbot.domain.enums import ConversationStatus, LeadStatus
+from robbot.infra.db.models.conversation_model import ConversationModel
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +38,8 @@ class HandoffService:
         session: Session,
         conversation_id: str,
         reason: str,
-        score: Optional[int] = None,
-        additional_context: Optional[str] = None,
+        score: int | None = None,
+        additional_context: str | None = None,
     ) -> dict:
         """
         Trigger bot→human handoff.
@@ -59,7 +57,7 @@ class HandoffService:
         if not conversation:
             raise NotFoundException(f"Conversation {conversation_id} not found")
 
-        # Validar estados permitidos
+        # Validate allowed states
         if conversation.status in [
             ConversationStatus.COMPLETED,
             ConversationStatus.CLOSED,
@@ -68,16 +66,16 @@ class HandoffService:
                 f"Cannot handoff conversation in status {conversation.status}"
             )
 
-        # Atualizar status e motivo
+        # Update status and reason
         conversation.status = ConversationStatus.PENDING_HANDOFF
         conversation.escalation_reason = reason
-        conversation.updated_at = datetime.now(timezone.utc)
+        conversation.updated_at = datetime.now(UTC)
 
         self.conversation_repo.update(conversation)
         session.flush()
 
         logger.info(
-            f"✓ Handoff triggered: conv={conversation_id}, reason={reason}, score={score}"
+            f"[SUCCESS] Handoff triggered: conv={conversation_id}, reason={reason}, score={score}"
         )
 
         # Gerar mensagem de transição natural baseada no contexto
@@ -95,7 +93,7 @@ class HandoffService:
         session: Session,
         conversation_id: str,
         user_id: str,
-    ) -> Conversation:
+    ) -> ConversationModel:
         """
         Assign conversation to human attendant.
         
@@ -110,7 +108,7 @@ class HandoffService:
         if not conversation:
             raise NotFoundException(f"Conversation {conversation_id} not found")
 
-        # Validar estado
+        # Validate state
         if conversation.status not in [
             ConversationStatus.PENDING_HANDOFF,
             ConversationStatus.ACTIVE_BOT,
@@ -123,14 +121,14 @@ class HandoffService:
         # Atribuir ao atendente
         conversation.status = ConversationStatus.ACTIVE_HUMAN
         conversation.assigned_to = user_id
-        conversation.assigned_at = datetime.now(timezone.utc)
-        conversation.updated_at = datetime.now(timezone.utc)
+        conversation.assigned_at = datetime.now(UTC)
+        conversation.updated_at = datetime.now(UTC)
 
         self.conversation_repo.update(conversation)
         session.flush()
 
         logger.info(
-            f"✓ Conversation assigned: conv={conversation_id}, user={user_id}"
+            f"[SUCCESS] Conversation assigned: conv={conversation_id}, user={user_id}"
         )
 
         return conversation
@@ -155,30 +153,30 @@ class HandoffService:
         if not conversation:
             raise NotFoundException(f"Conversation {conversation_id} not found")
 
-        # Validar estado
+        # Validate state
         if conversation.status != ConversationStatus.ACTIVE_HUMAN:
             raise BusinessRuleError(
                 f"Can only complete conversations in ACTIVE_HUMAN status, got {conversation.status}"
             )
 
-        # Validar atribuição
+        # Validate assignment
         if conversation.assigned_to != user_id:
             raise BusinessRuleError(
                 f"User {user_id} cannot complete conversation assigned to {conversation.assigned_to}"
             )
 
-        # Marcar como concluído
+        # Mark as completed
         conversation.status = ConversationStatus.COMPLETED
-        conversation.completed_at = datetime.now(timezone.utc)
-        conversation.updated_at = datetime.now(timezone.utc)
+        conversation.completed_at = datetime.now(UTC)
+        conversation.updated_at = datetime.now(UTC)
 
-        # Atualizar lead para convertido
+        # Update lead to converted
         if conversation.lead_id:
             lead = self.lead_repo.get_by_id(conversation.lead_id)
             if lead:
                 lead.status = LeadStatus.SCHEDULED
                 lead.maturity_score = 100
-                lead.updated_at = datetime.now(timezone.utc)
+                lead.updated_at = datetime.now(UTC)
                 self.lead_repo.update(lead)
 
         self.conversation_repo.update(conversation)
@@ -188,7 +186,7 @@ class HandoffService:
         metrics = self._calculate_metrics(conversation)
 
         logger.info(
-            f"✓ Conversation completed: conv={conversation_id}, metrics={metrics}"
+            f"[SUCCESS] Conversation completed: conv={conversation_id}, metrics={metrics}"
         )
 
         return {
@@ -198,7 +196,7 @@ class HandoffService:
         }
 
     def _generate_transition_message(
-        self, reason: str, score: Optional[int] = None
+        self, reason: str, score: int | None = None
     ) -> str:
         """Gera mensagem de transição natural baseada no contexto."""
         messages = {
@@ -224,7 +222,7 @@ class HandoffService:
             "Vou transferir você para um atendente humano. Aguarde um momento.",
         )
 
-    def _calculate_metrics(self, conversation: Conversation) -> dict:
+    def _calculate_metrics(self, conversation: ConversationModel) -> dict:
         """Calcula métricas de conversão."""
         metrics = {}
 
@@ -264,7 +262,7 @@ class HandoffService:
         session: Session,
         conversation_id: str,
         user_id: str,
-    ) -> Conversation:
+    ) -> ConversationModel:
         """
         Devolve conversa ao bot (caso humano decida).
         
@@ -279,10 +277,10 @@ class HandoffService:
         if not conversation:
             raise NotFoundException(f"Conversation {conversation_id} not found")
 
-        # Validar estado e atribuição
+        # Validate state and assignment
         if conversation.status != ConversationStatus.ACTIVE_HUMAN:
             raise BusinessRuleError(
-                f"Can only return conversations in ACTIVE_HUMAN status"
+                "Can only return conversations in ACTIVE_HUMAN status"
             )
 
         if conversation.assigned_to != user_id:
@@ -295,13 +293,13 @@ class HandoffService:
         conversation.assigned_to = None
         conversation.assigned_at = None
         conversation.escalation_reason = None
-        conversation.updated_at = datetime.now(timezone.utc)
+        conversation.updated_at = datetime.now(UTC)
 
         self.conversation_repo.update(conversation)
         session.flush()
 
         logger.info(
-            f"✓ Conversation returned to bot: conv={conversation_id}, by_user={user_id}"
+            f"[SUCCESS] Conversation returned to bot: conv={conversation_id}, by_user={user_id}"
         )
 
         return conversation
