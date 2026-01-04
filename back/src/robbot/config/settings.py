@@ -120,12 +120,8 @@ class Settings(BaseSettings):
         case_sensitive=True,
         extra="ignore",
     )
-
-
 @lru_cache
 def get_settings() -> "Settings":
     """Retorna singleton de configurações, atrasando validação."""
     return Settings()
-
-
 settings = get_settings()
