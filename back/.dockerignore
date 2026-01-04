@@ -1,36 +1,68 @@
 # ==================================
-# Python
+# Version Control
+# ==================================
+.git
+.gitignore
+.github/
+
+# ==================================
+# Python Cache/Artifacts
 # ==================================
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyc
+*.pyo
+*.pyd
 *.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info
-.installed.cfg
 *.egg
-MANIFEST
+build/
+dist/
 
 # ==================================
 # Virtual Environments
 # ==================================
+.venv/
+.env/
 venv/
 ENV/
 env/
-.venv/
-.env/
+
+# ==================================
+# Tool Caches
+# ==================================
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.tox/
+.coverage
+coverage.xml
+
+# ==================================
+# Environment/Config
+# ==================================
+.env
+.env.local
+.env.production
+.env.*.local
+*.local
+
+# ==================================
+# Logs
+# ==================================
+*.log
+logs/
+*.log.*
+
+# ==================================
+# Database
+# ==================================
+*.db
+*.sqlite
+*.sqlite3
+dump.rdb
 
 # ==================================
 # IDE
@@ -42,92 +74,43 @@ env/
 *~
 
 # ==================================
-# Environment Variables
-# ==================================
-.env
-.env.local
-.env.production
-.env.*.local
-
-# ==================================
-# Database
-# ==================================
-*.db
-*.sqlite
-*.sqlite3
-
-# ==================================
-# Logs
-# ==================================
-*.log
-logs/
-*.log.*
-
-# ==================================
 # OS
 # ==================================
 .DS_Store
 Thumbs.db
 *.bak
 *.tmp
-sitecustomize.py
+*.temp
+
+# ==================================
+# Documentation (not needed in container)
+# ==================================
+README.md
+docs/
+*.md
+
+# ==================================
+# Development Scripts
+# ==================================
+scripts/monitor_workers.sh
+scripts/autoscale_workers.py
+auto-commit.sh
+auto-commit.ps1
+
+# ==================================
+# Testing
+# ==================================
+tests/
+pytest.ini
 
 # ==================================
 # Docker
 # ==================================
-docker-compose.override.yml
+Dockerfile*
+docker-compose*.yml
 .dockerignore
 
 # ==================================
-# Alembic
+# Railway
 # ==================================
-alembic/versions/__pycache__/
-
-# ==================================
-# Redis
-# ==================================
-dump.rdb
-
-# ==================================
-# Coverage/Tests
-# ==================================
-.coverage
-.pytest_cache/
-htmlcov/
-.tox/
-coverage.xml
-
-# ==================================
-# TCC - Documentação Acadêmica
-# ==================================
-# Comentado para manter versionado durante desenvolvimento
-# docs/tcc/
-*.backup.md
-
-# ==================================
-# Scripts de Desenvolvimento
-# ==================================
-# Comentado para manter versionado
-# scripts/auto-commit.sh
-# scripts/auto-commit.ps1
-
-# ==================================
-# Temporary Files
-# ==================================
-*.tmp
-*.temp
-.cache/
-.mypy_cache/
-.ruff_cache/
-
-# ==================================
-# UV Package Manager
-# ==================================
-.uv/
-
-# ==================================
-# Data/Storage
-# ==================================
-data/
-storage/
-uploads/
+railway.json
