@@ -3,13 +3,11 @@ Controller para gerenciar filas/jobs.
 """
 
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from robbot.api.v1.dependencies import get_db, get_current_user
-from robbot.domain.enums import Role
+from robbot.api.v1.dependencies import get_current_user, get_db
 from robbot.services.queue_service import get_queue_service
 
 logger = logging.getLogger(__name__)
@@ -33,25 +31,25 @@ def get_queue_stats(db: Session = Depends(get_db), current_user=Depends(get_curr
         Dict com queue stats
     """
     queue_service = get_queue_service()
-    
+
     try:
         stats = queue_service.get_queue_stats()
-        
+
         logger.info(
             f"Queue stats requisitados por {current_user.email}",
             extra={"user_id": current_user.id, "role": current_user.role},
         )
-        
+
         return {
             "status": "success",
             "data": stats,
         }
-    
+
     except (ConnectionError, TimeoutError) as e:
-        logger.error(f"Erro de conexão ao obter queue stats: {e}")
+        logger.error("Erro de conexão ao obter queue stats: %s", e)
         raise HTTPException(status_code=503, detail="Serviço de fila indisponível") from e
-    except Exception as e:
-        logger.error(f"Erro ao obter queue stats: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.error("Erro ao obter queue stats: %s", e)
         raise HTTPException(status_code=500, detail="Erro ao obter estatísticas") from e
 
 
@@ -64,21 +62,21 @@ def queue_health_check():
         Status de cada fila
     """
     queue_service = get_queue_service()
-    
+
     try:
         health = queue_service.health_check()
-        
+
         status_code = 200 if health["status"] == "healthy" else 503
         return {
             "status": health["status"],
             "queues": health.get("queues", {}),
         }, status_code
-    
+
     except (ConnectionError, TimeoutError) as e:
-        logger.error(f"Erro de conexão em queue health check: {e}")
+        logger.error("Erro de conexão em queue health check: %s", e)
         return {"status": "unhealthy", "error": "Serviço de fila indisponível"}, 503
     except (KeyError, ValueError) as e:
-        logger.error(f"Erro de validação em queue health check: {e}")
+        logger.error("Erro de validação em queue health check: %s", e)
         return {"status": "unhealthy", "error": str(e)}, 503
 
 
@@ -98,22 +96,22 @@ def get_job_status(
         Status, resultado, erros
     """
     queue_service = get_queue_service()
-    
+
     try:
         status = queue_service.get_job_status(job_id)
-        
+
         logger.info(
             f"Job status requisitado: {job_id}",
             extra={"user_id": current_user.id, "job_id": job_id},
         )
-        
+
         return {
             "status": "success",
             "data": status,
         }
-    
-    except Exception as e:
-        logger.error(f"Erro ao obter status do job {job_id}: {e}")
+
+    except Exception as e:  # noqa: BLE001
+        logger.error("Erro ao obter status do job %s: %s", job_id, e)
         raise HTTPException(status_code=500, detail="Erro ao obter status")
 
 
@@ -135,23 +133,23 @@ def get_failed_jobs(
         Lista de jobs na Dead Letter Queue
     """
     queue_service = get_queue_service()
-    
+
     try:
         failed_jobs = queue_service.get_failed_jobs(limit=limit)
-        
+
         logger.info(
             f"Failed jobs requisitados por {current_user.email}",
             extra={"user_id": current_user.id, "limit": limit},
         )
-        
+
         return {
             "status": "success",
             "total": len(failed_jobs),
             "data": failed_jobs,
         }
-    
-    except Exception as e:
-        logger.error(f"Erro ao obter failed jobs: {e}")
+
+    except Exception as e:  # noqa: BLE001
+        logger.error("Erro ao obter failed jobs: %s", e)
         raise HTTPException(status_code=500, detail="Erro ao obter failed jobs")
 
 
@@ -177,27 +175,27 @@ def retry_job(
         Status da operação
     """
     queue_service = get_queue_service()
-    
+
     try:
         success = queue_service.retry_job(job_id)
-        
+
         if not success:
             raise HTTPException(status_code=404, detail="Job não encontrado")
-        
+
         logger.info(
             f"Job {job_id} retentado por {current_user.email}",
             extra={"user_id": current_user.id, "job_id": job_id},
         )
-        
+
         return {
             "status": "success",
             "message": f"Job {job_id} reenfileirado para retry",
         }
-    
+
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Erro ao retryar job {job_id}: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.error("Erro ao retryar job %s: %s", job_id, e)
         raise HTTPException(status_code=500, detail="Erro ao retryar job")
 
 
@@ -219,27 +217,27 @@ def cancel_job(
         Status da operação
     """
     queue_service = get_queue_service()
-    
+
     try:
         success = queue_service.cancel_job(job_id)
-        
+
         if not success:
             raise HTTPException(status_code=404, detail="Job não encontrado ou já completado")
-        
+
         logger.info(
             f"Job {job_id} cancelado por {current_user.email}",
             extra={"user_id": current_user.id, "job_id": job_id},
         )
-        
+
         return {
             "status": "success",
             "message": f"Job {job_id} cancelado",
         }
-    
+
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Erro ao cancelar job {job_id}: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.error("Erro ao cancelar job %s: %s", job_id, e)
         raise HTTPException(status_code=500, detail="Erro ao cancelar job")
 
 
@@ -261,7 +259,7 @@ def retry_failed_jobs(
         Contador de jobs retentados
     """
     queue_service = get_queue_service()
-    
+
     try:
         if job_ids:
             # Retryar IDs específicos
@@ -272,20 +270,20 @@ def retry_failed_jobs(
         else:
             # Retryar todos os failed jobs
             retried = queue_service.retry_all_failed()
-        
+
         logger.info(
             f"{retried} failed jobs retentados por {current_user.email}",
             extra={"user_id": current_user.id, "retried": retried},
         )
-        
+
         return {
             "status": "success",
             "retried": retried,
             "message": f"{retried} jobs reenfileirados para retry",
         }
-    
-    except Exception as e:
-        logger.error(f"Erro ao retryar failed jobs: {e}")
+
+    except Exception as e:  # noqa: BLE001
+        logger.error("Erro ao retryar failed jobs: %s", e)
         raise HTTPException(status_code=500, detail="Erro ao retryar jobs")
 
 
@@ -297,7 +295,7 @@ def clear_failed_jobs(
     """
     Limpar todos os jobs falhados (DLQ).
     
-    ⚠️ ATENÇÃO: Esta operação é IRREVERSÍVEL!
+    [WARNING] ATENÇÃO: Esta operação é IRREVERSÍVEL!
     
     Requer: Role ADMIN
     
@@ -305,21 +303,21 @@ def clear_failed_jobs(
         Contador de jobs removidos
     """
     queue_service = get_queue_service()
-    
+
     try:
         cleared = queue_service.clear_failed_queue()
-        
+
         logger.warning(
             f"Dead Letter Queue limpa por {current_user.email} ({cleared} jobs removidos)",
             extra={"user_id": current_user.id, "cleared": cleared},
         )
-        
+
         return {
             "status": "success",
             "cleared": cleared,
             "message": f"{cleared} jobs removidos da DLQ",
         }
-    
-    except Exception as e:
-        logger.error(f"Erro ao limpar failed queue: {e}")
+
+    except Exception as e:  # noqa: BLE001
+        logger.error("Erro ao limpar failed queue: %s", e)
         raise HTTPException(status_code=500, detail="Erro ao limpar failed queue")
