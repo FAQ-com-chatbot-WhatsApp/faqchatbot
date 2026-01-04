@@ -24,12 +24,10 @@ from robbot.schemas.waha import (
 )
 
 logger = logging.getLogger(__name__)
-
-
 class WAHAService:
     """
     Unified WAHA service for sessions + messages.
-    
+
     Responsibilities:
     - Session management (create, start, stop, status)
     - Message sending (text, image, file, location)
@@ -270,7 +268,7 @@ class WAHAService:
 
             return True
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("Redis rate limit check failed: %s", e)
             return True
 
