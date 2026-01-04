@@ -1,5 +1,5 @@
 """
-Sistema de prompts para Gemini AI com metodologia SPIN Selling. 
+Sistema de prompts para Gemini AI com metodologia SPIN Selling.
 
 Este módulo centraliza todos os prompts usados no sistema,
 implementando a metodologia de vendas consultivas de Neil Rackham.
@@ -8,12 +8,10 @@ implementando a metodologia de vendas consultivas de Neil Rackham.
 import logging
 
 logger = logging.getLogger(__name__)
-
-
 class PromptTemplates:
     """
     Templates de prompts com metodologia SPIN Selling integrada.
-    
+
     Responsabilidades:
     - Fornecer prompts padronizados com SPIN Selling
     - Permitir personalização com variáveis
@@ -218,7 +216,7 @@ Antes de enviar QUALQUER resposta, verifique:
 """
 
     # ========== DETECÇÃO DE INTENÇÃO COM SPIN ==========
-    INTENT_DETECTION_PROMPT = """Analise a mensagem identificando INTENÇÃO e FASE SPIN. 
+    INTENT_DETECTION_PROMPT = """Analise a mensagem identificando INTENÇÃO e FASE SPIN.
 
 MENSAGEM: "{message}"
 
@@ -246,7 +244,7 @@ CONTEXTO ANTERIOR:
 - NEED_PAYOFF - Expressando desejo de solução/benefícios
 - READY - Pronto para agendamento/próximo passo
 
-Responda APENAS em JSON: 
+Responda APENAS em JSON:
 {{
     "intent": "<INTENÇÃO>",
     "spin_phase": "<FASE_SPIN>",
@@ -309,7 +307,7 @@ Analise e responda em JSON:
 """
 
     # ========== GERAÇÃO DE RESPOSTA COM SPIN ==========
-    RESPONSE_GENERATION_PROMPT = """Gere uma resposta seguindo metodologia SPIN Selling. 
+    RESPONSE_GENERATION_PROMPT = """Gere uma resposta seguindo metodologia SPIN Selling.
 
 MENSAGEM DO CLIENTE:  "{user_message}"
 
@@ -455,7 +453,7 @@ CONTEXTO: {context}
 # REGRAS DE EXTRAÇÃO
 1. Procure por apresentações naturais:
    - "Meu nome é Maria" → Maria
-   - "Sou o João" → João  
+   - "Sou o João" → João
    - "Me chamo Ana Paula" → Ana Paula
    - "Pode me chamar de Carlos" → Carlos
 
@@ -559,17 +557,17 @@ Responda em JSON:
 SITUAÇÃO: {situation}
 ÚLTIMO ERRO: {error}
 
-INSTRUÇÕES: 
+INSTRUÇÕES:
 - Mantenha tom consultivo e empático
 - Mostre genuíno interesse em ajudar
 - Ofereça alternativas (falar com humano, reformular)
 - Não exponha detalhes técnicos
 - Faça uma pergunta SITUATION simples para retomar
 
-Exemplo:  "Desculpe, tive uma dificuldade técnica. Para eu entender melhor 
+Exemplo:  "Desculpe, tive uma dificuldade técnica. Para eu entender melhor
 como posso ajudar:  qual é a principal questão que você gostaria de resolver hoje?"
 
-Gere resposta de fallback. 
+Gere resposta de fallback.
 """
 
     # ========== MÉTODOS DE FORMATAÇÃO ==========
@@ -664,16 +662,12 @@ Gere resposta de fallback.
     def get_version(cls) -> str:
         """Obter versão dos prompts."""
         return cls. VERSION
-
-
 # Singleton global
 _prompt_templates:  PromptTemplates | None = None
-
-
 def get_prompt_templates() -> PromptTemplates:
     """
-    Obter instância singleton de PromptTemplates. 
-    
+    Obter instância singleton de PromptTemplates.
+
     Returns:
         PromptTemplates singleton
     """
