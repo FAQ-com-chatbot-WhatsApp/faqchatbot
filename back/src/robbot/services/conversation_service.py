@@ -5,12 +5,11 @@ This service orchestrates conversation operations separate from AI logic.
 """
 
 import logging
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
-from robbot.core.exceptions import BusinessRuleError, NotFoundException
+from robbot.core.custom_exceptions import BusinessRuleError, NotFoundException
 from robbot.domain.enums import ConversationStatus, LeadStatus
 from robbot.infra.db.models.conversation_model import ConversationModel
 
@@ -36,7 +35,7 @@ class ConversationService:
         self,
         chat_id: str,
         phone_number: str,
-        name: Optional[str] = None,
+        name: str | None = None,
     ) -> ConversationModel:
         """
         Get existing conversation or create new one.
@@ -49,29 +48,28 @@ class ConversationService:
         Returns:
             Found or created conversation
         """
-        from robbot.adapters.repositories.conversation_repository import (
-            ConversationRepository
-        )
-        
+        from robbot.adapters.repositories.conversation_repository import ConversationRepository
+
         repo = ConversationRepository(self.db)
-        
+
         # Tentar buscar existente
         conversation = repo.get_by_chat_id(chat_id)
-        
+
         if conversation:
-            logger.info(f"✓ Conversa encontrada (id={conversation.id})")
+            logger.info("[SUCCESS] Conversation found (id=%s)", conversation.id)
             return conversation
-        
-        # Criar nova conversa
-        conversation = repo.create(
+
+        # Create new conversation
+        conversation = ConversationModel(
             chat_id=chat_id,
             phone_number=phone_number,
             name=name,
             status=ConversationStatus.ACTIVE,
         )
-        
-        logger.info(f"✓ Nova conversa criada (id={conversation.id})")
-        
+        conversation = repo.create(conversation)
+
+        logger.info("[SUCCESS] New conversation created (id=%s)", conversation.id)
+
         return conversation
 
     def update_status(
@@ -93,35 +91,33 @@ class ConversationService:
             NotFoundException: If conversation not found
             BusinessRuleError: If transition is invalid
         """
-        from robbot.adapters.repositories.conversation_repository import (
-            ConversationRepository
-        )
-        
+        from robbot.adapters.repositories.conversation_repository import ConversationRepository
+
         repo = ConversationRepository(self.db)
         conversation = repo.get_by_id(conversation_id)
-        
+
         if not conversation:
             raise NotFoundException(f"Conversation {conversation_id} not found")
-        
+
         old_status = conversation.status
-        
-        # Validar transição de status
+
+        # Validate status transition
         if not self._is_valid_transition(old_status, new_status):
             raise BusinessRuleError(
                 f"Invalid status transition: {old_status} -> {new_status}"
             )
-        
-        # Atualizar status
+
+        # Update status
         conversation = repo.update_status(conversation_id, new_status)
-        
+
         logger.info(
-            f"✓ Status atualizado (conv_id={conversation_id}, "
+            f"[SUCCESS] Status updated (conv_id={conversation_id}, "
             f"{old_status} → {new_status})"
         )
-        
+
         return conversation
 
-    def close(self, conversation_id: str, reason: Optional[str] = None) -> ConversationModel:
+    def close(self, conversation_id: str, reason: str | None = None) -> ConversationModel:
         """
         Close conversation.
         
@@ -135,26 +131,23 @@ class ConversationService:
         Raises:
             NotFoundException: If conversation not found
         """
-        from robbot.adapters.repositories.conversation_repository import (
-            ConversationRepository
-        )
-        
+        from robbot.adapters.repositories.conversation_repository import ConversationRepository
+
         repo = ConversationRepository(self.db)
         conversation = repo.get_by_id(conversation_id)
-        
+
         if not conversation:
             raise NotFoundException(f"Conversation {conversation_id} not found")
-        
-        # Atualizar para CLOSED
-        conversation = repo.update(conversation_id, {
-            "status": ConversationStatus.CLOSED,
-            "closed_at": datetime.now(timezone.utc),
-        })
-        
+
+        # Update to CLOSED
+        conversation.status = ConversationStatus.CLOSED
+        conversation.closed_at = datetime.now(UTC)
+        conversation = repo.update(conversation)
+
         logger.info(
-            f"✓ Conversa fechada (id={conversation_id}, reason={reason})"
+            f"[SUCCESS] Conversation closed (id={conversation_id}, reason={reason})"
         )
-        
+
         return conversation
 
     def transfer_to_secretary(
@@ -175,26 +168,46 @@ class ConversationService:
         Raises:
             NotFoundException: If conversation not found
         """
-        from robbot.adapters.repositories.conversation_repository import (
-            ConversationRepository
-        )
-        
+        from uuid import uuid4
+
+        from robbot.adapters.repositories.conversation_repository import ConversationRepository
+        from robbot.infra.db.models.lead_model import LeadModel
+
         repo = ConversationRepository(self.db)
         conversation = repo.get_by_id(conversation_id)
-        
+
         if not conversation:
             raise NotFoundException(f"Conversation {conversation_id} not found")
-        
-        # Atualizar status e atribuir
-        conversation = repo.update(conversation_id, {
-            "status": ConversationStatus.TRANSFERRED,
-            "assigned_to_user_id": user_id,
-        })
-        
+
+        # Update status
+        conversation.status = ConversationStatus.TRANSFERRED
+        conversation = repo.update(conversation)
+
+        # Create or update Lead with assigned_to_user_id
+        if conversation.lead:
+            # Update existing lead assignment
+            conversation.lead.assigned_to_user_id = user_id
+        else:
+            # Create new lead for this conversation
+            lead = LeadModel(
+                id=str(uuid4()),
+                conversation_id=conversation_id,
+                name=conversation.name or "Unknown",
+                phone_number=conversation.phone_number,
+                email=None,
+                assigned_to_user_id=user_id,
+                status=LeadStatus.NEW,
+                maturity_score=0,
+            )
+            self.db.add(lead)
+
+        self.db.commit()
+        self.db.refresh(conversation)
+
         logger.info(
-            f"✓ Conversa transferida (id={conversation_id}, user_id={user_id})"
+            f"[SUCCESS] Conversation transferred (id={conversation_id}, user_id={user_id})"
         )
-        
+
         return conversation
 
     def get_active_conversations(self, limit: int = 100) -> list[ConversationModel]:
@@ -207,18 +220,16 @@ class ConversationService:
         Returns:
             List of active conversations
         """
-        from robbot.adapters.repositories.conversation_repository import (
-            ConversationRepository
-        )
-        
+        from robbot.adapters.repositories.conversation_repository import ConversationRepository
+
         repo = ConversationRepository(self.db)
         return repo.get_active(limit=limit)
-    
+
     def list_conversations(
         self,
-        status: Optional[ConversationStatus] = None,
-        is_urgent: Optional[bool] = None,
-        assigned_to_user_id: Optional[int] = None,
+        status: ConversationStatus | None = None,
+        is_urgent: bool | None = None,
+        assigned_to_user_id: int | None = None,
         limit: int = 50,
         offset: int = 0,
     ) -> tuple[list[ConversationModel], int]:
@@ -235,12 +246,10 @@ class ConversationService:
         Returns:
             Tuple of (conversations list, total count)
         """
-        from robbot.adapters.repositories.conversation_repository import (
-            ConversationRepository
-        )
-        
+        from robbot.adapters.repositories.conversation_repository import ConversationRepository
+
         repo = ConversationRepository(self.db)
-        
+
         filters = {}
         if status is not None:
             filters["status"] = status
@@ -248,13 +257,13 @@ class ConversationService:
             filters["is_urgent"] = is_urgent
         if assigned_to_user_id is not None:
             filters["assigned_to_user_id"] = assigned_to_user_id
-        
+
         conversations = repo.find_by_criteria(filters, limit=limit, offset=offset)
         total = len(repo.find_by_criteria(filters))
-        
+
         return conversations, total
-    
-    def get_by_id(self, conversation_id: str) -> Optional[ConversationModel]:
+
+    def get_by_id(self, conversation_id: str) -> ConversationModel | None:
         """
         Get conversation by ID.
         
@@ -264,10 +273,8 @@ class ConversationService:
         Returns:
             Conversation model or None if not found
         """
-        from robbot.adapters.repositories.conversation_repository import (
-            ConversationRepository
-        )
-        
+        from robbot.adapters.repositories.conversation_repository import ConversationRepository
+
         repo = ConversationRepository(self.db)
         return repo.get_by_id(conversation_id)
 
@@ -307,7 +314,7 @@ class ConversationService:
                 ConversationStatus.ACTIVE,
             ],
         }
-        
+
         allowed = valid_transitions.get(old_status, [])
         return new_status in allowed
 
@@ -329,23 +336,19 @@ class ConversationService:
         Raises:
             NotFoundException: If conversation not found
         """
-        from robbot.adapters.repositories.conversation_repository import (
-            ConversationRepository
-        )
-        
+        from robbot.adapters.repositories.conversation_repository import ConversationRepository
+
         repo = ConversationRepository(self.db)
         conversation = repo.get_by_id(conversation_id)
-        
+
         if not conversation:
             raise NotFoundException(f"Conversation {conversation_id} not found")
-        
-        updated = repo.update(
-            conversation_id=conversation_id,
-            data={"notes": notes}
-        )
-        
-        logger.info(f"✓ Notes updated (conv_id={conversation_id})")
-        
+
+        conversation.notes = notes
+        updated = repo.update(conversation)
+
+        logger.info("[SUCCESS] Notes updated (conv_id=%s)", conversation_id)
+
         return updated
 
     def find_by_criteria(
@@ -361,9 +364,7 @@ class ConversationService:
         Returns:
             List of conversations matching criteria
         """
-        from robbot.adapters.repositories.conversation_repository import (
-            ConversationRepository
-        )
-        
+        from robbot.adapters.repositories.conversation_repository import ConversationRepository
+
         repo = ConversationRepository(self.db)
         return repo.find_by_criteria(filters)
