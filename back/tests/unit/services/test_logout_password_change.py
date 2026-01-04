@@ -1,18 +1,19 @@
+# pylint: skip-file
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from robbot.services.auth_services import AuthService
-from robbot.schemas.user import UserCreate
-from robbot.services.credential_service import CredentialService
-from robbot.infra.db.models.user_model import UserModel
+from robbot.infra.db.models.auth_session_model import AuthSessionModel
 from robbot.infra.db.models.credential_model import CredentialModel
 from robbot.infra.db.models.revoked_token_model import RevokedTokenModel
-from robbot.infra.db.models.auth_session_model import AuthSessionModel
+from robbot.infra.db.models.user_model import UserModel
+from robbot.schemas.user import UserCreate
+from robbot.services.auth_services import AuthService
+from robbot.services.credential_service import CredentialService
 
 
 @pytest.fixture()
-def db_session():
+def db_session_instance():
     # In-memory SQLite for fast tests
     engine = create_engine("sqlite+pysqlite:///:memory:", echo=False)
     # Create tables required for these flows

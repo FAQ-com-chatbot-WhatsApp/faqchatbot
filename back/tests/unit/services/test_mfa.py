@@ -1,21 +1,22 @@
+# pylint: skip-file
 """Testes unitários para MFA (FASE 5)."""
 
-import base64
 import json
-import pytest
+
 import pyotp
+import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-from robbot.services.mfa_service import MfaService
-from robbot.services.auth_services import AuthService
 from robbot.adapters.repositories.credential_repository import CredentialRepository
-from robbot.core.exceptions import AuthException
+from robbot.core.custom_exceptions import AuthException
 from robbot.schemas.auth import SignupRequest
+from robbot.services.auth_services import AuthService
+from robbot.services.mfa_service import MfaService
 
 
 @pytest.fixture
-def db_session():
+def db_session_instance():
     """Cria DB SQLite em memória com tabelas mínimas."""
     engine = create_engine("sqlite:///:memory:")
     with engine.connect() as conn:
@@ -24,12 +25,10 @@ def db_session():
             CREATE TABLE users (
                 id INTEGER PRIMARY KEY,
                 email VARCHAR(255) UNIQUE NOT NULL,
-                hashed_password VARCHAR(255) NOT NULL,
                 full_name VARCHAR(255),
                 is_active BOOLEAN DEFAULT 1 NOT NULL,
                 role VARCHAR(50) DEFAULT 'user' NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             """
         ))

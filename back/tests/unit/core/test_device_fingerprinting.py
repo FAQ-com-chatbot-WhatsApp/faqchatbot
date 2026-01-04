@@ -1,15 +1,15 @@
+# pylint: skip-file
 """Unit tests for device fingerprinting functionality.
 
 FASE 3: Tests for parse_device_name() function and device info capture.
 """
 
-import pytest
 from robbot.core.security import parse_device_name
 
 
 class TestParseDeviceName:
     """Test device name parsing from user-agent strings."""
-    
+
     def test_chrome_on_windows(self):
         """Should parse Chrome on Windows correctly."""
         user_agent = (
@@ -19,7 +19,7 @@ class TestParseDeviceName:
         )
         result = parse_device_name(user_agent)
         assert result == "Chrome on Windows"
-    
+
     def test_firefox_on_linux(self):
         """Should parse Firefox on Linux correctly."""
         user_agent = (
@@ -28,7 +28,7 @@ class TestParseDeviceName:
         )
         result = parse_device_name(user_agent)
         assert result == "Firefox on Linux"
-    
+
     def test_safari_on_iphone(self):
         """Should parse Safari on iPhone correctly."""
         user_agent = (
@@ -38,7 +38,7 @@ class TestParseDeviceName:
         )
         result = parse_device_name(user_agent)
         assert result == "Safari on iPhone"
-    
+
     def test_safari_on_macos(self):
         """Should parse Safari on macOS correctly."""
         user_agent = (
@@ -48,7 +48,7 @@ class TestParseDeviceName:
         )
         result = parse_device_name(user_agent)
         assert result == "Safari on macOS"
-    
+
     def test_edge_on_windows(self):
         """Should parse Edge on Windows correctly."""
         user_agent = (
@@ -58,7 +58,7 @@ class TestParseDeviceName:
         )
         result = parse_device_name(user_agent)
         assert result == "Edge on Windows"
-    
+
     def test_chrome_on_android(self):
         """Should parse Chrome on Android correctly."""
         user_agent = (
@@ -68,7 +68,7 @@ class TestParseDeviceName:
         )
         result = parse_device_name(user_agent)
         assert result == "Chrome on Android"
-    
+
     def test_safari_on_ipad(self):
         """Should parse Safari on iPad correctly."""
         user_agent = (
@@ -78,17 +78,17 @@ class TestParseDeviceName:
         )
         result = parse_device_name(user_agent)
         assert result == "Safari on iPad"
-    
+
     def test_empty_user_agent(self):
         """Should handle empty user agent gracefully."""
         result = parse_device_name("")
         assert result == "Unknown Device"
-    
+
     def test_none_user_agent(self):
         """Should handle None user agent gracefully."""
         result = parse_device_name(None)
         assert result == "Unknown Device"
-    
+
     def test_unknown_browser_and_os(self):
         """Should handle unknown browser/OS gracefully."""
         user_agent = "CustomBot/1.0"

@@ -1,16 +1,17 @@
+# pylint: skip-file
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from robbot.services.user_service import UserService
-from robbot.schemas.user import UserCreate
-from robbot.infra.db.models.user_model import UserModel
-from robbot.infra.db.models.auth_session_model import AuthSessionModel
 from robbot.adapters.repositories.user_repository import UserRepository
+from robbot.infra.db.models.auth_session_model import AuthSessionModel
+from robbot.infra.db.models.user_model import UserModel
+from robbot.schemas.user import UserCreate
+from robbot.services.user_service import UserService
 
 
 @pytest.fixture()
-def db_session():
+def db_session_instance():
     engine = create_engine("sqlite+pysqlite:///:memory:", echo=False)
     # Minimal tables for this test
     UserModel.__table__.create(bind=engine)

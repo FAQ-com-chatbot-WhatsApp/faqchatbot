@@ -1,18 +1,20 @@
+# pylint: skip-file
+from datetime import UTC, datetime, timedelta
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from robbot.services.auth_services import AuthService
-from robbot.schemas.user import UserCreate
-from robbot.infra.db.models.user_model import UserModel
-from robbot.infra.db.models.credential_model import CredentialModel
-from robbot.infra.db.models.auth_session_model import AuthSessionModel
 from robbot.core import security
-from datetime import UTC, datetime, timedelta
+from robbot.infra.db.models.auth_session_model import AuthSessionModel
+from robbot.infra.db.models.credential_model import CredentialModel
+from robbot.infra.db.models.user_model import UserModel
+from robbot.schemas.user import UserCreate
+from robbot.services.auth_services import AuthService
 
 
 @pytest.fixture()
-def db_session():
+def db_session_instance():
     engine = create_engine("sqlite+pysqlite:///:memory:", echo=False)
     # Create needed tables
     UserModel.__table__.create(bind=engine)

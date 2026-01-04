@@ -1,13 +1,14 @@
+# pylint: skip-file
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from robbot.services.credential_service import CredentialService
 from robbot.infra.db.models.credential_model import CredentialModel
+from robbot.services.credential_service import CredentialService
 
 
 @pytest.fixture()
-def db_session():
+def db_session_instance():
     engine = create_engine("sqlite+pysqlite:///:memory:", echo=False)
     CredentialModel.__table__.create(bind=engine)
     SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
