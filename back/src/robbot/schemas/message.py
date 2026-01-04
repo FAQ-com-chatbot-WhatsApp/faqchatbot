@@ -1,7 +1,7 @@
 """Message schemas for API requests and responses."""
 
 from datetime import datetime
-from typing import Literal, Optional
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -12,7 +12,7 @@ class MediaFile(BaseModel):
 
     mimetype: str
     filename: str
-    url: Optional[str] = None
+    url: str | None = None
 
 
 class Location(BaseModel):
@@ -20,7 +20,7 @@ class Location(BaseModel):
 
     latitude: float
     longitude: float
-    title: Optional[str] = None
+    title: str | None = None
 
 
 # Create schemas
@@ -29,9 +29,9 @@ class MessageCreateText(BaseModel):
 
     type: Literal["text"]
     text: str
-    title: Optional[str] = Field(None, max_length=255, description="Message title for organization")
-    description: Optional[str] = Field(None, description="Description for LLM context")
-    tags: Optional[str] = Field(None, max_length=500, description="Comma-separated tags")
+    title: str | None = Field(None, max_length=255, description="Message title for organization")
+    description: str | None = Field(None, description="Description for LLM context")
+    tags: str | None = Field(None, max_length=500, description="Comma-separated tags")
 
 
 class MessageCreateMedia(BaseModel):
@@ -39,10 +39,10 @@ class MessageCreateMedia(BaseModel):
 
     type: Literal["image", "voice", "video", "document"]
     file: MediaFile
-    caption: Optional[str] = None
-    title: Optional[str] = Field(None, max_length=255, description="Message title for organization")
-    description: Optional[str] = Field(None, description="Description for LLM context")
-    tags: Optional[str] = Field(None, max_length=500, description="Comma-separated tags")
+    caption: str | None = None
+    title: str | None = Field(None, max_length=255, description="Message title for organization")
+    description: str | None = Field(None, description="Description for LLM context")
+    tags: str | None = Field(None, max_length=500, description="Comma-separated tags")
 
 
 class MessageCreateLocation(BaseModel):
@@ -51,39 +51,39 @@ class MessageCreateLocation(BaseModel):
     type: Literal["location"]
     latitude: float
     longitude: float
-    title: Optional[str] = None
-    description: Optional[str] = Field(None, description="Description for LLM context")
-    tags: Optional[str] = Field(None, max_length=500, description="Comma-separated tags")
+    title: str | None = None
+    description: str | None = Field(None, description="Description for LLM context")
+    tags: str | None = Field(None, max_length=500, description="Comma-separated tags")
 
 
 # Update schemas
 class MessageUpdateText(BaseModel):
     """Schema for updating text messages."""
 
-    text: Optional[str] = None
-    title: Optional[str] = None
-    description: Optional[str] = None
-    tags: Optional[str] = None
+    text: str | None = None
+    title: str | None = None
+    description: str | None = None
+    tags: str | None = None
 
 
 class MessageUpdateMedia(BaseModel):
     """Schema for updating media messages."""
 
-    caption: Optional[str] = None
-    file: Optional[MediaFile] = None
-    title: Optional[str] = None
-    description: Optional[str] = None
-    tags: Optional[str] = None
+    caption: str | None = None
+    file: MediaFile | None = None
+    title: str | None = None
+    description: str | None = None
+    tags: str | None = None
 
 
 class MessageUpdateLocation(BaseModel):
     """Schema for updating location messages."""
 
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-    title: Optional[str] = None
-    description: Optional[str] = None
-    tags: Optional[str] = None
+    latitude: float | None = None
+    longitude: float | None = None
+    title: str | None = None
+    description: str | None = None
+    tags: str | None = None
 
 
 # Output schemas
@@ -93,9 +93,9 @@ class MessageOutText(BaseModel):
     id: UUID
     type: Literal["text"]
     text: str
-    title: Optional[str] = None
-    description: Optional[str] = None
-    tags: Optional[str] = None
+    title: str | None = None
+    description: str | None = None
+    tags: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -108,10 +108,10 @@ class MessageOutMedia(BaseModel):
     id: UUID
     type: Literal["image", "voice", "video", "document"]
     file: MediaFile
-    caption: Optional[str] = None
-    title: Optional[str] = None
-    description: Optional[str] = None
-    tags: Optional[str] = None
+    caption: str | None = None
+    title: str | None = None
+    description: str | None = None
+    tags: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -125,9 +125,9 @@ class MessageOutLocation(BaseModel):
     type: Literal["location"]
     latitude: float
     longitude: float
-    title: Optional[str] = None
-    description: Optional[str] = None
-    tags: Optional[str] = None
+    title: str | None = None
+    description: str | None = None
+    tags: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -146,9 +146,9 @@ class MessageDescriptionOut(BaseModel):
     """Response schema for generated description."""
 
     message_id: UUID
-    generated_title: Optional[str]
+    generated_title: str | None
     generated_description: str
-    suggested_tags: Optional[str]
+    suggested_tags: str | None
 
 
 class DeletedResponse(BaseModel):
