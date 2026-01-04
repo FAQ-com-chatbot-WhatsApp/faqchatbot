@@ -63,22 +63,56 @@
 <details open>
 <summary><b>🪟 Windows (PowerShell)</b></summary>
 
+### 1️⃣ Instalar o uv
+
 Execute no **PowerShell** como usuário normal (não precisa de admin):
 
 ```powershell
 powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-Verifique a instalação:
+### 2️⃣ Recarregar o Terminal
+
+**IMPORTANTE**: Após a instalação, **feche e abra novamente o PowerShell** para que o comando `uv` seja reconhecido.
+
+### 3️⃣ Verificar a Instalação
 
 ```powershell
+# Verificar versão
 uv --version
+
+# Se der erro "comando não encontrado", verifique o PATH:
+$env:PATH -split ';' | Select-String -Pattern "uv"
 ```
+
+### ⚠️ Troubleshooting
+
+<details>
+<summary>Se <code>uv --version</code> não funcionar...</summary>
+
+```powershell
+# 1. Verifique se o executável existe
+Test-Path "$env:USERPROFILE\.cargo\bin\uv.exe"
+
+# 2. Se existir mas não funcionar, adicione manualmente ao PATH (temporário):
+$env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
+
+# 3. Teste novamente
+uv --version
+
+# 4. Para tornar permanente, adicione às variáveis de ambiente do Windows:
+# Painel de Controle → Sistema → Configurações avançadas → Variáveis de Ambiente
+# Adicione: %USERPROFILE%\.cargo\bin ao PATH do usuário
+```
+
+</details>
 
 </details>
 
 <details>
 <summary><b>🐧 Linux / WSL / 🍎 macOS</b></summary>
+
+### 1️⃣ Instalar o uv
 
 Execute no **bash/zsh**:
 
@@ -86,11 +120,76 @@ Execute no **bash/zsh**:
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-Verifique a instalação:
+### 2️⃣ Recarregar o Shell
+
+**IMPORTANTE**: O script adiciona `uv` ao `~/.local/bin`, mas você precisa recarregar o shell:
+
+<table>
+<tr>
+<td width="50%">
+
+**Opção A: Reiniciar Terminal** ⭐
 
 ```bash
+# Feche e abra novamente o terminal
+# (Forma mais confiável)
+```
+
+</td>
+<td width="50%">
+
+**Opção B: Recarregar Profile**
+
+```bash
+# Para bash:
+source ~/.bashrc
+
+# Para zsh:
+source ~/.zshrc
+```
+
+</td>
+</tr>
+</table>
+
+### 3️⃣ Verificar a Instalação
+
+```bash
+# Verificar versão
+uv --version
+
+# Verificar se ~/.local/bin está no PATH
+echo $PATH | grep -i ".local/bin"
+# ✅ Deve mostrar o caminho incluindo ~/.local/bin
+```
+
+### ⚠️ Troubleshooting
+
+<details>
+<summary>Se <code>uv --version</code> não funcionar...</summary>
+
+```bash
+# 1. Verificar se o executável existe
+ls -la ~/.local/bin/uv
+
+# 2. Verificar se ~/.local/bin está no PATH
+echo $PATH | grep ".local/bin"
+
+# 3. Se NÃO estiver no PATH, adicione manualmente:
+
+# Para bash:
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+
+# Para zsh:
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+
+# 4. Teste novamente
 uv --version
 ```
+
+</details>
 
 </details>
 
