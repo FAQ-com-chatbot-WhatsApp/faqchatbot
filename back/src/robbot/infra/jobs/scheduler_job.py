@@ -9,8 +9,6 @@ from typing import Any
 from robbot.infra.jobs.base_job import BaseJob, JobRetryableError
 
 logger = logging.getLogger(__name__)
-
-
 class ScheduledJob(BaseJob):
     """
     Job base para execução agendada.
@@ -85,7 +83,7 @@ class ScheduledJob(BaseJob):
 
             return result
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(
                 f"Erro em tarefa agendada: {type(e).__name__}: {e}",
                 extra=self._log_context(),
@@ -96,8 +94,6 @@ class ScheduledJob(BaseJob):
         """Executar tarefa específica (override em subclasses)."""
         # TODO: Implementar por tipo
         return {"status": "executed", "task_type": self.task_type}
-
-
 class ReminderJob(ScheduledJob):
     """
     Job para lembrete de consulta.
@@ -149,8 +145,6 @@ class ReminderJob(ScheduledJob):
             "appointment_id": self.appointment_id,
             "phone": self.phone,
         }
-
-
 class CleanupJob(ScheduledJob):
     """
     Job para limpeza periódica de dados.
@@ -196,7 +190,7 @@ class CleanupJob(ScheduledJob):
 
         cutoff_date = datetime.now(UTC) - timedelta(days=self.days_threshold)
 
-        results = {
+        return {
             "status": "completed",
             "cleanup_type": self.cleanup_type,
             "cutoff_date": cutoff_date.isoformat(),
@@ -204,9 +198,6 @@ class CleanupJob(ScheduledJob):
         }
 
         # TODO: Implementar cleanup por tipo
-
-        return results
-
 
 class SyncJob(ScheduledJob):
     """
