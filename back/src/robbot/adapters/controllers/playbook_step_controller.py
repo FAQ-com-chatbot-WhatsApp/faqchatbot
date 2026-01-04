@@ -1,17 +1,17 @@
 """PlaybookStep Controller - REST endpoints for managing playbook steps."""
 
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from robbot.api.v1.dependencies import get_current_user, get_db
+from robbot.common.utils import filter_none_values
 from robbot.schemas.playbook_step import (
-    PlaybookStepCreate, 
-    PlaybookStepList, 
-    PlaybookStepOut, 
-    PlaybookStepReorder, 
-    PlaybookStepUpdate
+    PlaybookStepCreate,
+    PlaybookStepList,
+    PlaybookStepOut,
+    PlaybookStepReorder,
+    PlaybookStepUpdate,
 )
 from robbot.schemas.topic import DeletedResponse
 from robbot.services.playbook_service import PlaybookService
@@ -34,7 +34,7 @@ def add_step(
     Requires authentication.
     """
     service = PlaybookService(db)
-    
+
     created = service.add_step(
         playbook_id=payload.playbook_id,
         message_id=str(payload.message_id),
@@ -57,7 +57,7 @@ def list_playbook_steps(
     """
     service = PlaybookService(db)
     steps = service.get_playbook_steps(playbook_id)
-    
+
     return PlaybookStepList(
         steps=[PlaybookStepOut.model_validate(s) for s in steps],
         total=len(steps)
@@ -82,7 +82,7 @@ def list_playbook_steps_with_details(
     """
     service = PlaybookService(db)
     steps_with_details = service.get_playbook_steps_with_details(playbook_id)
-    
+
     return {
         "playbook_id": playbook_id,
         "steps": steps_with_details,
@@ -111,22 +111,22 @@ def reorder_steps(
     All steps must belong to the same playbook.
     """
     service = PlaybookService(db)
-    
+
     # Extract playbook_id from first step
     if not payload.step_id_order:
         raise HTTPException(status_code=400, detail="At least one step required")
-    
+
     first_step = service.step_repo.get_by_id(payload.step_id_order[0][0])
     if not first_step:
         raise HTTPException(status_code=404, detail="First step not found")
-    
+
     playbook_id = first_step.playbook_id
-    
+
     # Reorder
     success = service.reorder_steps(playbook_id, payload.step_id_order)
     if not success:
         raise HTTPException(status_code=500, detail="Failed to reorder steps")
-    
+
     return {"message": "Steps reordered successfully", "playbook_id": playbook_id}
 
 
@@ -139,14 +139,14 @@ def update_step(
 ):
     """Update step fields (order or context_hint)."""
     service = PlaybookService(db)
-    
+
     # Build update dict (only non-None values)
-    update_data = {k: v for k, v in payload.model_dump().items() if v is not None}
-    
+    update_data = filter_none_values(payload)
+
     updated = service.step_repo.update(step_id, **update_data)
     if not updated:
         raise HTTPException(status_code=404, detail=f"Step {step_id} not found")
-    
+
     return PlaybookStepOut.model_validate(updated)
 
 
@@ -165,5 +165,5 @@ def delete_step(
     success = service.delete_step(step_id)
     if not success:
         raise HTTPException(status_code=404, detail=f"Step {step_id} not found")
-    
+
     return DeletedResponse(message="Step deleted successfully", deleted_id=step_id)
