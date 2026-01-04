@@ -30,7 +30,7 @@ router = APIRouter()
     status_code=status.HTTP_201_CREATED,
 )
 def create_message(
-    payload: Union[MessageCreateText, MessageCreateMedia, MessageCreateLocation],
+    payload: MessageCreateText | MessageCreateMedia | MessageCreateLocation,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
@@ -71,8 +71,7 @@ def get_message(
 
 @router.get(
     "/",
-    response_model=list[Union[MessageOutText,
-                              MessageOutMedia, MessageOutLocation]],
+    response_model=list[MessageOutText | MessageOutMedia | MessageOutLocation],
 )
 def list_messages(
     db: Session = Depends(get_db),
@@ -95,7 +94,7 @@ def list_messages(
 )
 def update_message(
     message_id: UUID,
-    payload: Union[MessageUpdateText, MessageUpdateMedia, MessageUpdateLocation],
+    payload: MessageUpdateText | MessageUpdateMedia | MessageUpdateLocation,
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ):
@@ -151,10 +150,10 @@ def generate_description(
     Requires authentication.
     """
     from robbot.services.description_service import DescriptionService
-    
+
     service = DescriptionService(db)
     result = service.generate_description(str(message_id), use_gemini_vision)
-    
+
     return {
         "message_id": str(message_id),
         "generated_title": result.get("generated_title"),
