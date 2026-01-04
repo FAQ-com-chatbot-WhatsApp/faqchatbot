@@ -4,13 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from robbot.api.v1.dependencies import get_current_user, get_db
-from robbot.schemas.playbook import (
-    PlaybookCreate, 
-    PlaybookList, 
-    PlaybookOut, 
-    PlaybookSearchResults, 
-    PlaybookUpdate
-)
+from robbot.common.utils import filter_none_values
+from robbot.schemas.playbook import PlaybookCreate, PlaybookList, PlaybookOut, PlaybookSearchResults, PlaybookUpdate
 from robbot.schemas.topic import DeletedResponse
 from robbot.services.playbook_service import PlaybookService
 
@@ -61,7 +56,7 @@ def search_playbooks(
     """
     service = PlaybookService(db)
     results = service.search_playbooks(query, top_k=top_k, active_only=active_only)
-    
+
     return PlaybookSearchResults(
         results=results,
         total=len(results)
@@ -111,14 +106,14 @@ def update_playbook(
     Automatically reindexes for semantic search.
     """
     service = PlaybookService(db)
-    
+
     # Build update dict (only non-None values)
-    update_data = {k: v for k, v in payload.model_dump().items() if v is not None}
-    
+    update_data = filter_none_values(payload)
+
     updated = service.update_playbook(playbook_id, **update_data)
     if not updated:
         raise HTTPException(status_code=404, detail=f"Playbook {playbook_id} not found")
-    
+
     return PlaybookOut.model_validate(updated)
 
 
@@ -137,5 +132,5 @@ def delete_playbook(
     success = service.delete_playbook(playbook_id)
     if not success:
         raise HTTPException(status_code=404, detail=f"Playbook {playbook_id} not found")
-    
+
     return DeletedResponse(message="Playbook deleted successfully", deleted_id=playbook_id)
