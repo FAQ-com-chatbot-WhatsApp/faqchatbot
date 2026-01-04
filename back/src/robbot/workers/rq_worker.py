@@ -19,7 +19,6 @@ Uso:
 
 import logging
 import sys
-from typing import List
 
 from rq import Worker
 from rq.job import Job
@@ -57,7 +56,7 @@ def exception_handler(job: Job, exc_type, exc_value, traceback):
         },
         exc_info=True,
     )
-    
+
     # TODO: Integrar com sistema de alertas (Sentry, email, etc)
     # if isinstance(exc_value, CriticalError):
     #     send_alert_to_admin(job, exc_value)
@@ -68,48 +67,48 @@ def main():
     logger.info("=" * 80)
     logger.info("🚀 Iniciando RQ Worker")
     logger.info("=" * 80)
-    logger.info(f"Redis URL: {settings.REDIS_URL}")
-    logger.info(f"Max retries: {settings.RQ_MAX_RETRIES}")
-    
+    logger.info("Redis URL: %s", settings.REDIS_URL)
+    logger.info("Max retries: %s", settings.RQ_MAX_RETRIES)
+
     # Obter conexão Redis
     redis_conn = get_redis_client()
-    
-    # Testar conexão
+
+    # Test connection
     try:
         redis_conn.ping()
-        logger.info("✓ Conexão com Redis estabelecida")
+        logger.info("[SUCCESS] Connection to Redis established")
     except (ConnectionError, TimeoutError) as e:
-        logger.error(f"✗ Falha ao conectar com Redis: {e}")
+        logger.error("[ERROR] Failed to connect to Redis: %s", e)
         sys.exit(1)
-    
-    # Obter filas
+
+    # Get queues
     queue_manager = get_queue_manager(redis_conn)
     queues = [
-        queue_manager.queue_messages,    # Prioridade alta
-        queue_manager.queue_ai,          # Prioridade média
-        queue_manager.queue_escalation,  # Prioridade baixa
+        queue_manager.queue_messages,    # High priority
+        queue_manager.queue_ai,          # Medium priority
+        queue_manager.queue_escalation,  # Low priority
     ]
-    
-    logger.info(f"✓ Filas configuradas: {[q.name for q in queues]}")
+
+    logger.info("[SUCCESS] Queues configured: %s", [q.name for q in queues])
     logger.info("=" * 80)
-    
+
     # Criar worker com nome único baseado no hostname
     import socket
     worker_name = f"worker-{socket.gethostname()}"
-    
+
     worker = Worker(
         queues,
         connection=redis_conn,
         name=worker_name,
         exception_handlers=[exception_handler],
     )
-    
+
     # Log de startup
-    logger.info(f"Worker ID: {worker.name}")
+    logger.info("Worker ID: %s", worker.name)
     logger.info("Aguardando jobs...")
     logger.info("Pressione Ctrl+C para parar")
     logger.info("=" * 80)
-    
+
     # Iniciar processamento (blocking)
     try:
         worker.work(
@@ -120,7 +119,7 @@ def main():
         logger.info("\n🛑 Worker interrompido pelo usuário")
         sys.exit(0)
     except (ValueError, RuntimeError, ConnectionError) as e:
-        logger.error(f"✗ Worker crashed: {e}", exc_info=True)
+        logger.error(f"[ERROR] Worker crashed: {e}", exc_info=True)
         sys.exit(1)
 
 
