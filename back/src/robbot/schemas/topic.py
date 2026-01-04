@@ -13,8 +13,6 @@ class TopicCreate(BaseModel):
     description: str | None = Field(None, description="Detailed description")
     category: str | None = Field(None, max_length=100, description="Category for grouping")
     active: bool = Field(True, description="Whether topic is active")
-
-
 # Update schemas
 class TopicUpdate(BaseModel):
     """Schema for updating topics."""
@@ -23,8 +21,6 @@ class TopicUpdate(BaseModel):
     description: str | None = None
     category: str | None = Field(None, max_length=100)
     active: bool | None = None
-
-
 # Output schemas
 class TopicOut(BaseModel):
     """Response schema for topics."""
@@ -38,15 +34,11 @@ class TopicOut(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
-
-
 class TopicList(BaseModel):
     """Response schema for listing topics."""
 
     topics: list[TopicOut]
     total: int
-
-
 class DeletedResponse(BaseModel):
     """Response for delete operations."""
 
