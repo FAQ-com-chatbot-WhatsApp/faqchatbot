@@ -13,12 +13,10 @@ from robbot.core.custom_exceptions import NotFoundException
 from robbot.infra.db.models.notification_model import NotificationModel
 
 logger = logging.getLogger(__name__)
-
-
 class NotificationService:
     """
     Service for managing in-app notifications.
-    
+
     Responsibilities:
     - Create notifications for users
     - Mark notifications as read
@@ -29,7 +27,7 @@ class NotificationService:
     def __init__(self, db: Session):
         """
         Initialize service with database session.
-        
+
         Args:
             db: SQLAlchemy database session
         """
@@ -45,13 +43,13 @@ class NotificationService:
     ) -> NotificationModel:
         """
         Create a new notification.
-        
+
         Args:
             user_id: ID of the user to notify
             notification_type: Type of notification (NEW_LEAD, NEW_MESSAGE, etc.)
             title: Notification title
             message: Detailed message content
-            
+
         Returns:
             Created notification model
         """
@@ -72,13 +70,13 @@ class NotificationService:
     def mark_as_read(self, notification_id: str) -> NotificationModel:
         """
         Mark notification as read.
-        
+
         Args:
             notification_id: UUID of the notification
-            
+
         Returns:
             Updated notification model
-            
+
         Raises:
             NotFoundException: If notification does not exist
         """
@@ -99,12 +97,12 @@ class NotificationService:
     ) -> list[NotificationModel]:
         """
         Get notifications for a user.
-        
+
         Args:
             user_id: ID of the user
             unread_only: Return only unread notifications
             limit: Maximum number of results
-            
+
         Returns:
             List of notification models ordered by created_at desc
         """
@@ -124,10 +122,10 @@ class NotificationService:
     def count_unread(self, user_id: int) -> int:
         """
         Count unread notifications for a user.
-        
+
         Args:
             user_id: ID of the user
-            
+
         Returns:
             Count of unread notifications
         """
@@ -141,12 +139,12 @@ class NotificationService:
     ) -> NotificationModel:
         """
         Notify user about new lead assignment.
-        
+
         Args:
             user_id: ID of the secretary/agent
             lead_phone: Lead's phone number
             lead_name: Lead's name
-            
+
         Returns:
             Created notification model
         """
@@ -165,12 +163,12 @@ class NotificationService:
     ) -> NotificationModel:
         """
         Notify user about new message in conversation.
-        
+
         Args:
             user_id: ID of the secretary/agent
             conversation_id: UUID of the conversation
             message_preview: Preview text of the message
-            
+
         Returns:
             Created notification model
         """
@@ -189,12 +187,12 @@ class NotificationService:
     ) -> NotificationModel:
         """
         Notify user about urgent message requiring immediate attention.
-        
+
         Args:
             user_id: ID of the secretary/agent
             conversation_id: UUID of the conversation
             message_text: Text of the urgent message
-            
+
         Returns:
             Created notification model
         """
@@ -213,12 +211,12 @@ class NotificationService:
     ) -> NotificationModel:
         """
         Notify user about receiving a transferred conversation.
-        
+
         Args:
             user_id: ID of the receiving user
             conversation_id: UUID of the conversation
             from_user_name: Name of the user who transferred
-            
+
         Returns:
             Created notification model
         """
