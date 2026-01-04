@@ -2,7 +2,7 @@
 
 from uuid import uuid4
 
-from sqlalchemy import Column, ForeignKey, Float, String
+from sqlalchemy import Column, Float, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
