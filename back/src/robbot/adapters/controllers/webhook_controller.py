@@ -1,15 +1,15 @@
 """Webhook controller for WAHA events (NO JWT auth)."""
 
+import logging
+
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.webhook_log_repository import WebhookLogRepository
 from robbot.api.v1.dependencies import get_db
-from robbot.config.settings import settings
-from robbot.core.custom_exceptions import QueueError, ExternalServiceError
-from robbot.services.queue_service import get_queue_service
-import logging
+from robbot.core.custom_exceptions import ExternalServiceError, QueueError
 from robbot.schemas.waha import WebhookLogOut, WebhookPayload
+from robbot.services.queue_service import get_queue_service
 
 router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
 logger = logging.getLogger(__name__)
@@ -55,21 +55,21 @@ async def receive_waha_webhook(
     )
 
     queue_service = get_queue_service()
-    
+
     try:
         if payload.event == "message" and payload.payload:
             message_data = payload.payload
-            
+
             chat_id = message_data.get("from", "")
             phone = chat_id.split("@")[0] if "@" in chat_id else chat_id
-            
+
             job_id = queue_service.enqueue_message_processing(
                 message_data=message_data,
                 message_direction="inbound",
             )
-            
+
             logger.info(
-                f"✓ Mensagem enfileirada para processamento: {job_id}",
+                f"[SUCCESS] Mensagem enfileirada para processamento: {job_id}",
                 extra={
                     "job_id": job_id,
                     "phone": phone,
@@ -82,14 +82,14 @@ async def receive_waha_webhook(
                 f"Evento '{payload.event}' registrado mas não enfileirado",
                 extra={"event": payload.event, "webhook_log_id": log.id},
             )
-    
+
     except (QueueError, ExternalServiceError) as e:
         logger.error(
             f"Erro ao enfileirar mensagem: {e}",
             extra={"webhook_log_id": log.id, "error": str(e)},
             exc_info=True,
         )
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.error(
             f"Erro inesperado ao processar webhook: {e}",
             extra={"webhook_log_id": log.id, "error": str(e)},
