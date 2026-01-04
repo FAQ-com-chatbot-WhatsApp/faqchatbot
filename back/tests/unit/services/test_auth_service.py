@@ -1,4 +1,4 @@
-# pylint: skip-file
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -21,14 +21,12 @@ def db_session_instance():
     CredentialModel.__table__.create(bind=engine)
     RevokedTokenModel.__table__.create(bind=engine)
     AuthSessionModel.__table__.create(bind=engine)
-    SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
-    session = SessionLocal()
+    session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    session = session_local()
     try:
         yield session
     finally:
         session.close()
-
-
 def test_signup_creates_user_and_credential(db_session):
     svc = AuthService(db_session)
     payload = UserCreate(email="unit@example.com", password="StrongPass123!", full_name="Unit", role="user")
@@ -43,8 +41,6 @@ def test_signup_creates_user_and_credential(db_session):
     cred = cred_repo.get_by_user_id(user.id)
     assert cred is not None
     assert isinstance(cred.hashed_password, str) and len(cred.hashed_password) > 0
-
-
 def test_authenticate_user_success(db_session):
     svc = AuthService(db_session)
     payload = UserCreate(email="login@example.com", password="StrongPass123!", full_name="Login", role="user")
@@ -61,8 +57,6 @@ def test_authenticate_user_success(db_session):
     assert token is not None
     assert isinstance(token.access_token, str)
     assert isinstance(token.refresh_token, str)
-
-
 def test_refresh_rotation_revokes_used_token(db_session):
     svc = AuthService(db_session)
     payload = UserCreate(email="refresh@example.com", password="StrongPass123!", full_name="Refresh", role="user")
@@ -81,5 +75,5 @@ def test_refresh_rotation_revokes_used_token(db_session):
     assert isinstance(new_pair.refresh_token, str)
 
     # Reuse original should fail (revoked)
-    with pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017 (testing error handling)
         svc.refresh(token.refresh_token)
