@@ -1,10 +1,9 @@
 """Pydantic schemas for WAHA integration."""
 
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
-
 
 # ============================================================================
 # SESSION SCHEMAS
