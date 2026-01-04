@@ -8,21 +8,17 @@ from pydantic import BaseModel
 from robbot.config.settings import settings
 
 logger = logging.getLogger(__name__)
-
-
 def filter_none_values(pydantic_model: BaseModel) -> dict:
     """
     Remove None values from Pydantic model dump for partial updates.
-    
+
     Args:
         pydantic_model: Pydantic model instance
-        
+
     Returns:
         Dict with only non-None values
     """
     return {k: v for k, v in pydantic_model.model_dump().items() if v is not None}
-
-
 def send_email(to: str, subject: str, body: str) -> None:
     """
     Send email using SMTP settings.
@@ -64,5 +60,5 @@ def send_email(to: str, subject: str, body: str) -> None:
                 server.login(user, password)
             server.sendmail(sender, [to], msg.as_string())
         logger.info("Email sent to %s: %s", to, subject)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001 (blind exception)
         logger.exception("Failed to send email to %s: %s", to, exc)
