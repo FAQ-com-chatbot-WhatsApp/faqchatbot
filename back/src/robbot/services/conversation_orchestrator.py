@@ -48,8 +48,6 @@ from robbot.services.playbook_tools import PLAYBOOK_TOOLS_DECLARATIONS
 from robbot.services.transcription_service import TranscriptionService
 
 logger = logging.getLogger(__name__)
-
-
 class ConversationOrchestrator:
     """
     Orquestrador central do fluxo de conversação.
@@ -181,7 +179,7 @@ class ConversationOrchestrator:
                         # Por ora, apenas marcamos que há vídeo
                         message_text = f"[Vídeo recebido]\nÁudio: {transcription or 'não transcrito'}"
 
-                    except Exception as e:  # noqa: BLE001
+                    except Exception as e:  # noqa: BLE001 (blind exception)
                         logger.error("[ERROR] Error processing video: %s", e)
                         message_text = "[Vídeo recebido - erro no processamento]"
 
@@ -196,7 +194,7 @@ class ConversationOrchestrator:
                         else:
                             logger.warning("[WARNING] Transcription returned empty")
                             message_text = "[Áudio recebido - transcrição falhou]"
-                    except Exception as e:  # noqa: BLE001
+                    except Exception as e:  # noqa: BLE001 (blind exception)
                         logger.error("[ERROR] Error transcribing audio: %s", e)
                         message_text = "[Áudio recebido - erro na transcrição]"
 
@@ -321,7 +319,7 @@ class ConversationOrchestrator:
                     "maturity_score": new_score,
                 }
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(
                 f"[ERROR] Failed to process message: {e}",
                 exc_info=True,
@@ -469,7 +467,7 @@ class ConversationOrchestrator:
 
         except VectorDBError:
             raise
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.warning("[WARNING] Failed to fetch context: %s", e)
             raise VectorDBError(f"Failed to get context: {e}")
 
@@ -508,7 +506,7 @@ class ConversationOrchestrator:
 
         except (json.JSONDecodeError, LLMError) as e:
             logger.debug("Could not extract name: %s", e)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.warning("[WARNING] Error trying to extract name: %s", e)
 
     async def _generate_name_request(
@@ -599,7 +597,7 @@ Responda apenas: SIM ou NÃO"""
 
         except LLMError:
             raise
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.warning("[WARNING] Error detecting urgency: %s", e)
             return has_keyword if 'has_keyword' in locals() else False
 
@@ -634,7 +632,7 @@ Responda apenas: SIM ou NÃO"""
 
         except LLMError:
             raise
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.warning("[WARNING] Failed to detect intent: %s", e)
             return "OUTRO"
 
@@ -718,7 +716,7 @@ Responda apenas: SIM ou NÃO"""
 
         except DatabaseError:
             raise
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.warning("[WARNING] Failed to update score: %s", e)
             raise DatabaseError(f"Failed to update maturity score: {e}")
 
@@ -740,7 +738,7 @@ Responda apenas: SIM ou NÃO"""
             logger.info("[SUCCESS] Context saved to ChromaDB (conv_id=%s)", conversation_id)
         except VectorDBError:
             raise
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.warning("[WARNING] Failed to save to ChromaDB: %s", e)
             raise VectorDBError(f"Failed to save to ChromaDB: {e}")
 
@@ -765,7 +763,7 @@ Responda apenas: SIM ou NÃO"""
             return True
         except WAHAError:
             raise
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("[ERROR] Failed to send via WAHA: %s", e)
             raise WAHAError(f"Failed to send message: {e}", original_error=e)
 
@@ -805,7 +803,7 @@ Responda apenas: SIM ou NÃO"""
 
         except DatabaseError:
             raise
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.warning("[WARNING] Failed to register interaction: %s", e)
             raise DatabaseError(f"Failed to register interaction: {e}")
 
@@ -900,7 +898,7 @@ Responda apenas: SIM ou NÃO"""
 
         except DatabaseError:
             raise
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.warning("[WARNING] Failed to log LLM interaction: %s", e)
             raise DatabaseError(f"Failed to log LLM interaction: {e}")
 
@@ -925,12 +923,8 @@ Responda apenas: SIM ou NÃO"""
                 "Desculpe, estou com dificuldades técnicas no momento. "
                 "Um atendente humano entrará em contato em breve."
             )
-
-
 # Singleton global
 _orchestrator: ConversationOrchestrator | None = None
-
-
 def get_conversation_orchestrator() -> ConversationOrchestrator:
     """
     Obter instância singleton do orchestrador.
