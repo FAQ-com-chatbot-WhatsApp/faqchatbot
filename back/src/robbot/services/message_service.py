@@ -195,10 +195,10 @@ class MessageService:
     def _transcribe_audio(self, audio_url: str) -> str | None:
         """
         Transcrever áudio usando Faster-Whisper local.
-        
+
         Args:
             audio_url: URL do arquivo de áudio
-            
+
         Returns:
             Texto transcrito ou None se falhar
         """
@@ -209,7 +209,7 @@ class MessageService:
                 logger = logging.getLogger(__name__)
                 logger.info("[SUCCESS] Áudio transcrito: %s...", transcription[:100])
             return transcription
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             import logging
             logger = logging.getLogger(__name__)
             logger.error("[ERROR] Erro ao transcrever áudio: %s", e)
@@ -218,13 +218,13 @@ class MessageService:
     def _generate_description(self, media_url: str, filename: str, caption: str, media_type: str) -> dict:
         """
         Gerar descrição de mídia usando BLIP-2 (imagens) ou metadata básico.
-        
+
         Args:
             media_url: URL do arquivo de mídia
             filename: Nome do arquivo
             caption: Legenda fornecida
             media_type: Tipo de mídia (image, video)
-            
+
         Returns:
             Dict com title, description, tags ou vazio se falhar
         """
@@ -236,7 +236,7 @@ class MessageService:
             # Para vídeo ou se BLIP falhar, usar metadata básico
             return self.desc_service.generate_file_metadata(filename, caption, media_type)
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             import logging
             logger = logging.getLogger(__name__)
             logger.error("[ERROR] Erro ao gerar descrição de %s: %s", media_type, e)
@@ -245,18 +245,18 @@ class MessageService:
     def _generate_file_description(self, filename: str, caption: str, file_type: str) -> dict:
         """
         Gerar metadata de documento baseado em filename e caption.
-        
+
         Args:
             filename: Nome do arquivo
             caption: Legenda do arquivo
             file_type: Tipo do arquivo (document, voice)
-            
+
         Returns:
             Dict com title, description, tags
         """
         try:
             return self.desc_service.generate_file_metadata(filename, caption, file_type)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             import logging
             logger = logging.getLogger(__name__)
             logger.error("[ERROR] Erro ao gerar metadata de %s: %s", file_type, e)
