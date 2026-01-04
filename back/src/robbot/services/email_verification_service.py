@@ -9,14 +9,13 @@ Gerencia o fluxo de verificação de email:
 
 import secrets
 from datetime import UTC, datetime, timedelta
-from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from robbot.core.exceptions import AuthException
-from robbot.config.settings import settings
 from robbot.adapters.repositories.credential_repository import CredentialRepository
 from robbot.adapters.repositories.user_repository import UserRepository
+from robbot.config.settings import settings
+from robbot.core.custom_exceptions import AuthException
 
 
 class EmailVerificationService:
@@ -46,15 +45,15 @@ class EmailVerificationService:
         credential = self.credential_repo.get_by_user_id(user_id)
         if not credential:
             raise AuthException("Credential not found")
-        
+
         # Generate secure random token (32 bytes = 64 hex characters)
         token = secrets.token_urlsafe(32)
-        
+
         # Store token and timestamp
         credential.email_verification_token = token
         credential.email_verification_sent_at = datetime.now(UTC)
         self.db.commit()
-        
+
         return token
 
     def verify_email(self, token: str) -> int:
@@ -72,11 +71,11 @@ class EmailVerificationService:
         credential = self.credential_repo.get_by_verification_token(token)
         if not credential:
             raise AuthException("Invalid verification token")
-        
+
         # Check if already verified
         if credential.email_verified:
             raise AuthException("Email already verified")
-        
+
         # Check token expiration (configurable)
         if credential.email_verification_sent_at:
             expiration_hours = settings.EMAIL_VERIFICATION_TOKEN_EXPIRATION_HOURS
@@ -84,12 +83,12 @@ class EmailVerificationService:
             expiration = sent_at_aware + timedelta(hours=expiration_hours)
             if datetime.now(UTC) > expiration:
                 raise AuthException("Verification token expired")
-        
+
         # Mark as verified and invalidate token
         credential.email_verified = True
         credential.email_verification_token = None
         self.db.commit()
-        
+
         return credential.user_id
 
     def resend_verification_email(self, email: str) -> str:
@@ -107,22 +106,22 @@ class EmailVerificationService:
         user = self.user_repo.get_by_email(email)
         if not user:
             raise AuthException("User not found")
-        
+
         credential = self.credential_repo.get_by_user_id(user.id)
         if not credential:
             raise AuthException("Credential not found")
-        
+
         # Check if already verified
         if credential.email_verified:
             raise AuthException("Email already verified")
-        
+
         # Apply rate limiting (configurable)
         min_interval_minutes = settings.EMAIL_VERIFICATION_RESEND_MIN_INTERVAL_MINUTES
         if min_interval_minutes and credential.email_verification_sent_at:
             min_interval = credential.email_verification_sent_at + timedelta(minutes=min_interval_minutes)
             if datetime.now(UTC) < min_interval:
                 raise AuthException("Please wait before requesting another verification email")
-        
+
         # Generate new token
         return self.generate_verification_token(user.id)
 
