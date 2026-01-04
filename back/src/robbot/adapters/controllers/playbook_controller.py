@@ -10,8 +10,6 @@ from robbot.schemas.topic import DeletedResponse
 from robbot.services.playbook_service import PlaybookService
 
 router = APIRouter()
-
-
 @router.post("/", response_model=PlaybookOut, status_code=status.HTTP_201_CREATED)
 def create_playbook(
     payload: PlaybookCreate,
@@ -20,10 +18,10 @@ def create_playbook(
 ):
     """
     Create a new playbook.
-    
+
     Playbooks are organized message sequences for specific topics.
     Automatically indexed for semantic search.
-    
+
     Requires authentication.
     """
     service = PlaybookService(db)
@@ -34,8 +32,6 @@ def create_playbook(
         active=payload.active,
     )
     return PlaybookOut.model_validate(created)
-
-
 @router.get("/search", response_model=PlaybookSearchResults)
 def search_playbooks(
     query: str = Query(..., min_length=1, description="Search query (natural language)"),
@@ -46,12 +42,12 @@ def search_playbooks(
 ):
     """
     Semantic search for playbooks using RAG (ChromaDB).
-    
+
     Example queries:
     - "botox preço procedimento"
     - "clareamento dental informações"
     - "preenchimento labial antes depois"
-    
+
     Returns playbooks ranked by relevance score (0-1).
     """
     service = PlaybookService(db)
@@ -61,8 +57,6 @@ def search_playbooks(
         results=results,
         total=len(results)
     )
-
-
 @router.get("/{playbook_id}", response_model=PlaybookOut)
 def get_playbook(
     playbook_id: str,
@@ -75,8 +69,6 @@ def get_playbook(
     if not playbook:
         raise HTTPException(status_code=404, detail=f"Playbook {playbook_id} not found")
     return PlaybookOut.model_validate(playbook)
-
-
 @router.get("/topic/{topic_id}", response_model=PlaybookList)
 def list_playbooks_by_topic(
     topic_id: str,
@@ -91,8 +83,6 @@ def list_playbooks_by_topic(
         playbooks=[PlaybookOut.model_validate(p) for p in playbooks],
         total=len(playbooks)
     )
-
-
 @router.patch("/{playbook_id}", response_model=PlaybookOut)
 def update_playbook(
     playbook_id: str,
@@ -102,7 +92,7 @@ def update_playbook(
 ):
     """
     Update playbook fields.
-    
+
     Automatically reindexes for semantic search.
     """
     service = PlaybookService(db)
@@ -115,8 +105,6 @@ def update_playbook(
         raise HTTPException(status_code=404, detail=f"Playbook {playbook_id} not found")
 
     return PlaybookOut.model_validate(updated)
-
-
 @router.delete("/{playbook_id}", response_model=DeletedResponse)
 def delete_playbook(
     playbook_id: str,
@@ -125,7 +113,7 @@ def delete_playbook(
 ):
     """
     Delete playbook.
-    
+
     Cascades deletion to steps and removes from ChromaDB index.
     """
     service = PlaybookService(db)
