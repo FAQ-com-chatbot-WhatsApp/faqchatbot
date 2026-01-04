@@ -1,7 +1,6 @@
 """Constantes e funções para gerenciar localização da Clínica GO."""
 
 import logging
-from typing import Optional
 
 from robbot.config.settings import get_settings
 
@@ -33,7 +32,7 @@ def get_clinic_location() -> dict:
 async def send_clinic_location_via_waha(
     chat_id: str,
     session_name: str = "default",
-    custom_title: Optional[str] = None
+    custom_title: str | None = None
 ) -> dict:
     """
     Enviar localização da Clínica GO via WAHA.
@@ -51,12 +50,12 @@ async def send_clinic_location_via_waha(
         >>> print(result)  # {"id": "...", "status": "sent"}
     """
     from robbot.adapters.external.waha_client import WAHAClient
-    
+
     location = get_clinic_location()
     title = custom_title or location["name"]
-    
-    logger.info(f"📍 Enviando localização da clínica para {chat_id}")
-    
+
+    logger.info("📍 Enviando localização da clínica para %s", chat_id)
+
     async with WAHAClient() as waha:
         result = await waha.send_location(
             chat_id=chat_id,
@@ -65,15 +64,15 @@ async def send_clinic_location_via_waha(
             longitude=location["longitude"],
             title=title
         )
-    
-    logger.info(f"✓ Localização da clínica enviada com sucesso")
+
+    logger.info("[SUCCESS] Clinic location sent successfully")
     return result
 
 
 def send_clinic_location_via_waha_sync(
     chat_id: str,
     session_name: str = "default",
-    custom_title: Optional[str] = None
+    custom_title: str | None = None
 ) -> dict:
     """
     Versão síncrona de send_clinic_location_via_waha.
@@ -81,13 +80,13 @@ def send_clinic_location_via_waha_sync(
     Útil para jobs em background (RQ).
     """
     import asyncio
-    
+
     try:
         loop = asyncio.get_event_loop()
     except RuntimeError:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-    
+
     return loop.run_until_complete(
         send_clinic_location_via_waha(chat_id, session_name, custom_title)
     )
