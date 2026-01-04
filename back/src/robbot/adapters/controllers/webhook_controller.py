@@ -13,13 +13,9 @@ from robbot.services.queue_service import get_queue_service
 
 router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
 logger = logging.getLogger(__name__)
-
-
 def _get_webhook_repo(db: Session = Depends(get_db)) -> WebhookLogRepository:
     """Dependency to create WebhookLogRepository."""
     return WebhookLogRepository(db)
-
-
 @router.post(
     "/waha",
     response_model=WebhookLogOut,
@@ -89,7 +85,7 @@ async def receive_waha_webhook(
             extra={"webhook_log_id": log.id, "error": str(e)},
             exc_info=True,
         )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         logger.error(
             f"Erro inesperado ao processar webhook: {e}",
             extra={"webhook_log_id": log.id, "error": str(e)},
@@ -97,8 +93,6 @@ async def receive_waha_webhook(
         )
 
     return WebhookLogOut.model_validate(log)
-
-
 @router.get(
     "/waha/logs",
     response_model=list[WebhookLogOut],
