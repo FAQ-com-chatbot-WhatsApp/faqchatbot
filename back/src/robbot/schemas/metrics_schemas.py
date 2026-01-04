@@ -16,8 +16,6 @@ class PeriodSchema(BaseModel):
     """Período de análise"""
     start: date = Field(..., description="Data inicial")
     end: date = Field(..., description="Data final")
-
-
 # =============================================================================
 # DASHBOARD SCHEMAS
 # =============================================================================
@@ -32,8 +30,6 @@ class DashboardKPIsSchema(BaseModel):
     active_conversations: int = Field(..., ge=0, description="Conversas ativas")
     total_messages: int = Field(..., ge=0, description="Total de mensagens")
     avg_messages_per_conversation: float = Field(..., ge=0, description="Média de mensagens por conversa")
-
-
 class DashboardSummaryResponse(BaseModel):
     """Response do dashboard summary"""
     period: PeriodSchema
@@ -56,8 +52,6 @@ class DashboardSummaryResponse(BaseModel):
             }
         }
     )
-
-
 # =============================================================================
 # CONVERSION ANALYTICS SCHEMAS
 # =============================================================================
@@ -67,21 +61,15 @@ class ConversionMetricsSchema(BaseModel):
     total_leads: int = Field(..., ge=0)
     converted_leads: int = Field(..., ge=0)
     conversion_rate: float = Field(..., ge=0, le=100, description="Taxa de conversão (%)")
-
-
 class ConversionSegmentSchema(ConversionMetricsSchema):
     """Segmento de conversão"""
     segment_name: str
     segment_id: str | None = None
-
-
 class ConversionRateResponse(BaseModel):
     """Response da taxa de conversão"""
     period: PeriodSchema
     conversion: ConversionMetricsSchema | None = None
     segments: list[ConversionSegmentSchema] | None = None
-
-
 class FunnelStageSchema(BaseModel):
     """Etapa do funil de conversão"""
     stage: str = Field(..., description="Identificador da etapa")
@@ -89,8 +77,6 @@ class FunnelStageSchema(BaseModel):
     count: int = Field(..., ge=0, description="Quantidade nesta etapa")
     percentage: float = Field(..., ge=0, le=100, description="% do total inicial")
     drop_off: float = Field(..., ge=0, le=100, description="% de abandono da etapa anterior")
-
-
 class ConversionFunnelResponse(BaseModel):
     """Response do funil de conversão"""
     period: PeriodSchema
@@ -121,8 +107,6 @@ class ConversionFunnelResponse(BaseModel):
             }
         }
     )
-
-
 class TimeToConversionStatsSchema(BaseModel):
     """Estatísticas de tempo até conversão"""
     avg_hours: float = Field(..., ge=0, description="Média (horas)")
@@ -130,14 +114,10 @@ class TimeToConversionStatsSchema(BaseModel):
     min_hours: float = Field(..., ge=0, description="Mínimo (horas)")
     max_hours: float = Field(..., ge=0, description="Máximo (horas)")
     p95_hours: float = Field(..., ge=0, description="95º percentil (horas)")
-
-
 class TimeToConversionResponse(BaseModel):
     """Response do tempo até conversão"""
     period: PeriodSchema
     time_stats: TimeToConversionStatsSchema
-
-
 # =============================================================================
 # PERFORMANCE ANALYTICS SCHEMAS
 # =============================================================================
@@ -149,30 +129,22 @@ class ResponseTimeStatsSchema(BaseModel):
     p95_seconds: float = Field(..., ge=0, description="95º percentil (segundos)")
     p99_seconds: float = Field(..., ge=0, description="99º percentil (segundos)")
     total_responses: int = Field(..., ge=0, description="Total de respostas analisadas")
-
-
 class ResponseTimeResponse(BaseModel):
     """Response do tempo de resposta"""
     period: PeriodSchema
     user_id: str | None = Field(None, description="UUID do usuário (null = global)")
     response_time: ResponseTimeStatsSchema
-
-
 class MessageVolumeDataPointSchema(BaseModel):
     """Ponto de dados do volume de mensagens"""
     timestamp: str = Field(..., description="ISO 8601 timestamp")
     incoming: int = Field(..., ge=0, description="Mensagens recebidas")
     outgoing: int = Field(..., ge=0, description="Mensagens enviadas")
     total: int = Field(..., ge=0, description="Total de mensagens")
-
-
 class MessageVolumeResponse(BaseModel):
     """Response do volume de mensagens"""
     period: PeriodSchema
     granularity: str = Field(..., description="hour, day, ou week")
     data_points: list[MessageVolumeDataPointSchema]
-
-
 # =============================================================================
 # BOT PERFORMANCE SCHEMAS
 # =============================================================================
@@ -183,14 +155,10 @@ class BotAutonomyMetricsSchema(BaseModel):
     bot_only: int = Field(..., ge=0, description="Conversas resolvidas sem humano")
     with_handoff: int = Field(..., ge=0, description="Conversas transferidas para humano")
     autonomy_rate: float = Field(..., ge=0, le=100, description="Taxa de autonomia (%)")
-
-
 class BotAutonomyResponse(BaseModel):
     """Response da autonomia do bot"""
     period: PeriodSchema
     autonomy: BotAutonomyMetricsSchema
-
-
 # =============================================================================
 # CACHE MANAGEMENT SCHEMAS
 # =============================================================================
@@ -200,8 +168,6 @@ class CacheStatsSchema(BaseModel):
     keyspace_hits: int = Field(..., ge=0)
     keyspace_misses: int = Field(..., ge=0)
     hit_rate: float = Field(..., ge=0, le=100, description="Taxa de acerto do cache (%)")
-
-
 # =============================================================================
 # FORECAST SCHEMAS (FUTURE)
 # =============================================================================
@@ -212,8 +178,6 @@ class ForecastDataPointSchema(BaseModel):
     predicted_volume: int = Field(..., ge=0)
     lower_bound: int = Field(..., ge=0)
     upper_bound: int = Field(..., ge=0)
-
-
 class DemandForecastResponse(BaseModel):
     """Response da previsão de demanda"""
     forecast: list[ForecastDataPointSchema]
