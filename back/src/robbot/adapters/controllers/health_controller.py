@@ -1,4 +1,3 @@
-from datetime import datetime
 
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
