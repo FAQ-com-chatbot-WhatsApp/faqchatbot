@@ -1,8 +1,6 @@
 """
 Conversation Tag Repository - manage conversation-tag associations.
 """
-
-
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, MetaData, String, Table, text
 from sqlalchemy.orm import Session
 
@@ -11,8 +9,6 @@ from robbot.infra.db.models.tag_model import TagModel
 
 # Local metadata for this repository
 metadata = MetaData()
-
-
 # SQLAlchemy association table
 conversation_tags_table = Table(
     'conversation_tags',
@@ -21,11 +17,9 @@ conversation_tags_table = Table(
     Column('tag_id', Integer, ForeignKey('tags.id', ondelete='CASCADE'), primary_key=True),
     Column('created_at', DateTime(timezone=True), nullable=False, server_default=text('now()')),
 )
-
-
 class ConversationTagRepository:
     """Repository for conversation-tag associations.
-    
+
     Note: This repository manages a many-to-many association table,
     so it does not inherit from BaseRepository as it's not a standard CRUD model.
     """
