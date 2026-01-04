@@ -1,7 +1,6 @@
 """Playbook schemas for API requests and responses."""
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -12,7 +11,7 @@ class PlaybookCreate(BaseModel):
 
     topic_id: str = Field(..., description="Associated topic ID")
     name: str = Field(..., min_length=1, max_length=255, description="Playbook name")
-    description: Optional[str] = Field(None, description="Detailed description")
+    description: str | None = Field(None, description="Detailed description")
     active: bool = Field(True, description="Whether playbook is active")
 
 
@@ -20,9 +19,9 @@ class PlaybookCreate(BaseModel):
 class PlaybookUpdate(BaseModel):
     """Schema for updating playbooks."""
 
-    name: Optional[str] = Field(None, min_length=1, max_length=255)
-    description: Optional[str] = None
-    active: Optional[bool] = None
+    name: str | None = Field(None, min_length=1, max_length=255)
+    description: str | None = None
+    active: bool | None = None
 
 
 # Output schemas
@@ -32,7 +31,7 @@ class PlaybookOut(BaseModel):
     id: str
     topic_id: str
     name: str
-    description: Optional[str]
+    description: str | None
     active: bool
     created_at: datetime
     updated_at: datetime
@@ -52,7 +51,7 @@ class PlaybookSearchResult(BaseModel):
 
     playbook_id: str
     name: str
-    description: Optional[str]
+    description: str | None
     topic_name: str
     relevance_score: float = Field(..., ge=0.0, le=1.0, description="Semantic similarity score")
 
