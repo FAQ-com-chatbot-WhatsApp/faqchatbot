@@ -17,8 +17,6 @@ from robbot.infra.vectordb.chroma_client import get_chroma_client
 from robbot.services.conversation_orchestrator import get_conversation_orchestrator
 
 router = APIRouter(prefix="/ai", tags=["AI"])
-
-
 # ========== SCHEMAS ==========
 
 class ProcessMessageRequest(BaseModel):
@@ -28,8 +26,6 @@ class ProcessMessageRequest(BaseModel):
     phone_number: str = Field(..., description="Número do telefone")
     message_text: str = Field(..., description="Texto da mensagem")
     session_name: str = Field(default="default", description="Nome da sessão WAHA")
-
-
 class ProcessMessageResponse(BaseModel):
     """Response de processamento de mensagem."""
 
@@ -38,8 +34,6 @@ class ProcessMessageResponse(BaseModel):
     response_text: str
     intent: str
     maturity_score: int
-
-
 class AIStatsResponse(BaseModel):
     """Response de estatísticas de IA."""
 
@@ -48,8 +42,6 @@ class AIStatsResponse(BaseModel):
     total_tokens_used: int
     average_latency_ms: float
     chromadb_documents: int
-
-
 # ========== ENDPOINTS ==========
 
 @router.post(
@@ -59,7 +51,7 @@ class AIStatsResponse(BaseModel):
     summary="Processar mensagem e gerar resposta",
     description="""
     Processa mensagem inbound e gera resposta usando Gemini AI.
-    
+
     Fluxo completo:
     1. Busca ou cria conversa
     2. Salva mensagem inbound
@@ -74,13 +66,13 @@ class AIStatsResponse(BaseModel):
 async def process_message(request: ProcessMessageRequest) -> ProcessMessageResponse:
     """
     Processar mensagem e gerar resposta automática.
-    
+
     Args:
         request: Dados da mensagem
-        
+
     Returns:
         Resultado do processamento
-        
+
     Raises:
         HTTPException 500: Se falhar ao processar
     """
@@ -96,13 +88,11 @@ async def process_message(request: ProcessMessageRequest) -> ProcessMessageRespo
 
         return ProcessMessageResponse(**result)
 
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to process message: {str(e)}"
         ) from e
-
-
 @router.get(
     "/stats",
     response_model=AIStatsResponse,
@@ -120,10 +110,10 @@ async def process_message(request: ProcessMessageRequest) -> ProcessMessageRespo
 async def get_ai_stats() -> AIStatsResponse:
     """
     Obter estatísticas de uso da IA.
-    
+
     Returns:
         Estatísticas agregadas
-        
+
     Raises:
         HTTPException 500: If fails to get stats
     """
@@ -159,7 +149,7 @@ async def get_ai_stats() -> AIStatsResponse:
                 chromadb_documents=chromadb_count,
             )
 
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get AI stats: {str(e)}"
