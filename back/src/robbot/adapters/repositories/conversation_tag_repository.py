@@ -2,13 +2,12 @@
 Conversation Tag Repository - manage conversation-tag associations.
 """
 
-from typing import List
 
-from sqlalchemy import Table, Column, String, Integer, DateTime, ForeignKey, text, MetaData
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, MetaData, String, Table, text
 from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.tag_repository import TagRepository
-from robbot.domain.entities.tag import Tag
+from robbot.infra.db.models.tag_model import TagModel
 
 # Local metadata for this repository
 metadata = MetaData()
@@ -25,7 +24,11 @@ conversation_tags_table = Table(
 
 
 class ConversationTagRepository:
-    """Repository for conversation-tag associations."""
+    """Repository for conversation-tag associations.
+    
+    Note: This repository manages a many-to-many association table,
+    so it does not inherit from BaseRepository as it's not a standard CRUD model.
+    """
 
     def __init__(self, session: Session):
         self.session = session
@@ -41,10 +44,10 @@ class ConversationTagRepository:
                 (self.table.c.tag_id == tag_id)
             )
         ).fetchone()
-        
+
         if existing:
             return  # Already associated
-        
+
         # Insert
         self.session.execute(
             self.table.insert().values(
@@ -65,7 +68,7 @@ class ConversationTagRepository:
         self.session.flush()
         return result.rowcount > 0
 
-    def get_conversation_tags(self, conversation_id: str) -> List[Tag]:
+    def get_conversation_tags(self, conversation_id: str) -> list[TagModel]:
         """Get all tags for a conversation."""
         # Join with tags table
         result = self.session.execute(
@@ -73,26 +76,26 @@ class ConversationTagRepository:
                 self.table.c.conversation_id == conversation_id
             )
         ).fetchall()
-        
+
         if not result:
             return []
-        
+
         # Get tag IDs
         tag_ids = [row.tag_id for row in result]
-        
+
         # Fetch tags
         tags = []
         for tag_id in tag_ids:
             tag = self.tag_repo.get_by_id(tag_id)
             if tag:
                 tags.append(tag)
-        
+
         return tags
 
-    def get_conversations_by_tag(self, tag_id: int) -> List[str]:
+    def get_conversations_by_tag(self, tag_id: int) -> list[str]:
         """Get all conversation IDs that have this tag."""
         result = self.session.execute(
             self.table.select().where(self.table.c.tag_id == tag_id)
         ).fetchall()
-        
+
         return [row.conversation_id for row in result]
