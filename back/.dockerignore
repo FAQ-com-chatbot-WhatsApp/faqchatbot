@@ -1,28 +1,116 @@
-# Exclude VCS
+# ==================================
+# Version Control
+# ==================================
 .git
 .gitignore
+.github/
 
-# Python cache/artifacts
+# ==================================
+# Python Cache/Artifacts
+# ==================================
 __pycache__/
+*.py[cod]
+*$py.class
 *.pyc
 *.pyo
 *.pyd
-*.log
-*.sqlite3
+*.so
+*.egg-info
+*.egg
+build/
+dist/
 
-# Virtual environments
+# ==================================
+# Virtual Environments
+# ==================================
 .venv/
 .env/
+venv/
+ENV/
+env/
 
-# Tool caches
+# ==================================
+# Tool Caches
+# ==================================
 .pytest_cache/
 .mypy_cache/
+.ruff_cache/
 htmlcov/
+.tox/
+.coverage
+coverage.xml
 
-# Local config
+# ==================================
+# Environment/Config
+# ==================================
 .env
+.env.local
+.env.production
+.env.*.local
 *.local
 
-# Misc
+# ==================================
+# Logs
+# ==================================
+*.log
+logs/
+*.log.*
+
+# ==================================
+# Database
+# ==================================
+*.db
+*.sqlite
+*.sqlite3
+dump.rdb
+
+# ==================================
+# IDE
+# ==================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ==================================
+# OS
+# ==================================
 .DS_Store
 Thumbs.db
+*.bak
+*.tmp
+*.temp
+
+# ==================================
+# Documentation (not needed in container)
+# ==================================
+README.md
+docs/
+*.md
+
+# ==================================
+# Development Scripts
+# ==================================
+scripts/monitor_workers.sh
+scripts/autoscale_workers.py
+auto-commit.sh
+auto-commit.ps1
+
+# ==================================
+# Testing
+# ==================================
+tests/
+pytest.ini
+
+# ==================================
+# Docker
+# ==================================
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# ==================================
+# Railway
+# ==================================
+railway.json
