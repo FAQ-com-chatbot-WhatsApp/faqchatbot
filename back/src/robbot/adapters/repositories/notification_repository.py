@@ -14,14 +14,14 @@ from robbot.infra.db.models.notification_model import NotificationModel
 class NotificationRepository(BaseRepository[NotificationModel]):
     """
     Repository for notification data access.
-    
+
     Encapsulates all database operations related to notifications.
     """
 
     def __init__(self, db: Session):
         """
         Initialize repository with database session.
-        
+
         Args:
             db: SQLAlchemy database session
         """
@@ -35,12 +35,12 @@ class NotificationRepository(BaseRepository[NotificationModel]):
     ) -> list[NotificationModel]:
         """
         Get notifications for a specific user.
-        
+
         Args:
             user_id: ID of the user
             unread_only: If True, return only unread notifications
             limit: Maximum number of notifications to return
-            
+
         Returns:
             List of notification models ordered by created_at desc
         """
@@ -52,34 +52,34 @@ class NotificationRepository(BaseRepository[NotificationModel]):
         )
 
         if unread_only:
-            stmt = stmt.where(NotificationModel.read == False)
+            stmt = stmt.where(not NotificationModel.read)
 
         return list(self.db.scalars(stmt).all())
 
     def count_unread(self, user_id: int) -> int:
         """
         Count unread notifications for a user.
-        
+
         Args:
             user_id: ID of the user
-            
+
         Returns:
             Count of unread notifications
         """
         stmt = (
             select(NotificationModel)
             .where(NotificationModel.user_id == user_id)
-            .where(NotificationModel.read == False)
+            .where(not NotificationModel.read)
         )
         return len(list(self.db.scalars(stmt).all()))
 
     def mark_as_read(self, notification_id: str) -> NotificationModel | None:
         """
         Mark a notification as read.
-        
+
         Args:
             notification_id: UUID of the notification
-            
+
         Returns:
             Updated notification model or None if not found
         """
@@ -92,17 +92,17 @@ class NotificationRepository(BaseRepository[NotificationModel]):
     def mark_all_as_read(self, user_id: int) -> int:
         """
         Mark all notifications as read for a user.
-        
+
         Args:
             user_id: ID of the user
-            
+
         Returns:
             Count of notifications marked as read
         """
         stmt = (
             select(NotificationModel)
             .where(NotificationModel.user_id == user_id)
-            .where(NotificationModel.read == False)
+            .where(not NotificationModel.read)
         )
         notifications = list(self.db.scalars(stmt).all())
 
@@ -115,11 +115,11 @@ class NotificationRepository(BaseRepository[NotificationModel]):
     def delete_old_read(self, user_id: int, days: int = 30) -> int:
         """
         Delete old read notifications for a user.
-        
+
         Args:
             user_id: ID of the user
             days: Delete notifications older than this many days
-            
+
         Returns:
             Count of notifications deleted
         """
@@ -128,7 +128,7 @@ class NotificationRepository(BaseRepository[NotificationModel]):
         stmt = (
             select(NotificationModel)
             .where(NotificationModel.user_id == user_id)
-            .where(NotificationModel.read == True)
+            .where(NotificationModel.read)
             .where(NotificationModel.created_at < cutoff_date)
         )
         notifications = list(self.db.scalars(stmt).all())
