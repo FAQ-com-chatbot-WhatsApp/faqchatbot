@@ -11,8 +11,6 @@ from robbot.infra.db.base import Base
 
 if TYPE_CHECKING:
     from robbot.infra.db.models.conversation_model import ConversationModel
-
-
 class LLMInteractionModel(Base):
     """Model for logging LLM API interactions.
 
