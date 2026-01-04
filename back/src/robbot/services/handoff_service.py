@@ -12,12 +12,10 @@ from robbot.domain.enums import ConversationStatus, LeadStatus
 from robbot.infra.db.models.conversation_model import ConversationModel
 
 logger = logging.getLogger(__name__)
-
-
 class HandoffService:
     """
     Service to manage bot→human handoff.
-    
+
     Responsibilities:
     - Trigger handoff when high score or bot confused
     - Assign conversation to attendant
@@ -43,13 +41,13 @@ class HandoffService:
     ) -> dict:
         """
         Trigger bot→human handoff.
-        
+
         Args:
             conversation_id: Conversation ID
             reason: Reason (score_high, bot_confused, manual)
             score: Current maturity score
             additional_context: Additional context
-            
+
         Returns:
             dict with status and transition message
         """
@@ -96,11 +94,11 @@ class HandoffService:
     ) -> ConversationModel:
         """
         Assign conversation to human attendant.
-        
+
         Args:
             conversation_id: Conversation ID
             user_id: Attendant UUID
-            
+
         Returns:
             Updated conversation
         """
@@ -141,11 +139,11 @@ class HandoffService:
     ) -> dict:
         """
         Mark conversation as completed after scheduling.
-        
+
         Args:
             conversation_id: Conversation ID
             user_id: UUID of attendant who confirmed
-            
+
         Returns:
             dict with calculated metrics
         """
@@ -265,11 +263,11 @@ class HandoffService:
     ) -> ConversationModel:
         """
         Devolve conversa ao bot (caso humano decida).
-        
+
         Args:
             conversation_id: ID da conversa
             user_id: UUID do atendente que está devolvendo
-            
+
         Returns:
             Conversation atualizada
         """
