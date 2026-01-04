@@ -31,15 +31,15 @@ def trigger_reengagement_job(
     # Check admin permission
     if current_user.role != Role.ADMIN:
         raise HTTPException(status_code=403, detail="Admin access required")
-    
+
     try:
         result = run_reengagement_job()
-        
+
         return {
             "message": "Re-engagement job completed",
             "result": result,
         }
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         raise HTTPException(
             status_code=500,
             detail=f"Failed to run re-engagement job: {str(e)}"
