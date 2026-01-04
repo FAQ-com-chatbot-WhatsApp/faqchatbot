@@ -3,10 +3,11 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from robbot.adapters.repositories.base_repository import BaseRepository
 from robbot.infra.db.models.session_model import WhatsAppSession
 
 
-class SessionRepository:
+class SessionRepository(BaseRepository[WhatsAppSession]):
     """Data access layer for WhatsApp sessions."""
 
     def __init__(self, db: Session):
@@ -15,7 +16,7 @@ class SessionRepository:
         Args:
             db: SQLAlchemy session
         """
-        self.db = db
+        super().__init__(db, WhatsAppSession)
 
     def get_by_name(self, name: str) -> WhatsAppSession | None:
         """Get session by name.
