@@ -1,8 +1,6 @@
 """
 Audit Log Repository - database operations for audit logs.
 """
-
-
 from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.base_repository import BaseRepository
