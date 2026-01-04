@@ -3,13 +3,13 @@ Service para orquestração de filas (jobs assíncronos).
 """
 
 import logging
-from typing import Any, Optional, Type
+from typing import Any
 
 from rq.job import Job
+from rq.registry import FailedJobRegistry
 
 from robbot.config.settings import settings
 from robbot.core.custom_exceptions import QueueError
-from robbot.infra.jobs.base_job import BaseJob
 from robbot.infra.jobs.escalation_job import EscalationJob
 from robbot.infra.jobs.gemini_job import GeminiAIProcessingJob
 from robbot.infra.jobs.message_job import MessageProcessingJob
@@ -34,7 +34,7 @@ class QueueService:
     def __init__(self):
         """Inicializar serviço de filas."""
         self.queue_manager = get_queue_manager()
-        logger.info("✓ QueueService inicializado")
+        logger.info("[SUCCESS] QueueService inicializado")
 
     # =====================================================================
     # ENFILEIRAR JOBS
@@ -43,7 +43,7 @@ class QueueService:
     def enqueue_message_processing(
         self,
         message_data: dict[str, Any],
-        conversation_id: Optional[str] = None,
+        conversation_id: str | None = None,
         message_direction: str = "inbound",
     ) -> str:
         """
@@ -63,14 +63,14 @@ class QueueService:
             message_direction=message_direction,
             attempt=0,
         )
-        
+
         self.queue_manager.queue_messages.enqueue(
             job.run,
             job_id=job.job_id,
             result_ttl=settings.RQ_DEFAULT_RESULT_TTL,
             failure_ttl=settings.RQ_DEFAULT_FAILURE_TTL,
         )
-        
+
         logger.info(
             f"📨 Mensagem enfileirada (fila: messages) -> {job.job_id}",
             extra={
@@ -79,7 +79,7 @@ class QueueService:
                 "phone": message_data.get("phone"),
             },
         )
-        
+
         return job.job_id
 
     def enqueue_ai_processing(
@@ -108,14 +108,14 @@ class QueueService:
             phone=phone,
             attempt=0,
         )
-        
+
         self.queue_manager.queue_ai.enqueue(
             job.run,
             job_id=job.job_id,
             result_ttl=settings.RQ_DEFAULT_RESULT_TTL,
             failure_ttl=settings.RQ_DEFAULT_FAILURE_TTL,
         )
-        
+
         logger.info(
             f"🤖 IA enfileirada (fila: ai) -> {job.job_id}",
             extra={
@@ -124,7 +124,7 @@ class QueueService:
                 "conversation_id": conversation_id,
             },
         )
-        
+
         return job.job_id
 
     def enqueue_escalation(
@@ -132,7 +132,7 @@ class QueueService:
         conversation_id: str,
         reason: str,
         phone: str,
-        user_name: Optional[str] = None,
+        user_name: str | None = None,
     ) -> str:
         """
         Enfileirar escalação para secretária.
@@ -153,14 +153,14 @@ class QueueService:
             user_name=user_name,
             attempt=0,
         )
-        
+
         self.queue_manager.queue_escalation.enqueue(
             job.run,
             job_id=job.job_id,
             result_ttl=settings.RQ_DEFAULT_RESULT_TTL,
             failure_ttl=settings.RQ_DEFAULT_FAILURE_TTL,
         )
-        
+
         logger.info(
             f"⬆️ Escalação enfileirada (fila: escalation) -> {job.job_id}",
             extra={
@@ -170,7 +170,7 @@ class QueueService:
                 "reason": reason,
             },
         )
-        
+
         return job.job_id
 
     def enqueue_scheduled_job(
@@ -188,7 +188,7 @@ class QueueService:
         """
         # Escolher fila por tipo
         queue_name = "escalation"  # Default
-        
+
         self.queue_manager.get_queue(queue_name).enqueue_at(
             scheduled_job.scheduled_for,
             scheduled_job.run,
@@ -196,7 +196,7 @@ class QueueService:
             result_ttl=settings.RQ_DEFAULT_RESULT_TTL,
             failure_ttl=settings.RQ_DEFAULT_FAILURE_TTL,
         )
-        
+
         logger.info(
             f"⏰ Job agendado -> {scheduled_job.job_id} "
             f"(executa em {scheduled_job.scheduled_for})",
@@ -206,7 +206,7 @@ class QueueService:
                 "task_type": scheduled_job.task_type,
             },
         )
-        
+
         return scheduled_job.job_id
 
     # =====================================================================
@@ -227,7 +227,7 @@ class QueueService:
         for queue_name, queue in self.queue_manager.get_all_queues().items():
             try:
                 rq_job = Job.fetch(job_id, connection=queue.connection)
-                
+
                 return {
                     "job_id": job_id,
                     "queue": queue_name,
@@ -244,7 +244,7 @@ class QueueService:
             except (QueueError, ValueError):
                 # Job inválido ou corrompido - pular
                 continue
-        
+
         return {
             "job_id": job_id,
             "status": "not_found",
@@ -273,12 +273,10 @@ class QueueService:
         Returns:
             Lista de jobs falhados com detalhes
         """
-        from rq.registry import FailedJobRegistry
-        
         failed_jobs = []
         queue = self.queue_manager.queue_failed
         failed_registry = FailedJobRegistry(queue=queue, connection=queue.connection)
-        
+
         for job_id in list(failed_registry.get_job_ids())[:limit]:
             try:
                 job = Job.fetch(job_id, connection=queue.connection)
@@ -291,7 +289,7 @@ class QueueService:
             except (QueueError, ValueError):
                 # Job inválido - pular
                 continue
-        
+
         return failed_jobs
 
     # =====================================================================
@@ -309,31 +307,31 @@ class QueueService:
             True se conseguiu enfileirar novamente
         """
         try:
-            # Buscar job em qualquer fila
+            # Search for job in any queue
             for queue_name, queue in self.queue_manager.get_all_queues().items():
                 try:
                     job = Job.fetch(job_id, connection=queue.connection)
-                    
+
                     # Requeue o job (RQ automaticamente coloca na fila certa)
                     job.requeue()
-                    
+
                     logger.info(
                         f"Job {job_id} reenfileirado para retry",
                         extra={"job_id": job_id, "queue": queue_name},
                     )
                     return True
-                    
+
                 except (QueueError, ValueError):
                     # Queue não existe ou job inválido
                     continue
-            
-            logger.warning(f"Job {job_id} não encontrado para retry")
+
+            logger.warning("Job %s não encontrado para retry", job_id)
             return False
-            
+
         except QueueError:
             raise
-        except Exception as e:
-            logger.error(f"Erro ao retryar job {job_id}: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.error("Erro ao retryar job %s: %s", job_id, e)
             raise QueueError(f"Failed to retry job {job_id}: {e}")
 
     def retry_all_failed(self) -> int:
@@ -345,35 +343,35 @@ class QueueService:
         """
         retried = 0
         queue = self.queue_manager.queue_failed
-        
+
         for job_id in list(queue.failed_job_ids):
             if self.retry_job(job_id):
                 retried += 1
-        
-        logger.info(f"{retried} jobs falhados reenfileirados")
+
+        logger.info("%s jobs falhados reenfileirados", retried)
         return retried
 
     def clear_failed_queue(self) -> int:
         """
         Limpar todos os jobs falhados (DLQ).
         
-        ⚠️ OPERAÇÃO IRREVERSÍVEL!
+        [WARNING] OPERAÇÃO IRREVERSÍVEL!
         
         Returns:
             Número de jobs removidos
         """
         queue = self.queue_manager.queue_failed
         count = len(queue.failed_job_ids)
-        
+
         # Remover todos os jobs falhados
         for job_id in list(queue.failed_job_ids):
             try:
                 job = Job.fetch(job_id, connection=queue.connection)
                 job.delete()
             except (QueueError, ValueError) as e:
-                logger.warning(f"Erro ao deletar job {job_id}: {e}")
-        
-        logger.warning(f"Dead Letter Queue limpa: {count} jobs removidos")
+                logger.warning("Erro ao deletar job %s: %s", job_id, e)
+
+        logger.warning("Dead Letter Queue limpa: %s jobs removidos", count)
         return count
 
     def cancel_job(self, job_id: str) -> bool:
@@ -392,18 +390,18 @@ class QueueService:
                 try:
                     job = Job.fetch(job_id, connection=queue.connection)
                     job.cancel()
-                    logger.info(f"Job {job_id} cancelado")
+                    logger.info("Job %s cancelado", job_id)
                     return True
                 except (QueueError, ValueError):
                     # Job não existe nesta fila
                     continue
-            
+
             return False
-            
+
         except QueueError:
             raise
-        except Exception as e:
-            logger.error(f"Erro ao cancelar job {job_id}: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.error("Erro ao cancelar job %s: %s", job_id, e)
             raise QueueError(f"Failed to cancel job {job_id}: {e}")
 
     # =====================================================================
@@ -425,14 +423,14 @@ class QueueService:
 
 
 # Singleton
-_queue_service: Optional[QueueService] = None
+_queue_service: QueueService | None = None
 
 
 def get_queue_service() -> QueueService:
     """Obter instância singleton de QueueService."""
     global _queue_service
-    
+
     if _queue_service is None:
         _queue_service = QueueService()
-    
+
     return _queue_service
