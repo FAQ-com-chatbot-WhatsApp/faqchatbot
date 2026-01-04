@@ -5,21 +5,18 @@ from urllib.parse import quote
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from robbot.adapters.external.waha_client import get_waha_client, WAHAClient
+from robbot.adapters.external.waha_client import WAHAClient, get_waha_client
 from robbot.adapters.repositories.session_repository import SessionRepository
-from robbot.api.v1.dependencies import get_db, get_current_user, require_role
-from robbot.core.exceptions import ExternalServiceError
+from robbot.api.v1.dependencies import get_current_user, get_db, require_role
+from robbot.core.custom_exceptions import ExternalServiceError
 from robbot.domain.enums import Role
 from robbot.schemas.waha import (
-    CheckNumberRequest,
-    ContactAboutResponse,
     ContactBlockRequest,
     ConvertVideoRequest,
     ConvertVoiceRequest,
     EditMessageRequest,
     ForwardMessageRequest,
     GetMessagesResponse,
-    GetQRCodeRequest,
     HealthCheckResponse,
     LinkCustomPreviewRequest,
     MessageSentResponse,
@@ -34,8 +31,6 @@ from robbot.schemas.waha import (
     SendLocationRequest,
     SendPollRequest,
     SendPollVoteRequest,
-    SendReactionRequest,
-    SendStarRequest,
     SendTextRequest,
     SendVideoRequest,
     SendVoiceRequest,
