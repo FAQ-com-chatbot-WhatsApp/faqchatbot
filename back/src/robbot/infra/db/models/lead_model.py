@@ -11,12 +11,14 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+)
+from sqlalchemy import (
     Enum as SQLEnum,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from robbot.infra.db.base import Base
 from robbot.domain.enums import LeadStatus
+from robbot.infra.db.base import Base
 
 if TYPE_CHECKING:
     from robbot.infra.db.models.conversation_model import ConversationModel
@@ -36,13 +38,13 @@ class LeadModel(Base):
         String(36), primary_key=True, default=lambda: str(uuid4()), index=True
     )
 
-    conversation_id: Mapped[str] = mapped_column(
+    conversation_id: Mapped[str | None] = mapped_column(
         String(36),
         ForeignKey("conversations.id", ondelete="CASCADE"),
         unique=True,
-        nullable=False,
+        nullable=True,
         index=True,
-        comment="One lead per conversation"
+        comment="One lead per conversation (optional - leads can exist without conversations)",
     )
 
     name: Mapped[str] = mapped_column(
