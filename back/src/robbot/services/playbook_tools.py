@@ -9,13 +9,14 @@ These tools enable the AI to:
 Designed for Google Gemini Function Calling integration.
 """
 
-from typing import Any, Dict, List
+import logging
+from typing import Any
 
 from sqlalchemy.orm import Session
 
-from robbot.services.playbook_service import PlaybookService
+from robbot.services.conversation_service import ConversationService
 from robbot.services.message_service import MessageService
-import logging
+from robbot.services.playbook_service import PlaybookService
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +53,7 @@ SEARCH_PLAYBOOKS_DECLARATION = {
 }
 
 
-def search_playbooks_tool(db: Session, query: str, top_k: int = 3) -> List[Dict[str, Any]]:
+def search_playbooks_tool(db: Session, query: str, top_k: int = 3) -> list[dict[str, Any]]:
     """
     Execute semantic search for playbooks.
     
@@ -67,9 +68,9 @@ def search_playbooks_tool(db: Session, query: str, top_k: int = 3) -> List[Dict[
     try:
         service = PlaybookService(db)
         results = service.search_playbooks(query, top_k=top_k, active_only=True)
-        
-        logger.info(f"Playbook search: query='{query}', results={len(results)}")
-        
+
+        logger.info("Playbook search: query='%s', results=%s", query, len(results))
+
         # Convert to dict for LLM consumption
         return [
             {
@@ -82,8 +83,8 @@ def search_playbooks_tool(db: Session, query: str, top_k: int = 3) -> List[Dict[
             }
             for r in results
         ]
-    except Exception as e:
-        logger.error(f"Error searching playbooks: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.error("Error searching playbooks: %s", e)
         return []
 
 
@@ -112,7 +113,7 @@ GET_PLAYBOOK_STEPS_DECLARATION = {
 }
 
 
-def get_playbook_steps_tool(db: Session, playbook_id: str) -> Dict[str, Any]:
+def get_playbook_steps_tool(db: Session, playbook_id: str) -> dict[str, Any]:
     """
     Retrieve all steps for a playbook with full message details.
     
@@ -126,16 +127,16 @@ def get_playbook_steps_tool(db: Session, playbook_id: str) -> Dict[str, Any]:
     try:
         service = PlaybookService(db)
         steps = service.get_playbook_steps_with_details(playbook_id)
-        
-        logger.info(f"Retrieved playbook steps: playbook_id={playbook_id}, steps={len(steps)}")
-        
+
+        logger.info("Retrieved playbook steps: playbook_id=%s, steps=%s", playbook_id, len(steps))
+
         return {
             "playbook_id": playbook_id,
             "total_steps": len(steps),
             "steps": steps
         }
-    except Exception as e:
-        logger.error(f"Error getting playbook steps: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.error("Error getting playbook steps: %s", e)
         return {"playbook_id": playbook_id, "total_steps": 0, "steps": [], "error": str(e)}
 
 
@@ -178,7 +179,7 @@ def send_playbook_message_tool(
     message_id: str,
     conversation_id: str,
     custom_intro: str = None
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Send a message from a playbook to the client.
     
@@ -192,22 +193,20 @@ def send_playbook_message_tool(
         Dict with success status and message info
     """
     try:
-        from robbot.services.conversation_service import ConversationService
-        
         # Get message details
         message_service = MessageService(db)
         message = message_service.get_message(message_id)
-        
+
         if not message:
             return {"success": False, "error": f"Message {message_id} not found"}
-        
+
         # Get conversation
         conv_service = ConversationService(db)
-        conversation = conv_service.get_conversation(conversation_id)
-        
+        conversation = conv_service.get_by_id(conversation_id)
+
         if not conversation:
             return {"success": False, "error": f"Conversation {conversation_id} not found"}
-        
+
         # Prepare message payload
         # Note: Actual sending logic should go through WAHA service
         # This is a simplified version - full implementation would:
@@ -215,15 +214,15 @@ def send_playbook_message_tool(
         # 2. Add custom_intro if provided
         # 3. Send via WAHA
         # 4. Save to conversation_messages
-        
+
         logger.info(
             f"Sending playbook message: message_id={message_id}, "
             f"conversation_id={conversation_id}, intro={custom_intro}"
         )
-        
+
         # TODO: Implement actual WAHA sending logic
         # For now, return success with message details
-        
+
         return {
             "success": True,
             "message_id": message_id,
@@ -232,9 +231,9 @@ def send_playbook_message_tool(
             "custom_intro": custom_intro,
             "note": "Message queued for sending (implementation pending)"
         }
-        
-    except Exception as e:
-        logger.error(f"Error sending playbook message: {e}")
+
+    except Exception as e:  # noqa: BLE001
+        logger.error("Error sending playbook message: %s", e)
         return {"success": False, "error": str(e)}
 
 
@@ -271,10 +270,9 @@ SEND_CLINIC_LOCATION_DECLARATION = {
 
 
 def send_clinic_location_tool(
-    db: Session,
     chat_id: str,
     custom_title: str = "Clínica GO"
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Enviar localização da Clínica GO via WhatsApp.
     
@@ -288,14 +286,14 @@ def send_clinic_location_tool(
     """
     try:
         from robbot.common.clinic_location import send_clinic_location_via_waha_sync
-        
-        logger.info(f"🔧 Tool: send_clinic_location para {chat_id}")
-        
+
+        logger.info("[INFO] Tool: send_clinic_location para %s", chat_id)
+
         result = send_clinic_location_via_waha_sync(
             chat_id=chat_id,
             custom_title=custom_title
         )
-        
+
         return {
             "success": True,
             "message": "Localização da Clínica GO enviada com sucesso",
@@ -303,8 +301,8 @@ def send_clinic_location_tool(
             "address": "Av. São Miguel, 1000 - sala 102 - Centro, Dois Irmãos - RS",
             "result": result
         }
-    except Exception as e:
-        logger.error(f"✗ Erro ao enviar localização: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.error("[ERROR] Erro ao enviar localização: %s", e)
         return {
             "success": False,
             "error": str(e)
@@ -326,7 +324,7 @@ PLAYBOOK_TOOLS_DECLARATIONS = [
 def execute_playbook_tool(
     db: Session,
     tool_name: str,
-    tool_args: Dict[str, Any]
+    tool_args: dict[str, Any]
 ) -> Any:
     """
     Execute a playbook tool by name.
@@ -348,5 +346,5 @@ def execute_playbook_tool(
     elif tool_name == "send_clinic_location":
         return send_clinic_location_tool(db, **tool_args)
     else:
-        logger.error(f"Unknown tool: {tool_name}")
+        logger.error("Unknown tool: %s", tool_name)
         return {"error": f"Unknown tool: {tool_name}"}
