@@ -31,12 +31,6 @@ class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class UserInDB(UserOut):
-    """Internal schema including hashed password for persistence layer."""
-
-    hashed_password: str
-
-
 class UserUpdate(BaseModel):
     """Schema para atualização de campos de perfil do usuário.
     
