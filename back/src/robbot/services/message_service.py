@@ -1,12 +1,11 @@
 """Message service orchestrating repository and business logic."""
 
-from typing import Optional, Union
 from uuid import UUID
 
 from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.message_repository import MessageRepository
-from robbot.core.exceptions import NotFoundException
+from robbot.core.custom_exceptions import NotFoundException
 from robbot.schemas.message import (
     DeletedResponse,
     MediaFile,
@@ -20,6 +19,8 @@ from robbot.schemas.message import (
     MessageUpdateMedia,
     MessageUpdateText,
 )
+from robbot.services.description_service import DescriptionService
+from robbot.services.transcription_service import TranscriptionService
 
 
 class MessageService:
@@ -27,11 +28,13 @@ class MessageService:
 
     def __init__(self, db: Session):
         self.repo = MessageRepository(db)
+        self.desc_service = DescriptionService(db)
+        self.transcription_service = TranscriptionService()
 
     def create_message(
         self,
-        payload: Union[MessageCreateText, MessageCreateMedia, MessageCreateLocation],
-    ) -> Union[MessageOutText, MessageOutMedia, MessageOutLocation]:
+        payload: MessageCreateText | MessageCreateMedia | MessageCreateLocation,
+    ) -> MessageOutText | MessageOutMedia | MessageOutLocation:
         """
         Create message based on type.
         For media types, file.url must be generated externally (e.g., storage upload).
@@ -43,53 +46,53 @@ class MessageService:
         if isinstance(payload, MessageCreateMedia):
             if not payload.file.url:
                 raise ValueError("Media file URL is required")
-            
-            # Processar mídia automaticamente conforme tipo
+
+            # Process media automatically based on type
             transcription = None
             title = None
             description = None
             tags = None
-            
+
             # 1. VOICE: Transcrever áudio
             if payload.type == "voice":
                 transcription = self._transcribe_audio(payload.file.url)
-            
+
             # 2. VIDEO: Transcrever áudio + gerar metadata básico
             elif payload.type == "video":
                 transcription = self._transcribe_audio(payload.file.url)
                 metadata = self._generate_description(
                     payload.file.url,
-                    payload.file.filename, 
-                    payload.caption or "", 
+                    payload.file.filename,
+                    payload.caption or "",
                     "video"
                 )
                 title = metadata.get("generated_title")
                 description = metadata.get("generated_description")
                 tags = metadata.get("suggested_tags")
-            
+
             # 3. IMAGE: Analisar com BLIP-2 (open source, local, sem custo)
             elif payload.type == "image":
                 metadata = self._generate_description(
                     payload.file.url,
-                    payload.file.filename, 
-                    payload.caption or "", 
+                    payload.file.filename,
+                    payload.caption or "",
                     "image"
                 )
                 title = metadata.get("generated_title")
                 description = metadata.get("generated_description")
                 tags = metadata.get("suggested_tags")
-            
+
             # 4. DOCUMENT: Gerar metadata baseado em filename
             elif payload.type == "document":
                 metadata = self._generate_file_description(
-                    payload.file.filename, 
-                    payload.caption or "", 
+                    payload.file.filename,
+                    payload.caption or "",
                     "document"
                 )
                 title = metadata.get("generated_title")
                 description = metadata.get("generated_description")
                 tags = metadata.get("suggested_tags")
-            
+
             msg = self.repo.create_media(
                 msg_type=payload.type,
                 mimetype=payload.file.mimetype,
@@ -145,7 +148,7 @@ class MessageService:
 
     def get_message(
         self, message_id: UUID
-    ) -> Union[MessageOutText, MessageOutMedia, MessageOutLocation]:
+    ) -> MessageOutText | MessageOutMedia | MessageOutLocation:
         """Retrieve message by ID."""
         msg = self.repo.get_by_id(message_id)
         if not msg:
@@ -189,7 +192,7 @@ class MessageService:
 
         raise ValueError(f"Unknown message type: {msg.type}")
 
-    def _transcribe_audio(self, audio_url: str) -> Optional[str]:
+    def _transcribe_audio(self, audio_url: str) -> str | None:
         """
         Transcrever áudio usando Faster-Whisper local.
         
@@ -200,20 +203,18 @@ class MessageService:
             Texto transcrito ou None se falhar
         """
         try:
-            from robbot.services.transcription_service import TranscriptionService
-            transcriber = TranscriptionService()
-            transcription = transcriber.transcribe_audio_sync(audio_url, language="pt")
+            transcription = self.transcription_service.transcribe_audio_sync(audio_url, language="pt")
             if transcription:
                 import logging
                 logger = logging.getLogger(__name__)
-                logger.info(f"✓ Áudio transcrito: {transcription[:100]}...")
+                logger.info("[SUCCESS] Áudio transcrito: %s...", transcription[:100])
             return transcription
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             import logging
             logger = logging.getLogger(__name__)
-            logger.error(f"✗ Erro ao transcrever áudio: {e}")
+            logger.error("[ERROR] Erro ao transcrever áudio: %s", e)
             return None
-    
+
     def _generate_description(self, media_url: str, filename: str, caption: str, media_type: str) -> dict:
         """
         Gerar descrição de mídia usando BLIP-2 (imagens) ou metadata básico.
@@ -228,22 +229,19 @@ class MessageService:
             Dict com title, description, tags ou vazio se falhar
         """
         try:
-            from robbot.services.description_service import DescriptionService
-            desc_service = DescriptionService(self.repo.db)
-            
             # Se é imagem, tentar usar BLIP-2 para análise visual
             if media_type == "image" and media_url:
-                return desc_service.analyze_image_with_blip(media_url, caption)
-            
+                return self.desc_service.analyze_image_with_blip(media_url, caption)
+
             # Para vídeo ou se BLIP falhar, usar metadata básico
-            return desc_service.generate_file_metadata(filename, caption, media_type)
-            
-        except Exception as e:
+            return self.desc_service.generate_file_metadata(filename, caption, media_type)
+
+        except Exception as e:  # noqa: BLE001
             import logging
             logger = logging.getLogger(__name__)
-            logger.error(f"✗ Erro ao gerar descrição de {media_type}: {e}")
+            logger.error("[ERROR] Erro ao gerar descrição de %s: %s", media_type, e)
             return {}
-    
+
     def _generate_file_description(self, filename: str, caption: str, file_type: str) -> dict:
         """
         Gerar metadata de documento baseado em filename e caption.
@@ -257,18 +255,16 @@ class MessageService:
             Dict com title, description, tags
         """
         try:
-            from robbot.services.description_service import DescriptionService
-            desc_service = DescriptionService(self.repo.db)
-            return desc_service.generate_file_metadata(filename, caption, file_type)
-        except Exception as e:
+            return self.desc_service.generate_file_metadata(filename, caption, file_type)
+        except Exception as e:  # noqa: BLE001
             import logging
             logger = logging.getLogger(__name__)
-            logger.error(f"✗ Erro ao gerar metadata de {file_type}: {e}")
+            logger.error("[ERROR] Erro ao gerar metadata de %s: %s", file_type, e)
             return {}
 
     def list_messages(
         self,
-    ) -> list[Union[MessageOutText, MessageOutMedia, MessageOutLocation]]:
+    ) -> list[MessageOutText | MessageOutMedia | MessageOutLocation]:
         """Retrieve all messages."""
         messages = self.repo.list_all()
         result = []
@@ -311,8 +307,8 @@ class MessageService:
     def update_message(
         self,
         message_id: UUID,
-        payload: Union[MessageUpdateText, MessageUpdateMedia, MessageUpdateLocation],
-    ) -> Union[MessageOutText, MessageOutMedia, MessageOutLocation]:
+        payload: MessageUpdateText | MessageUpdateMedia | MessageUpdateLocation,
+    ) -> MessageOutText | MessageOutMedia | MessageOutLocation:
         """Update message fields based on type."""
         msg = self.repo.get_by_id(message_id)
         if not msg:
