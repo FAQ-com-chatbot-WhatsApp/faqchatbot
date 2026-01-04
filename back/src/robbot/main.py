@@ -10,12 +10,12 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from robbot.adapters.repositories.alert_repository import AlertRepository
 from robbot.api.v1.dependencies import initialize_rate_limiter
 from robbot.api.v1.routers.api import api_router
 from robbot.config.settings import get_settings
 from robbot.core.logging_setup import configure_logging
 from robbot.infra.db.session import get_sync_session
-from robbot.services.alert_service import AlertService
 
 
 def create_app() -> FastAPI:
@@ -25,17 +25,17 @@ def create_app() -> FastAPI:
     """
     configure_logging()
     settings = get_settings()
-    
+
     @asynccontextmanager
-    async def lifespan(app: FastAPI):
+    async def lifespan(app: FastAPI):  # type: ignore[no-redef]
         """Initialize services on application startup/shutdown."""
         logger = logging.getLogger("robbot.startup")
         logger.info("Initializing rate limiter...")
         try:
             initialize_rate_limiter()
-            logger.info("✓ Rate limiter initialized successfully")
+            logger.info("[SUCCESS] Rate limiter initialized successfully")
         except Exception as e:  # noqa: BLE001
-            logger.error(f"✗ Failed to initialize rate limiter: {e}")
+            logger.error("[ERROR] Failed to initialize rate limiter: %s", e)
             # Don't fail app startup, rate limiter will fail gracefully
         yield
         # (optional) shutdown hooks here
@@ -67,8 +67,8 @@ def create_app() -> FastAPI:
         # Tenta persistir um alerta no banco; não deve impedir resposta ao cliente.
         try:
             with get_sync_session() as db:
-                alert_svc = AlertService(db)
-                alert_svc.create_alert(
+                alert_repo = AlertRepository(db)
+                alert_repo.create_alert(
                     level="critical",
                     message="Unhandled exception",
                     metadata={"error": str(exc)},
