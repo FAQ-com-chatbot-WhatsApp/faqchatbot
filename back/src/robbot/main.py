@@ -27,14 +27,14 @@ def create_app() -> FastAPI:
     settings = get_settings()
 
     @asynccontextmanager
-    async def lifespan(app: FastAPI):  # type: ignore[no-redef]
+    async def lifespan(app: FastAPI):
         """Initialize services on application startup/shutdown."""
         logger = logging.getLogger("robbot.startup")
         logger.info("Initializing rate limiter...")
         try:
             initialize_rate_limiter()
             logger.info("[SUCCESS] Rate limiter initialized successfully")
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("[ERROR] Failed to initialize rate limiter: %s", e)
             # Don't fail app startup, rate limiter will fail gracefully
         yield
@@ -53,8 +53,6 @@ def create_app() -> FastAPI:
     )
 
     application.include_router(api_router, prefix="/api/v1")
-
-
     @application.exception_handler(Exception)
     async def global_exception_handler(_request: Request, exc: Exception):
         """
@@ -73,7 +71,7 @@ def create_app() -> FastAPI:
                     message="Unhandled exception",
                     metadata={"error": str(exc)},
                 )
-        except Exception:  # pylint: disable=broad-exception-caught
+        except Exception:
             # se falhar ao persistir alerta, apenas loga
             logger.exception("Failed to persist alert for unhandled exception")
 
@@ -82,6 +80,4 @@ def create_app() -> FastAPI:
         )
 
     return application
-
-
 app = create_app()
