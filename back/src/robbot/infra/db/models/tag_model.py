@@ -2,9 +2,9 @@
 Tag Model - SQLAlchemy ORM model for conversation tags.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from sqlalchemy import String, DateTime
+from sqlalchemy import DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from robbot.infra.db.base import Base
@@ -32,7 +32,7 @@ class TagModel(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        default=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(UTC),
         comment="Tag creation timestamp"
     )
 
