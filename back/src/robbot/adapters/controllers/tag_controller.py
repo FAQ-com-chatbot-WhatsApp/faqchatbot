@@ -2,7 +2,6 @@
 Tag Controller - REST endpoints for tag management.
 """
 
-from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
@@ -59,13 +58,13 @@ def create_tag(
     # Check admin permission
     if current_user.role != Role.ADMIN:
         raise HTTPException(status_code=403, detail="Admin access required")
-    
+
     service = TagService(db)
-    
+
     try:
         tag = service.create_tag(name=request.name, color=request.color)
         db.commit()
-        
+
         return TagOut(
             id=tag.id,
             name=tag.name,
@@ -74,12 +73,12 @@ def create_tag(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to create tag: {str(e)}")
 
 
-@router.get("/tags", response_model=List[TagOut], tags=["Tags"])
+@router.get("/tags", response_model=list[TagOut], tags=["Tags"])
 def list_tags(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -91,7 +90,7 @@ def list_tags(
     """
     service = TagService(db)
     tags = service.get_all_tags()
-    
+
     return [
         TagOut(
             id=tag.id,
@@ -117,18 +116,18 @@ def delete_tag(
     # Check admin permission
     if current_user.role != Role.ADMIN:
         raise HTTPException(status_code=403, detail="Admin access required")
-    
+
     service = TagService(db)
-    
+
     try:
         deleted = service.delete_tag(tag_id)
         db.commit()
-        
+
         if not deleted:
             raise HTTPException(status_code=404, detail="Tag not found")
-        
+
         return {"message": "Tag deleted successfully", "tag_id": tag_id}
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to delete tag: {str(e)}")
 
@@ -150,26 +149,26 @@ def add_tag_to_conversation(
     conversation = conv_repo.get_by_id(conversation_id)
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
-    
+
     # Check tag exists
     tag_service = TagService(db)
     tag = tag_service.get_tag_by_id(request.tag_id)
     if not tag:
         raise HTTPException(status_code=404, detail="Tag not found")
-    
+
     # Add association
     try:
         conv_tag_repo = ConversationTagRepository(db)
         conv_tag_repo.add_tag_to_conversation(conversation_id, request.tag_id)
         db.commit()
-        
+
         return {
             "message": "Tag added to conversation",
             "conversation_id": conversation_id,
             "tag_id": request.tag_id,
             "tag_name": tag.name,
         }
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to add tag: {str(e)}")
 
@@ -191,27 +190,27 @@ def remove_tag_from_conversation(
     conversation = conv_repo.get_by_id(conversation_id)
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
-    
+
     # Remove association
     try:
         conv_tag_repo = ConversationTagRepository(db)
         deleted = conv_tag_repo.remove_tag_from_conversation(conversation_id, tag_id)
         db.commit()
-        
+
         if not deleted:
             raise HTTPException(status_code=404, detail="Tag not associated with this conversation")
-        
+
         return {
             "message": "Tag removed from conversation",
             "conversation_id": conversation_id,
             "tag_id": tag_id,
         }
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to remove tag: {str(e)}")
 
 
-@router.get("/conversations/{conversation_id}/tags", response_model=List[TagOut], tags=["Tags"])
+@router.get("/conversations/{conversation_id}/tags", response_model=list[TagOut], tags=["Tags"])
 def get_conversation_tags(
     conversation_id: str,
     current_user: dict = Depends(get_current_user),
@@ -227,11 +226,11 @@ def get_conversation_tags(
     conversation = conv_repo.get_by_id(conversation_id)
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
-    
+
     # Get tags
     conv_tag_repo = ConversationTagRepository(db)
     tags = conv_tag_repo.get_conversation_tags(conversation_id)
-    
+
     return [
         TagOut(
             id=tag.id,
