@@ -1,6 +1,5 @@
 """PlaybookEmbeddingModel ORM for RAG search integration."""
 
-from datetime import datetime
 from uuid import uuid4
 
 from sqlalchemy import Column, DateTime, ForeignKey, String, Text
@@ -22,10 +21,10 @@ class PlaybookEmbeddingModel(Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid4()))
     playbook_id = Column(
-        String(36), 
-        ForeignKey('playbooks.id', ondelete='CASCADE'), 
-        nullable=False, 
-        unique=True, 
+        String(36),
+        ForeignKey('playbooks.id', ondelete='CASCADE'),
+        nullable=False,
+        unique=True,
         index=True
     )
     embedding_text = Column(Text, nullable=False)  # Combined text from playbook + steps for embedding
