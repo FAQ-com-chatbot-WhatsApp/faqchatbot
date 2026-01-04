@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from robbot.api.v1.dependencies import get_current_user, get_db
-from robbot.schemas.topic import TopicCreate, TopicList, TopicOut, TopicUpdate, DeletedResponse
+from robbot.common.utils import filter_none_values
+from robbot.schemas.topic import DeletedResponse, TopicCreate, TopicList, TopicOut, TopicUpdate
 from robbot.services.playbook_service import PlaybookService
 
 router = APIRouter()
@@ -85,14 +86,14 @@ def update_topic(
     Only provided fields will be updated.
     """
     service = PlaybookService(db)
-    
+
     # Build update dict (only non-None values)
-    update_data = {k: v for k, v in payload.model_dump().items() if v is not None}
-    
+    update_data = filter_none_values(payload)
+
     updated = service.update_topic(topic_id, **update_data)
     if not updated:
         raise HTTPException(status_code=404, detail=f"Topic {topic_id} not found")
-    
+
     return TopicOut.model_validate(updated)
 
 
@@ -111,5 +112,5 @@ def delete_topic(
     success = service.delete_topic(topic_id)
     if not success:
         raise HTTPException(status_code=404, detail=f"Topic {topic_id} not found")
-    
+
     return DeletedResponse(message="Topic deleted successfully", deleted_id=topic_id)
