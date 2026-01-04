@@ -3,6 +3,7 @@ Handoff endpoints - Gerenciar transição bot→humano.
 """
 
 import logging
+from datetime import UTC
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -28,7 +29,7 @@ router = APIRouter(prefix="/conversations", tags=["Handoff"])
 
 class TriggerHandoffRequest(BaseModel):
     """Request para disparar handoff."""
-    
+
     reason: str = Field(
         ...,
         description="Motivo do handoff: score_high, bot_confused, manual"
@@ -41,13 +42,13 @@ class TriggerHandoffRequest(BaseModel):
 
 class AssignConversationRequest(BaseModel):
     """Request para atribuir conversa."""
-    
+
     user_id: str = Field(..., description="UUID do atendente")
 
 
 class HandoffResponse(BaseModel):
     """Response padrão de handoff."""
-    
+
     status: str
     conversation_id: str
     message: str | None = None
@@ -56,7 +57,7 @@ class HandoffResponse(BaseModel):
 
 class PendingHandoffConversation(BaseModel):
     """Conversa aguardando handoff."""
-    
+
     conversation_id: str
     phone_number: str
     lead_name: str | None
@@ -94,19 +95,19 @@ async def trigger_handoff(
             ConversationRepository(db),
             LeadRepository(db)
         )
-        
+
         # Buscar score do lead para passar ao service
         conv_repo = ConversationRepository(db)
         conversation = conv_repo.get_by_id(conversation_id)
-        
+
         if not conversation:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Conversation {conversation_id} not found"
             )
-        
+
         score = conversation.lead.maturity_score if conversation.lead else None
-        
+
         result = await handoff_service.trigger_handoff(
             session=db,
             conversation_id=conversation_id,
@@ -114,21 +115,21 @@ async def trigger_handoff(
             score=score,
             additional_context=request.additional_context,
         )
-        
+
         logger.info(
-            f"✓ Handoff triggered via API: conv={conversation_id}, "
+            f"[SUCCESS] Handoff triggered via API: conv={conversation_id}, "
             f"reason={request.reason}, user_id={current_user['user_id']}"
         )
-        
+
         return HandoffResponse(**result)
-        
+
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
-    except Exception as e:
-        logger.error(f"✗ Erro ao disparar handoff: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.error("[ERROR] Erro ao disparar handoff: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to trigger handoff: {str(e)}"
@@ -155,31 +156,31 @@ async def assign_conversation(
             ConversationRepository(db),
             LeadRepository(db)
         )
-        
+
         conversation = await handoff_service.assign_to_human(
             session=db,
             conversation_id=conversation_id,
             user_id=request.user_id,
         )
-        
+
         logger.info(
-            f"✓ Conversation assigned via API: conv={conversation_id}, "
+            f"[SUCCESS] Conversation assigned via API: conv={conversation_id}, "
             f"to_user={request.user_id}, by_user_id={current_user['user_id']}"
         )
-        
+
         return HandoffResponse(
             status="assigned",
             conversation_id=conversation_id,
             message=f"Conversa atribuída para {request.user_id}"
         )
-        
+
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
-    except Exception as e:
-        logger.error(f"✗ Erro ao atribuir conversa: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.error("[ERROR] Erro ao atribuir conversa: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to assign conversation: {str(e)}"
@@ -206,27 +207,27 @@ async def complete_conversation(
             ConversationRepository(db),
             LeadRepository(db)
         )
-        
+
         result = await handoff_service.mark_as_completed(
             session=db,
             conversation_id=conversation_id,
             user_id=str(current_user["user_id"]),
         )
-        
+
         logger.info(
-            f"✓ Conversation completed via API: conv={conversation_id}, "
+            f"[SUCCESS] Conversation completed via API: conv={conversation_id}, "
             f"user_id={current_user['user_id']}, metrics={result['metrics']}"
         )
-        
+
         return result
-        
+
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
-    except Exception as e:
-        logger.error(f"✗ Erro ao completar conversa: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.error("[ERROR] Erro ao completar conversa: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to complete conversation: {str(e)}"
@@ -254,31 +255,31 @@ async def return_conversation_to_bot(
             ConversationRepository(db),
             LeadRepository(db)
         )
-        
+
         conversation = await handoff_service.return_to_bot(
             session=db,
             conversation_id=conversation_id,
             user_id=str(current_user["user_id"]),
         )
-        
+
         logger.info(
-            f"✓ Conversation returned to bot via API: conv={conversation_id}, "
+            f"[SUCCESS] Conversation returned to bot via API: conv={conversation_id}, "
             f"user_id={current_user['user_id']}"
         )
-        
+
         return HandoffResponse(
             status="returned_to_bot",
             conversation_id=conversation_id,
             message="Conversa devolvida ao bot"
         )
-        
+
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
-    except Exception as e:
-        logger.error(f"✗ Erro ao devolver conversa: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.error("[ERROR] Erro ao devolver conversa: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to return conversation: {str(e)}"
@@ -302,28 +303,27 @@ async def get_pending_handoffs(
     **Permissões:** Admin ou Agent
     """
     try:
-        from datetime import datetime, timezone
-        from robbot.adapters.repositories.conversation_message_repository import (
-            ConversationMessageRepository
-        )
-        
+        from datetime import datetime
+
+        from robbot.adapters.repositories.conversation_message_repository import ConversationMessageRepository
+
         conv_repo = ConversationRepository(db)
         msg_repo = ConversationMessageRepository(db)
-        
+
         # Buscar conversas pendentes
         conversations = conv_repo.get_by_status(ConversationStatus.PENDING_HANDOFF)
-        
+
         result = []
-        
+
         for conv in conversations:
             # Calcular tempo aguardando
-            waiting_time = datetime.now(timezone.utc) - conv.updated_at
+            waiting_time = datetime.now(UTC) - conv.updated_at
             waiting_minutes = int(waiting_time.total_seconds() / 60)
-            
+
             # Buscar última mensagem
             messages = msg_repo.get_by_conversation_id(conv.id, limit=1)
             last_message = messages[0].content if messages else "N/A"
-            
+
             result.append(
                 PendingHandoffConversation(
                     conversation_id=conv.id,
@@ -336,7 +336,7 @@ async def get_pending_handoffs(
                     last_message=last_message[:100],
                 )
             )
-        
+
         # Ordenar: urgentes primeiro, depois score, depois tempo
         result.sort(
             key=lambda x: (
@@ -345,16 +345,16 @@ async def get_pending_handoffs(
                 -x.waiting_time_minutes,  # Mais antigo primeiro
             )
         )
-        
+
         logger.info(
-            f"✓ Pending handoffs retrieved: {len(result)} conversas, "
+            f"[SUCCESS] Pending handoffs retrieved: {len(result)} conversas, "
             f"user_id={current_user['user_id']}"
         )
-        
+
         return result
-        
-    except Exception as e:
-        logger.error(f"✗ Erro ao buscar pending handoffs: {e}")
+
+    except Exception as e:  # noqa: BLE001
+        logger.error("[ERROR] Erro ao buscar pending handoffs: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get pending handoffs: {str(e)}"
