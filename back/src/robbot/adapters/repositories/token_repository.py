@@ -1,6 +1,4 @@
 """Repository for managing revoked JWT tokens."""
-
-
 from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.base_repository import BaseRepository
