@@ -43,8 +43,6 @@ from robbot.services.auth_services import AuthService
 
 router = APIRouter()
 settings = get_settings()
-
-
 @router.post("/signup", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 @RATE_LIMIT_REGISTER  # 3 per hour per IP
 async def signup(request: Request, payload: SignupRequest, db: Session = Depends(get_db)):
@@ -57,11 +55,9 @@ async def signup(request: Request, payload: SignupRequest, db: Session = Depends
     service = AuthService(db)
     try:
         user = service.signup(payload)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001 (blind exception)
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return user
-
-
 @router.post("/token", response_model=dict)
 @RATE_LIMIT_LOGIN  # 5 per 15min per IP
 async def login_for_access_token(
@@ -132,8 +128,6 @@ async def login_for_access_token(
         "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         "mfa_required": False,
     }
-
-
 @router.post("/refresh", response_model=dict)
 @RATE_LIMIT_REFRESH  # 10 per 1min per user
 async def refresh_token(
@@ -164,7 +158,7 @@ async def refresh_token(
             user_agent=user_agent,
             ip_address=client_ip,
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001 (blind exception)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(exc),
@@ -199,8 +193,6 @@ async def refresh_token(
         "message": "Token refreshed successfully",
         "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     }
-
-
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 def logout(
     request: Request,
@@ -218,23 +210,20 @@ def logout(
     service = AuthService(db)
 
     # Use service to revoke tokens and session, and log audit
-    try:
+    import contextlib
+    with contextlib.suppress(Exception):
+        # Proceed to clear cookies regardless
         service.logout(
             user_id=current_user.id,
             access_token=access_token,
             refresh_token=refresh_token_value,
         )
-    except Exception:
-        # Proceed to clear cookies regardless
-        ...
 
     # Clear cookies
     response.delete_cookie("access_token", path="/api/v1")
     response.delete_cookie("refresh_token", path="/api/v1/auth/refresh")
 
     return
-
-
 @router.post("/password-change", status_code=status.HTTP_200_OK)
 async def password_change(
     request: Request,
@@ -259,8 +248,6 @@ async def password_change(
             detail=str(exc),
         ) from exc
     return {"detail": "Password changed successfully"}
-
-
 @router.get("/me", response_model=AuthSessionResponse)
 def read_me(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     """Obtém informações da sessão de autenticação atual.
@@ -299,8 +286,6 @@ def read_me(current_user=Depends(get_current_user), db: Session = Depends(get_db
         session_id=session_id,
         last_login_at=last_login_at,
     )
-
-
 @router.post("/password-recovery", status_code=status.HTTP_202_ACCEPTED)
 @RATE_LIMIT_PASSWORD_RECOVERY  # 3 per hour per email
 async def password_recovery(request: Request, email: str, db: Session = Depends(get_db)):
@@ -312,8 +297,6 @@ async def password_recovery(request: Request, email: str, db: Session = Depends(
     service = AuthService(db)
     service.send_password_recovery(email)
     return {"detail": "If the email exists a recovery message was sent"}
-
-
 @router.post("/password-reset", status_code=status.HTTP_200_OK)
 @RATE_LIMIT_PASSWORD_RESET  # 5 per 15min per IP
 async def password_reset(request: Request, token: str, new_password: str, db: Session = Depends(get_db)):
@@ -325,19 +308,15 @@ async def password_reset(request: Request, token: str, new_password: str, db: Se
     service = AuthService(db)
     try:
         service.reset_password(token, new_password)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001 (blind exception)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
     return {"detail": "Password updated"}
-
-
 # ============================================================================
 # SESSION MANAGEMENT
 # ============================================================================
-
-
 @router.get("/sessions", response_model=SessionListResponse)
 def list_sessions(
     request: Request,
@@ -376,8 +355,6 @@ def list_sessions(
         sessions=session_outs,
         total=len(session_outs)
     )
-
-
 @router.post("/sessions/{session_id}/revoke", status_code=status.HTTP_204_NO_CONTENT)
 def revoke_session(
     session_id: int,
@@ -411,8 +388,6 @@ def revoke_session(
         )
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
 @router.post("/sessions/revoke-all", status_code=status.HTTP_200_OK)
 def revoke_all_sessions(
     request: Request,
@@ -451,13 +426,9 @@ def revoke_all_sessions(
         "detail": f"Revoked {revoked_count} session(s)",
         "revoked_count": revoked_count
     }
-
-
 # ============================================================================
 # EMAIL VERIFICATION ENDPOINTS
 # ============================================================================
-
-
 @router.get("/email/verify", response_model=EmailVerificationResponse)
 async def verify_email(token: str, db: Session = Depends(get_db)):
     """Verifica email do usuário usando token de verificação do link do email.
@@ -486,8 +457,6 @@ async def verify_email(token: str, db: Session = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
-
-
 @router.post("/email/resend", status_code=status.HTTP_200_OK)
 async def resend_verification_email(
     payload: EmailResendRequest,
@@ -510,7 +479,7 @@ async def resend_verification_email(
 
     service = EmailVerificationService(db)
     try:
-        verification_token = service.resend_verification_email(payload.email)
+        service.resend_verification_email(payload.email)
 
         return {
             "detail": "Verification email sent. Please check your inbox.",
@@ -521,8 +490,6 @@ async def resend_verification_email(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
-
-
 # ==================== MFA ENDPOINTS ====================
 
 @router.post("/mfa/setup", response_model=MfaSetupResponse)
@@ -555,8 +522,6 @@ def setup_mfa(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
-
-
 @router.post("/mfa/verify", response_model=MfaVerifyResponse)
 def verify_mfa_code(
     payload: MfaVerifyRequest,
@@ -599,8 +564,6 @@ def verify_mfa_code(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=str(exc),
             ) from exc
-
-
 @router.post("/mfa/disable", response_model=MfaDisableResponse)
 def disable_mfa(
     payload: MfaDisableRequest,
@@ -635,8 +598,6 @@ def disable_mfa(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(exc),
         ) from exc
-
-
 @router.post("/mfa/login", response_model=LoginResponse, status_code=status.HTTP_200_OK)
 def mfa_login(
     payload: MfaLoginRequest,
