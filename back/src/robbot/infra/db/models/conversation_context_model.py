@@ -12,8 +12,6 @@ from robbot.infra.db.base import Base
 
 if TYPE_CHECKING:
     from robbot.infra.db.models.conversation_model import ConversationModel
-
-
 class ConversationContextModel(Base):
     """Model for structured conversation context extracted by LLM.
 
