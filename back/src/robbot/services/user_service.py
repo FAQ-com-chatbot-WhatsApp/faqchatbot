@@ -1,5 +1,7 @@
 """User management service for CRUD operations and admin actions."""
 
+import contextlib
+
 from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.auth_session_repository import AuthSessionRepository
@@ -67,7 +69,7 @@ class UserService:
         # Revoke all active sessions
         self.session_repo.revoke_all_for_user(user_id, reason=reason or "admin_block")
         # Audit
-        try:
+        with contextlib.suppress(Exception):
             self.audit_svc.log_action(
                 action="user_block",
                 entity_type="User",
@@ -76,8 +78,6 @@ class UserService:
                 old_value={"is_active": True},
                 new_value={"is_active": False, "reason": reason},
             )
-        except Exception:
-            pass
         return UserOut.model_validate(user)
 
     def unblock_user(self, user_id: int, reason: str | None = None) -> UserOut:
@@ -89,7 +89,7 @@ class UserService:
             user.is_active = True
             self.repo.update_user(user)
         # Audit
-        try:
+        with contextlib.suppress(Exception):
             self.audit_svc.log_action(
                 action="user_unblock",
                 entity_type="User",
@@ -98,6 +98,4 @@ class UserService:
                 old_value={"is_active": False},
                 new_value={"is_active": True, "reason": reason},
             )
-        except Exception:
-            pass
         return UserOut.model_validate(user)
