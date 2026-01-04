@@ -9,8 +9,6 @@ from rq import Queue, Worker
 from robbot.infra.redis.client import get_redis_client
 
 logger = logging.getLogger(__name__)
-
-
 class WorkerAnalyticsService:
     """Service for monitoring workers and implementing autoscaling."""
 
@@ -136,7 +134,7 @@ class WorkerAnalyticsService:
 
     def should_autoscale(self) -> tuple[bool, int, str]:
         """Check if autoscaling should be triggered.
-        
+
         Returns:
             Tuple of (should_scale, target_workers, reason)
         """
