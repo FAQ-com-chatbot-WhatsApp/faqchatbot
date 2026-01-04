@@ -13,8 +13,6 @@ from robbot.core.custom_exceptions import NotFoundException
 from robbot.services.notification_service import NotificationService
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
-
-
 # ========== SCHEMAS ==========
 
 class NotificationOut(BaseModel):
@@ -29,14 +27,10 @@ class NotificationOut(BaseModel):
     created_at: str
 
     model_config = ConfigDict(from_attributes=True)
-
-
 class MarkReadRequest(BaseModel):
     """Request para marcar como lida."""
     # Endpoint usa apenas o ID da URL - sem campos necessários
     model_config = {"extra": "forbid"}
-
-
 # ========== ENDPOINTS ==========
 
 @router.get(
@@ -94,8 +88,6 @@ async def list_notifications(
         )
         for n in notifications
     ]
-
-
 @router.get(
     "/unread-count",
     response_model=dict,
@@ -120,8 +112,6 @@ async def count_unread_notifications(
     count = service.count_unread(user_id=current_user.id)
 
     return {"count": count}
-
-
 @router.put(
     "/{notification_id}/read",
     response_model=NotificationOut,
@@ -183,7 +173,7 @@ async def mark_notification_as_read(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Notification {notification_id} not found",
         )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to mark notification as read: {str(e)}",
