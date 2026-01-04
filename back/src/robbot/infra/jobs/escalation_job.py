@@ -11,8 +11,6 @@ from robbot.infra.db.session import get_sync_session
 from robbot.infra.jobs.base_job import BaseJob, JobFailureError, JobRetryableError
 
 logger = logging.getLogger(__name__)
-
-
 class EscalationJob(BaseJob):
     """
     Job para transferir conversa para atendimento humano.
@@ -118,7 +116,7 @@ class EscalationJob(BaseJob):
                 extra=self._log_context(),
             )
             raise
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(
                 "Erro inesperado ao escalar conversa: %s: %s",
                 type(e).__name__,
@@ -147,10 +145,7 @@ class EscalationJob(BaseJob):
         # - Enviar push notification via Firebase/OneSignal
         # - Enviar webhook para dashboard real-time
 
-        notification_id = f"notif_{self.conversation_id}_{int(self.metadata.get('created_at', 0))}"
-        return notification_id
-
-
+        return f"notif_{self.conversation_id}_{int(self.metadata.get('created_at', 0))}"
 class MultipleEscalationJob(BaseJob):
     """
     Job para escalar múltiplas conversas.
