@@ -6,15 +6,13 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 ModelType = TypeVar("ModelType")
-
-
 class BaseRepository(Generic[ModelType]):
     """Generic repository with common database operations."""
 
     def __init__(self, db: Session, model_class: type[ModelType]):
         """
         Initialize repository.
-        
+
         Args:
             db: Database session
             model_class: SQLAlchemy ORM Model class
