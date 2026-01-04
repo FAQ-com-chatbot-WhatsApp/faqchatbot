@@ -22,11 +22,9 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token", auto_error=F
 
 # Flag to ensure rate limiter is initialized only once
 _rate_limiter_initialized = False
-
-
 def initialize_rate_limiter() -> None:
     """Initialize rate limiter with Redis client.
-    
+
     This should be called during application startup.
     """
     global _rate_limiter_initialized
@@ -34,27 +32,23 @@ def initialize_rate_limiter() -> None:
         redis_client = get_redis_client()
         init_rate_limiter(redis_client)
         _rate_limiter_initialized = True
-
-
 def get_db() -> Generator[Session, None, None]:
     """Dependency that provides a SQLAlchemy session.
-    
+
     Delegates to infra.db.session.get_db() for consistency.
     Auto-commits on success, rollbacks on exception.
-    
+
     Yields:
         SQLAlchemy Session with automatic transaction management
     """
     yield from session_get_db()
-
-
 def get_current_user(
     request: Request,
     db: Session = Depends(get_db)
 ) -> UserModel:
     """
     Validates token from HttpOnly cookie and returns current user from DB.
-    
+
     Reads access_token from cookie instead of Authorization header.
     """
     # Read access token from HttpOnly cookie
@@ -111,8 +105,6 @@ def get_current_user(
         )
 
     return user
-
-
 def require_role(*allowed_roles: str) -> Callable:
     """
     Dependency factory that checks if current user has one of the allowed roles.
