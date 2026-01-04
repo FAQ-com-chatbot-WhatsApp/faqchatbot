@@ -12,10 +12,10 @@ from robbot.infra.db.base import SessionLocal
 def get_sync_session() -> Generator[Session, None, None]:
     """
     Get synchronous database session with context manager.
-    
+
     Yields:
         SQLAlchemy Session
-        
+
     Example:
         with get_sync_session() as session:
             # Use session
@@ -30,15 +30,13 @@ def get_sync_session() -> Generator[Session, None, None]:
         raise
     finally:
         session.close()
-
-
 def get_db() -> Generator[Session, None, None]:
     """
     Get database session for FastAPI dependency injection.
-    
+
     Yields:
         SQLAlchemy Session
-        
+
     Example:
         @app.get("/items")
         def get_items(db: Session = Depends(get_db)):
