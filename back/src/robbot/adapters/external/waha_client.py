@@ -15,8 +15,6 @@ from robbot.config.settings import settings
 from robbot.core.custom_exceptions import WAHAError
 
 logger = logging.getLogger(__name__)
-
-
 class WAHAClient:
     """Async HTTP client for WAHA API with anti-ban features."""
 
@@ -123,7 +121,7 @@ class WAHAClient:
                 original_error=e
             )
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(
                 "WAHA unexpected error: %s",
                 e,
@@ -498,7 +496,7 @@ class WAHAClient:
             # Stop typing before sending
             await self.stop_typing(session, chat_id)
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             # Don't fail message sending if anti-ban flow fails
             logger.warning("Anti-ban flow error (non-critical): %s", e)
 
@@ -1323,8 +1321,7 @@ class WAHAClient:
         """
         params = {"format": image_format}
         # For image format, might return binary
-        result = await self._request("GET", f"/api/{session}/auth/qr", params=params)
-        return result
+        return await self._request("GET", f"/api/{session}/auth/qr", params=params)
 
     async def request_auth_code(
         self,
@@ -1513,15 +1510,11 @@ class WAHAClient:
         params = {"session": session}
         logger.info("Taking screenshot of session: %s", session)
         return await self._request("GET", "/api/screenshot", params=params)
-
-
 # ============================================================================
 # FACTORY FUNCTION (singleton pattern for global session)
 # ============================================================================
 
 _waha_client_instance: WAHAClient | None = None
-
-
 def get_waha_client() -> WAHAClient:
     """Get or create singleton WAHA client instance.
 
@@ -1532,8 +1525,6 @@ def get_waha_client() -> WAHAClient:
     if _waha_client_instance is None:
         _waha_client_instance = WAHAClient()
     return _waha_client_instance
-
-
 async def close_waha_client():
     """Close global WAHA client connection."""
     global _waha_client_instance
