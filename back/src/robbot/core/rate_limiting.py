@@ -90,7 +90,7 @@ class RateLimiter:
 
             return is_allowed, current, ttl
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             # If Redis fails, allow request (fail open)
             logging.getLogger(__name__).exception("Rate limiter error: %s", e)
             return True, 0, 0
@@ -105,12 +105,8 @@ class RateLimiter:
         """
         key = self._get_key(identifier, endpoint, key_type)
         self.redis.delete(key)
-
-
 # Global rate limiter instance (initialized in deps.py)
 _rate_limiter: RateLimiter | None = None
-
-
 def init_rate_limiter(redis_client: Redis) -> None:
     """Initialize global rate limiter instance.
 
@@ -119,8 +115,6 @@ def init_rate_limiter(redis_client: Redis) -> None:
     """
     global _rate_limiter
     _rate_limiter = RateLimiter(redis_client)
-
-
 def get_rate_limiter() -> RateLimiter:
     """Get global rate limiter instance.
 
@@ -133,8 +127,6 @@ def get_rate_limiter() -> RateLimiter:
     if _rate_limiter is None:
         raise RuntimeError("Rate limiter not initialized. Call init_rate_limiter() first.")
     return _rate_limiter
-
-
 def rate_limit(
     max_requests: int,
     window_seconds: int,
@@ -227,8 +219,6 @@ def rate_limit(
         return wrapper
 
     return decorator
-
-
 # Predefined rate limit configurations
 # Usage: @RATE_LIMIT_LOGIN
 # instead of: @rate_limit(max_requests=5, window_seconds=900, key_type="ip")
