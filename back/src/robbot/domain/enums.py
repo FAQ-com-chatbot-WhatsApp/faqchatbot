@@ -18,7 +18,7 @@ class ConversationStatus(str, Enum):
     COMPLETED = "COMPLETED"  # Agendamento confirmado
     ESCALATED = "ESCALATED"  # Escalado (bot confuso)
     CLOSED = "CLOSED"  # Conversa finalizada
-    
+
     # Mantido para compatibilidade
     ACTIVE = "ACTIVE_BOT"
     WAITING_SECRETARY = "PENDING_HANDOFF"
@@ -58,3 +58,5 @@ class InteractionType(str, Enum):
     STATUS_CHANGE = "STATUS_CHANGE"
     CALL = "CALL"
     EMAIL = "EMAIL"
+    MESSAGE = "MESSAGE"
+    MEETING = "MEETING"
