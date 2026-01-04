@@ -19,8 +19,6 @@ from robbot.services.message_service import MessageService
 from robbot.services.playbook_service import PlaybookService
 
 logger = logging.getLogger(__name__)
-
-
 # ============================================================================
 # TOOL 1: Search Playbooks (RAG Semantic Search)
 # ============================================================================
@@ -51,17 +49,15 @@ SEARCH_PLAYBOOKS_DECLARATION = {
         "required": ["query"]
     }
 }
-
-
 def search_playbooks_tool(db: Session, query: str, top_k: int = 3) -> list[dict[str, Any]]:
     """
     Execute semantic search for playbooks.
-    
+
     Args:
         db: Database session
         query: Search query (natural language)
         top_k: Number of results to return
-    
+
     Returns:
         List of playbook search results with relevance scores
     """
@@ -83,11 +79,9 @@ def search_playbooks_tool(db: Session, query: str, top_k: int = 3) -> list[dict[
             }
             for r in results
         ]
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         logger.error("Error searching playbooks: %s", e)
         return []
-
-
 # ============================================================================
 # TOOL 2: Get Playbook Steps (with message details)
 # ============================================================================
@@ -111,16 +105,14 @@ GET_PLAYBOOK_STEPS_DECLARATION = {
         "required": ["playbook_id"]
     }
 }
-
-
 def get_playbook_steps_tool(db: Session, playbook_id: str) -> dict[str, Any]:
     """
     Retrieve all steps for a playbook with full message details.
-    
+
     Args:
         db: Database session
         playbook_id: Playbook UUID
-    
+
     Returns:
         Dict with playbook info and list of steps with message details
     """
@@ -135,11 +127,9 @@ def get_playbook_steps_tool(db: Session, playbook_id: str) -> dict[str, Any]:
             "total_steps": len(steps),
             "steps": steps
         }
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         logger.error("Error getting playbook steps: %s", e)
         return {"playbook_id": playbook_id, "total_steps": 0, "steps": [], "error": str(e)}
-
-
 # ============================================================================
 # TOOL 3: Send Playbook Message
 # ============================================================================
@@ -172,8 +162,6 @@ SEND_PLAYBOOK_MESSAGE_DECLARATION = {
         "required": ["message_id", "conversation_id"]
     }
 }
-
-
 def send_playbook_message_tool(
     db: Session,
     message_id: str,
@@ -182,13 +170,13 @@ def send_playbook_message_tool(
 ) -> dict[str, Any]:
     """
     Send a message from a playbook to the client.
-    
+
     Args:
         db: Database session
         message_id: Message UUID from playbook
         conversation_id: Current conversation UUID
         custom_intro: Optional introductory text
-    
+
     Returns:
         Dict with success status and message info
     """
@@ -232,11 +220,9 @@ def send_playbook_message_tool(
             "note": "Message queued for sending (implementation pending)"
         }
 
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         logger.error("Error sending playbook message: %s", e)
         return {"success": False, "error": str(e)}
-
-
 # ============================================================================
 # TOOL 4: Send Clinic Location
 # ============================================================================
@@ -267,20 +253,18 @@ SEND_CLINIC_LOCATION_DECLARATION = {
         "required": ["chat_id"]
     }
 }
-
-
 def send_clinic_location_tool(
     chat_id: str,
     custom_title: str = "Clínica GO"
 ) -> dict[str, Any]:
     """
     Enviar localização da Clínica GO via WhatsApp.
-    
+
     Args:
         db: Database session (não usado, mas mantido por consistência)
         chat_id: ID do chat do WhatsApp
         custom_title: Título customizado para o pin
-        
+
     Returns:
         Resultado do envio
     """
@@ -301,14 +285,12 @@ def send_clinic_location_tool(
             "address": "Av. São Miguel, 1000 - sala 102 - Centro, Dois Irmãos - RS",
             "result": result
         }
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         logger.error("[ERROR] Erro ao enviar localização: %s", e)
         return {
             "success": False,
             "error": str(e)
         }
-
-
 # ============================================================================
 # Tool Registry
 # ============================================================================
@@ -319,8 +301,6 @@ PLAYBOOK_TOOLS_DECLARATIONS = [
     SEND_PLAYBOOK_MESSAGE_DECLARATION,
     SEND_CLINIC_LOCATION_DECLARATION,
 ]
-
-
 def execute_playbook_tool(
     db: Session,
     tool_name: str,
@@ -328,12 +308,12 @@ def execute_playbook_tool(
 ) -> Any:
     """
     Execute a playbook tool by name.
-    
+
     Args:
         db: Database session
         tool_name: Name of the tool to execute
         tool_args: Arguments for the tool
-    
+
     Returns:
         Tool execution result
     """
