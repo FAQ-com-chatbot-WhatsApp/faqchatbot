@@ -6,8 +6,8 @@ import json
 import logging
 import time
 from abc import ABC, abstractmethod
-from datetime import UTC, datetime, timedelta
-from typing import Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from robbot.config.settings import settings
 
@@ -27,13 +27,13 @@ class JobRetryableError(Exception):
 class BaseJob(ABC):
     """
     Classe base para todos os jobs assíncronos.
-    
+
     Responsabilidades:
     - Implementar retry com backoff exponencial
     - Logging estruturado de eventos
     - Tratamento de exceções
     - Persistência de estado (quando necessário)
-    
+
     Subclasses devem implementar: execute()
     """
 
@@ -43,13 +43,13 @@ class BaseJob(ABC):
 
     def __init__(
         self,
-        job_id: Optional[str] = None,
+        job_id: str | None = None,
         attempt: int = 0,
-        metadata: Optional[dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ):
         """
         Inicializar job.
-        
+
         Args:
             job_id: ID único do job (gerado pelo RQ se não fornecido)
             attempt: Número da tentativa atual (0 = primeira tentativa)
@@ -59,8 +59,8 @@ class BaseJob(ABC):
         self.attempt = attempt
         self.metadata = metadata or {}
         self.created_at = datetime.now(UTC)
-        self.started_at: Optional[datetime] = None
-        self.completed_at: Optional[datetime] = None
+        self.started_at: datetime | None = None
+        self.completed_at: datetime | None = None
 
     @staticmethod
     def _generate_job_id() -> str:
@@ -71,14 +71,14 @@ class BaseJob(ABC):
     def execute(self) -> Any:
         """
         Executar lógica do job.
-        
+
         Este método DEVE ser implementado pelas subclasses.
-        
+
         Pode lançar:
         - JobRetryableError: Será retentado com backoff
         - JobFailureError: Falha definitiva, vai para DLQ
         - Exception: Tratado como erro não-previsto, retentado
-        
+
         Returns:
             Resultado do processamento
         """
@@ -87,58 +87,58 @@ class BaseJob(ABC):
     def run(self) -> Any:
         """
         Executar job com tratamento de erros e logging.
-        
+
         Esta é a função que RQ vai chamar diretamente.
-        
+
         Returns:
             Resultado do execute() ou None se falhar
         """
         self.started_at = datetime.now(UTC)
-        
+
         try:
             logger.info(
                 f"[JOB:{self.job_id}] Iniciando execução (tentativa {self.attempt + 1}/{self.MAX_RETRIES + 1})",
                 extra=self._log_context(),
             )
-            
+
             result = self.execute()
-            
+
             self.completed_at = datetime.now(UTC)
             duration = (self.completed_at - self.started_at).total_seconds()
-            
+
             logger.info(
-                f"[JOB:{self.job_id}] ✓ Concluído com sucesso ({duration:.2f}s)",
+                f"[JOB:{self.job_id}] [SUCCESS] Completed successfully ({duration:.2f}s)",
                 extra=self._log_context(),
             )
-            
+
             return result
 
         except JobRetryableError as e:
             return self._handle_retryable_error(e)
         except JobFailureError as e:
             return self._handle_failure_error(e)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return self._handle_unexpected_error(e)
 
     def _handle_retryable_error(self, error: JobRetryableError) -> None:
         """Tratar erro recuperável (retentável)."""
         self.attempt += 1
-        
+
         if self.attempt < self.MAX_RETRIES:
             wait_seconds = self.RETRY_BACKOFF[self.attempt - 1]
             logger.warning(
-                f"[JOB:{self.job_id}] ⚠ Erro retentável: {error}. "
+                f"[JOB:{self.job_id}] [WARNING] Erro retentável: {error}. "
                 f"Retentando em {wait_seconds}s (tentativa {self.attempt + 1}/{self.MAX_RETRIES + 1})",
                 extra=self._log_context(),
             )
-            
+
             # Aguardar e relançar para RQ reprocessar
             time.sleep(wait_seconds)
             raise error
         else:
             logger.error(
-                f"[JOB:{self.job_id}] ✗ Falha após {self.MAX_RETRIES} tentativas. "
-                f"Movendo para DLQ. Erro: {error}",
+                f"[JOB:{self.job_id}] [ERROR] Failed after {self.MAX_RETRIES} attempts. "
+                f"Moving to DLQ. Error: {error}",
                 extra=self._log_context(),
             )
             raise JobFailureError(str(error))
@@ -146,7 +146,7 @@ class BaseJob(ABC):
     def _handle_failure_error(self, error: JobFailureError) -> None:
         """Tratar erro não-recuperável (vai para DLQ)."""
         logger.error(
-            f"[JOB:{self.job_id}] ✗ Falha definitiva (não-recuperável): {error}",
+            f"[JOB:{self.job_id}] [ERROR] Permanent failure (non-recoverable): {error}",
             extra=self._log_context(),
         )
         raise error
@@ -154,21 +154,21 @@ class BaseJob(ABC):
     def _handle_unexpected_error(self, error: Exception) -> None:
         """Tratar erro inesperado (tentar retryar)."""
         self.attempt += 1
-        
+
         if self.attempt < self.MAX_RETRIES:
             wait_seconds = self.RETRY_BACKOFF[self.attempt - 1]
             logger.warning(
-                f"[JOB:{self.job_id}] ⚠ Erro inesperado: {type(error).__name__}: {error}. "
-                f"Retentando em {wait_seconds}s (tentativa {self.attempt + 1}/{self.MAX_RETRIES + 1})",
+                f"[JOB:{self.job_id}] [WARNING] Unexpected error: {type(error).__name__}: {error}. "
+                f"Retrying in {wait_seconds}s (attempt {self.attempt + 1}/{self.MAX_RETRIES + 1})",
                 extra=self._log_context(),
             )
-            
+
             time.sleep(wait_seconds)
             raise JobRetryableError(str(error))
         else:
             logger.error(
-                f"[JOB:{self.job_id}] ✗ Falha após {self.MAX_RETRIES} tentativas. "
-                f"Erro: {type(error).__name__}: {error}",
+                f"[JOB:{self.job_id}] [ERROR] Failed after {self.MAX_RETRIES} attempts. "
+                f"Error: {type(error).__name__}: {error}",
                 extra=self._log_context(),
             )
             raise JobFailureError(str(error))
@@ -189,7 +189,7 @@ class BaseJob(ABC):
             status = "running"
         if self.completed_at:
             status = "completed"
-        
+
         return {
             "job_id": self.job_id,
             "type": self.__class__.__name__,
