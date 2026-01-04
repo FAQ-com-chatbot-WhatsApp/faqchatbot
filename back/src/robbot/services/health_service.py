@@ -7,6 +7,7 @@ from robbot.adapters.repositories.alert_repository import AlertRepository
 from robbot.adapters.repositories.health_repository import HealthRepository
 from robbot.adapters.repositories.session_repository import SessionRepository
 from robbot.config.settings import settings
+from robbot.core.custom_exceptions import ExternalServiceError
 from robbot.schemas.health import HealthOut
 from robbot.services.queue_service import get_queue_service
 
@@ -39,13 +40,13 @@ class HealthService:
 
         try:
             db_ok = self.health_repo.ping()
-        except Exception as exc:  # pragma: no cover - integration moment  # noqa: BLE001
+        except Exception as exc:  # pragma: no cover - integration moment  # noqa: BLE001 (blind exception)
             db_ok = False
             db_error = str(exc)
 
         try:
             redis_ok = self.health_repo.check_redis_connection()
-        except Exception as exc:  # pragma: no cover - integration moment  # noqa: BLE001
+        except Exception as exc:  # pragma: no cover - integration moment  # noqa: BLE001 (blind exception)
             redis_ok = False
             redis_error = str(exc)
 
@@ -57,7 +58,7 @@ class HealthService:
         except ExternalServiceError as exc:
             waha_ok = False
             waha_error = str(exc)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001 (blind exception)
             waha_ok = False
             waha_error = str(exc)
 
@@ -66,7 +67,7 @@ class HealthService:
             queue_service = get_queue_service()
             queue_health = queue_service.health_check()
             queue_ok = queue_health.get("status") == "healthy"
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001 (blind exception)
             queue_ok = False
             queue_error = str(exc)
 
@@ -82,15 +83,14 @@ class HealthService:
         # Se crítico (DB down) e alerts ativados, persistir alerta básico
         if not db_ok and getattr(settings, "SMTP_SENDER", None) is not None:
             # Persistir alerta para análise posterior
-            try:
+            import contextlib
+            with contextlib.suppress(Exception):
+                # Não propagar erro de persistência de alerta no health check
                 self.alert_repo.create_alert(
                     level="critical",
                     message="Database unreachable in health check",
                     metadata={"error": db_error},
                 )
-            except Exception:
-                # Não propagar erro de persistência de alerta no health check
-                pass
 
         return HealthOut(
             status=status_str,
