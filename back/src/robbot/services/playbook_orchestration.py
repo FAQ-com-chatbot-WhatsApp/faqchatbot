@@ -12,7 +12,7 @@ import json
 import logging
 from typing import Any
 
-from robbot.core.custom_exceptions import VectorDBError
+from robbot.core.custom_exceptions import ExternalServiceError, VectorDBError
 from robbot.services.playbook_tools import (
     PLAYBOOK_TOOLS_DECLARATIONS,
     execute_playbook_tool,
@@ -20,12 +20,10 @@ from robbot.services.playbook_tools import (
 from robbot.services.transcription_service import TranscriptionService
 
 logger = logging.getLogger(__name__)
-
-
 class PlaybookOrchestrationMixin:
     """
     Mixin to add playbook capabilities to ConversationOrchestrator.
-    
+
     This provides:
     - Function calling tool registration
     - Tool execution handling
@@ -35,7 +33,7 @@ class PlaybookOrchestrationMixin:
     def _get_playbook_tools(self) -> list[dict[str, Any]]:
         """
         Get playbook tool declarations for Gemini Function Calling.
-        
+
         Returns:
             List of tool declaration dicts compatible with Gemini API
         """
@@ -52,13 +50,13 @@ class PlaybookOrchestrationMixin:
     ) -> dict[str, Any]:
         """
         Generate response using Gemini with playbook tools enabled.
-        
+
         This implements a function calling loop:
         1. Send prompt + tools to Gemini
         2. If Gemini requests tool call, execute it
         3. Return tool result to Gemini
         4. Repeat until Gemini generates final text response
-        
+
         Args:
             session: Database session
             message_text: User message
@@ -66,7 +64,7 @@ class PlaybookOrchestrationMixin:
             context: Conversation context
             conversation: ConversationModel entity
             max_tool_calls: Max iterations to prevent infinite loops
-        
+
         Returns:
             Dict with response and metadata
         """
@@ -126,7 +124,7 @@ class PlaybookOrchestrationMixin:
                 "Resuma a conversa e responda ao usuário sem usar mais ferramentas."
             )
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("Error in function calling loop: %s", e)
             raise VectorDBError(f"Function calling failed: {e}", original_error=e)
 
@@ -139,7 +137,7 @@ class PlaybookOrchestrationMixin:
     ) -> str:
         """
         Build prompt with playbook usage instructions.
-        
+
         Teaches LLM when and how to use playbook tools.
         """
         base_prompt = self.prompt_templates.format_response_prompt(
@@ -188,17 +186,17 @@ IMPORTANTE:
     def _extract_function_call(self, response: dict[str, Any]) -> dict[str, Any] | None:
         """
         Extract function call from Gemini response.
-        
+
         Returns:
             Dict with function name and args, or None if no function call
-        
+
         Note:
             IMPLEMENTATION PENDING - Gemini Function Calling integration.
-            
+
             When implemented, should parse:
             - response.candidates[0].content.parts[0].function_call.name
             - response.candidates[0].content.parts[0].function_call.args
-            
+
             See: https://ai.google.dev/gemini-api/docs/function-calling
         """
         # Check if response has function_call structure
@@ -243,10 +241,10 @@ IMPORTANTE:
     ) -> str | None:
         """
         Transcribe voice message using Whisper API.
-        
+
         Args:
             audio_url: URL of audio file to transcribe
-        
+
         Returns:
             Transcription text or None if failed
         """
@@ -272,15 +270,15 @@ IMPORTANTE:
     ) -> str:
         """
         Process media message (image, video, audio, document).
-        
+
         For voice messages, transcribe audio.
         For other media, return caption or type description.
-        
+
         Args:
             message_type: Type of media (audio, image, video, document)
             media_url: URL of media file
             caption: Optional caption
-        
+
         Returns:
             Text representation of media message
         """
