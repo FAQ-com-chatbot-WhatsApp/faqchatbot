@@ -8,12 +8,10 @@ from robbot.adapters.repositories.tag_repository import TagRepository
 from robbot.infra.db.models.tag_model import TagModel
 
 logger = logging.getLogger(__name__)
-
-
 class TagService:
     """
     Service for tag management.
-    
+
     Business logic for:
     - Creating tags
     - Listing tags
@@ -27,14 +25,14 @@ class TagService:
     def create_tag(self, name: str, color: str) -> TagModel:
         """
         Create a new tag.
-        
+
         Args:
             name: Tag name (max 50 chars, must be unique)
             color: Hex color code (e.g., #FF0000)
-            
+
         Returns:
             Created Tag entity
-            
+
         Raises:
             ValueError: If tag name already exists or invalid color format
         """
@@ -59,7 +57,7 @@ class TagService:
     def get_all_tags(self) -> list[TagModel]:
         """
         Get all tags.
-        
+
         Returns:
             List of all tags
         """
@@ -70,10 +68,10 @@ class TagService:
     def get_tag_by_id(self, tag_id: int) -> TagModel | None:
         """
         Get tag by ID.
-        
+
         Args:
             tag_id: Tag ID
-            
+
         Returns:
             Tag entity or None
         """
@@ -82,10 +80,10 @@ class TagService:
     def get_tag_by_name(self, name: str) -> TagModel | None:
         """
         Get tag by name.
-        
+
         Args:
             name: Tag name
-            
+
         Returns:
             Tag entity or None
         """
@@ -94,10 +92,10 @@ class TagService:
     def delete_tag(self, tag_id: int) -> bool:
         """
         Delete a tag.
-        
+
         Args:
             tag_id: Tag ID
-            
+
         Returns:
             True if deleted, False if not found
         """
