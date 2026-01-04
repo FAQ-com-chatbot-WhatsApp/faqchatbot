@@ -1,6 +1,4 @@
 """Repository for playbook_step persistence and retrieval operations."""
-
-
 from sqlalchemy.orm import Session, joinedload
 
 from robbot.adapters.repositories.base_repository import BaseRepository
