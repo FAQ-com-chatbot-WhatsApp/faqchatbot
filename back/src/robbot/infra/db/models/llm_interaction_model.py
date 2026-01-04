@@ -4,11 +4,10 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, Enum as SQLEnum
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from robbot.infra.db.base import Base
-from robbot.domain.enums import LLMProvider
 
 if TYPE_CHECKING:
     from robbot.infra.db.models.conversation_model import ConversationModel
