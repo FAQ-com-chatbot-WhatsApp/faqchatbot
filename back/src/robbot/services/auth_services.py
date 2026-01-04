@@ -29,11 +29,9 @@ from robbot.services.email_verification_service import EmailVerificationService
 from robbot.services.mfa_service import MfaService
 
 logger = logging.getLogger(__name__)
-
-
 class AuthService:
     """Camada de serviço que implementa regras de negócio de autenticação.
-    
+
     Gerencia autenticação de usuários, emissão de tokens, sessões,
     e integração com MFA e verificação de email.
     """
@@ -49,18 +47,18 @@ class AuthService:
 
     def signup(self, payload: SignupRequest) -> UserOut:
         """Registra um novo usuário com validação de senha e persistência.
-        
+
         Args:
             payload: Dados de registro incluindo email, senha e nome completo
-            
+
         Returns:
             Dados do usuário criado (sem senha)
-            
+
         Raises:
             AuthException: Se usuário já existe ou senha é inválida
-            
+
         Note:
-            Cria usuário com email_verified=false. Verificação de email 
+            Cria usuário com email_verified=false. Verificação de email
             é necessária antes do login.
         """
         existing = self.repo.get_by_email(payload.email)
@@ -94,17 +92,17 @@ class AuthService:
         ip_address: str | None = None,
     ) -> Token | None:
         """Valida credenciais e retorna tokens com dados do usuário.
-        
+
         Bloqueia login se email não verificado.
         Se MFA habilitado, retorna tokens temporários com mfa_required=True.
         Se MFA desabilitado, retorna tokens finais com mfa_required=False.
-        
+
         Args:
             email: Email do usuário
             password: Senha do usuário
             user_agent: User-agent do dispositivo (opcional)
             ip_address: Endereço IP do cliente (opcional)
-        
+
         Returns:
             Token com mfa_required=True se MFA habilitado (tokens temporários)
             Token com mfa_required=False se MFA desabilitado (tokens finais)
@@ -121,8 +119,6 @@ class AuthService:
         if not self.email_verification_svc.is_email_verified(user.id):
             logger.warning("Login failed: email not verified for user %s", email)
             raise AuthException("Email not verified. Please check your email for verification link.")
-
-
         # Verificar senha via CredentialService
         if not self.credential_svc.verify_password(user.id, password):
             logger.warning("Login failed: invalid password for user %s", email)
@@ -196,15 +192,15 @@ class AuthService:
         ip_address: str | None = None,
     ) -> Token:
         """Rotação de refresh token: valida, revoga o token usado e retorna novo par.
-        
+
         Args:
             refresh_token: Token de refresh a ser renovado
             user_agent: User-agent do dispositivo (opcional)
             ip_address: Endereço IP do cliente (opcional)
-            
+
         Returns:
             Novo par de tokens (access + refresh)
-            
+
         Raises:
             AuthException: Se token inválido, revogado ou expirado
         """
@@ -306,11 +302,11 @@ class AuthService:
 
     def reset_password(self, token: str, new_password: str) -> None:
         """Redefine senha se token válido e senha atende política.
-        
+
         Args:
             token: Token de redefinição de senha
             new_password: Nova senha do usuário
-            
+
         Raises:
             AuthException: Se token inválido ou senha não atende política
         """
@@ -382,16 +378,16 @@ class AuthService:
         ip_address: str | None = None,
     ) -> Token:
         """Completa login após verificação MFA.
-        
+
         Args:
             temporary_token: Token temporário do login inicial
             code: Código TOTP ou código de backup
             user_agent: User-agent para rastreamento de sessão (opcional)
             ip_address: Endereço IP para rastreamento de sessão (opcional)
-            
+
         Returns:
             Token with final access and refresh tokens
-            
+
         Raises:
             AuthException: If token invalid, expired, or MFA verification fails
         """
