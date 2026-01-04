@@ -1,6 +1,4 @@
 """Repository for LeadInteraction entity."""
-
-
 from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.base_repository import BaseRepository
@@ -21,11 +19,11 @@ class LeadInteractionRepository(BaseRepository[LeadInteractionModel]):
     ) -> list[LeadInteractionModel]:
         """
         Get interactions by lead ID.
-        
+
         Args:
             lead_id: Lead ID
             limit: Maximum number of interactions
-            
+
         Returns:
             List of LeadInteractionModels ordered by timestamp
         """
@@ -44,11 +42,11 @@ class LeadInteractionRepository(BaseRepository[LeadInteractionModel]):
     ) -> list[LeadInteractionModel]:
         """
         Get interactions by user ID.
-        
+
         Args:
             user_id: User ID
             limit: Maximum number of interactions
-            
+
         Returns:
             List of LeadInteractionModels ordered by timestamp
         """
