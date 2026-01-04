@@ -14,12 +14,10 @@ from robbot.domain.enums import ConversationStatus, LeadStatus
 from robbot.infra.db.models.conversation_model import ConversationModel
 
 logger = logging.getLogger(__name__)
-
-
 class ConversationService:
     """
     Service to manage conversations (business logic).
-    
+
     Responsibilities:
     - Conversation CRUD operations
     - Status transitions
@@ -39,12 +37,12 @@ class ConversationService:
     ) -> ConversationModel:
         """
         Get existing conversation or create new one.
-        
+
         Args:
             chat_id: WhatsApp chat ID
             phone_number: Phone number
             name: Contact name (optional)
-            
+
         Returns:
             Found or created conversation
         """
@@ -79,14 +77,14 @@ class ConversationService:
     ) -> ConversationModel:
         """
         Update conversation status with transition validation.
-        
+
         Args:
             conversation_id: Conversation ID
             new_status: New status
-            
+
         Returns:
             Updated conversation
-            
+
         Raises:
             NotFoundException: If conversation not found
             BusinessRuleError: If transition is invalid
@@ -120,14 +118,14 @@ class ConversationService:
     def close(self, conversation_id: str, reason: str | None = None) -> ConversationModel:
         """
         Close conversation.
-        
+
         Args:
             conversation_id: Conversation ID
             reason: Closure reason (optional)
-            
+
         Returns:
             Closed conversation
-            
+
         Raises:
             NotFoundException: If conversation not found
         """
@@ -157,14 +155,14 @@ class ConversationService:
     ) -> ConversationModel:
         """
         Transfer conversation to secretary.
-        
+
         Args:
             conversation_id: Conversation ID
             user_id: User ID (secretary)
-            
+
         Returns:
             Transferred conversation
-            
+
         Raises:
             NotFoundException: If conversation not found
         """
@@ -213,10 +211,10 @@ class ConversationService:
     def get_active_conversations(self, limit: int = 100) -> list[ConversationModel]:
         """
         Get active conversations.
-        
+
         Args:
             limit: Maximum number of results
-            
+
         Returns:
             List of active conversations
         """
@@ -235,14 +233,14 @@ class ConversationService:
     ) -> tuple[list[ConversationModel], int]:
         """
         List conversations with filters.
-        
+
         Args:
             status: Filter by conversation status
             is_urgent: Filter by urgency flag
             assigned_to_user_id: Filter by assigned user
             limit: Maximum number of results
             offset: Number of results to skip
-            
+
         Returns:
             Tuple of (conversations list, total count)
         """
@@ -266,10 +264,10 @@ class ConversationService:
     def get_by_id(self, conversation_id: str) -> ConversationModel | None:
         """
         Get conversation by ID.
-        
+
         Args:
             conversation_id: UUID of the conversation
-            
+
         Returns:
             Conversation model or None if not found
         """
@@ -285,11 +283,11 @@ class ConversationService:
     ) -> bool:
         """
         Validar se transição de status é permitida.
-        
+
         Args:
             old_status: Status atual
             new_status: Status desejado
-            
+
         Returns:
             True se transição válida
         """
@@ -325,14 +323,14 @@ class ConversationService:
     ) -> ConversationModel:
         """
         Update conversation notes.
-        
+
         Args:
             conversation_id: Conversation ID
             notes: Notes text (max 5000 chars)
-            
+
         Returns:
             Updated conversation
-            
+
         Raises:
             NotFoundException: If conversation not found
         """
@@ -357,10 +355,10 @@ class ConversationService:
     ) -> list[ConversationModel]:
         """
         Find conversations by criteria.
-        
+
         Args:
             filters: Dict with filter criteria (status, assigned_to_user_id, etc.)
-            
+
         Returns:
             List of conversations matching criteria
         """
