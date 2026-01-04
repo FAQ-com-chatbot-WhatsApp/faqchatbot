@@ -10,11 +10,10 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
+
 # ============================================================================
 # REGISTRATION & LOGIN
 # ============================================================================
-
-
 class SignupRequest(BaseModel):
     """Schema for user registration (signup) requests.
 
@@ -41,18 +40,14 @@ class SignupRequest(BaseModel):
         if len(v) > 128:
             raise ValueError("Password must not exceed 128 characters")
         return v
-
-
 class LoginRequest(BaseModel):
     """Schema for login requests."""
 
     email: EmailStr
     password: str
-
-
 class LoginResponse(BaseModel):
     """Schema for successful login response.
-    
+
     If mfa_required=True, client must call POST /auth/mfa/login with code.
     The tokens provided are temporary and have limited scope.
     """
@@ -63,25 +58,17 @@ class LoginResponse(BaseModel):
     expires_in: int = 900  # 15 minutes in seconds
     mfa_required: bool = False  # True if user has MFA enabled
     temporary: bool = False  # True if tokens are temporary (awaiting MFA)
-
-
 class LogoutRequest(BaseModel):
     """Schema for logout requests."""
 
     refresh_token: str
-
-
 # ============================================================================
 # TOKEN REFRESH
 # ============================================================================
-
-
 class RefreshRequest(BaseModel):
     """Schema for token refresh requests."""
 
     refresh_token: str
-
-
 class RefreshResponse(BaseModel):
     """Schema for token refresh response.
 
@@ -92,19 +79,13 @@ class RefreshResponse(BaseModel):
     refresh_token: str  # New token due to rotation
     token_type: str = "bearer"
     expires_in: int = 900  # 15 minutes
-
-
 # ============================================================================
 # PASSWORD MANAGEMENT
 # ============================================================================
-
-
 class ForgotPasswordRequest(BaseModel):
     """Schema for password recovery initiation."""
 
     email: EmailStr
-
-
 class ResetPasswordRequest(BaseModel):
     """Schema for password reset with token."""
 
@@ -120,8 +101,6 @@ class ResetPasswordRequest(BaseModel):
         if len(v) > 128:
             raise ValueError("Password must not exceed 128 characters")
         return v
-
-
 class ChangePasswordRequest(BaseModel):
     """Schema for authenticated password change."""
 
@@ -137,30 +116,20 @@ class ChangePasswordRequest(BaseModel):
         if len(v) > 128:
             raise ValueError("Password must not exceed 128 characters")
         return v
-
-
 # ============================================================================
 # EMAIL VERIFICATION
 # ============================================================================
-
-
 class VerifyEmailRequest(BaseModel):
     """Schema for email verification."""
 
     token: str
-
-
 class ResendEmailRequest(BaseModel):
     """Schema for resending email verification."""
 
     email: EmailStr
-
-
 # ============================================================================
 # SESSION MANAGEMENT
 # ============================================================================
-
-
 class SessionOut(BaseModel):
     """Schema for session information."""
 
@@ -176,27 +145,19 @@ class SessionOut(BaseModel):
     is_revoked: bool = False
 
     model_config = ConfigDict(from_attributes=True)
-
-
 class SessionListResponse(BaseModel):
     """Schema for listing user sessions."""
 
     sessions: list[SessionOut]
     total: int
-
-
 class RevokeSessionRequest(BaseModel):
     """Schema for revoking a specific session."""
 
     session_id: int
     reason: str | None = "manual_revocation"
-
-
 # ============================================================================
 # AUTH SESSION INFO (GET /auth/me)
 # ============================================================================
-
-
 class AuthSessionResponse(BaseModel):
     """Schema for current authentication session information.
 
@@ -214,105 +175,73 @@ class AuthSessionResponse(BaseModel):
     last_login_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
-
-
 # ============================================================================
 # ADMIN - USER BLOCKING
 # ============================================================================
-
-
 class BlockUserRequest(BaseModel):
     """Schema for blocking a user (admin only)."""
 
     reason: str | None = None
-
-
 class UnblockUserRequest(BaseModel):
     """Schema for unblocking a user (admin only)."""
 
     reason: str | None = None
-
-
 # ============================================================================
 # MFA (Multi-Factor Authentication) - PHASE 5
 # ============================================================================
-
-
 class MfaSetupResponse(BaseModel):
     """Schema for MFA setup response."""
 
     secret: str
     qr_code: str  # Base64 encoded QR code image
     backup_codes: list[str]
-
-
 class MfaVerifyRequest(BaseModel):
     """Schema for MFA verification."""
 
     code: str = Field(..., min_length=6, max_length=6)
-
-
 class MfaDisableRequest(BaseModel):
     """Schema for disabling MFA."""
 
     password: str
     code: str = Field(..., min_length=6, max_length=6)
-
-
 class BackupCodesResponse(BaseModel):
     """Schema for backup codes generation."""
 
     codes: list[str]
-
-
 # ============================================================================
 # EMAIL VERIFICATION
 # ============================================================================
-
-
 class EmailVerificationRequest(BaseModel):
     """Schema para validação de token de verificação de email.
-    
+
     Usado por: GET /auth/email/verify?token=...
     """
 
     token: str = Field(..., min_length=32, max_length=255)
-
-
 class EmailResendRequest(BaseModel):
     """Schema para reenvio de email de verificação.
-    
+
     Usado por: POST /auth/email/resend
     """
 
     email: EmailStr
-
-
 class EmailVerificationResponse(BaseModel):
     """Schema de resposta após verificação bem-sucedida de email.
-    
+
     Retornado após verificação bem-sucedida do email.
     """
 
     message: str
     email_verified: bool
     user_id: int
-
-
 # ============================================================================
 # SESSION MANAGEMENT
 # ============================================================================
-
-
 # Classes SessionOut, SessionListResponse e RevokeSessionRequest foram movidas para cima
 # para evitar duplicação (linhas 184-195)
-
-
 # ============================================================================
 # AUDIT & SECURITY
 # ============================================================================
-
-
 class AuditLogEntry(BaseModel):
     """Schema for audit log entries."""
 
@@ -325,33 +254,25 @@ class AuditLogEntry(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
-
-
 class AuditLogListResponse(BaseModel):
     """Schema for listing audit logs."""
 
     logs: list[AuditLogEntry]
     total: int
-
-
 # ============================================================================
 # MFA LOGIN
 # ============================================================================
-
-
 class MfaLoginRequest(BaseModel):
     """Schema for MFA verification during login.
-    
+
     User provides the temporary token received from login + TOTP/backup code.
     """
 
     temporary_token: str = Field(..., description="Temporary access token from login response")
     code: str = Field(..., min_length=6, max_length=6, description="TOTP code or backup code")
-
-
 class MfaLoginResponse(BaseModel):
     """Schema for successful MFA login response.
-    
+
     Returns final access and refresh tokens after MFA verification.
     """
 
