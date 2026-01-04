@@ -4,21 +4,21 @@ Gerencia todas as operações de banco de dados relacionadas a credenciais.
 """
 
 from datetime import UTC, datetime
-from typing import Optional
 
 from sqlalchemy.orm import Session
 
+from robbot.adapters.repositories.base_repository import BaseRepository
 from robbot.infra.db.models.credential_model import CredentialModel
 
 
-class CredentialRepository:
+class CredentialRepository(BaseRepository[CredentialModel]):
     """Repository encapsulating DB access for user credentials."""
 
     def __init__(self, db: Session):
         """Initialize repository with database session."""
-        self.db = db
+        super().__init__(db, CredentialModel)
 
-    def get_by_user_id(self, user_id: int) -> Optional[CredentialModel]:
+    def get_by_user_id(self, user_id: int) -> CredentialModel | None:
         """Retrieve credential by user ID."""
         return (
             self.db.query(CredentialModel).filter(CredentialModel.user_id == user_id).first()
@@ -102,7 +102,7 @@ class CredentialRepository:
         self.db.refresh(credential)
         return credential
 
-    def get_by_reset_token(self, token: str) -> Optional[CredentialModel]:
+    def get_by_reset_token(self, token: str) -> CredentialModel | None:
         """Get credential by reset token.
 
         Args:
@@ -182,7 +182,7 @@ class CredentialRepository:
     # EMAIL VERIFICATION
     # ========================================================================
 
-    def get_by_verification_token(self, token: str) -> Optional[CredentialModel]:
+    def get_by_verification_token(self, token: str) -> CredentialModel | None:
         """Get credential by email verification token.
 
         Args:
