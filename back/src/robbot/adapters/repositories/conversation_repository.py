@@ -1,16 +1,17 @@
 """Repository for conversation persistence and retrieval operations."""
 
-from typing import Optional
 from datetime import UTC, datetime
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
+from robbot.adapters.repositories.base_repository import BaseRepository
+from robbot.domain.enums import ConversationStatus
 from robbot.infra.db.models.conversation_model import ConversationModel
-from robbot.domain.enums import ConversationStatus, LeadStatus
+from robbot.infra.db.models.lead_model import LeadModel
 
 
-class ConversationRepository:
+class ConversationRepository(BaseRepository[ConversationModel]):
     """Data access layer for conversations."""
 
     def __init__(self, db: Session):
@@ -19,23 +20,9 @@ class ConversationRepository:
         Args:
             db: SQLAlchemy session
         """
-        self.db = db
+        super().__init__(db, ConversationModel)
 
-    def get_by_id(self, conversation_id: str) -> Optional[ConversationModel]:
-        """Get conversation by ID.
-
-        Args:
-            conversation_id: Conversation UUID
-
-        Returns:
-            Conversation or None if not found
-        """
-        stmt = select(ConversationModel).where(
-            ConversationModel.id == conversation_id
-        )
-        return self.db.scalars(stmt).first()
-
-    def get_by_chat_id(self, chat_id: str) -> Optional[ConversationModel]:
+    def get_by_chat_id(self, chat_id: str) -> ConversationModel | None:
         """Get conversation by WhatsApp chat ID.
 
         Args:
@@ -48,66 +35,6 @@ class ConversationRepository:
             ConversationModel.chat_id == chat_id
         )
         return self.db.scalars(stmt).first()
-
-    def create(
-        self,
-        chat_id: str,
-        phone_number: str,
-        name: Optional[str] = None,
-        status: ConversationStatus = ConversationStatus.ACTIVE,
-    ) -> ConversationModel:
-        """Create new conversation.
-
-        Args:
-            chat_id: WhatsApp chat ID
-            phone_number: Phone number
-            name: Contact name (optional)
-            status: Initial status (default: ACTIVE)
-
-        Returns:
-            Created conversation
-        """
-        conversation = ConversationModel(
-            chat_id=chat_id,
-            phone_number=phone_number,
-            name=name,
-            status=status,
-            last_message_at=datetime.now(UTC),
-        )
-        self.db.add(conversation)
-        self.db.commit()
-        self.db.refresh(conversation)
-        return conversation
-
-    def update(
-        self,
-        conversation_id: str,
-        data: dict,
-    ) -> ConversationModel:
-        """Update conversation.
-
-        Args:
-            conversation_id: Conversation UUID
-            data: Dictionary with fields to update
-
-        Returns:
-            Updated conversation
-
-        Raises:
-            ValueError: If conversation not found
-        """
-        conversation = self.get_by_id(conversation_id)
-        if not conversation:
-            raise ValueError(f"Conversation {conversation_id} not found")
-
-        for key, value in data.items():
-            if hasattr(conversation, key):
-                setattr(conversation, key, value)
-
-        conversation.updated_at = datetime.now(UTC)
-        self.db.commit()
-        self.db.refresh(conversation)
-        return conversation
 
     def update_status(
         self,
@@ -123,7 +50,14 @@ class ConversationRepository:
         Returns:
             Updated conversation
         """
-        return self.update(conversation_id, {"status": status})
+        conversation = self.get_by_id(conversation_id)
+        if not conversation:
+            raise ValueError(f"Conversation {conversation_id} not found")
+        conversation.status = status
+        conversation.updated_at = datetime.now(UTC)
+        self.db.flush()
+        self.db.refresh(conversation)
+        return conversation
 
     def update_last_message_at(
         self,
@@ -137,10 +71,13 @@ class ConversationRepository:
         Returns:
             Updated conversation
         """
-        return self.update(
-            conversation_id,
-            {"last_message_at": datetime.now(UTC)}
-        )
+        conversation = self.get_by_id(conversation_id)
+        if not conversation:
+            raise ValueError(f"Conversation {conversation_id} not found")
+        conversation.last_message_at = datetime.now(UTC)
+        self.db.flush()
+        self.db.refresh(conversation)
+        return conversation
 
     def get_active(self, limit: int = 100) -> list[ConversationModel]:
         """Get active conversations.
@@ -157,37 +94,6 @@ class ConversationRepository:
             .order_by(ConversationModel.last_message_at.desc())
             .limit(limit)
         )
-        return list(self.db.scalars(stmt).all())
-
-    def list_all(
-        self,
-        skip: int = 0,
-        limit: int = 100,
-    ) -> list[ConversationModel]:
-        """List all conversations with pagination.
-
-        Args:
-            skip: Number of records to skip
-            limit: Max number of records to return
-
-        Returns:
-            List of conversations
-        """
-        stmt = (
-            select(ConversationModel)
-            .order_by(ConversationModel.created_at.desc())
-            .offset(skip)
-            .limit(limit)
-        )
-        return list(self.db.scalars(stmt).all())
-
-    def get_all(self) -> list[ConversationModel]:
-        """Get all conversations without pagination.
-
-        Returns:
-            List of all conversations
-        """
-        stmt = select(ConversationModel).order_by(ConversationModel.created_at.desc())
         return list(self.db.scalars(stmt).all())
 
     def get_by_status(
@@ -210,4 +116,50 @@ class ConversationRepository:
             .order_by(ConversationModel.updated_at.desc())
             .limit(limit)
         )
+        return list(self.db.scalars(stmt).all())
+
+    def find_by_criteria(
+        self,
+        filters: dict,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[ConversationModel]:
+        """Find conversations by dynamic criteria.
+
+        Args:
+            filters: Dict with optional keys:
+                - status: ConversationStatus
+                - assigned_to_user_id: int (from Lead)
+                - created_after: datetime
+                - created_before: datetime
+            limit: Max number of conversations to return
+            offset: Number of conversations to skip
+
+        Returns:
+            List of conversations matching criteria
+        """
+        stmt = select(ConversationModel).options(joinedload(ConversationModel.lead))
+
+        # Apply filters dynamically
+        if "status" in filters and filters["status"]:
+            stmt = stmt.where(ConversationModel.status == filters["status"])
+
+        if "assigned_to_user_id" in filters and filters["assigned_to_user_id"]:
+            # Join with Lead to filter by assigned_to_user_id
+            stmt = stmt.join(LeadModel, ConversationModel.id == LeadModel.conversation_id)
+            stmt = stmt.where(LeadModel.assigned_to_user_id == filters["assigned_to_user_id"])
+
+        if "created_after" in filters and filters["created_after"]:
+            stmt = stmt.where(ConversationModel.created_at >= filters["created_after"])
+
+        if "created_before" in filters and filters["created_before"]:
+            stmt = stmt.where(ConversationModel.created_at <= filters["created_before"])
+
+        # Order and paginate
+        stmt = (
+            stmt.order_by(ConversationModel.updated_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+
         return list(self.db.scalars(stmt).all())
