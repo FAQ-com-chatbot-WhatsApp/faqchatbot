@@ -12,12 +12,10 @@ from robbot.core.custom_exceptions import QueueError
 from robbot.infra.redis.client import get_redis_client
 
 logger = logging.getLogger(__name__)
-
-
 class RQQueueManager:
     """
     Gerenciador centralizado de filas RQ.
-    
+
     Responsabilidades:
     - Gerenciar filas separadas (messages, ai, escalation)
     - Fornecer acesso à fila de jobs falhados (DLQ)
@@ -27,7 +25,7 @@ class RQQueueManager:
     def __init__(self, redis_client: Redis | None = None):
         """
         Inicializa o gerenciador de filas.
-        
+
         Args:
             redis_client: Cliente Redis (usa singleton se não fornecido)
         """
@@ -99,13 +97,13 @@ class RQQueueManager:
     def get_queue(self, queue_name: str) -> Queue:
         """
         Obter fila por nome.
-        
+
         Args:
             queue_name: Nome da fila ('messages', 'ai', 'escalation')
-            
+
         Returns:
             Instância de Queue
-            
+
         Raises:
             ValueError: Se fila não existir
         """
@@ -135,7 +133,7 @@ class RQQueueManager:
     def get_queue_stats(self) -> dict[str, dict]:
         """
         Retorna estatísticas de todas as filas.
-        
+
         Returns:
             Dict com count, size (bytes) e workers por fila
         """
@@ -164,7 +162,7 @@ class RQQueueManager:
     def health_check(self) -> dict[str, bool]:
         """
         Verifica saúde de todas as filas e conexão Redis.
-        
+
         Returns:
             Dict com status de cada fila
         """
@@ -182,22 +180,18 @@ class RQQueueManager:
             }
         except QueueError:
             raise
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("Health check falhou: %s", e)
             raise QueueError(f"Health check failed: {e}")
-
-
 # Singleton global
 _queue_manager: RQQueueManager | None = None
-
-
 def get_queue_manager(redis_client: Redis | None = None) -> RQQueueManager:
     """
     Obter instância singleton do gerenciador de filas.
-    
+
     Args:
         redis_client: Redis client (uso interno)
-        
+
     Returns:
         RQQueueManager singleton
     """
@@ -208,8 +202,6 @@ def get_queue_manager(redis_client: Redis | None = None) -> RQQueueManager:
         logger.info("🎯 RQQueueManager inicializado como singleton")
 
     return _queue_manager
-
-
 def close_queue_manager() -> None:
     """Fechar gerenciador (limpar resources)."""
     global _queue_manager
