@@ -11,8 +11,6 @@ from robbot.infra.db.session import get_db
 from robbot.infra.jobs.reengagement_job import run_reengagement_job
 
 router = APIRouter()
-
-
 @router.post("/jobs/reengagement", tags=["Jobs"])
 def trigger_reengagement_job(
     current_user: dict = Depends(get_current_user),
@@ -20,9 +18,9 @@ def trigger_reengagement_job(
 ):
     """
     Trigger re-engagement job manually (admin only).
-    
+
     Requires JWT authentication and admin role.
-    
+
     This job:
     - Finds inactive conversations (> 48h without messages)
     - Sends automated re-engagement messages
@@ -39,7 +37,7 @@ def trigger_reengagement_job(
             "message": "Re-engagement job completed",
             "result": result,
         }
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         raise HTTPException(
             status_code=500,
             detail=f"Failed to run re-engagement job: {str(e)}"
