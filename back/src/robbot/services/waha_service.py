@@ -4,14 +4,14 @@ WAHA unified service for session management and message sending.
 Consolidates session operations + message sending with rate limiting.
 """
 
+import logging
 from datetime import UTC, datetime
 
 from robbot.adapters.external.waha_client import WAHAClient
 from robbot.adapters.repositories.session_repository import SessionRepository
 from robbot.config.settings import settings
-from robbot.infra.redis.client import get_redis_client
-import logging
 from robbot.infra.db.models.session_model import WhatsAppSession
+from robbot.infra.redis.client import get_redis_client
 from robbot.schemas.waha import (
     MessageSentResponse,
     SendFileRequest,
@@ -72,7 +72,7 @@ class WAHAService:
             name=data.name,
             webhook_url=data.webhook_url or settings.WAHA_WEBHOOK_URL,
         )
-        logger.info(f"WAHA session created: {waha_response}")
+        logger.info("WAHA session created: %s", waha_response)
 
         # Save to DB
         session = self.session_repo.create(
@@ -270,8 +270,8 @@ class WAHAService:
 
             return True
 
-        except Exception as e:
-            logger.error(f"Redis rate limit check failed: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.error("Redis rate limit check failed: %s", e)
             return True
 
     async def send_text(self, data: SendTextRequest) -> MessageSentResponse:
@@ -289,7 +289,7 @@ class WAHAService:
             message_id_to_reply=data.reply_to,
         )
 
-        logger.info(f"Text message sent to {data.chat_id}")
+        logger.info("Text message sent to %s", data.chat_id)
 
         return MessageSentResponse(
             message_id=response.get("id", ""),
@@ -312,7 +312,7 @@ class WAHAService:
             apply_anti_ban=data.apply_anti_ban and settings.WAHA_ANTI_BAN_ENABLED,
         )
 
-        logger.info(f"Image sent to {data.chat_id}")
+        logger.info("Image sent to %s", data.chat_id)
 
         return MessageSentResponse(
             message_id=response.get("id", ""),
@@ -335,7 +335,7 @@ class WAHAService:
             caption=data.caption,
         )
 
-        logger.info(f"File sent to {data.chat_id}: {data.filename}")
+        logger.info("File sent to %s: %s", data.chat_id, data.filename)
 
         return MessageSentResponse(
             message_id=response.get("id", ""),
@@ -358,7 +358,7 @@ class WAHAService:
             title=data.title,
         )
 
-        logger.info(f"Location sent to {data.chat_id}")
+        logger.info("Location sent to %s", data.chat_id)
 
         return MessageSentResponse(
             message_id=response.get("id", ""),
