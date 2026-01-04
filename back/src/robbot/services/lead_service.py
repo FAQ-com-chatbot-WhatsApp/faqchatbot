@@ -15,12 +15,10 @@ from robbot.domain.enums import LeadStatus
 from robbot.infra.db.models.lead_model import LeadModel
 
 logger = logging.getLogger(__name__)
-
-
 class LeadService:
     """
     Service to manage leads (business logic).
-    
+
     Responsibilities:
     - Lead CRUD operations
     - Status transitions
@@ -40,12 +38,12 @@ class LeadService:
     ) -> LeadModel:
         """
         Create lead from conversation.
-        
+
         Args:
             phone_number: Phone number
             name: Lead name
             email: Email (optional)
-            
+
         Returns:
             Created lead
         """
@@ -74,14 +72,14 @@ class LeadService:
     ) -> LeadModel:
         """
         Update lead maturity score.
-        
+
         Args:
             lead_id: Lead ID
             new_score: New score (0-100)
-            
+
         Returns:
             Updated lead
-            
+
         Raises:
             NotFoundException: If lead not found
             BusinessRuleError: If score is invalid
@@ -111,14 +109,14 @@ class LeadService:
     ) -> LeadModel:
         """
         Atribuir lead para secretária.
-        
+
         Args:
             lead_id: ID do lead
             user_id: ID do usuário
-            
+
         Returns:
             Lead atualizado
-            
+
         Raises:
             NotFoundException: Se lead não existir
         """
@@ -136,13 +134,13 @@ class LeadService:
     def convert(self, lead_id: str) -> LeadModel:
         """
         Marcar lead como convertido.
-        
+
         Args:
             lead_id: ID do lead
-            
+
         Returns:
             Lead atualizado
-            
+
         Raises:
             NotFoundException: Se lead não existir
         """
@@ -164,14 +162,14 @@ class LeadService:
     ) -> LeadModel:
         """
         Marcar lead como perdido.
-        
+
         Args:
             lead_id: ID do lead
             reason: Motivo da perda (opcional)
-            
+
         Returns:
             Lead atualizado
-            
+
         Raises:
             NotFoundException: Se lead não existir
         """
@@ -193,11 +191,11 @@ class LeadService:
     ) -> list[LeadModel]:
         """
         Get leads by status.
-        
+
         Args:
             status: Lead status
             limit: Maximum number of results
-            
+
         Returns:
             List of leads
         """
@@ -213,10 +211,10 @@ class LeadService:
     def get_unassigned_leads(self, limit: int = 50) -> list[LeadModel]:
         """
         Get unassigned leads.
-        
+
         Args:
             limit: Maximum number of results
-            
+
         Returns:
             List of leads without assignment
         """
@@ -241,7 +239,7 @@ class LeadService:
     ) -> tuple[list[LeadModel], int]:
         """
         List leads with multiple filters.
-        
+
         Args:
             status: Filter by lead status
             assigned_to_user_id: Filter by assigned user
@@ -249,7 +247,7 @@ class LeadService:
             unassigned_only: Show only unassigned leads
             limit: Maximum number of results
             offset: Number of results to skip
-            
+
         Returns:
             Tuple of (leads list, total count)
         """
@@ -259,15 +257,15 @@ class LeadService:
         filtered = all_leads
 
         if status:
-            filtered = [l for l in filtered if l.status == status]
+            filtered = [lead for lead in filtered if lead.status == status]
 
         if unassigned_only:
-            filtered = [l for l in filtered if l.assigned_to_user_id is None]
+            filtered = [lead for lead in filtered if lead.assigned_to_user_id is None]
         elif assigned_to_user_id is not None:
-            filtered = [l for l in filtered if l.assigned_to_user_id == assigned_to_user_id]
+            filtered = [lead for lead in filtered if lead.assigned_to_user_id == assigned_to_user_id]
 
         if min_score is not None:
-            filtered = [l for l in filtered if l.maturity_score >= min_score]
+            filtered = [lead for lead in filtered if lead.maturity_score >= min_score]
 
         total = len(filtered)
         paginated = filtered[offset:offset + limit]
@@ -277,12 +275,12 @@ class LeadService:
     def auto_assign_lead(self, lead_id: str) -> LeadModel | None:
         """
         Atribuir lead automaticamente para secretária disponível.
-        
+
         Implementa lógica de round-robin baseada em carga de trabalho.
-        
+
         Args:
             lead_id: ID do lead
-            
+
         Returns:
             Lead atualizado ou None se nenhuma secretária disponível
         """
@@ -305,8 +303,8 @@ class LeadService:
 
         # Balanceamento de carga: atribuir para secretária com menos leads ativos
         from collections import Counter
-        active_leads = [l for l in self.repo.get_all() if l.assigned_to_user_id and l.status in [LeadStatus.ENGAGED, LeadStatus.INTERESTED]]
-        lead_counts = Counter(l.assigned_to_user_id for l in active_leads)
+        active_leads = [lead for lead in self.repo.get_all() if lead.assigned_to_user_id and lead.status in [LeadStatus.ENGAGED, LeadStatus.INTERESTED]]
+        lead_counts = Counter(lead.assigned_to_user_id for lead in active_leads)
         selected_secretary = min(secretaries, key=lambda s: lead_counts.get(s.id, 0))
 
         lead.assigned_to_user_id = selected_secretary.id
@@ -322,13 +320,13 @@ class LeadService:
     def soft_delete(self, lead_id: str) -> LeadModel:
         """
         Soft delete de lead (marca deleted_at).
-        
+
         Args:
             lead_id: ID do lead
-            
+
         Returns:
             Lead marcado como deletado
-            
+
         Raises:
             NotFoundException: Se lead não existir
         """
@@ -350,13 +348,13 @@ class LeadService:
     def restore(self, lead_id: str) -> LeadModel:
         """
         Restaurar lead soft-deleted.
-        
+
         Args:
             lead_id: ID do lead
-            
+
         Returns:
             Lead restaurado
-            
+
         Raises:
             NotFoundException: Se lead não existir
         """
