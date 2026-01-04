@@ -14,8 +14,6 @@ from robbot.infra.db.base import Base
 if TYPE_CHECKING:
     from robbot.infra.db.models.lead_model import LeadModel
     from robbot.infra.db.models.user_model import UserModel
-
-
 class LeadInteractionModel(Base):
     """Model for recording secretary interactions with leads.
 
