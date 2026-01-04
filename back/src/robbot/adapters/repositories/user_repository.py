@@ -1,35 +1,30 @@
 """Repository for user persistence and retrieval operations."""
 
-from typing import Optional
 
 from sqlalchemy.orm import Session
 
+from robbot.adapters.repositories.base_repository import BaseRepository
 from robbot.infra.db.models.user_model import UserModel
 from robbot.schemas.user import UserCreate
 
 
-class UserRepository:
+class UserRepository(BaseRepository[UserModel]):
     """
     Repository encapsulating DB access for users.
     """
 
     def __init__(self, db: Session):
-        self.db = db
+        super().__init__(db, UserModel)
 
-    def get_by_email(self, email: str) -> Optional[UserModel]:
+    def get_by_email(self, email: str) -> UserModel | None:
         """Retrieve user by email address."""
         return self.db.query(UserModel).filter(UserModel.email == email).first()
 
-    def get_by_id(self, user_id: int) -> Optional[UserModel]:
-        """Retrieve user by primary key ID."""
-        return self.db.get(UserModel, user_id)
-
     def create_user(self, user_in: UserCreate, hashed_password: str) -> UserModel:
-        """Create a new user including legacy `hashed_password` for backward compatibility."""
+        """Create a new user (password is handled by CredentialRepository)."""
         user = UserModel(
             email=user_in.email,
             full_name=user_in.full_name,
-            hashed_password=hashed_password,
             role=user_in.role,
             is_active=True,
         )
