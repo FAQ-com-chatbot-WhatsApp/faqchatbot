@@ -1,8 +1,6 @@
 """
 Lead Controller - REST endpoints for lead management.
 """
-
-
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from sqlalchemy.orm import Session
@@ -13,8 +11,6 @@ from robbot.infra.db.session import get_db
 from robbot.services.lead_service import LeadService
 
 router = APIRouter()
-
-
 # ===== SCHEMAS =====
 
 class LeadOut(BaseModel):
@@ -30,36 +26,24 @@ class LeadOut(BaseModel):
     updated_at: str
 
     model_config = ConfigDict(from_attributes=True)
-
-
 class LeadListOut(BaseModel):
     """Response schema for lead list."""
     leads: list[LeadOut]
     total: int
-
-
 class CreateLeadRequest(BaseModel):
     """Request schema for creating lead."""
     phone_number: str = Field(..., min_length=10, max_length=20)
     name: str | None = Field(None, max_length=255)
     email: EmailStr | None = None
-
-
 class UpdateMaturityRequest(BaseModel):
     """Request schema for updating maturity score."""
     score: int = Field(..., ge=0, le=100)
-
-
 class AssignRequest(BaseModel):
     """Request schema for assigning lead."""
     user_id: int
-
-
 class MarkLostRequest(BaseModel):
     """Request schema for marking lead as lost."""
     reason: str = Field(..., min_length=1, max_length=500)
-
-
 # ===== ENDPOINTS =====
 
 @router.get("/leads", response_model=LeadListOut, tags=["Leads"])
@@ -75,9 +59,9 @@ def list_leads(
 ):
     """
     List leads with filters.
-    
+
     Requires JWT authentication.
-    
+
     Filters:
     - status: NEW, CONTACTED, QUALIFIED, CONVERTED, LOST
     - assigned_to_me: Show only assigned to authenticated user
@@ -107,22 +91,20 @@ def list_leads(
     # Convert to response
     leads_out = [
         LeadOut(
-            id=l.id,
-            phone_number=l.phone_number,
-            name=l.name,
-            email=l.email,
-            status=l.status.value,
-            maturity_score=l.maturity_score,
-            assigned_to=l.assigned_to,
-            created_at=l.created_at.isoformat(),
-            updated_at=l.updated_at.isoformat(),
+            id=str(lead.id),
+            phone_number=lead.phone_number,
+            name=lead.name,
+            email=lead.email,
+            status=lead.status.value,
+            maturity_score=lead.maturity_score,
+            assigned_to=lead.assigned_to,
+            created_at=lead.created_at.isoformat(),
+            updated_at=lead.updated_at.isoformat(),
         )
-        for l in leads
+        for lead in leads
     ]
 
     return LeadListOut(leads=leads_out, total=total)
-
-
 @router.get("/leads/{lead_id}", response_model=LeadOut, tags=["Leads"])
 def get_lead(
     lead_id: str,
@@ -131,7 +113,7 @@ def get_lead(
 ):
     """
     Get lead by ID.
-    
+
     Requires JWT authentication.
     """
     service = LeadService(db)
@@ -151,8 +133,6 @@ def get_lead(
         created_at=lead.created_at.isoformat(),
         updated_at=lead.updated_at.isoformat(),
     )
-
-
 @router.post("/leads", response_model=LeadOut, tags=["Leads"])
 def create_lead(
     request: CreateLeadRequest,
@@ -161,7 +141,7 @@ def create_lead(
 ):
     """
     Create a new lead manually.
-    
+
     Requires JWT authentication.
     """
     service = LeadService(db)
@@ -184,10 +164,8 @@ def create_lead(
             created_at=lead.created_at.isoformat(),
             updated_at=lead.updated_at.isoformat(),
         )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         raise HTTPException(status_code=500, detail=f"Failed to create lead: {str(e)}")
-
-
 @router.put("/leads/{lead_id}/maturity", tags=["Leads"])
 def update_lead_maturity(
     lead_id: str,
@@ -197,7 +175,7 @@ def update_lead_maturity(
 ):
     """
     Update lead maturity score.
-    
+
     Requires JWT authentication.
     """
     service = LeadService(db)
@@ -212,10 +190,8 @@ def update_lead_maturity(
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         raise HTTPException(status_code=500, detail=f"Failed to update maturity: {str(e)}")
-
-
 @router.post("/leads/{lead_id}/assign", tags=["Leads"])
 def assign_lead(
     lead_id: str,
@@ -225,7 +201,7 @@ def assign_lead(
 ):
     """
     Assign lead to user (secretary).
-    
+
     Requires JWT authentication.
     """
     service = LeadService(db)
@@ -240,10 +216,8 @@ def assign_lead(
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         raise HTTPException(status_code=500, detail=f"Failed to assign lead: {str(e)}")
-
-
 @router.post("/leads/{lead_id}/auto-assign", tags=["Leads"])
 def auto_assign_lead(
     lead_id: str,
@@ -252,7 +226,7 @@ def auto_assign_lead(
 ):
     """
     Auto-assign lead using round-robin algorithm.
-    
+
     Requires JWT authentication.
     """
     service = LeadService(db)
@@ -267,10 +241,8 @@ def auto_assign_lead(
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         raise HTTPException(status_code=500, detail=f"Failed to auto-assign: {str(e)}")
-
-
 @router.post("/leads/{lead_id}/convert", tags=["Leads"])
 def convert_lead(
     lead_id: str,
@@ -279,7 +251,7 @@ def convert_lead(
 ):
     """
     Mark lead as converted (maturity score = 100).
-    
+
     Requires JWT authentication.
     """
     service = LeadService(db)
@@ -295,10 +267,8 @@ def convert_lead(
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         raise HTTPException(status_code=500, detail=f"Failed to convert lead: {str(e)}")
-
-
 @router.post("/leads/{lead_id}/mark-lost", tags=["Leads"])
 def mark_lead_lost(
     lead_id: str,
@@ -308,7 +278,7 @@ def mark_lead_lost(
 ):
     """
     Mark lead as lost with reason (maturity score = 0).
-    
+
     Requires JWT authentication.
     """
     service = LeadService(db)
@@ -325,10 +295,8 @@ def mark_lead_lost(
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         raise HTTPException(status_code=500, detail=f"Failed to mark lead as lost: {str(e)}")
-
-
 @router.delete("/leads/{lead_id}", status_code=204, tags=["Leads"])
 def delete_lead(
     lead_id: str,
@@ -337,9 +305,9 @@ def delete_lead(
 ):
     """
     Soft delete a lead (mark as deleted without removing from database).
-    
+
     Requires JWT authentication.
-    
+
     The lead will be marked with deleted_at timestamp and hidden from listings.
     """
     service = LeadService(db)
@@ -351,11 +319,9 @@ def delete_lead(
         return  # 204 No Content
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to delete lead: {str(e)}")
-
-
 @router.post("/leads/{lead_id}/restore", tags=["Leads"])
 def restore_lead(
     lead_id: str,
@@ -364,7 +330,7 @@ def restore_lead(
 ):
     """
     Restore a soft-deleted lead.
-    
+
     Requires JWT authentication.
     """
     service = LeadService(db)
@@ -380,6 +346,6 @@ def restore_lead(
         }
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to restore lead: {str(e)}")
