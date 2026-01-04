@@ -2,9 +2,9 @@
 ConversationTag Model - SQLAlchemy ORM model for conversation-tag association.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from sqlalchemy import String, Integer, ForeignKey, DateTime
+from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from robbot.infra.db.base import Base
@@ -36,7 +36,7 @@ class ConversationTagModel(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        default=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(UTC),
         comment="When the tag was applied to the conversation"
     )
 
