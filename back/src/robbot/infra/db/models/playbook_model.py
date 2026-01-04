@@ -1,6 +1,5 @@
 """PlaybookModel ORM for message sequences."""
 
-from datetime import datetime
 from uuid import uuid4
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text
@@ -22,9 +21,9 @@ class PlaybookModel(Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid4()))
     topic_id = Column(
-        String(36), 
-        ForeignKey('topics.id', ondelete='CASCADE'), 
-        nullable=False, 
+        String(36),
+        ForeignKey('topics.id', ondelete='CASCADE'),
+        nullable=False,
         index=True
     )
     name = Column(String(255), nullable=False, index=True)
@@ -43,14 +42,14 @@ class PlaybookModel(Base):
     # Relationships
     topic = relationship("TopicModel", back_populates="playbooks")
     steps = relationship(
-        "PlaybookStepModel", 
-        back_populates="playbook", 
+        "PlaybookStepModel",
+        back_populates="playbook",
         cascade="all, delete-orphan",
         order_by="PlaybookStepModel.step_order"
     )
     embedding = relationship(
-        "PlaybookEmbeddingModel", 
-        back_populates="playbook", 
+        "PlaybookEmbeddingModel",
+        back_populates="playbook",
         cascade="all, delete-orphan",
         uselist=False
     )
