@@ -1,4 +1,4 @@
-# pylint: skip-file
+
 """
 Unit tests for QueueService.
 
@@ -55,19 +55,13 @@ def mock_queue_manager():
             'escalation': mock_escalation_queue,
             'failed': mock_failed_queue
         }
-
-
 @pytest.fixture()
 def queue_service(mock_queue_manager):
     """Create QueueService instance with mocked queues."""
     return QueueService()
-
-
 # =====================================================================
 # ENQUEUE JOBS TESTS
 # =====================================================================
-
-
 def test_enqueue_message_processing(queue_service, mock_queue_manager):
     """Test enqueuing message processing job."""
     message_data = {
@@ -88,8 +82,6 @@ def test_enqueue_message_processing(queue_service, mock_queue_manager):
 
     # Verify enqueue was called
     mock_queue_manager['messages'].enqueue.assert_called_once()
-
-
 def test_enqueue_message_processing_without_conversation(queue_service, mock_queue_manager):
     """Test enqueuing message without conversation ID."""
     message_data = {
@@ -102,8 +94,6 @@ def test_enqueue_message_processing_without_conversation(queue_service, mock_que
     )
 
     assert job_id is not None
-
-
 def test_enqueue_ai_processing(queue_service, mock_queue_manager):
     """Test enqueuing AI processing job."""
     job_id = queue_service.enqueue_ai_processing(
@@ -117,8 +107,6 @@ def test_enqueue_ai_processing(queue_service, mock_queue_manager):
 
     # Verify AI queue was used
     mock_queue_manager['ai'].enqueue.assert_called_once()
-
-
 def test_enqueue_escalation(queue_service, mock_queue_manager):
     """Test enqueuing escalation job."""
     job_id = queue_service.enqueue_escalation(
@@ -132,8 +120,6 @@ def test_enqueue_escalation(queue_service, mock_queue_manager):
 
     # Verify escalation queue was used
     mock_queue_manager['escalation'].enqueue.assert_called_once()
-
-
 def test_enqueue_escalation_without_user_name(queue_service, mock_queue_manager):
     """Test enqueuing escalation without user name."""
     job_id = queue_service.enqueue_escalation(
@@ -143,13 +129,9 @@ def test_enqueue_escalation_without_user_name(queue_service, mock_queue_manager)
     )
 
     assert job_id is not None
-
-
 # =====================================================================
 # GET JOB STATUS TESTS
 # =====================================================================
-
-
 @patch('robbot.services.queue_service.Job')
 def test_get_job_status_queued(mock_job_class, queue_service, mock_queue_manager):
     """Test getting status of queued job."""
@@ -175,8 +157,6 @@ def test_get_job_status_queued(mock_job_class, queue_service, mock_queue_manager
     assert status['status'] == 'queued'
     assert status['is_started'] is False
     assert status['is_finished'] is False
-
-
 @patch('robbot.services.queue_service.Job')
 def test_get_job_status_finished(mock_job_class, queue_service, mock_queue_manager):
     """Test getting status of finished job."""
@@ -200,8 +180,6 @@ def test_get_job_status_finished(mock_job_class, queue_service, mock_queue_manag
     assert status['status'] == 'finished'
     assert status['is_finished'] is True
     assert status['result'] == {'success': True, 'data': 'processed'}
-
-
 @patch('robbot.services.queue_service.Job')
 def test_get_job_status_failed(mock_job_class, queue_service, mock_queue_manager):
     """Test getting status of failed job."""
@@ -225,8 +203,6 @@ def test_get_job_status_failed(mock_job_class, queue_service, mock_queue_manager
     assert status['status'] == 'failed'
     assert status['is_failed'] is True
     assert 'ValueError' in status['exc_info']
-
-
 @patch('robbot.services.queue_service.Job')
 def test_get_job_status_not_found(mock_job_class, queue_service, mock_queue_manager):
     """Test getting status of non-existent job."""
@@ -241,13 +217,9 @@ def test_get_job_status_not_found(mock_job_class, queue_service, mock_queue_mana
     # Accept both English and Portuguese error messages
     error_lower = status['error'].lower()
     assert 'not found' in error_lower or 'não encontrado' in error_lower
-
-
 # =====================================================================
 # QUEUE STATS TESTS
 # =====================================================================
-
-
 def test_get_queue_stats(queue_service, mock_queue_manager):
     """Test getting queue statistics."""
     stats = queue_service.get_queue_stats()
@@ -255,13 +227,9 @@ def test_get_queue_stats(queue_service, mock_queue_manager):
     assert 'timestamp' in stats
     assert 'queues' in stats
     assert isinstance(stats['queues'], dict)
-
-
 # =====================================================================
 # FAILED JOBS TESTS
 # =====================================================================
-
-
 # TODO: Implement or import FailedJobRegistry in queue_service
 @patch('robbot.services.queue_service.FailedJobRegistry')
 @patch('robbot.services.queue_service.Job')
@@ -291,8 +259,6 @@ def test_get_failed_jobs(mock_job_class, mock_registry_class, queue_service, moc
     assert failed_jobs[0]['job_id'] == 'failed-1'
     assert failed_jobs[1]['job_id'] == 'failed-2'
     assert 'error' in failed_jobs[0]
-
-
 @patch('robbot.services.queue_service.FailedJobRegistry')
 @patch('robbot.services.queue_service.Job')
 def test_get_failed_jobs_with_limit(mock_job_class, mock_registry_class, queue_service, mock_queue_manager):
@@ -315,8 +281,6 @@ def test_get_failed_jobs_with_limit(mock_job_class, mock_registry_class, queue_s
     failed_jobs = queue_service.get_failed_jobs(limit=5)
 
     assert len(failed_jobs) <= 5
-
-
 @patch('robbot.services.queue_service.FailedJobRegistry')
 def test_get_failed_jobs_empty(mock_registry_class, queue_service, mock_queue_manager):
     """Test getting failed jobs when queue is empty."""
@@ -327,13 +291,9 @@ def test_get_failed_jobs_empty(mock_registry_class, queue_service, mock_queue_ma
     failed_jobs = queue_service.get_failed_jobs()
 
     assert failed_jobs == []
-
-
 # =====================================================================
 # RETRY JOB TESTS
 # =====================================================================
-
-
 @patch('robbot.services.queue_service.Job')
 def test_retry_job_success(mock_job_class, queue_service, mock_queue_manager):
     """Test retrying a failed job successfully."""
@@ -346,8 +306,6 @@ def test_retry_job_success(mock_job_class, queue_service, mock_queue_manager):
 
     assert result is True
     mock_job.requeue.assert_called_once()
-
-
 @patch('robbot.services.queue_service.Job')
 def test_retry_job_not_found(mock_job_class, queue_service, mock_queue_manager):
     """Test retrying non-existent job returns False."""
@@ -358,8 +316,6 @@ def test_retry_job_not_found(mock_job_class, queue_service, mock_queue_manager):
     result = queue_service.retry_job(job_id)
 
     assert result is False
-
-
 @patch('robbot.services.queue_service.Job')
 def test_retry_job_error_handling(mock_job_class, queue_service, mock_queue_manager):
     """Test retry job handles errors gracefully."""
@@ -373,26 +329,18 @@ def test_retry_job_error_handling(mock_job_class, queue_service, mock_queue_mana
         queue_service.retry_job(job_id)
 
     assert "Failed to retry" in str(exc_info.value)
-
-
 # =====================================================================
 # HEALTH CHECK TESTS
 # =====================================================================
-
-
 def test_health_check(queue_service, mock_queue_manager):
     """Test queue service health check."""
     health = queue_service.health_check()
 
     assert health is not None
     assert 'status' in health
-
-
 # =====================================================================
 # INTEGRATION-LIKE TESTS
 # =====================================================================
-
-
 def test_enqueue_multiple_jobs_different_queues(queue_service, mock_queue_manager):
     """Test enqueuing jobs to different queues."""
     # Enqueue to messages queue
@@ -424,13 +372,9 @@ def test_enqueue_multiple_jobs_different_queues(queue_service, mock_queue_manage
     assert mock_queue_manager['messages'].enqueue.called
     assert mock_queue_manager['ai'].enqueue.called
     assert mock_queue_manager['escalation'].enqueue.called
-
-
 # =====================================================================
 # EDGE CASE TESTS
 # =====================================================================
-
-
 def test_get_job_status_with_none_timestamps(queue_service, mock_queue_manager):
     """Test getting job status when timestamps are None."""
     with patch('robbot.services.queue_service.Job') as mock_job_class:

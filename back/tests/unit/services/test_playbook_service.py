@@ -1,12 +1,10 @@
-# pylint: skip-file
+
 """
 Unit tests for PlaybookService.
 
 Tests core business logic for playbook, topic, and step management.
 Note: These tests mock ChromaDB to avoid filesystem dependencies.
 """
-# pylint: disable=redefined-outer-name,unused-argument
-
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
@@ -34,16 +32,14 @@ def db_session_instance():
     PlaybookEmbeddingModel.__table__.create(bind=engine)
     MessageModel.__table__.create(bind=engine)
 
-    SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
-    session = SessionLocal()
+    session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    session = session_local()
     try:
         yield session
     finally:
         session.close()
-
-
 @pytest.fixture()
-def mock_chroma():  # type: ignore[no-redef]
+def mock_chroma():
     """Mock ChromaDB client and collection."""
     with patch('robbot.services.playbook_service.chromadb.Client') as mock_client_class:
         mock_collection = MagicMock()
@@ -62,20 +58,14 @@ def mock_chroma():  # type: ignore[no-redef]
             'client': mock_client,
             'collection': mock_collection
         }
-
-
 @pytest.fixture()
-def playbook_service(db_session):  # type: ignore[no-redef]
+def playbook_service(db_session):
     """Create PlaybookService instance with mocked ChromaDB."""
     return PlaybookService(db_session)
-
-
 # =====================================================================
 # TOPIC OPERATIONS TESTS
 # =====================================================================
-
-
-def test_create_topic(playbook_service):  # type: ignore[no-redef]
+def test_create_topic(playbook_service):
     """Test creating a new topic."""
     name = "Procedimentos"
     description = "Procedimentos estéticos disponíveis"
@@ -93,9 +83,7 @@ def test_create_topic(playbook_service):  # type: ignore[no-redef]
     assert topic.description == description
     assert topic.category == category
     assert topic.active is True
-
-
-def test_create_topic_minimal(playbook_service):  # type: ignore[no-redef]
+def test_create_topic_minimal(playbook_service):
     """Test creating topic with only required fields."""
     name = "Consultas"
 
@@ -104,9 +92,7 @@ def test_create_topic_minimal(playbook_service):  # type: ignore[no-redef]
     assert topic is not None
     assert topic.name == name
     assert topic.active is True
-
-
-def test_get_topic(playbook_service):  # type: ignore[no-redef]
+def test_get_topic(playbook_service):
     """Test retrieving topic by ID."""
     topic = playbook_service.create_topic(name="Test Topic")
 
@@ -115,18 +101,14 @@ def test_get_topic(playbook_service):  # type: ignore[no-redef]
     assert retrieved is not None
     assert retrieved.id == topic.id
     assert retrieved.name == topic.name
-
-
-def test_get_nonexistent_topic(playbook_service):  # type: ignore[no-redef]
+def test_get_nonexistent_topic(playbook_service):
     """Test retrieving non-existent topic returns None."""
     fake_id = str(uuid4())
 
     result = playbook_service.get_topic(fake_id)
 
     assert result is None
-
-
-def test_list_topics(playbook_service):  # type: ignore[no-redef]
+def test_list_topics(playbook_service):
     """Test listing all topics."""
     # Create multiple topics
     playbook_service.create_topic(name="Topic 1", active=True)
@@ -140,9 +122,7 @@ def test_list_topics(playbook_service):  # type: ignore[no-redef]
     # List active only
     active_topics = playbook_service.list_topics(active_only=True)
     assert len(active_topics) == 2
-
-
-def test_update_topic(playbook_service):  # type: ignore[no-redef]
+def test_update_topic(playbook_service):
     """Test updating topic fields."""
     topic = playbook_service.create_topic(name="Original Name")
 
@@ -155,9 +135,7 @@ def test_update_topic(playbook_service):  # type: ignore[no-redef]
     assert updated is not None
     assert updated.name == "Updated Name"
     assert updated.description == "New description"
-
-
-def test_delete_topic(playbook_service):  # type: ignore[no-redef]
+def test_delete_topic(playbook_service):
     """Test deleting a topic."""
     topic = playbook_service.create_topic(name="To Delete")
     topic_id = str(topic.id)
@@ -166,14 +144,10 @@ def test_delete_topic(playbook_service):  # type: ignore[no-redef]
 
     assert success is True
     assert playbook_service.get_topic(topic_id) is None
-
-
 # =====================================================================
 # PLAYBOOK OPERATIONS TESTS
 # =====================================================================
-
-
-def test_create_playbook(playbook_service):  # type: ignore[no-redef]  # type: ignore[no-redef]
+def test_create_playbook(playbook_service):
     """Test creating a new playbook."""
     # Create topic first
     topic = playbook_service.create_topic(name="Test Topic")
@@ -189,9 +163,7 @@ def test_create_playbook(playbook_service):  # type: ignore[no-redef]  # type: i
     assert playbook.name == "Botox Information"
     assert playbook.topic_id == str(topic.id)
     assert playbook.active is True
-
-
-def test_create_playbook_indexes_to_chroma(playbook_service, mock_chroma):  # type: ignore[no-redef]
+def test_create_playbook_indexes_to_chroma(playbook_service, mock_chroma):
     """Test that creating playbook triggers ChromaDB indexing."""
     topic = playbook_service.create_topic(name="Test Topic")
 
@@ -204,9 +176,7 @@ def test_create_playbook_indexes_to_chroma(playbook_service, mock_chroma):  # ty
     _collection = mock_chroma['collection']
     # Note: This might be called in _generate_playbook_embedding
     # The exact assertion depends on implementation
-
-
-def test_get_playbook(playbook_service):  # type: ignore[no-redef]
+def test_get_playbook(playbook_service):
     """Test retrieving playbook by ID."""
     topic = playbook_service.create_topic(name="Topic")
     playbook = playbook_service.create_playbook(
@@ -219,9 +189,7 @@ def test_get_playbook(playbook_service):  # type: ignore[no-redef]
     assert retrieved is not None
     assert retrieved.id == playbook.id
     assert retrieved.name == playbook.name
-
-
-def test_list_playbooks_by_topic(playbook_service):  # type: ignore[no-redef]
+def test_list_playbooks_by_topic(playbook_service):
     """Test listing playbooks filtered by topic."""
     topic1 = playbook_service.create_topic(name="Topic 1")
     topic2 = playbook_service.create_topic(name="Topic 2")
@@ -238,9 +206,7 @@ def test_list_playbooks_by_topic(playbook_service):  # type: ignore[no-redef]
 
     assert len(topic1_playbooks) == 2
     assert all(p.topic_id == str(topic1.id) for p in topic1_playbooks)
-
-
-def test_update_playbook(playbook_service):  # type: ignore[no-redef]
+def test_update_playbook(playbook_service):
     """Test updating playbook fields."""
     topic = playbook_service.create_topic(name="Topic")
     playbook = playbook_service.create_playbook(
@@ -257,9 +223,7 @@ def test_update_playbook(playbook_service):  # type: ignore[no-redef]
     assert updated is not None
     assert updated.name == "Updated Name"
     assert updated.description == "New description"
-
-
-def test_delete_playbook(playbook_service):  # type: ignore[no-redef]
+def test_delete_playbook(playbook_service):
     """Test deleting a playbook."""
     topic = playbook_service.create_topic(name="Topic")
     playbook = playbook_service.create_playbook(str(topic.id), "To Delete")
@@ -269,14 +233,10 @@ def test_delete_playbook(playbook_service):  # type: ignore[no-redef]
 
     assert success is True
     assert playbook_service.get_playbook(playbook_id) is None
-
-
 # =====================================================================
 # PLAYBOOK STEP OPERATIONS TESTS
 # =====================================================================
-
-
-def test_add_step_to_playbook(playbook_service, db_session):  # type: ignore[no-redef]
+def test_add_step_to_playbook(playbook_service, db_session):
     """Test adding a step to playbook."""
     # Setup
     topic = playbook_service.create_topic(name="Topic")
@@ -304,9 +264,7 @@ def test_add_step_to_playbook(playbook_service, db_session):  # type: ignore[no-
     assert step.message_id == str(message.id)
     assert step.step_order == 1
     assert step.context_hint == "Use when client asks about pricing"
-
-
-def test_add_step_auto_order(playbook_service, db_session):  # type: ignore[no-redef]
+def test_add_step_auto_order(playbook_service, db_session):
     """Test adding step with auto-assigned order."""
     topic = playbook_service.create_topic(name="Topic")
     playbook = playbook_service.create_playbook(str(topic.id), "Playbook")
@@ -324,9 +282,7 @@ def test_add_step_auto_order(playbook_service, db_session):  # type: ignore[no-r
 
     assert step is not None
     assert step.step_order is not None  # Auto-assigned
-
-
-def test_get_playbook_steps(playbook_service, db_session):  # type: ignore[no-redef]
+def test_get_playbook_steps(playbook_service, db_session):
     """Test retrieving all steps for a playbook."""
     topic = playbook_service.create_topic(name="Topic")
     playbook = playbook_service.create_playbook(str(topic.id), "Playbook")
@@ -353,9 +309,7 @@ def test_get_playbook_steps(playbook_service, db_session):  # type: ignore[no-re
     assert len(steps) == 3
     assert steps[0].step_order == 1
     assert steps[2].step_order == 3
-
-
-def test_delete_step(playbook_service, db_session):  # type: ignore[no-redef]
+def test_delete_step(playbook_service, db_session):
     """Test deleting a step from playbook."""
     topic = playbook_service.create_topic(name="Topic")
     playbook = playbook_service.create_playbook(str(topic.id), "Playbook")
@@ -373,13 +327,9 @@ def test_delete_step(playbook_service, db_session):  # type: ignore[no-redef]
     success = playbook_service.delete_step(step_id)
 
     assert success is True
-
-
 # =====================================================================
 # SEMANTIC SEARCH TESTS
 # =====================================================================
-
-
 def test_search_playbooks_no_results(playbook_service, mock_chroma):
     """Test searching when no playbooks match."""
     # Mock empty results
@@ -395,8 +345,6 @@ def test_search_playbooks_no_results(playbook_service, mock_chroma):
     )
 
     assert results == []
-
-
 def test_search_playbooks_with_results(playbook_service, mock_chroma):
     """Test searching with matching results."""
     # Mock search results
@@ -428,8 +376,6 @@ def test_search_playbooks_with_results(playbook_service, mock_chroma):
     assert results[0].playbook_id == '123'
     assert results[0].name == 'Botox Info'
     assert results[0].relevance_score > results[1].relevance_score
-
-
 def test_search_playbooks_active_only_filter(playbook_service, mock_chroma):
     """Test searching with active_only filter."""
     playbook_service.search_playbooks(
@@ -443,14 +389,10 @@ def test_search_playbooks_active_only_filter(playbook_service, mock_chroma):
 
     # Check that where parameter was passed (exact assertion depends on implementation)
     assert call_args is not None
-
-
 # =====================================================================
 # INTEGRATION TESTS (TOPIC + PLAYBOOK + STEP)
 # =====================================================================
-
-
-def test_full_workflow_create_topic_playbook_steps(playbook_service, db_session):  # type: ignore[no-redef]
+def test_full_workflow_create_topic_playbook_steps(playbook_service, db_session):
     """Test complete workflow: create topic, playbook, and add steps."""
     # 1. Create topic
     topic = playbook_service.create_topic(
@@ -489,14 +431,12 @@ def test_full_workflow_create_topic_playbook_steps(playbook_service, db_session)
 
     assert len(steps) == 3
     assert all(s.playbook_id == str(playbook.id) for s in steps)
-
-
-def test_cascade_delete_topic_removes_playbooks(playbook_service, db_session):  # type: ignore[no-redef]
+def test_cascade_delete_topic_removes_playbooks(playbook_service, db_session):
     """Test that deleting topic cascades to playbooks."""
     # Create topic with playbooks
     topic = playbook_service.create_topic(name="Topic")
-    playbook1 = playbook_service.create_playbook(str(topic.id), "Playbook 1")
-    playbook2 = playbook_service.create_playbook(str(topic.id), "Playbook 2")
+    playbook_service.create_playbook(str(topic.id), "Playbook 1")
+    playbook_service.create_playbook(str(topic.id), "Playbook 2")
 
     # Delete topic
     playbook_service.delete_topic(str(topic.id))
@@ -504,13 +444,9 @@ def test_cascade_delete_topic_removes_playbooks(playbook_service, db_session):  
     # Verify playbooks are also deleted (depends on cascade configuration)
     # This assertion depends on actual cascade delete being configured
     # If not configured, this test documents expected behavior
-
-
 # =====================================================================
 # ERROR HANDLING TESTS
 # =====================================================================
-
-
 def test_search_playbooks_handles_chroma_error(playbook_service, mock_chroma):
     """Test graceful handling when ChromaDB fails."""
     # Make ChromaDB raise an exception

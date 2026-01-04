@@ -1,4 +1,4 @@
-# pylint: skip-file
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -11,14 +11,12 @@ from robbot.services.credential_service import CredentialService
 def db_session_instance():
     engine = create_engine("sqlite+pysqlite:///:memory:", echo=False)
     CredentialModel.__table__.create(bind=engine)
-    SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
-    session = SessionLocal()
+    session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    session = session_local()
     try:
         yield session
     finally:
         session.close()
-
-
 def test_set_and_verify_password(db_session):
     svc = CredentialService(db_session)
     user_id = 100
@@ -29,8 +27,6 @@ def test_set_and_verify_password(db_session):
     # verify
     assert svc.verify_password(user_id, "StrongPass123!") is True
     assert svc.verify_password(user_id, "WrongPass!") is False
-
-
 def test_change_password(db_session):
     svc = CredentialService(db_session)
     user_id = 101

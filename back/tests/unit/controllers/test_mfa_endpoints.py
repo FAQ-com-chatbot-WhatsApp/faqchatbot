@@ -1,4 +1,4 @@
-# pylint: skip-file
+
 """Unit tests for MFA endpoints (FASE 5)."""
 
 from unittest.mock import Mock, patch
@@ -14,8 +14,6 @@ from robbot.main import app
 def mock_db():
     """Mock database session."""
     return Mock()
-
-
 @pytest.fixture
 def mock_current_user():
     """Mock authenticated user."""
@@ -23,8 +21,6 @@ def mock_current_user():
     user.id = 1
     user.email = "test@example.com"
     return user
-
-
 @pytest.fixture
 def client_with_auth(mock_current_user, mock_db):
     """Test client with mocked authentication."""
@@ -39,8 +35,6 @@ def client_with_auth(mock_current_user, mock_db):
 
     # Clear overrides after test
     app.dependency_overrides.clear()
-
-
 class TestMfaSetup:
     """Tests for POST /auth/mfa/setup endpoint."""
 
@@ -78,8 +72,6 @@ class TestMfaSetup:
         client = TestClient(app)
         response = client.post("/api/v1/auth/mfa/setup")
         assert response.status_code == 401
-
-
 class TestMfaVerify:
     """Tests for POST /auth/mfa/verify endpoint."""
 
@@ -98,59 +90,65 @@ class TestMfaVerify:
 
     def test_verify_mfa_backup_code_success(self, client_with_auth):
         """Test successful backup code verification."""
-        with patch("robbot.services.mfa_service.MfaService.verify_mfa") as mock_verify_totp:
-            with patch("robbot.services.mfa_service.MfaService.verify_backup_code") as mock_verify_backup:
-                # TOTP fails
-                mock_verify_totp.side_effect = AuthException("Invalid MFA code")
-                # Backup succeeds
-                mock_verify_backup.return_value = True
+        with (
+            patch("robbot.services.mfa_service.MfaService.verify_mfa") as mock_verify_totp,
+            patch("robbot.services.mfa_service.MfaService.verify_backup_code") as mock_verify_backup,
+        ):
+            # TOTP fails
+            mock_verify_totp.side_effect = AuthException("Invalid MFA code")
+            # Backup succeeds
+            mock_verify_backup.return_value = True
 
-                response = client_with_auth.post("/api/v1/auth/mfa/verify", json={"code": "abc123"})
+            response = client_with_auth.post("/api/v1/auth/mfa/verify", json={"code": "abc123"})
 
-                assert response.status_code == 200
-                data = response.json()
-                assert data["verified"] is True
-                assert "Backup code" in data["message"]
+            assert response.status_code == 200
+            data = response.json()
+            assert data["verified"] is True
+            assert "Backup code" in data["message"]
 
     def test_verify_mfa_invalid_code(self, client_with_auth):
         """Test verification with invalid code."""
-        with patch("robbot.services.mfa_service.MfaService.verify_mfa") as mock_verify_totp:
-            with patch("robbot.services.mfa_service.MfaService.verify_backup_code") as mock_verify_backup:
-                mock_verify_totp.side_effect = AuthException("Invalid MFA code")
-                mock_verify_backup.side_effect = AuthException("Invalid backup code")
+        with (
+            patch("robbot.services.mfa_service.MfaService.verify_mfa") as mock_verify_totp,
+            patch("robbot.services.mfa_service.MfaService.verify_backup_code") as mock_verify_backup,
+        ):
+            mock_verify_totp.side_effect = AuthException("Invalid MFA code")
+            mock_verify_backup.side_effect = AuthException("Invalid backup code")
 
-                response = client_with_auth.post("/api/v1/auth/mfa/verify", json={"code": "000000"})
+            response = client_with_auth.post("/api/v1/auth/mfa/verify", json={"code": "000000"})
 
-                assert response.status_code == 401
+            assert response.status_code == 401
 
     def test_verify_mfa_not_enabled(self, client_with_auth):
         """Test verification when MFA not enabled."""
-        with patch("robbot.services.mfa_service.MfaService.verify_mfa") as mock_verify:
-            with patch("robbot.services.mfa_service.MfaService.verify_backup_code") as mock_backup:
-                mock_verify.side_effect = AuthException("MFA not enabled")
-                mock_backup.side_effect = AuthException("MFA not enabled")
+        with (
+            patch("robbot.services.mfa_service.MfaService.verify_mfa") as mock_verify,
+            patch("robbot.services.mfa_service.MfaService.verify_backup_code") as mock_backup,
+        ):
+            mock_verify.side_effect = AuthException("MFA not enabled")
+            mock_backup.side_effect = AuthException("MFA not enabled")
 
-                response = client_with_auth.post("/api/v1/auth/mfa/verify", json={"code": "123456"})
+            response = client_with_auth.post("/api/v1/auth/mfa/verify", json={"code": "123456"})
 
-                assert response.status_code == 401
-
-
+            assert response.status_code == 401
 class TestMfaDisable:
     """Tests for POST /auth/mfa/disable endpoint."""
 
     def test_disable_mfa_success(self, client_with_auth):
         """Test successful MFA disabling."""
-        with patch("robbot.services.mfa_service.MfaService.verify_mfa") as mock_verify:
-            with patch("robbot.services.mfa_service.MfaService.disable_mfa") as mock_disable:
-                mock_verify.return_value = True
+        with (
+            patch("robbot.services.mfa_service.MfaService.verify_mfa") as mock_verify,
+            patch("robbot.services.mfa_service.MfaService.disable_mfa") as mock_disable,
+        ):
+            mock_verify.return_value = True
 
-                response = client_with_auth.post("/api/v1/auth/mfa/disable", json={"code": "123456"})
+            response = client_with_auth.post("/api/v1/auth/mfa/disable", json={"code": "123456"})
 
-                assert response.status_code == 200
-                data = response.json()
-                assert "disabled successfully" in data["message"]
-                mock_verify.assert_called_once_with(1, "123456")
-                mock_disable.assert_called_once_with(1)
+            assert response.status_code == 200
+            data = response.json()
+            assert "disabled successfully" in data["message"]
+            mock_verify.assert_called_once_with(1, "123456")
+            mock_disable.assert_called_once_with(1)
 
     def test_disable_mfa_invalid_code(self, client_with_auth):
         """Test MFA disabling with invalid code."""

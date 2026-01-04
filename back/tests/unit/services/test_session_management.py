@@ -1,4 +1,4 @@
-# pylint: skip-file
+
 """Unit tests for session management endpoints.
 
 FASE 3: Tests for listing, revoking, and managing user sessions.
@@ -54,24 +54,18 @@ def db_session_instance():
         """))
         conn.commit()
 
-    Session = sessionmaker(bind=engine)
-    session = Session()
+    session_factory = sessionmaker(bind=engine)
+    session = session_factory()
     yield session
     session.close()
-
-
 @pytest.fixture
 def user_repo(db_session):
     """Create UserRepository fixture."""
     return UserRepository(db_session)
-
-
 @pytest.fixture
 def session_repo(db_session):
     """Create AuthSessionRepository fixture."""
     return AuthSessionRepository(db_session)
-
-
 @pytest.fixture
 def test_user(user_repo, db_session):
     """Create test user."""
@@ -85,14 +79,12 @@ def test_user(user_repo, db_session):
     db_session.commit()
     db_session.refresh(user)
     return user
-
-
 def test_list_all_sessions_for_user(session_repo, test_user):
     """Test listing all sessions (active + revoked) for a user."""
     # Create 3 sessions: 2 active, 1 revoked
     expires = datetime.now(UTC).replace(tzinfo=None) + timedelta(minutes=30)
 
-    session1 = session_repo.create(
+    session_repo.create(
         user_id=test_user.id,
         refresh_token_jti="jti_1",
         ip_address="192.168.1.1",
@@ -101,7 +93,7 @@ def test_list_all_sessions_for_user(session_repo, test_user):
         expires_at=expires,
     )
 
-    session2 = session_repo.create(
+    session_repo.create(
         user_id=test_user.id,
         refresh_token_jti="jti_2",
         ip_address="192.168.1.2",
@@ -135,8 +127,6 @@ def test_list_all_sessions_for_user(session_repo, test_user):
     revoked_sessions = [s for s in sessions if s.is_revoked]
     assert len(revoked_sessions) == 1
     assert revoked_sessions[0].revocation_reason == "test_revocation"
-
-
 def test_revoke_session_by_id(session_repo, test_user):
     """Test revoking a specific session by ID."""
     expires = datetime.now(UTC).replace(tzinfo=None) + timedelta(minutes=30)
@@ -166,8 +156,6 @@ def test_revoke_session_by_id(session_repo, test_user):
     assert revoked_session.is_revoked
     assert revoked_session.revocation_reason == "manual_revocation"
     assert revoked_session.revoked_at is not None
-
-
 def test_revoke_session_by_id_wrong_user(session_repo, test_user, db_session):
     """Test that revoking a session fails if user_id doesn't match."""
     # Create another user
@@ -205,8 +193,6 @@ def test_revoke_session_by_id_wrong_user(session_repo, test_user, db_session):
     # Verify session is still active
     unchanged_session = session_repo.get_by_id(session.id)
     assert not unchanged_session.is_revoked
-
-
 def test_revoke_all_sessions_for_user(session_repo, test_user):
     """Test revoking all sessions for a user."""
     expires = datetime.now(UTC).replace(tzinfo=None) + timedelta(minutes=30)
@@ -234,14 +220,12 @@ def test_revoke_all_sessions_for_user(session_repo, test_user):
     sessions = session_repo.get_all_by_user_id(test_user.id)
     assert all(s.is_revoked for s in sessions)
     assert all(s.revocation_reason == "revoke_all_test" for s in sessions)
-
-
 def test_get_active_sessions_excludes_expired_and_revoked(session_repo, test_user):
     """Test that get_active_by_user_id excludes expired and revoked sessions."""
     now = datetime.now(UTC).replace(tzinfo=None)
 
     # Create active session
-    active_session = session_repo.create(
+    session_repo.create(
         user_id=test_user.id,
         refresh_token_jti="jti_active",
         ip_address="192.168.1.1",
@@ -251,7 +235,7 @@ def test_get_active_sessions_excludes_expired_and_revoked(session_repo, test_use
     )
 
     # Create expired session
-    expired_session = session_repo.create(
+    session_repo.create(
         user_id=test_user.id,
         refresh_token_jti="jti_expired",
         ip_address="192.168.1.2",

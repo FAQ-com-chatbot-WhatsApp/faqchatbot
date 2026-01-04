@@ -1,4 +1,4 @@
-# pylint: skip-file
+
 """
 Unit tests for NotificationService.
 
@@ -19,25 +19,19 @@ def db_session_instance():
     """Create in-memory SQLite database for testing."""
     engine = create_engine("sqlite+pysqlite:///:memory:", echo=False)
     NotificationModel.__table__.create(bind=engine)
-    SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
-    session = SessionLocal()
+    session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    session = session_local()
     try:
         yield session
     finally:
         session.close()
-
-
 @pytest.fixture()
 def notification_service(db_session_instance):
     """Create NotificationService instance."""
-    return NotificationService(db_session)
-
-
+    return NotificationService(db_session_instance)
 # =====================================================================
 # CREATE NOTIFICATION TESTS
 # =====================================================================
-
-
 def test_create_notification(notification_service):
     """Test creating a new notification."""
     user_id = 123
@@ -58,8 +52,6 @@ def test_create_notification(notification_service):
     assert notification.title == title
     assert notification.message == message
     assert notification.read is False  # Default state
-
-
 def test_create_notification_different_types(notification_service):
     """Test creating notifications with different types."""
     user_id = 456
@@ -79,8 +71,6 @@ def test_create_notification_different_types(notification_service):
         )
 
         assert notification.type == notif_type
-
-
 def test_create_multiple_notifications_for_user(notification_service):
     """Test creating multiple notifications for the same user."""
     user_id = 789
@@ -98,13 +88,9 @@ def test_create_multiple_notifications_for_user(notification_service):
     notifications = notification_service.get_user_notifications(user_id)
 
     assert len(notifications) == 3
-
-
 # =====================================================================
 # MARK AS READ TESTS
 # =====================================================================
-
-
 def test_mark_notification_as_read(notification_service):
     """Test marking a notification as read."""
     # Create notification
@@ -121,8 +107,6 @@ def test_mark_notification_as_read(notification_service):
     updated = notification_service.mark_as_read(str(notification.id))
 
     assert updated.read is True
-
-
 def test_mark_nonexistent_notification_as_read(notification_service):
     """Test marking non-existent notification as read raises error."""
     fake_id = "00000000-0000-0000-0000-000000000000"
@@ -131,8 +115,6 @@ def test_mark_nonexistent_notification_as_read(notification_service):
         notification_service.mark_as_read(fake_id)
 
     assert "not found" in str(exc_info.value).lower()
-
-
 def test_mark_already_read_notification(notification_service):
     """Test marking an already read notification (idempotent operation)."""
     # Create and mark as read
@@ -149,13 +131,9 @@ def test_mark_already_read_notification(notification_service):
     updated = notification_service.mark_as_read(str(notification.id))
 
     assert updated.read is True
-
-
 # =====================================================================
 # GET USER NOTIFICATIONS TESTS
 # =====================================================================
-
-
 def test_get_user_notifications_all(notification_service):
     """Test getting all notifications for a user."""
     user_id = 333
@@ -180,8 +158,6 @@ def test_get_user_notifications_all(notification_service):
     )
 
     assert len(notifications) == 5
-
-
 def test_get_user_notifications_unread_only(notification_service):
     """Test getting only unread notifications for a user."""
     user_id = 444
@@ -207,8 +183,6 @@ def test_get_user_notifications_unread_only(notification_service):
 
     assert len(notifications) == 3
     assert all(not n.read for n in notifications)
-
-
 def test_get_user_notifications_with_limit(notification_service):
     """Test getting notifications respects limit parameter."""
     user_id = 555
@@ -229,8 +203,6 @@ def test_get_user_notifications_with_limit(notification_service):
     )
 
     assert len(notifications) <= 5
-
-
 def test_get_notifications_for_different_users(notification_service):
     """Test that users only see their own notifications."""
     user1_id = 666
@@ -257,8 +229,6 @@ def test_get_notifications_for_different_users(notification_service):
 
     assert len(user1_notifications) == 1
     assert all(n.user_id == user1_id for n in user1_notifications)
-
-
 def test_get_notifications_empty_result(notification_service):
     """Test getting notifications for user with no notifications."""
     user_id = 888
@@ -267,13 +237,9 @@ def test_get_notifications_empty_result(notification_service):
 
     assert len(notifications) == 0
     assert isinstance(notifications, list)
-
-
 # =====================================================================
 # COUNT UNREAD TESTS
 # =====================================================================
-
-
 def test_count_unread_notifications(notification_service):
     """Test counting unread notifications."""
     user_id = 999
@@ -295,8 +261,6 @@ def test_count_unread_notifications(notification_service):
     unread_count = notification_service.count_unread(user_id)
 
     assert unread_count == 3
-
-
 def test_count_unread_zero(notification_service):
     """Test counting unread notifications when all are read."""
     user_id = 1000
@@ -314,8 +278,6 @@ def test_count_unread_zero(notification_service):
     unread_count = notification_service.count_unread(user_id)
 
     assert unread_count == 0
-
-
 def test_count_unread_no_notifications(notification_service):
     """Test counting unread for user with no notifications."""
     user_id = 1111
@@ -323,13 +285,9 @@ def test_count_unread_no_notifications(notification_service):
     unread_count = notification_service.count_unread(user_id)
 
     assert unread_count == 0
-
-
 # =====================================================================
 # SPECIALIZED NOTIFICATION TESTS
 # =====================================================================
-
-
 def test_notify_new_lead(notification_service):
     """Test specialized notification for new lead."""
     user_id = 1222
@@ -346,8 +304,6 @@ def test_notify_new_lead(notification_service):
     assert notification.user_id == user_id
     assert notification.type == "NEW_LEAD"
     assert lead_name in notification.message
-
-
 def test_notify_urgent_message(notification_service):
     """Test specialized notification for urgent message."""
     user_id = 1333
@@ -364,8 +320,6 @@ def test_notify_urgent_message(notification_service):
     assert notification.user_id == user_id
     assert notification.type == "URGENT_MESSAGE"
     assert conversation_id in notification.message
-
-
 def test_notify_transfer_received(notification_service):
     """Test specialized notification for conversation transfer."""
     user_id = 1444
@@ -382,13 +336,9 @@ def test_notify_transfer_received(notification_service):
     assert notification.user_id == user_id
     assert notification.type == "TRANSFER_RECEIVED"
     assert from_user_name in notification.message
-
-
 # =====================================================================
 # EDGE CASE TESTS
 # =====================================================================
-
-
 def test_create_notification_with_long_message(notification_service):
     """Test creating notification with very long message."""
     user_id = 1555
@@ -403,8 +353,6 @@ def test_create_notification_with_long_message(notification_service):
 
     assert notification is not None
     assert len(notification.message) == 2000
-
-
 def test_create_notification_empty_title(notification_service):
     """Test creating notification with empty title."""
     user_id = 1666
@@ -418,28 +366,26 @@ def test_create_notification_empty_title(notification_service):
 
     assert notification is not None
     assert notification.title == ""
-
-
 def test_notification_ordering(notification_service):
     """Test that notifications are ordered by created_at descending."""
     user_id = 1777
 
     # Create notifications with slight delay simulation
-    notification1 = notification_service.create_notification(
+    notification_service.create_notification(
         user_id=user_id,
         notification_type="TEST",
         title="First",
         message="First notification"
     )
 
-    notification2 = notification_service.create_notification(
+    notification_service.create_notification(
         user_id=user_id,
         notification_type="TEST",
         title="Second",
         message="Second notification"
     )
 
-    notification3 = notification_service.create_notification(
+    notification_service.create_notification(
         user_id=user_id,
         notification_type="TEST",
         title="Third",

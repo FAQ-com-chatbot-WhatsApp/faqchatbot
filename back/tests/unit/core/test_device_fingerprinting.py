@@ -1,4 +1,4 @@
-# pylint: skip-file
+
 """Unit tests for device fingerprinting functionality.
 
 FASE 3: Tests for parse_device_name() function and device info capture.

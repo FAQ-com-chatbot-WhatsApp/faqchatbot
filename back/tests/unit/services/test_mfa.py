@@ -1,4 +1,4 @@
-# pylint: skip-file
+
 """Testes unitários para MFA (FASE 5)."""
 
 import json
@@ -54,12 +54,10 @@ def db_session_instance():
             """
         ))
         conn.commit()
-    Session = sessionmaker(bind=engine)
-    session = Session()
+    session_factory = sessionmaker(bind=engine)
+    session = session_factory()
     yield session
     session.close()
-
-
 def test_setup_mfa_and_verify_totp(db_session):
     auth_service = AuthService(db_session)
     mfa_service = MfaService(db_session)
@@ -93,8 +91,6 @@ def test_setup_mfa_and_verify_totp(db_session):
     # verifica TOTP inválido
     with pytest.raises(AuthException, match="Invalid MFA code"):
         mfa_service.verify_mfa(user.id, "000000")
-
-
 def test_backup_code_consumption(db_session):
     auth_service = AuthService(db_session)
     mfa_service = MfaService(db_session)

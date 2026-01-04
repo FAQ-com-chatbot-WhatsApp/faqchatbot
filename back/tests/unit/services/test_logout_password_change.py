@@ -1,4 +1,4 @@
-# pylint: skip-file
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -21,14 +21,12 @@ def db_session_instance():
     CredentialModel.__table__.create(bind=engine)
     RevokedTokenModel.__table__.create(bind=engine)
     AuthSessionModel.__table__.create(bind=engine)
-    SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
-    session = SessionLocal()
+    session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    session = session_local()
     try:
         yield session
     finally:
         session.close()
-
-
 def test_logout_revokes_tokens_and_session(db_session):
     svc = AuthService(db_session)
     payload = UserCreate(email="logout@example.com", password="StrongPass123!", full_name="Logout", role="user")
@@ -64,8 +62,6 @@ def test_logout_revokes_tokens_and_session(db_session):
     sess = db_session.query(AuthSessionModel).filter(AuthSessionModel.id == sess.id).first()
     assert sess.is_revoked is True
     assert sess.revocation_reason == "logout"
-
-
 def test_change_password_updates_credential_and_revokes_sessions(db_session):
     svc = AuthService(db_session)
     payload = UserCreate(email="changepw@example.com", password="Initial123!", full_name="ChangePW", role="user")

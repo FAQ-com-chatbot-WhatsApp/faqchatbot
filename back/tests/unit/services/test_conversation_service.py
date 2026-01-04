@@ -1,11 +1,9 @@
-# pylint: skip-file
+
 """
 Unit tests for ConversationService.
 
 Tests core business logic for conversation management.
 """
-
-
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -26,25 +24,19 @@ def db_session_instance():
     LeadModel.__table__.create(bind=engine)
     ConversationModel.__table__.create(bind=engine)
     ConversationMessageModel.__table__.create(bind=engine)
-    SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
-    session = SessionLocal()
+    session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    session = session_local()
     try:
         yield session
     finally:
         session.close()
-
-
 @pytest.fixture()
 def conversation_service(db_session_instance):
     """Create ConversationService instance."""
     return ConversationService(db_session_instance)
-
-
 # =====================================================================
 # GET OR CREATE TESTS
 # =====================================================================
-
-
 def test_get_or_create_new_conversation(conversation_service):
     """Test creating a new conversation."""
     chat_id = "5511999999999@c.us"
@@ -62,8 +54,6 @@ def test_get_or_create_new_conversation(conversation_service):
     assert conversation.phone_number == phone_number
     assert conversation.name == name
     assert conversation.status == ConversationStatus.ACTIVE
-
-
 def test_get_or_create_existing_conversation(conversation_service):
     """Test retrieving an existing conversation."""
     chat_id = "5511888888888@c.us"
@@ -83,13 +73,9 @@ def test_get_or_create_existing_conversation(conversation_service):
 
     assert conv1.id == conv2.id
     assert conv1.chat_id == conv2.chat_id
-
-
 # =====================================================================
 # STATUS TRANSITION TESTS
 # =====================================================================
-
-
 def test_update_status_valid_transition(conversation_service):
     """Test valid status transition."""
     conversation = conversation_service.get_or_create(
@@ -104,8 +90,6 @@ def test_update_status_valid_transition(conversation_service):
     )
 
     assert updated.status == ConversationStatus.WAITING_SECRETARY
-
-
 def test_update_status_invalid_transition(conversation_service):
     """Test invalid status transition raises error."""
     conversation = conversation_service.get_or_create(
@@ -127,8 +111,6 @@ def test_update_status_invalid_transition(conversation_service):
         )
 
     assert "Invalid status transition" in str(exc_info.value)
-
-
 def test_update_status_conversation_not_found(conversation_service):
     """Test updating status of non-existent conversation."""
     fake_id = "00000000-0000-0000-0000-000000000000"
@@ -140,8 +122,6 @@ def test_update_status_conversation_not_found(conversation_service):
         )
 
     assert "not found" in str(exc_info.value).lower()
-
-
 def test_all_valid_status_transitions(conversation_service):
     """Test all valid status transitions."""
     conversation = conversation_service.get_or_create(
@@ -173,13 +153,9 @@ def test_all_valid_status_transitions(conversation_service):
         conv_id, ConversationStatus.ACTIVE
     )
     assert updated.status == ConversationStatus.ACTIVE
-
-
 # =====================================================================
 # CLOSE CONVERSATION TESTS
 # =====================================================================
-
-
 def test_close_conversation(conversation_service):
     """Test closing a conversation."""
     conversation = conversation_service.get_or_create(
@@ -194,21 +170,15 @@ def test_close_conversation(conversation_service):
 
     assert closed.status == ConversationStatus.CLOSED
     # Note: closed_at field doesn't exist in model
-
-
 def test_close_nonexistent_conversation(conversation_service):
     """Test closing non-existent conversation raises error."""
     fake_id = "11111111-1111-1111-1111-111111111111"
 
     with pytest.raises(NotFoundException):
         conversation_service.close(conversation_id=fake_id)
-
-
 # =====================================================================
 # TRANSFER TO SECRETARY TESTS
 # =====================================================================
-
-
 def test_transfer_to_secretary(conversation_service):
     """Test transferring conversation to secretary."""
     conversation = conversation_service.get_or_create(
@@ -224,8 +194,6 @@ def test_transfer_to_secretary(conversation_service):
 
     assert transferred.status == ConversationStatus.TRANSFERRED
     # Note: assigned_to_user_id is in LeadModel, not ConversationModel
-
-
 def test_transfer_nonexistent_conversation(conversation_service):
     """Test transferring non-existent conversation raises error."""
     fake_id = "22222222-2222-2222-2222-222222222222"
@@ -235,18 +203,14 @@ def test_transfer_nonexistent_conversation(conversation_service):
             conversation_id=fake_id,
             user_id=999
         )
-
-
 # =====================================================================
 # LIST/FILTER TESTS
 # =====================================================================
-
-
 def test_get_active_conversations(conversation_service):
     """Test retrieving active conversations."""
     # Create active and closed conversations
-    conv1 = conversation_service.get_or_create("active1@c.us", "+5511111111111")
-    conv2 = conversation_service.get_or_create("active2@c.us", "+5511222222222")
+    conversation_service.get_or_create("active1@c.us", "+5511111111111")
+    conversation_service.get_or_create("active2@c.us", "+5511222222222")
     conv3 = conversation_service.get_or_create("closed@c.us", "+5511333333333")
 
     # Close one conversation
@@ -257,12 +221,10 @@ def test_get_active_conversations(conversation_service):
 
     assert len(active) == 2
     assert all(c.status == ConversationStatus.ACTIVE for c in active)
-
-
 def test_list_conversations_with_filters(conversation_service):
     """Test listing conversations with various filters."""
     # Create conversations with different statuses
-    conv1 = conversation_service.get_or_create("list1@c.us", "+5511111111111")
+    conversation_service.get_or_create("list1@c.us", "+5511111111111")
     conv2 = conversation_service.get_or_create("list2@c.us", "+5511222222222")
     conv3 = conversation_service.get_or_create("list3@c.us", "+5511333333333")
 
@@ -281,8 +243,6 @@ def test_list_conversations_with_filters(conversation_service):
 
     assert len(active_convs) == 1
     assert active_convs[0].status == ConversationStatus.ACTIVE
-
-
 def test_list_conversations_by_assigned_user(conversation_service):
     """Test listing conversations assigned to specific user."""
     user_id = 789
@@ -301,13 +261,9 @@ def test_list_conversations_by_assigned_user(conversation_service):
 
     assert len(user_convs) == 1
     assert user_convs[0].lead.assigned_to_user_id == user_id
-
-
 # =====================================================================
 # GET BY ID TESTS
 # =====================================================================
-
-
 def test_get_conversation_by_id(conversation_service):
     """Test retrieving conversation by ID."""
     created = conversation_service.get_or_create(
@@ -320,8 +276,6 @@ def test_get_conversation_by_id(conversation_service):
     assert retrieved is not None
     assert retrieved.id == created.id
     assert retrieved.chat_id == created.chat_id
-
-
 def test_get_nonexistent_conversation_by_id(conversation_service):
     """Test retrieving non-existent conversation returns None."""
     fake_id = "33333333-3333-3333-3333-333333333333"
@@ -329,13 +283,9 @@ def test_get_nonexistent_conversation_by_id(conversation_service):
     result = conversation_service.get_by_id(fake_id)
 
     assert result is None
-
-
 # =====================================================================
 # UPDATE NOTES TESTS
 # =====================================================================
-
-
 def test_update_notes(conversation_service):
     """Test updating conversation notes."""
     conversation = conversation_service.get_or_create(
@@ -351,8 +301,6 @@ def test_update_notes(conversation_service):
 
     # Note: notes field may be in LeadModel or doesn't exist yet
     assert updated is not None
-
-
 def test_update_notes_conversation_not_found(conversation_service):
     """Test updating notes of non-existent conversation raises error."""
     fake_id = "44444444-4444-4444-4444-444444444444"
@@ -362,8 +310,6 @@ def test_update_notes_conversation_not_found(conversation_service):
             conversation_id=fake_id,
             notes="Some notes"
         )
-
-
 # =====================================================================
 # FIND BY CRITERIA TESTS
 # =====================================================================
@@ -375,7 +321,7 @@ def test_find_by_criteria_multiple_filters(conversation_service):
     # Create conversations
     conv1 = conversation_service.get_or_create("criteria1@c.us", "+5511111111111")
     conv2 = conversation_service.get_or_create("criteria2@c.us", "+5511222222222")
-    conv3 = conversation_service.get_or_create("criteria3@c.us", "+5511333333333")
+    conversation_service.get_or_create("criteria3@c.us", "+5511333333333")
 
     # Transfer some
     conversation_service.transfer_to_secretary(str(conv1.id), user_id=user_id)

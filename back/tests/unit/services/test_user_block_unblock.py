@@ -1,4 +1,4 @@
-# pylint: skip-file
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -16,14 +16,12 @@ def db_session_instance():
     # Minimal tables for this test
     UserModel.__table__.create(bind=engine)
     AuthSessionModel.__table__.create(bind=engine)
-    SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
-    session = SessionLocal()
+    session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    session = session_local()
     try:
         yield session
     finally:
         session.close()
-
-
 def make_user(db_session):
     repo = UserRepository(db_session)
     payload = UserCreate(email="adminblock@example.com", password="StrongPass123!", full_name="Admin Block", role="user")
@@ -31,8 +29,6 @@ def make_user(db_session):
     from robbot.core import security
     hashed = security.get_password_hash(payload.password)
     return repo.create_user(payload, hashed)
-
-
 def test_block_user_revokes_sessions_and_sets_inactive(db_session):
     service = UserService(db_session)
     user = make_user(db_session)
@@ -50,8 +46,6 @@ def test_block_user_revokes_sessions_and_sets_inactive(db_session):
 
     sessions = db_session.query(AuthSessionModel).filter(AuthSessionModel.user_id == user.id).all()
     assert all(s.is_revoked for s in sessions)
-
-
 def test_unblock_user_sets_active(db_session):
     service = UserService(db_session)
     user = make_user(db_session)

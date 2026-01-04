@@ -1,4 +1,4 @@
-# pylint: skip-file
+
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -20,14 +20,12 @@ def db_session_instance():
     UserModel.__table__.create(bind=engine)
     CredentialModel.__table__.create(bind=engine)
     AuthSessionModel.__table__.create(bind=engine)
-    SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
-    session = SessionLocal()
+    session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+    session = session_local()
     try:
         yield session
     finally:
         session.close()
-
-
 def test_reset_password_revokes_sessions(db_session):
     svc = AuthService(db_session)
     payload = UserCreate(email="reset@example.com", password="StrongPass123!", full_name="Reset", role="user")
