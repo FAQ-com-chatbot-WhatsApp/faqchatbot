@@ -1,6 +1,7 @@
 """Application settings loaded from environment variables."""
 
 from functools import lru_cache
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -48,7 +49,7 @@ class Settings(BaseSettings):
     GEMINI_MODEL: str = Field(default="gemini-1.5-flash")
     GEMINI_MAX_TOKENS: int = Field(default=2048)
     GEMINI_TEMPERATURE: float = Field(default=0.7)
-    
+
     # OpenAI (Whisper for transcription)
     OPENAI_API_KEY: str | None = Field(default=None)
     WHISPER_MODEL: str = Field(default="whisper-1")
@@ -78,7 +79,7 @@ class Settings(BaseSettings):
     # ChromaDB (persistência vetorial)
     CHROMA_PERSIST_DIR: str = Field(default="./data/chroma")
     CHROMA_COLLECTION_NAME: str = Field(default="conversations")
-    
+
     # Clínica GO - Localização Fixa
     CLINIC_NAME: str = Field(default="Clínica GO")
     CLINIC_ADDRESS: str = Field(
