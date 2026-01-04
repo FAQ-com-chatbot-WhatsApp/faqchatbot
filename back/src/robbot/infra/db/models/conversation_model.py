@@ -1,6 +1,9 @@
 """Conversation model for tracking WhatsApp conversations."""
 
+from __future__ import annotations
+
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import DateTime, String
@@ -8,6 +11,12 @@ from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from robbot.domain.enums import ConversationStatus
+
+if TYPE_CHECKING:
+    from robbot.infra.db.models.conversation_context_model import ConversationContextModel
+    from robbot.infra.db.models.conversation_message_model import ConversationMessageModel
+    from robbot.infra.db.models.lead_model import LeadModel
+    from robbot.infra.db.models.llm_interaction_model import LLMInteractionModel
 from robbot.infra.db.base import Base
 
 
@@ -68,24 +77,24 @@ class ConversationModel(Base):
     )
 
     # Relationships
-    messages: Mapped[list["ConversationMessageModel"]] = relationship(
+    messages: Mapped[list[ConversationMessageModel]] = relationship(
         "ConversationMessageModel",
         back_populates="conversation",
         cascade="all, delete-orphan",
         lazy="selectin",
     )
-    lead: Mapped["LeadModel"] = relationship(
+    lead: Mapped[LeadModel] = relationship(
         "LeadModel",
         back_populates="conversation",
         uselist=False,
         cascade="all, delete-orphan",
     )
-    llm_interactions: Mapped[list["LLMInteractionModel"]] = relationship(
+    llm_interactions: Mapped[list[LLMInteractionModel]] = relationship(
         "LLMInteractionModel",
         back_populates="conversation",
         cascade="all, delete-orphan",
     )
-    context: Mapped["ConversationContextModel"] = relationship(
+    context: Mapped[ConversationContextModel] = relationship(
         "ConversationContextModel",
         back_populates="conversation",
         uselist=False,
