@@ -82,7 +82,7 @@ class AuthSessionRepository(BaseRepository[AuthSessionModel]):
             self.db.query(AuthSessionModel)
             .filter(
                 AuthSessionModel.user_id == user_id,
-                AuthSessionModel.is_revoked == False,
+                not AuthSessionModel.is_revoked,
                 AuthSessionModel.expires_at > now,
             )
             .order_by(AuthSessionModel.last_used_at.desc())
@@ -172,7 +172,7 @@ class AuthSessionRepository(BaseRepository[AuthSessionModel]):
             self.db.query(AuthSessionModel)
             .filter(
                 AuthSessionModel.user_id == user_id,
-                AuthSessionModel.is_revoked == False,
+                not AuthSessionModel.is_revoked,
             )
             .update(
                 {
