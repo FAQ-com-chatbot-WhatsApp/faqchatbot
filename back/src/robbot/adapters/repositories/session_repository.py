@@ -38,7 +38,7 @@ class SessionRepository(BaseRepository[WhatsAppSession]):
         """
         stmt = (
             select(WhatsAppSession)
-            .where(WhatsAppSession.is_active == True)
+            .where(WhatsAppSession.is_active)
             .order_by(WhatsAppSession.created_at.desc())
         )
         return self.db.scalars(stmt).first()
@@ -117,5 +117,5 @@ class SessionRepository(BaseRepository[WhatsAppSession]):
         Returns:
             Number of active sessions
         """
-        stmt = select(WhatsAppSession).where(WhatsAppSession.is_active == True)
+        stmt = select(WhatsAppSession).where(WhatsAppSession.is_active)
         return len(self.db.scalars(stmt).all())
