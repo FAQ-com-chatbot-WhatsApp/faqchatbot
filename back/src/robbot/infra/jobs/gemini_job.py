@@ -3,13 +3,14 @@ Job para processar mensagens com Gemini AI.
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
+from robbot.adapters.repositories.conversation_message_repository import (
+    ConversationMessageRepository,
+)
 from robbot.adapters.repositories.conversation_repository import ConversationRepository
-from robbot.adapters.repositories.message_repository import MessageRepository
-from robbot.core.custom_exceptions import DatabaseError
 from robbot.infra.db.session import get_sync_session
-from robbot.infra.jobs.base_job import BaseJob, JobRetryableError, JobFailureError
+from robbot.infra.jobs.base_job import BaseJob, JobFailureError, JobRetryableError
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 class GeminiAIProcessingJob(BaseJob):
     """
     Job para processar mensagem com IA Gemini.
-    
+
     Responsabilidades:
     - Recuperar histórico de conversa
     - Chamar Gemini com LangChain
@@ -36,7 +37,7 @@ class GeminiAIProcessingJob(BaseJob):
     ):
         """
         Inicializar job de IA.
-        
+
         Args:
             conversation_id: ID da conversa
             message_id: ID da mensagem de entrada
@@ -45,12 +46,12 @@ class GeminiAIProcessingJob(BaseJob):
             **kwargs: Argumentos herdados
         """
         super().__init__(**kwargs)
-        
+
         self.conversation_id = conversation_id
         self.message_id = message_id
         self.user_input = user_input
         self.phone = phone
-        
+
         self.metadata.update({
             "conversation_id": conversation_id,
             "message_id": message_id,
@@ -60,29 +61,32 @@ class GeminiAIProcessingJob(BaseJob):
     def execute(self) -> dict[str, Any]:
         """
         Executar processamento com IA.
-        
+
         Returns:
             Dict com ID da resposta gerada e conteúdo
-            
+
         Raises:
             JobRetryableError: Se IA ou BD indisponíveis
             JobFailureError: Se resposta inválida
         """
         logger.info(
-            f"Processando com IA: {self.phone} -> '{self.user_input[:50]}...'",
+            "Processando com IA: %s -> '%s...'",
+            self.phone,
+            self.user_input[:50],
             extra=self._log_context(),
         )
-        
+
         try:
             with get_sync_session() as db:
                 conversation_context = self._get_conversation_context()
-                
+
                 ai_response = self._call_gemini(conversation_context)
-                
+
                 self._validate_ai_response(ai_response)
-                
-                message_repo = MessageRepository(db)
-                response_record = message_repo.create(
+
+                conv_msg_repo = ConversationMessageRepository(db)
+                from robbot.infra.db.models import MessageModel
+                response_record = MessageModel(
                     conversation_id=self.conversation_id,
                     direction="outbound",
                     content=ai_response,
@@ -93,12 +97,14 @@ class GeminiAIProcessingJob(BaseJob):
                         "triggerd_by_message_id": self.message_id,
                     },
                 )
-                
+                conv_msg_repo.create(response_record)  # type: ignore[attr-defined]
+
                 logger.info(
-                    f"✓ Resposta IA persistida: {response_record.id}",
+                    "[SUCCESS] Resposta IA persistida: %s",
+                    response_record.id,
                     extra=self._log_context(),
                 )
-                
+
                 return {
                     "status": "success",
                     "response_id": response_record.id,
@@ -110,16 +116,19 @@ class GeminiAIProcessingJob(BaseJob):
 
         except ValueError as e:
             logger.error(
-                f"Resposta inválida de IA: {e}",
+                "Resposta inválida de IA: %s",
+                e,
                 extra=self._log_context(),
             )
             raise JobFailureError(str(e)) from e
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(
-                f"Erro ao processar com IA: {type(e).__name__}: {e}",
+                "Erro ao processar com IA: %s: %s",
+                type(e).__name__,
+                e,
                 extra=self._log_context(),
             )
-            
+
             if any(x in str(e).lower() for x in ["timeout", "rate", "api", "503", "429"]):
                 raise JobRetryableError(f"Erro de API IA: {e}") from e
             raise JobFailureError(str(e)) from e
@@ -127,70 +136,72 @@ class GeminiAIProcessingJob(BaseJob):
     def _get_conversation_context(self) -> str:
         """
         Recuperar histórico de conversa do ChromaDB/BD.
-        
+
         Returns:
             String com contexto formatado para envio ao Gemini
         """
         with get_sync_session() as db:
             conv_repo = ConversationRepository(db)
-            msg_repo = MessageRepository(db)
-            
+            conv_msg_repo = ConversationMessageRepository(db)
+
             conversation = conv_repo.get_by_id(self.conversation_id)
             if not conversation:
                 raise ValueError(f"Conversa {self.conversation_id} não encontrada")
-            
-            messages = msg_repo.get_by_conversation_id(
-                self.conversation_id,
+
+            messages = conv_msg_repo.get_by_conversation(
+                conversation_id=self.conversation_id,
                 limit=10,
             )
-            
+
             context_lines = []
             for msg in messages:
                 direction = "Lead" if msg.direction == "inbound" else "Bot"
                 context_lines.append(f"{direction}: {msg.content}")
-            
+
             return "\n".join(context_lines)
 
     def _call_gemini(self, context: str) -> str:
         """
         Chamar API Gemini com LangChain.
-        
+
         Args:
             context: Histórico formatado da conversa
-            
+
         Returns:
             Resposta gerada pelo Gemini
-            
+
         Raises:
             JobRetryableError: Se API indisponível
         """
         # Implementação futura: chamada real com LangChain
         # Por enquanto, resposta mock
-        
+
         logger.debug(
-            f"Chamando Gemini com contexto ({len(context)} chars)",
+            "Chamando Gemini com contexto (%s chars)",
+            len(context),
             extra=self._log_context(),
         )
-        
+
         # Placeholder para desenvolvimento futuro
         return f"[Resposta do Gemini para: {self.user_input[:30]}...]"
 
     def _validate_ai_response(self, response: str) -> None:
         """
         Validar resposta de IA.
-        
+
         Args:
             response: Texto da resposta
-            
+
         Raises:
             ValueError: Se resposta inválida
         """
         if not response or len(response.strip()) == 0:
             raise ValueError("IA retornou resposta vazia")
-        
+
         if len(response) > 4096:
             logger.warning(
-                f"Resposta truncada: {len(response)} > 4096 chars",
+                "Resposta truncada: %s > 4096 chars",
+                len(response),
                 extra=self._log_context(),
             )
             response = response[:4096] + "..."
@@ -199,7 +210,7 @@ class GeminiAIProcessingJob(BaseJob):
 class MessageAnalysisJob(BaseJob):
     """
     Job para analisar mensagem e determinar próximas ações.
-    
+
     Responsabilidades:
     - Classificar intent (pergunta, agendamento, feedback)
     - Detectar sentimento (positivo, negativo, neutro)
@@ -216,7 +227,7 @@ class MessageAnalysisJob(BaseJob):
     ):
         """Inicializar job de análise."""
         super().__init__(**kwargs)
-        
+
         self.conversation_id = conversation_id
         self.message_id = message_id
         self.message_text = message_text
@@ -224,17 +235,18 @@ class MessageAnalysisJob(BaseJob):
     def execute(self) -> dict[str, Any]:
         """
         Analisar mensagem.
-        
+
         Returns:
             Dict com classificação, intent, sentimento, recomendações
         """
         logger.info(
-            f"Analisando mensagem: '{self.message_text[:50]}...'",
+            "Analisando mensagem: '%s...'",
+            self.message_text[:50],
             extra=self._log_context(),
         )
-        
+
         # Implementação futura: análise real com Gemini
-        
+
         return {
             "status": "success",
             "intent": "question",  # "question", "booking", "feedback", "off-topic"
