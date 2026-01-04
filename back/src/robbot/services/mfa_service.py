@@ -6,15 +6,14 @@ Implementa fluxo de MFA com TOTP (pyotp) e códigos de backup.
 import base64
 import json
 import secrets
-from typing import Tuple
 
 import pyotp
-from sqlalchemy.orm import Session
 from passlib.hash import bcrypt
+from sqlalchemy.orm import Session
 
-from robbot.core.exceptions import AuthException
 from robbot.adapters.repositories.credential_repository import CredentialRepository
 from robbot.adapters.repositories.user_repository import UserRepository
+from robbot.core.custom_exceptions import AuthException
 
 
 class MfaService:
@@ -35,7 +34,7 @@ class MfaService:
         totp = pyotp.TOTP(secret)
         return totp.provisioning_uri(name=email, issuer_name=self.issuer)
 
-    def _generate_backup_codes(self, count: int = 10) -> Tuple[list[str], str]:
+    def _generate_backup_codes(self, count: int = 10) -> tuple[list[str], str]:
         """Gera códigos de backup (retorna plain + JSON com hashes)."""
         codes: list[str] = []
         hashed: list[str] = []
@@ -45,7 +44,7 @@ class MfaService:
             hashed.append(bcrypt.hash(code))
         return codes, json.dumps(hashed)
 
-    def setup_mfa(self, user_id: int) -> Tuple[str, str, list[str]]:
+    def setup_mfa(self, user_id: int) -> tuple[str, str, list[str]]:
         """Habilita MFA para usuário e retorna (secret, qr_code_base64, backup_codes)."""
         user = self.user_repo.get_by_id(user_id)
         if not user:
