@@ -9,10 +9,10 @@ Este worker processa jobs de múltiplas filas em ordem de prioridade:
 Uso:
     # Rodar localmente:
     python -m robbot.workers.rq_worker
-    
+
     # Rodar via Docker:
     docker compose up -d worker
-    
+
     # Monitorar workers:
     rq info --url redis://localhost:6379/0
 """
@@ -35,12 +35,10 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
-
-
 def exception_handler(job: Job, exc_type, exc_value, traceback):
     """
     Handler customizado para exceções em jobs.
-    
+
     Registra erro detalhado e pode enviar alertas se necessário.
     """
     logger.error(
@@ -60,8 +58,6 @@ def exception_handler(job: Job, exc_type, exc_value, traceback):
     # TODO: Integrar com sistema de alertas (Sentry, email, etc)
     # if isinstance(exc_value, CriticalError):
     #     send_alert_to_admin(job, exc_value)
-
-
 def main():
     """Inicializar e rodar worker RQ."""
     logger.info("=" * 80)
@@ -121,7 +117,5 @@ def main():
     except (ValueError, RuntimeError, ConnectionError) as e:
         logger.error(f"[ERROR] Worker crashed: {e}", exc_info=True)
         sys.exit(1)
-
-
 if __name__ == "__main__":
     main()
