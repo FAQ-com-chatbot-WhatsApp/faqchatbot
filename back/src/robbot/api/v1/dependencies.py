@@ -3,7 +3,7 @@
 Inicializa rate limiter e fornece injeção de dependências para controllers.
 """
 
-from typing import Callable, Generator
+from collections.abc import Callable, Generator
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.user_repository import UserRepository
 from robbot.core import security
-from robbot.core.exceptions import AuthException
+from robbot.core.custom_exceptions import AuthException
 from robbot.core.rate_limiting import init_rate_limiter
 from robbot.infra.db.models.user_model import UserModel
 from robbot.infra.db.session import get_db as session_get_db
@@ -59,14 +59,14 @@ def get_current_user(
     """
     # Read access token from HttpOnly cookie
     token = request.cookies.get("access_token")
-    
+
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated - access token missing",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     try:
         payload = security.decode_token(token)
     except AuthException as exc:
@@ -75,7 +75,17 @@ def get_current_user(
             detail=str(exc),
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
-    
+
+    # CRITICAL: Check if token was revoked (logout/password change)
+    from robbot.adapters.repositories.token_repository import TokenRepository
+    token_repo = TokenRepository(db)
+    if token_repo.is_revoked(token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has been revoked",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     user_id = payload.get("sub")
     if not user_id:
         raise HTTPException(
@@ -83,23 +93,23 @@ def get_current_user(
             detail="Invalid token - missing subject",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     repo = UserRepository(db)
     user = repo.get_by_id(int(user_id))
-    
+
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
-    
+
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User is inactive",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     return user
 
 
