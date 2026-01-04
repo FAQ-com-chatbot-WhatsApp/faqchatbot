@@ -1,6 +1,5 @@
 """Message controller handling HTTP endpoints for CRUD operations."""
 
-from typing import Union
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
@@ -22,11 +21,9 @@ from robbot.schemas.message import (
 from robbot.services.message_service import MessageService
 
 router = APIRouter()
-
-
 @router.post(
     "/",
-    response_model=Union[MessageOutText, MessageOutMedia, MessageOutLocation],
+    response_model=MessageOutText | MessageOutMedia | MessageOutLocation,
     status_code=status.HTTP_201_CREATED,
 )
 def create_message(
@@ -47,11 +44,9 @@ def create_message(
     """
     service = MessageService(db)
     return service.create_message(payload)
-
-
 @router.get(
     "/{message_id}",
-    response_model=Union[MessageOutText, MessageOutMedia, MessageOutLocation],
+    response_model=MessageOutText | MessageOutMedia | MessageOutLocation,
 )
 def get_message(
     message_id: UUID,
@@ -67,8 +62,6 @@ def get_message(
     """
     service = MessageService(db)
     return service.get_message(message_id)
-
-
 @router.get(
     "/",
     response_model=list[MessageOutText | MessageOutMedia | MessageOutLocation],
@@ -86,11 +79,9 @@ def list_messages(
     """
     service = MessageService(db)
     return service.list_messages()
-
-
 @router.patch(
     "/{message_id}",
-    response_model=Union[MessageOutText, MessageOutMedia, MessageOutLocation],
+    response_model=MessageOutText | MessageOutMedia | MessageOutLocation,
 )
 def update_message(
     message_id: UUID,
@@ -108,8 +99,6 @@ def update_message(
     """
     service = MessageService(db)
     return service.update_message(message_id, payload)
-
-
 @router.delete("/{message_id}", response_model=DeletedResponse)
 def delete_message(
     message_id: UUID,
@@ -125,8 +114,6 @@ def delete_message(
     """
     service = MessageService(db)
     return service.delete_message(message_id)
-
-
 @router.post("/{message_id}/generate-description")
 def generate_description(
     message_id: UUID,
@@ -136,17 +123,17 @@ def generate_description(
 ):
     """
     Generate AI-assisted title, description, and tags for a message.
-    
+
     Uses Google Gemini Vision for images/videos to automatically:
     - Generate descriptive title (max 50 chars)
     - Generate detailed description (100-200 words)
     - Suggest relevant tags
-    
+
     This helps admins quickly catalog media for use in playbooks.
-    
+
     Query params:
     - use_gemini_vision: Enable Gemini Vision analysis (default: true)
-    
+
     Requires authentication.
     """
     from robbot.services.description_service import DescriptionService
