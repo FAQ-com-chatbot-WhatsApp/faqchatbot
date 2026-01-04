@@ -20,7 +20,7 @@ from robbot.core.custom_exceptions import AuthException
 
 class EmailVerificationService:
     """Serviço de verificação de email.
-    
+
     Implementa fluxo de verificação de email para garantir endereços válidos.
     """
 
@@ -32,13 +32,13 @@ class EmailVerificationService:
 
     def generate_verification_token(self, user_id: int) -> str:
         """Generate a secure verification token for a user.
-        
+
         Args:
             user_id: User ID to generate token for
-            
+
         Returns:
             Generated verification token (32 hex characters)
-            
+
         Raises:
             AuthException: If user or credential not found
         """
@@ -58,13 +58,13 @@ class EmailVerificationService:
 
     def verify_email(self, token: str) -> int:
         """Verify email using verification token.
-        
+
         Args:
             token: Verification token from email link
-            
+
         Returns:
             User ID of verified user
-            
+
         Raises:
             AuthException: If token is invalid, expired, or already used
         """
@@ -93,13 +93,13 @@ class EmailVerificationService:
 
     def resend_verification_email(self, email: str) -> str:
         """Resend verification email to user.
-        
+
         Args:
             email: User's email address
-            
+
         Returns:
             New verification token
-            
+
         Raises:
             AuthException: If user not found or email already verified
         """
@@ -127,10 +127,10 @@ class EmailVerificationService:
 
     def is_email_verified(self, user_id: int) -> bool:
         """Check if user's email is verified.
-        
+
         Args:
             user_id: User ID to check
-            
+
         Returns:
             True if email is verified, False otherwise
         """

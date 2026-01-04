@@ -12,7 +12,7 @@ Regras:
 
 Uso:
     python scripts/autoscale_workers.py
-    
+
     # Via cron (a cada 2 minutos):
     */2 * * * * cd /path/to/project && python scripts/autoscale_workers.py >> /var/log/autoscale.log 2>&1
 """

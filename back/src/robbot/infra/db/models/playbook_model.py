@@ -12,7 +12,7 @@ from robbot.infra.db.base import Base
 class PlaybookModel(Base):
     """
     Playbook entity representing an organized sequence of messages for a specific topic.
-    
+
     Example: "Apresentação Botox" playbook contains 5 steps with text, images, PDFs, videos
     that the LLM can use to respond to client inquiries about Botox.
     """

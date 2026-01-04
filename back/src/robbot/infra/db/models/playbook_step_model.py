@@ -13,7 +13,7 @@ from robbot.infra.db.base import Base
 class PlaybookStepModel(Base):
     """
     PlaybookStep entity linking messages to playbooks in a specific order.
-    
+
     Each step represents a message that should be sent at a specific point
     in the playbook sequence.
     """

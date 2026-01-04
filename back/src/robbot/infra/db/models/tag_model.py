@@ -13,7 +13,7 @@ from robbot.infra.db.base import Base
 class TagModel(Base):
     """
     SQLAlchemy model for tags.
-    
+
     Tags are used to categorize and organize conversations, allowing
     secretaries to filter and manage conversations more efficiently.
     """

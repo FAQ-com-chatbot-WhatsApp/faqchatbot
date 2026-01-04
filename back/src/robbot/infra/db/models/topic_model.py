@@ -12,7 +12,7 @@ from robbot.infra.db.base import Base
 class TopicModel(Base):
     """
     Topic entity for organizing playbooks by subject/context.
-    
+
     Topics are generic containers (e.g., "Botox", "Preenchimento Labial", "Clareamento Dental")
     that can have multiple playbooks associated with them.
     """

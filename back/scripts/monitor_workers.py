@@ -3,7 +3,7 @@ Script para monitorar workers RQ e estatísticas das filas.
 
 Uso:
     python scripts/monitor_workers.py
-    
+
     # Atualização contínua (Linux/Mac):
     watch -n 2 python scripts/monitor_workers.py
 """

@@ -12,7 +12,7 @@ from robbot.infra.db.base import Base
 class PlaybookEmbeddingModel(Base):
     """
     PlaybookEmbedding entity storing vector embedding metadata for RAG search.
-    
+
     This table links playbooks to their ChromaDB document representations,
     enabling semantic search for relevant playbooks during conversations.
     """

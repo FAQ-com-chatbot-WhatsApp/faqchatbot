@@ -14,7 +14,7 @@ from robbot.infra.db.base import Base
 class NotificationModel(Base):
     """
     SQLAlchemy model for in-app notifications.
-    
+
     Stores notifications for users about new leads, messages, and system events.
     """
 

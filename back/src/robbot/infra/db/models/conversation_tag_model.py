@@ -13,7 +13,7 @@ from robbot.infra.db.base import Base
 class ConversationTagModel(Base):
     """
     SQLAlchemy model for conversation-tag association (many-to-many).
-    
+
     This is an association table that links conversations with their tags,
     allowing multiple tags per conversation and multiple conversations per tag.
     """

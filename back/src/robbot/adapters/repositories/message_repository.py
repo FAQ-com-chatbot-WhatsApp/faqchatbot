@@ -37,7 +37,7 @@ class MessageRepository:
     ) -> MessageModel:
         """
         Criar mensagem de mídia com metadados do arquivo.
-        
+
         Args:
             msg_type: Tipo da mensagem (image, video, voice, document)
             mimetype: MIME type do arquivo
@@ -48,7 +48,7 @@ class MessageRepository:
             title: Título gerado automaticamente
             description: Descrição gerada automaticamente
             tags: Tags sugeridas automaticamente
-            
+
         Returns:
             MessageModel com mídia criada
         """
@@ -100,11 +100,11 @@ class MessageRepository:
 
     def list_all(self, limit: int = 100, offset: int = 0) -> list[MessageModel]:
         """Retrieve all messages with relationships and pagination.
-        
+
         Args:
             limit: Maximum number of records to return (default: 100)
             offset: Number of records to skip (default: 0)
-        
+
         Returns:
             List of message model instances
         """
