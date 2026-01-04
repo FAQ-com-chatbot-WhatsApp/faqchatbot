@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.credential_repository import CredentialRepository
 from robbot.core import security
-from robbot.core.exceptions import AuthException
+from robbot.core.custom_exceptions import AuthException
 
 
 class CredentialService:
