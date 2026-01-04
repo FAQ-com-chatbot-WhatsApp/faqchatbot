@@ -1,19 +1,19 @@
 """Repository for managing revoked JWT tokens."""
 
-from typing import Optional
 
 from sqlalchemy.orm import Session
 
+from robbot.adapters.repositories.base_repository import BaseRepository
 from robbot.infra.db.models.revoked_token_model import RevokedTokenModel
 
 
-class TokenRepository:
+class TokenRepository(BaseRepository[RevokedTokenModel]):
     """
     Repository to manage revoked tokens persistence.
     """
 
     def __init__(self, db: Session):
-        self.db = db
+        super().__init__(db, RevokedTokenModel)
 
     def revoke(self, token: str) -> RevokedTokenModel:
         """
@@ -34,7 +34,7 @@ class TokenRepository:
         exists_ = self.db.query(q.exists()).scalar()
         return bool(exists_)
 
-    def get_by_token(self, token: str) -> Optional[RevokedTokenModel]:
+    def get_by_token(self, token: str) -> RevokedTokenModel | None:
         """Retrieve a revoked token record by token string."""
         return (
             self.db.query(RevokedTokenModel)
