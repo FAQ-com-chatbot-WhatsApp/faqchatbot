@@ -14,19 +14,17 @@ from PIL import Image
 from transformers import BlipForConditionalGeneration, BlipProcessor
 
 logger = logging.getLogger(__name__)
-
-
 class VisionService:
     """
     Serviço para análise de imagens usando BLIP-2 (local, sem custo).
-    
+
     Modelo: Salesforce/blip-image-captioning-base
     - Open source (BSD-3 License)
     - Roda localmente (CPU ou GPU)
     - ~990MB download inicial
     - Zero custo de API
     - Qualidade boa para captioning
-    
+
     Funcionalidades:
     - Gerar descrição automática de imagens
     - Visual Question Answering (VQA)
@@ -47,7 +45,7 @@ class VisionService:
                 self.processor = BlipProcessor.from_pretrained(self.model_name)
                 self.model = BlipForConditionalGeneration.from_pretrained(self.model_name)
                 logger.info("[SUCCESS] Modelo BLIP-2 carregado com sucesso!")
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:  # noqa: BLE001 (blind exception)
                 logger.error("[ERROR] Erro ao carregar BLIP-2: %s", e)
                 raise
 
@@ -59,12 +57,12 @@ class VisionService:
     ) -> dict[str, str]:
         """
         Analisar imagem e gerar descrição detalhada.
-        
+
         Args:
             image_url: URL da imagem
             context: Contexto da análise (medical, fitness, food, etc)
             questions: Perguntas específicas para VQA
-            
+
         Returns:
             Dict com:
             - caption: Descrição principal da imagem
@@ -107,7 +105,7 @@ class VisionService:
                 "answers": answers
             }
 
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("[ERROR] Erro ao analisar imagem: %s", e)
             raise
 
@@ -137,9 +135,8 @@ class VisionService:
 
         # Gerar caption
         output = self.model.generate(**inputs, max_new_tokens=50)
-        caption = self.processor.decode(output[0], skip_special_tokens=True)
+        return self.processor.decode(output[0], skip_special_tokens=True)
 
-        return caption
 
     async def _generate_detailed_description(
         self,
@@ -149,7 +146,7 @@ class VisionService:
     ) -> str:
         """
         Gerar descrição detalhada com perguntas contextuais.
-        
+
         Para contexto médico/emagrecimento, faz perguntas como:
         - "What type of food is shown?"
         - "Is this a healthy meal?"
@@ -185,9 +182,8 @@ class VisionService:
         answer = self.processor.decode(output[0], skip_special_tokens=True)
 
         # Remover o prompt da resposta
-        answer = answer.replace(prompt, "").strip()
+        return answer.replace(prompt, "").strip()
 
-        return answer
 
     def _extract_tags(self, caption: str, description: str, context: str) -> str:
         """Extrair tags relevantes da descrição."""
@@ -234,7 +230,7 @@ class VisionService:
     ) -> dict[str, str]:
         """
         Versão síncrona de analyze_image.
-        
+
         Útil para jobs em background (RQ).
         """
         import asyncio
@@ -248,12 +244,8 @@ class VisionService:
         return loop.run_until_complete(
             self.analyze_image(image_url, context)
         )
-
-
 # Singleton para reutilizar modelo carregado
 _vision_service_instance: VisionService | None = None
-
-
 def get_vision_service() -> VisionService:
     """Obter instância singleton do VisionService."""
     global _vision_service_instance
