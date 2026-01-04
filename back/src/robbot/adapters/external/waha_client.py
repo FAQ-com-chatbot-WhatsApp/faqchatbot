@@ -10,8 +10,9 @@ import random
 from typing import Any
 
 import httpx
+
 from robbot.config.settings import settings
-from robbot.core.exceptions import ExternalServiceError
+from robbot.core.custom_exceptions import WAHAError
 
 logger = logging.getLogger(__name__)
 
@@ -100,28 +101,35 @@ class WAHAClient:
         except httpx.HTTPStatusError as e:
             error_detail = e.response.text
             logger.error(
-                f"WAHA HTTP error {e.response.status_code}: {error_detail}",
+                "WAHA HTTP error %s: %s",
+                e.response.status_code,
+                error_detail,
                 extra={"endpoint": endpoint, "method": method},
             )
-            raise ExternalServiceError(
-                f"WAHA API error: {e.response.status_code} - {error_detail}"
-            ) from e
+            raise WAHAError(
+                f"WAHA API error: {e.response.status_code} - {error_detail}",
+                original_error=e
+            )
 
         except httpx.TimeoutException as e:
             logger.error(
-                f"WAHA timeout on {method} {endpoint}",
+                "WAHA timeout on %s %s",
+                method,
+                endpoint,
                 extra={"timeout": self.timeout},
             )
-            raise ExternalServiceError(
-                f"WAHA timeout after {self.timeout}s"
-            ) from e
+            raise WAHAError(
+                f"WAHA timeout after {self.timeout}s",
+                original_error=e
+            )
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.error(
-                f"WAHA unexpected error: {e}",
+                "WAHA unexpected error: %s",
+                e,
                 extra={"endpoint": endpoint, "method": method},
             )
-            raise ExternalServiceError(f"WAHA request failed: {e}") from e
+            raise WAHAError(f"WAHA request failed: {e}", original_error=e)
 
     # ========================================================================
     # SESSION MANAGEMENT
@@ -152,7 +160,7 @@ class WAHAClient:
             payload["config"]["webhooks"] = [
                 {"url": webhook_url, "events": ["message"]}]
 
-        logger.info(f"Creating WAHA session: {name}")
+        logger.info("Creating WAHA session: %s", name)
         return await self._request("POST", "/api/sessions", json=payload)
 
     async def start_session(self, name: str) -> dict[str, Any]:
@@ -166,7 +174,7 @@ class WAHAClient:
 
         Docs: POST /api/sessions/{name}/start
         """
-        logger.info(f"Starting WAHA session: {name}")
+        logger.info("Starting WAHA session: %s", name)
         return await self._request("POST", f"/api/sessions/{name}/start")
 
     async def stop_session(self, name: str) -> dict[str, Any]:
@@ -180,7 +188,7 @@ class WAHAClient:
 
         Docs: POST /api/sessions/{name}/stop
         """
-        logger.info(f"Stopping WAHA session: {name}")
+        logger.info("Stopping WAHA session: %s", name)
         return await self._request("POST", f"/api/sessions/{name}/stop")
 
     async def restart_session(self, name: str) -> dict[str, Any]:
@@ -194,7 +202,7 @@ class WAHAClient:
 
         Docs: POST /api/sessions/{name}/restart
         """
-        logger.info(f"Restarting WAHA session: {name}")
+        logger.info("Restarting WAHA session: %s", name)
         return await self._request("POST", f"/api/sessions/{name}/restart")
 
     async def get_session_status(self, name: str) -> dict[str, Any]:
@@ -234,7 +242,7 @@ class WAHAClient:
 
         Docs: POST /api/sessions/{name}/logout
         """
-        logger.info(f"Logging out WAHA session: {name}")
+        logger.info("Logging out WAHA session: %s", name)
         return await self._request("POST", f"/api/sessions/{name}/logout")
 
     # ========================================================================
@@ -340,7 +348,7 @@ class WAHAClient:
         if mentions:
             payload["mentions"] = mentions
 
-        logger.info(f"Sending text to {chat_id}: {text[:50]}...")
+        logger.info("Sending text to %s: %s...", chat_id, text[:50])
         return await self._request("POST", "/api/sendText", json=payload)
 
     async def send_image(
@@ -379,7 +387,7 @@ class WAHAClient:
         if caption:
             payload["caption"] = caption
 
-        logger.info(f"Sending image to {chat_id}")
+        logger.info("Sending image to %s", chat_id)
         return await self._request("POST", "/api/sendImage", json=payload)
 
     async def send_file(
@@ -415,7 +423,7 @@ class WAHAClient:
         if caption:
             payload["caption"] = caption
 
-        logger.info(f"Sending file to {chat_id}: {filename}")
+        logger.info("Sending file to %s: %s", chat_id, filename)
         return await self._request("POST", "/api/sendFile", json=payload)
 
     async def send_location(
@@ -449,7 +457,7 @@ class WAHAClient:
         if title:
             payload["title"] = title
 
-        logger.info(f"Sending location to {chat_id}")
+        logger.info("Sending location to %s", chat_id)
         return await self._request("POST", "/api/sendLocation", json=payload)
 
     # ========================================================================
@@ -490,9 +498,9 @@ class WAHAClient:
             # Stop typing before sending
             await self.stop_typing(session, chat_id)
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             # Don't fail message sending if anti-ban flow fails
-            logger.warning(f"Anti-ban flow error (non-critical): {e}")
+            logger.warning("Anti-ban flow error (non-critical): %s", e)
 
     # ========================================================================
     # MESSAGE MANAGEMENT
@@ -521,7 +529,7 @@ class WAHAClient:
         endpoint = f"/api/{session}/chats/{chat_id}/messages/{message_id}"
         payload = {"text": text}
 
-        logger.info(f"Editing message {message_id} in {chat_id}")
+        logger.info("Editing message %s in %s", message_id, chat_id)
         return await self._request("PUT", endpoint, json=payload)
 
     async def delete_message(
@@ -544,7 +552,7 @@ class WAHAClient:
         """
         endpoint = f"/api/{session}/chats/{chat_id}/messages/{message_id}"
 
-        logger.info(f"Deleting message {message_id} from {chat_id}")
+        logger.info("Deleting message %s from %s", message_id, chat_id)
         return await self._request("DELETE", endpoint)
 
     async def get_messages(
@@ -615,7 +623,7 @@ class WAHAClient:
         if image_url:
             payload["image"] = {"url": image_url}
 
-        logger.info(f"Sending link with custom preview to {chat_id}: {title}")
+        logger.info("Sending link with custom preview to %s: %s", chat_id, title)
         return await self._request("POST", "/api/send/link-custom-preview", json=payload)
 
     async def send_event(
@@ -669,7 +677,7 @@ class WAHAClient:
         if reply_to:
             payload["reply_to"] = reply_to
 
-        logger.info(f"Sending event '{name}' to {chat_id}")
+        logger.info("Sending event '%s' to %s", name, chat_id)
         return await self._request("POST", f"/api/{session}/events", json=payload)
 
     # ========================================================================
@@ -739,7 +747,7 @@ class WAHAClient:
         if convert:
             payload["convert"] = convert
 
-        logger.info(f"Sending voice to {chat_id}")
+        logger.info("Sending voice to %s", chat_id)
         return await self._request("POST", "/api/sendVoice", json=payload)
 
     async def send_video(
@@ -787,7 +795,7 @@ class WAHAClient:
         if convert:
             payload["convert"] = convert
 
-        logger.info(f"Sending video to {chat_id}")
+        logger.info("Sending video to %s", chat_id)
         return await self._request("POST", "/api/sendVideo", json=payload)
 
     # ========================================================================
@@ -833,7 +841,7 @@ class WAHAClient:
         if footer:
             payload["footer"] = footer
 
-        logger.info(f"Sending buttons to {chat_id}")
+        logger.info("Sending buttons to %s", chat_id)
         return await self._request("POST", "/api/sendButtons", json=payload)
 
     async def send_list(
@@ -882,7 +890,7 @@ class WAHAClient:
         if reply_to:
             payload["reply_to"] = reply_to
 
-        logger.info(f"Sending list to {chat_id}")
+        logger.info("Sending list to %s", chat_id)
         return await self._request("POST", "/api/sendList", json=payload)
 
     async def send_poll(
@@ -919,7 +927,7 @@ class WAHAClient:
             "poll": poll_obj,
         }
 
-        logger.info(f"Sending poll to {chat_id}")
+        logger.info("Sending poll to %s", chat_id)
         return await self._request("POST", "/api/sendPoll", json=payload)
 
     async def send_poll_vote(
@@ -949,7 +957,7 @@ class WAHAClient:
             "optionIndex": option_index,
         }
 
-        logger.info(f"Voting on poll in {chat_id}")
+        logger.info("Voting on poll in %s", chat_id)
         return await self._request("POST", "/api/sendPollVote", json=payload)
 
     async def send_contact_vcard(
@@ -976,7 +984,7 @@ class WAHAClient:
             "contacts": contacts,
         }
 
-        logger.info(f"Sending {len(contacts)} contact(s) to {chat_id}")
+        logger.info("Sending %s contact(s) to %s", len(contacts), chat_id)
         return await self._request("POST", "/api/sendContactVcard", json=payload)
 
     async def send_buttons_reply(
@@ -1009,7 +1017,7 @@ class WAHAClient:
             "selectedButtonID": selected_button_id,
         }
 
-        logger.info(f"Clicking button '{selected_display_text}' in {chat_id}")
+        logger.info("Clicking button '%s' in %s", selected_display_text, chat_id)
         return await self._request("POST", "/api/send/buttons/reply", json=payload)
 
     async def forward_message(
@@ -1036,7 +1044,7 @@ class WAHAClient:
             "messageId": message_id,
         }
 
-        logger.info(f"Forwarding message to {chat_id}")
+        logger.info("Forwarding message to %s", chat_id)
         return await self._request("POST", "/api/forwardMessage", json=payload)
 
     # ========================================================================
@@ -1067,7 +1075,7 @@ class WAHAClient:
             "reaction": reaction,
         }
 
-        logger.info(f"Reacting with '{reaction}' to message")
+        logger.info("Reacting with '%s' to message", reaction)
         return await self._request("PUT", "/api/reaction", json=payload)
 
     async def send_star(
@@ -1097,7 +1105,7 @@ class WAHAClient:
             "star": star,
         }
 
-        logger.info(f"Star={star} message in {chat_id}")
+        logger.info("Star=%s message in %s", star, chat_id)
         return await self._request("PUT", "/api/star", json=payload)
 
     # ========================================================================
@@ -1182,7 +1190,7 @@ class WAHAClient:
             "contactId": contact_id,
         }
 
-        logger.info(f"Blocking contact: {contact_id}")
+        logger.info("Blocking contact: %s", contact_id)
         return await self._request("POST", "/api/contacts/block", json=payload)
 
     async def unblock_contact(
@@ -1206,7 +1214,7 @@ class WAHAClient:
             "contactId": contact_id,
         }
 
-        logger.info(f"Unblocking contact: {contact_id}")
+        logger.info("Unblocking contact: %s", contact_id)
         return await self._request("POST", "/api/contacts/unblock", json=payload)
 
     # ========================================================================
@@ -1238,7 +1246,7 @@ class WAHAClient:
         if chat_id:
             payload["chatId"] = chat_id
 
-        logger.info(f"Setting presence: {presence}")
+        logger.info("Setting presence: %s", presence)
         return await self._request("POST", f"/api/{session}/presence", json=payload)
 
     async def get_all_presence(self, session: str) -> dict[str, Any]:
@@ -1288,7 +1296,7 @@ class WAHAClient:
 
         Docs: POST /api/{session}/presence/{chatId}/subscribe
         """
-        logger.info(f"Subscribing to presence for {chat_id}")
+        logger.info("Subscribing to presence for %s", chat_id)
         return await self._request(
             "POST", f"/api/{session}/presence/{chat_id}/subscribe"
         )
@@ -1300,20 +1308,20 @@ class WAHAClient:
     async def get_qr_code_auth(
         self,
         session: str,
-        format: str = "image",
+        image_format: str = "image",
     ) -> dict[str, Any] | bytes:
         """Get QR code for authentication.
 
         Args:
             session: Session name
-            format: 'image' for PNG or 'raw' for JSON with base64
+            image_format: 'image' for PNG or 'raw' for JSON with base64
 
         Returns:
             PNG image bytes or JSON with QR data
 
         Docs: GET /api/{session}/auth/qr
         """
-        params = {"format": format}
+        params = {"format": image_format}
         # For image format, might return binary
         result = await self._request("GET", f"/api/{session}/auth/qr", params=params)
         return result
@@ -1340,7 +1348,7 @@ class WAHAClient:
         if method:
             payload["method"] = method
 
-        logger.info(f"Requesting auth code for {phone_number}")
+        logger.info("Requesting auth code for %s", phone_number)
         return await self._request("POST", f"/api/{session}/auth/request-code", json=payload)
 
     # ========================================================================
@@ -1368,7 +1376,7 @@ class WAHAClient:
             "callId": call_id,
         }
 
-        logger.info(f"Rejecting call: {call_id}")
+        logger.info("Rejecting call: %s", call_id)
         return await self._request("POST", f"/api/{session}/calls/reject", json=payload)
 
     # ========================================================================
@@ -1503,7 +1511,7 @@ class WAHAClient:
         Docs: GET /api/screenshot
         """
         params = {"session": session}
-        logger.info(f"Taking screenshot of session: {session}")
+        logger.info("Taking screenshot of session: %s", session)
         return await self._request("GET", "/api/screenshot", params=params)
 
 
