@@ -24,8 +24,6 @@ if TYPE_CHECKING:
     from robbot.infra.db.models.conversation_model import ConversationModel
     from robbot.infra.db.models.lead_interaction_model import LeadInteractionModel
     from robbot.infra.db.models.user_model import UserModel
-
-
 class LeadModel(Base):
     """Model for leads (prospects ready for scheduling).
 
