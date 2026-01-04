@@ -5,8 +5,6 @@ from logging.handlers import RotatingFileHandler
 from robbot.config.settings import settings
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
-
-
 def configure_logging() -> None:
     """
     Configura o logging básico da aplicação.
