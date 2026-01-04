@@ -6,7 +6,6 @@ implementando a metodologia de vendas consultivas de Neil Rackham.
 """
 
 import logging
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +19,9 @@ class PromptTemplates:
     - Permitir personalização com variáveis
     - Versionar prompts
     """
-    
+
     VERSION = "2.0.0-SPIN"
-    
+
     # ========== PROMPT BASE COM SPIN SELLING ==========
     BASE_SYSTEM_PROMPT = """Você é uma atendente especializada da Dra. Andréa Mondadori (ginecologista e obstetra), com anos de experiência em atendimento humanizado. Você conhece profundamente os protocolos da clínica e usa a metodologia SPIN Selling de Neil Rackham de forma natural.
 
@@ -574,7 +573,7 @@ Gere resposta de fallback.
 """
 
     # ========== MÉTODOS DE FORMATAÇÃO ==========
-    
+
     @classmethod
     def format_base_prompt(
         cls,
@@ -638,7 +637,7 @@ Gere resposta de fallback.
             message=message,
             context=context or ""
         )
-    
+
     @classmethod
     def format_name_request_prompt(cls, context: str, spin_phase: str, score: int) -> str:
         """Formatar prompt para solicitar nome naturalmente."""
@@ -668,7 +667,7 @@ Gere resposta de fallback.
 
 
 # Singleton global
-_prompt_templates:  Optional[PromptTemplates] = None
+_prompt_templates:  PromptTemplates | None = None
 
 
 def get_prompt_templates() -> PromptTemplates:
@@ -679,9 +678,9 @@ def get_prompt_templates() -> PromptTemplates:
         PromptTemplates singleton
     """
     global _prompt_templates
-    
+
     if _prompt_templates is None:
         _prompt_templates = PromptTemplates()
         logger.info(f"🎯 PromptTemplates inicializado com SPIN Selling (version={PromptTemplates.VERSION})")
-    
+
     return _prompt_templates
