@@ -119,3 +119,15 @@ coverage.xml
 .cache/
 .mypy_cache/
 .ruff_cache/
+
+# ==================================
+# UV Package Manager
+# ==================================
+.uv/
+
+# ==================================
+# Data/Storage
+# ==================================
+data/
+storage/
+uploads/
