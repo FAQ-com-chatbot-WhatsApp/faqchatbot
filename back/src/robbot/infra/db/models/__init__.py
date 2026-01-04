@@ -2,6 +2,7 @@
 
 from robbot.domain.enums import InteractionType
 from robbot.infra.db.models.alert_model import AlertModel
+from robbot.infra.db.models.audit_log_model import AuditLogModel
 from robbot.infra.db.models.auth_session_model import AuthSessionModel
 from robbot.infra.db.models.conversation_context_model import ConversationContextModel
 from robbot.infra.db.models.conversation_message_model import ConversationMessageModel
@@ -30,6 +31,7 @@ User = UserModel
 
 __all__ = [
     "AlertModel",
+    "AuditLogModel",
     "AuthSessionModel",
     "ConversationContextModel",
     "ConversationMessageModel",
