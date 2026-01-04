@@ -3,11 +3,9 @@ Factory para Redis Queue (RQ) com filas separadas por prioridade.
 """
 
 import logging
-from typing import Optional
 
 from redis import Redis
 from rq import Queue, Worker
-from rq.job import Job
 
 from robbot.config.settings import settings
 from robbot.core.custom_exceptions import QueueError
@@ -26,7 +24,7 @@ class RQQueueManager:
     - Configurar retry policy e timeouts
     """
 
-    def __init__(self, redis_client: Optional[Redis] = None):
+    def __init__(self, redis_client: Redis | None = None):
         """
         Inicializa o gerenciador de filas.
         
@@ -34,12 +32,12 @@ class RQQueueManager:
             redis_client: Cliente Redis (usa singleton se não fornecido)
         """
         self.redis_client = redis_client or get_redis_client()
-        
+
         # Inicializar filas com configs específicas
-        self._queue_messages: Optional[Queue] = None
-        self._queue_ai: Optional[Queue] = None
-        self._queue_escalation: Optional[Queue] = None
-        self._queue_failed: Optional[Queue] = None
+        self._queue_messages: Queue | None = None
+        self._queue_ai: Queue | None = None
+        self._queue_escalation: Queue | None = None
+        self._queue_failed: Queue | None = None
 
     @property
     def queue_messages(self) -> Queue:
@@ -52,13 +50,13 @@ class RQQueueManager:
                 is_async=True,
             )
             logger.info(
-                f"✓ Fila 'messages' inicializada (timeout={settings.RQ_JOB_TIMEOUT_MESSAGE}s)"
+                f"[SUCCESS] Queue 'messages' initialized (timeout={settings.RQ_JOB_TIMEOUT_MESSAGE}s)"
             )
         return self._queue_messages
 
     @property
     def queue_ai(self) -> Queue:
-        """Fila para processamento de IA/Gemini (timeout: 60s)."""
+        """Queue for AI/Gemini processing (timeout: 60s)."""
         if self._queue_ai is None:
             self._queue_ai = Queue(
                 name="ai",
@@ -67,7 +65,7 @@ class RQQueueManager:
                 is_async=True,
             )
             logger.info(
-                f"✓ Fila 'ai' inicializada (timeout={settings.RQ_JOB_TIMEOUT_AI}s)"
+                f"[SUCCESS] Queue 'ai' initialized (timeout={settings.RQ_JOB_TIMEOUT_AI}s)"
             )
         return self._queue_ai
 
@@ -82,7 +80,7 @@ class RQQueueManager:
                 is_async=True,
             )
             logger.info(
-                f"✓ Fila 'escalation' inicializada (timeout={settings.RQ_JOB_TIMEOUT_ESCALATION}s)"
+                f"[SUCCESS] Fila 'escalation' inicializada (timeout={settings.RQ_JOB_TIMEOUT_ESCALATION}s)"
             )
         return self._queue_escalation
 
@@ -95,7 +93,7 @@ class RQQueueManager:
                 connection=self.redis_client,
                 is_async=True,
             )
-            logger.info(f"✓ Fila 'failed' (DLQ) inicializada")
+            logger.info("[SUCCESS] Fila 'failed' (DLQ) inicializada")
         return self._queue_failed
 
     def get_queue(self, queue_name: str) -> Queue:
@@ -117,12 +115,12 @@ class RQQueueManager:
             "escalation": self.queue_escalation,
             "failed": self.queue_failed,
         }
-        
+
         if queue_name not in queues:
             raise ValueError(
                 f"Fila '{queue_name}' não existe. Opções: {list(queues.keys())}"
             )
-        
+
         return queues[queue_name]
 
     def get_all_queues(self) -> dict[str, Queue]:
@@ -147,20 +145,20 @@ class RQQueueManager:
                 count = queue.count
                 workers = Worker.all(connection=self.redis_client)
                 workers_on_queue = [w for w in workers if queue.name in [q.name for q in w.queues]]
-                
+
                 # Get failed jobs using registry instead of failed_job_ids
                 from rq.registry import FailedJobRegistry
                 failed_registry = FailedJobRegistry(queue=queue, connection=self.redis_client)
-                
+
                 stats[name] = {
                     "job_count": count,
                     "worker_count": len(workers_on_queue),
                     "failed_count": len(failed_registry),
                 }
             except (QueueError, ValueError) as e:
-                logger.error(f"Erro ao obter stats da fila '{name}': {e}")
+                logger.error("Erro ao obter stats da fila '%s': %s", name, e)
                 stats[name] = {"error": str(e)}
-        
+
         return stats
 
     def health_check(self) -> dict[str, bool]:
@@ -173,7 +171,7 @@ class RQQueueManager:
         try:
             # Testar conexão com Redis
             self.redis_client.ping()
-            
+
             # Verificar cada fila
             return {
                 "redis": True,
@@ -184,16 +182,16 @@ class RQQueueManager:
             }
         except QueueError:
             raise
-        except Exception as e:
-            logger.error(f"Health check falhou: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.error("Health check falhou: %s", e)
             raise QueueError(f"Health check failed: {e}")
 
 
 # Singleton global
-_queue_manager: Optional[RQQueueManager] = None
+_queue_manager: RQQueueManager | None = None
 
 
-def get_queue_manager(redis_client: Optional[Redis] = None) -> RQQueueManager:
+def get_queue_manager(redis_client: Redis | None = None) -> RQQueueManager:
     """
     Obter instância singleton do gerenciador de filas.
     
@@ -204,11 +202,11 @@ def get_queue_manager(redis_client: Optional[Redis] = None) -> RQQueueManager:
         RQQueueManager singleton
     """
     global _queue_manager
-    
+
     if _queue_manager is None:
         _queue_manager = RQQueueManager(redis_client)
         logger.info("🎯 RQQueueManager inicializado como singleton")
-    
+
     return _queue_manager
 
 
