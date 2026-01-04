@@ -13,8 +13,6 @@ class PlaybookCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255, description="Playbook name")
     description: str | None = Field(None, description="Detailed description")
     active: bool = Field(True, description="Whether playbook is active")
-
-
 # Update schemas
 class PlaybookUpdate(BaseModel):
     """Schema for updating playbooks."""
@@ -22,8 +20,6 @@ class PlaybookUpdate(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=255)
     description: str | None = None
     active: bool | None = None
-
-
 # Output schemas
 class PlaybookOut(BaseModel):
     """Response schema for playbooks."""
@@ -37,15 +33,11 @@ class PlaybookOut(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
-
-
 class PlaybookList(BaseModel):
     """Response schema for listing playbooks."""
 
     playbooks: list[PlaybookOut]
     total: int
-
-
 class PlaybookSearchResult(BaseModel):
     """Response schema for playbook search results."""
 
@@ -54,8 +46,6 @@ class PlaybookSearchResult(BaseModel):
     description: str | None
     topic_name: str
     relevance_score: float = Field(..., ge=0.0, le=1.0, description="Semantic similarity score")
-
-
 class PlaybookSearchResults(BaseModel):
     """Response schema for multiple search results."""
 
