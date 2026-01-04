@@ -8,8 +8,6 @@ from robbot.adapters.repositories.base_repository import BaseRepository
 from robbot.infra.db.models.conversation_message_model import ConversationMessageModel
 
 logger = logging.getLogger(__name__)
-
-
 class ConversationMessageRepository(BaseRepository[ConversationMessageModel]):
     """Repository for conversation messages CRUD operations."""
 
@@ -24,11 +22,11 @@ class ConversationMessageRepository(BaseRepository[ConversationMessageModel]):
     ) -> list[ConversationMessageModel]:
         """
         Get messages by conversation ID.
-        
+
         Args:
             conversation_id: Conversation ID
             limit: Maximum number of messages
-            
+
         Returns:
             List of messages ordered by timestamp
         """
