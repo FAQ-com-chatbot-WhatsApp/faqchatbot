@@ -33,8 +33,6 @@ from robbot.schemas.metrics_schemas import (
 from robbot.services.analytics.metrics_service import MetricsService
 
 router = APIRouter(prefix="/metrics", tags=["Metrics"])
-
-
 def get_metrics_service(db_session: Session = Depends(get_db)) -> MetricsService:
     """Injeta MetricsService com repositórios especializados"""
     return MetricsService(
@@ -44,15 +42,11 @@ def get_metrics_service(db_session: Session = Depends(get_db)) -> MetricsService
         dashboard_repo=DashboardAnalyticsRepository(db_session),
         redis_client=get_redis_client(),
     )
-
-
 def check_admin(current_user: UserModel = Depends(get_current_user)):
     """Apenas admin"""
     if current_user.role != Role.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Apenas admin")
     return current_user
-
-
 def parse_dates(
     start_date: str | None, end_date: str | None, period: str
 ) -> tuple[datetime, datetime]:
@@ -66,8 +60,6 @@ def parse_dates(
     end = datetime.now().replace(hour=23, minute=59, second=59)
     days = {"7d": 7, "30d": 30, "90d": 90}.get(period, 30)
     return end - timedelta(days=days), end
-
-
 @router.get("/dashboard", response_model=DashboardSummaryResponse)
 def dashboard(
     start_date: str | None = None,
@@ -79,8 +71,6 @@ def dashboard(
     """KPIs: conversão, mensagens, tempo resposta. Cache 5min."""
     start, end = parse_dates(start_date, end_date, period)
     return svc.get_dashboard_summary(start, end)
-
-
 @router.get("/conversion-funnel", response_model=ConversionFunnelResponse)
 def funnel(
     start_date: str | None = None,
@@ -92,8 +82,6 @@ def funnel(
     """Funil 5 etapas + drop-off. Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
     return svc.get_conversion_funnel(start, end)
-
-
 @router.get("/bot-autonomy", response_model=BotAutonomyResponse)
 def bot_autonomy(
     start_date: str | None = None,
