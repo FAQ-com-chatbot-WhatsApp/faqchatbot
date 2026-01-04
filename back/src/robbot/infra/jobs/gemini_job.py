@@ -13,8 +13,6 @@ from robbot.infra.db.session import get_sync_session
 from robbot.infra.jobs.base_job import BaseJob, JobFailureError, JobRetryableError
 
 logger = logging.getLogger(__name__)
-
-
 class GeminiAIProcessingJob(BaseJob):
     """
     Job para processar mensagem com IA Gemini.
@@ -121,7 +119,7 @@ class GeminiAIProcessingJob(BaseJob):
                 extra=self._log_context(),
             )
             raise JobFailureError(str(e)) from e
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(
                 "Erro ao processar com IA: %s: %s",
                 type(e).__name__,
@@ -205,8 +203,6 @@ class GeminiAIProcessingJob(BaseJob):
                 extra=self._log_context(),
             )
             response = response[:4096] + "..."
-
-
 class MessageAnalysisJob(BaseJob):
     """
     Job para analisar mensagem e determinar próximas ações.
