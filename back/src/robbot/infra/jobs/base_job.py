@@ -12,18 +12,12 @@ from typing import Any
 from robbot.config.settings import settings
 
 logger = logging.getLogger(__name__)
-
-
 class JobFailureError(Exception):
     """Exceção para falhas não-recuperáveis em jobs."""
     pass
-
-
 class JobRetryableError(Exception):
     """Exceção para falhas recuperáveis (serão retentadas)."""
     pass
-
-
 class BaseJob(ABC):
     """
     Classe base para todos os jobs assíncronos.
@@ -117,7 +111,7 @@ class BaseJob(ABC):
             return self._handle_retryable_error(e)
         except JobFailureError as e:
             return self._handle_failure_error(e)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             return self._handle_unexpected_error(e)
 
     def _handle_retryable_error(self, error: JobRetryableError) -> None:
