@@ -55,16 +55,15 @@ class ConversionAnalyticsRepository:
             LeadModel.deleted_at.is_(None),
         )
 
-        if segment_by:
-            if segment_by == "assigned_to":
-                query = query.join(
-                    UserModel, LeadModel.assigned_to_user_id == UserModel.id
-                )
-                query = query.add_columns(
-                    UserModel.full_name.label("segment_name"),
-                    UserModel.id.label("segment_id"),
-                )
-                query = query.group_by(UserModel.id, UserModel.full_name)
+        if segment_by and segment_by == "assigned_to":
+            query = query.join(
+                UserModel, LeadModel.assigned_to_user_id == UserModel.id
+            )
+            query = query.add_columns(
+                UserModel.full_name.label("segment_name"),
+                UserModel.id.label("segment_id"),
+            )
+            query = query.group_by(UserModel.id, UserModel.full_name)
             # Adicionar outros segments futuramente
 
         result = query.all()
