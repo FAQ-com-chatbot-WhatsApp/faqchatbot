@@ -7,13 +7,24 @@ Implementa caching inteligente no Redis com TTL configurável.
 
 import json
 import logging
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
+from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from redis import Redis
 
-from robbot.repositories.analytics.analytics_repository import AnalyticsRepository
+from robbot.adapters.repositories.analytics.bot_performance_analytics_repository import (
+    BotPerformanceAnalyticsRepository,
+)
+from robbot.adapters.repositories.analytics.conversion_analytics_repository import (
+    ConversionAnalyticsRepository,
+)
+from robbot.adapters.repositories.analytics.dashboard_analytics_repository import (
+    DashboardAnalyticsRepository,
+)
+from robbot.adapters.repositories.analytics.performance_analytics_repository import (
+    PerformanceAnalyticsRepository,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,10 +47,16 @@ class MetricsService:
 
     def __init__(
         self,
-        analytics_repo: AnalyticsRepository,
+        conversion_repo: ConversionAnalyticsRepository,
+        performance_repo: PerformanceAnalyticsRepository,
+        bot_performance_repo: BotPerformanceAnalyticsRepository,
+        dashboard_repo: DashboardAnalyticsRepository,
         redis_client: Redis,
     ):
-        self.analytics_repo = analytics_repo
+        self.conversion = conversion_repo
+        self.performance = performance_repo
+        self.bot_performance = bot_performance_repo
+        self.dashboard = dashboard_repo
         self.redis = redis_client
 
     # =============================================================================
@@ -51,18 +68,18 @@ class MetricsService:
         metric_name: str,
         start_date: datetime,
         end_date: datetime,
-        user_id: Optional[UUID] = None,
+        user_id: UUID | None = None,
         **kwargs,
     ) -> str:
         """Gera chave de cache consistente"""
         period = f"{start_date.date()}_{end_date.date()}"
         user_part = f"user_{user_id}" if user_id else "global"
-        
+
         # Hash dos parâmetros extras (sorted para consistência)
         if kwargs:
             params_str = "_".join(f"{k}={v}" for k, v in sorted(kwargs.items()))
             return f"metrics:{metric_name}:{period}:{user_part}:{params_str}"
-        
+
         return f"metrics:{metric_name}:{period}:{user_part}"
 
     def _get_cached_or_compute(
@@ -84,12 +101,12 @@ class MetricsService:
             # Tentar buscar do cache
             cached = self.redis.get(cache_key)
             if cached:
-                logger.debug(f"Cache HIT: {cache_key}")
+                logger.debug("Cache HIT: %s", cache_key)
                 return json.loads(cached)
-            
-            logger.debug(f"Cache MISS: {cache_key}")
-        except Exception as e:
-            logger.warning(f"Redis error on GET {cache_key}: {e}")
+
+            logger.debug("Cache MISS: %s", cache_key)
+        except Exception as e:  # noqa: BLE001
+            logger.warning("Redis error on GET %s: %s", cache_key, e)
             # Continua sem cache se Redis falhar
 
         # Computar métrica
@@ -102,9 +119,9 @@ class MetricsService:
                 ttl,
                 json.dumps(result, default=str)  # default=str para datetime
             )
-            logger.debug(f"Cache SET: {cache_key} (TTL={ttl}s)")
-        except Exception as e:
-            logger.warning(f"Redis error on SET {cache_key}: {e}")
+            logger.debug("Cache SET: %s (TTL=%ss)", cache_key, ttl)
+        except Exception as e:  # noqa: BLE001
+            logger.warning("Redis error on SET %s: %s", cache_key, e)
 
         return result
 
@@ -115,12 +132,12 @@ class MetricsService:
             keys_to_delete = []
             for key in self.redis.scan_iter(match=pattern):
                 keys_to_delete.append(key)
-            
+
             if keys_to_delete:
                 self.redis.delete(*keys_to_delete)
-                logger.info(f"Invalidated {len(keys_to_delete)} cache keys matching {pattern}")
-        except Exception as e:
-            logger.error(f"Failed to invalidate cache pattern {pattern}: {e}")
+                logger.info("Invalidated %s cache keys matching %s", len(keys_to_delete), pattern)
+        except Exception as e:  # noqa: BLE001
+            logger.error("Failed to invalidate cache pattern %s: %s", pattern, e)
 
     # =============================================================================
     # DASHBOARD METRICS
@@ -130,7 +147,7 @@ class MetricsService:
         self,
         start_date: datetime,
         end_date: datetime,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Resumo executivo do dashboard.
         
@@ -160,7 +177,7 @@ class MetricsService:
         result = self._get_cached_or_compute(
             cache_key,
             self.CACHE_TTL_REALTIME,
-            self.analytics_repo.get_dashboard_summary,
+            self.dashboard.get_dashboard_summary,
             start_date,
             end_date,
         )
@@ -181,8 +198,8 @@ class MetricsService:
         self,
         start_date: datetime,
         end_date: datetime,
-        segment_by: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        segment_by: str | None = None,
+    ) -> dict[str, Any]:
         """
         Taxa de conversão global ou segmentada.
         
@@ -209,7 +226,7 @@ class MetricsService:
         result = self._get_cached_or_compute(
             cache_key,
             self.CACHE_TTL_METRICS,
-            self.analytics_repo.get_conversion_rate,
+            self.conversion.get_conversion_rate,
             start_date,
             end_date,
             segment_by,
@@ -228,7 +245,7 @@ class MetricsService:
         self,
         start_date: datetime,
         end_date: datetime,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Análise de funil de conversão com drop-off.
         
@@ -260,7 +277,7 @@ class MetricsService:
         result = self._get_cached_or_compute(
             cache_key,
             self.CACHE_TTL_METRICS,
-            self.analytics_repo.get_conversion_funnel,
+            self.conversion.get_conversion_funnel,
             start_date,
             end_date,
         )
@@ -277,7 +294,7 @@ class MetricsService:
         self,
         start_date: datetime,
         end_date: datetime,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Estatísticas de tempo até conversão.
         
@@ -304,7 +321,7 @@ class MetricsService:
         result = self._get_cached_or_compute(
             cache_key,
             self.CACHE_TTL_METRICS,
-            self.analytics_repo.get_time_to_conversion,
+            self.conversion.get_time_to_conversion,
             start_date,
             end_date,
         )
@@ -325,8 +342,8 @@ class MetricsService:
         self,
         start_date: datetime,
         end_date: datetime,
-        user_id: Optional[UUID] = None,
-    ) -> Dict[str, Any]:
+        user_id: UUID | None = None,
+    ) -> dict[str, Any]:
         """
         Estatísticas de tempo de resposta.
         
@@ -355,7 +372,7 @@ class MetricsService:
         result = self._get_cached_or_compute(
             cache_key,
             self.CACHE_TTL_REALTIME,
-            self.analytics_repo.get_response_time_stats,
+            self.performance.get_response_time_stats,
             start_date,
             end_date,
             user_id,
@@ -375,7 +392,7 @@ class MetricsService:
         start_date: datetime,
         end_date: datetime,
         granularity: str = "day",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Volume de mensagens ao longo do tempo.
         
@@ -406,7 +423,7 @@ class MetricsService:
         result = self._get_cached_or_compute(
             cache_key,
             self.CACHE_TTL_METRICS,
-            self.analytics_repo.get_message_volume,
+            self.performance.get_message_volume,
             start_date,
             end_date,
             granularity,
@@ -429,7 +446,7 @@ class MetricsService:
         self,
         start_date: datetime,
         end_date: datetime,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Taxa de autonomia do bot.
         
@@ -455,7 +472,7 @@ class MetricsService:
         result = self._get_cached_or_compute(
             cache_key,
             self.CACHE_TTL_METRICS,
-            self.analytics_repo.get_bot_autonomy_rate,
+            self.bot_performance.get_bot_autonomy_rate,
             start_date,
             end_date,
         )
@@ -480,7 +497,7 @@ class MetricsService:
         """Invalida cache de uma métrica específica"""
         self._invalidate_cache_pattern(f"metrics:{metric_name}:*")
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """Estatísticas do cache Redis"""
         try:
             info = self.redis.info("stats")
@@ -488,11 +505,11 @@ class MetricsService:
                 "keyspace_hits": info.get("keyspace_hits", 0),
                 "keyspace_misses": info.get("keyspace_misses", 0),
                 "hit_rate": round(
-                    info.get("keyspace_hits", 0) / 
+                    info.get("keyspace_hits", 0) /
                     (info.get("keyspace_hits", 0) + info.get("keyspace_misses", 1)) * 100,
                     2
                 ),
             }
-        except Exception as e:
-            logger.error(f"Failed to get cache stats: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.error("Failed to get cache stats: %s", e)
             return {}
