@@ -23,7 +23,7 @@ router = APIRouter(prefix="/ai", tags=["AI"])
 
 class ProcessMessageRequest(BaseModel):
     """Request para processar mensagem."""
-    
+
     chat_id: str = Field(..., description="ID do chat")
     phone_number: str = Field(..., description="Número do telefone")
     message_text: str = Field(..., description="Texto da mensagem")
@@ -32,7 +32,7 @@ class ProcessMessageRequest(BaseModel):
 
 class ProcessMessageResponse(BaseModel):
     """Response de processamento de mensagem."""
-    
+
     conversation_id: str
     response_sent: bool
     response_text: str
@@ -42,7 +42,7 @@ class ProcessMessageResponse(BaseModel):
 
 class AIStatsResponse(BaseModel):
     """Response de estatísticas de IA."""
-    
+
     total_conversations: int
     total_llm_interactions: int
     total_tokens_used: int
@@ -86,17 +86,17 @@ async def process_message(request: ProcessMessageRequest) -> ProcessMessageRespo
     """
     try:
         orchestrator = get_conversation_orchestrator()
-        
+
         result = await orchestrator.process_inbound_message(
             chat_id=request.chat_id,
             phone_number=request.phone_number,
             message_text=request.message_text,
             session_name=request.session_name,
         )
-        
+
         return ProcessMessageResponse(**result)
-        
-    except Exception as e:
+
+    except Exception as e:  # noqa: BLE001
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to process message: {str(e)}"
@@ -132,25 +132,25 @@ async def get_ai_stats() -> AIStatsResponse:
             conv_repo = ConversationRepository(session)
             llm_repo = LLMInteractionRepository(session)
             chroma = get_chroma_client()
-            
+
             # Contar conversas
             all_conversations = conv_repo.get_all()
             total_conversations = len(all_conversations)
-            
+
             # Contar interações LLM
             all_llm = llm_repo.get_all()
             total_llm_interactions = len(all_llm)
-            
+
             # Calcular tokens e latência
             total_tokens = sum(llm.tokens_used for llm in all_llm)
             avg_latency = (
                 sum(llm.latency_ms for llm in all_llm) / len(all_llm)
                 if all_llm else 0
             )
-            
+
             # ChromaDB
             chromadb_count = chroma.count()
-            
+
             return AIStatsResponse(
                 total_conversations=total_conversations,
                 total_llm_interactions=total_llm_interactions,
@@ -158,8 +158,8 @@ async def get_ai_stats() -> AIStatsResponse:
                 average_latency_ms=round(avg_latency, 2),
                 chromadb_documents=chromadb_count,
             )
-            
-    except Exception as e:
+
+    except Exception as e:  # noqa: BLE001
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get AI stats: {str(e)}"
