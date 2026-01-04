@@ -1,6 +1,4 @@
 """Repository for LLMInteraction entity."""
-
-
 from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.base_repository import BaseRepository
@@ -21,11 +19,11 @@ class LLMInteractionRepository(BaseRepository[LLMInteractionModel]):
     ) -> list[LLMInteractionModel]:
         """
         Get interactions by conversation ID.
-        
+
         Args:
             conversation_id: Conversation ID
             limit: Maximum number of interactions
-            
+
         Returns:
             List of LLMInteractionModels ordered by timestamp
         """
@@ -44,11 +42,11 @@ class LLMInteractionRepository(BaseRepository[LLMInteractionModel]):
     ) -> list[LLMInteractionModel]:
         """
         Get interactions by user ID.
-        
+
         Args:
             user_id: User ID
             limit: Maximum number of interactions
-            
+
         Returns:
             List of LLMInteractionModels ordered by timestamp
         """
