@@ -18,11 +18,7 @@ from robbot.infra.db.session import get_db
 from robbot.services.conversation_service import ConversationService
 
 router = APIRouter()
-
-
 # ===== SCHEMAS =====
-
-
 class ConversationOut(BaseModel):
     """Response schema for conversation."""
 
@@ -38,42 +34,28 @@ class ConversationOut(BaseModel):
     updated_at: str
 
     model_config = ConfigDict(from_attributes=True)
-
-
 class ConversationListOut(BaseModel):
     """Response schema for conversation list."""
 
     conversations: list[ConversationOut]
     total: int
-
-
 class UpdateStatusRequest(BaseModel):
     """Request schema for status update."""
 
     new_status: str
-
-
 class TransferRequest(BaseModel):
     """Request schema for transfer."""
 
     user_id: int
-
-
 class CloseRequest(BaseModel):
     """Request schema for close."""
 
     reason: str
-
-
 class UpdateNotesRequest(BaseModel):
     """Request schema for updating notes."""
 
     notes: str = Field(..., max_length=5000)
-
-
 # ===== ENDPOINTS =====
-
-
 @router.get(
     "/conversations", response_model=ConversationListOut, tags=["Conversations"]
 )
@@ -135,8 +117,6 @@ def list_conversations(
     ]
 
     return ConversationListOut(conversations=conversations_out, total=total)
-
-
 @router.get(
     "/conversations/{conversation_id}",
     response_model=ConversationOut,
@@ -170,8 +150,6 @@ def get_conversation(
         created_at=conversation.created_at.isoformat(),
         updated_at=conversation.updated_at.isoformat(),
     )
-
-
 @router.put("/conversations/{conversation_id}/status", tags=["Conversations"])
 def update_conversation_status(
     conversation_id: str,
@@ -208,10 +186,8 @@ def update_conversation_status(
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         raise HTTPException(status_code=500, detail=f"Failed to update status: {e!s}")
-
-
 @router.post("/conversations/{conversation_id}/transfer", tags=["Conversations"])
 def transfer_conversation(
     conversation_id: str,
@@ -237,10 +213,8 @@ def transfer_conversation(
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         raise HTTPException(status_code=500, detail=f"Failed to transfer: {e!s}")
-
-
 @router.post("/conversations/{conversation_id}/close", tags=["Conversations"])
 def close_conversation(
     conversation_id: str,
@@ -266,10 +240,8 @@ def close_conversation(
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         raise HTTPException(status_code=500, detail=f"Failed to close: {e!s}")
-
-
 @router.put("/conversations/{conversation_id}/notes", tags=["Conversations"])
 def update_conversation_notes(
     conversation_id: str,
@@ -296,10 +268,8 @@ def update_conversation_notes(
         }
     except NotFoundException:
         raise HTTPException(status_code=404, detail="Conversation not found")
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 (blind exception)
         raise HTTPException(status_code=500, detail=f"Failed to update notes: {e!s}")
-
-
 @router.get("/conversations/export", tags=["Conversations"])
 def export_conversations(
     export_format: str = Query("csv", description="Export format (csv only)"),
@@ -401,8 +371,6 @@ def export_conversations(
             "Content-Disposition": f"attachment; filename=conversations_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
         },
     )
-
-
 @router.get(
     "/conversations/search", response_model=ConversationListOut, tags=["Conversations"]
 )
@@ -424,7 +392,7 @@ def search_conversations(
         ConversationMessageRepository,
     )
 
-    msg_repo = ConversationMessageRepository(db)
+    ConversationMessageRepository(db)
     service = ConversationService(db)
 
     # Search messages with full-text query using the model directly
@@ -435,7 +403,7 @@ def search_conversations(
     ).limit(limit * 5).all()  # Get more messages to find unique conversations
 
     # Get unique conversation IDs
-    conversation_ids = list(set([msg.conversation_id for msg in result]))[:limit]
+    conversation_ids = list({msg.conversation_id for msg in result})[:limit]
 
     # Get conversations
     conversations = []
@@ -443,9 +411,8 @@ def search_conversations(
         conv = service.get_by_id(conv_id)
         if conv:
             # Filter by user if not admin
-            if current_user.role != Role.ADMIN:
-                if conv.assigned_to_user_id != current_user.id:
-                    continue
+            if current_user.role != Role.ADMIN and conv.assigned_to_user_id != current_user.id:
+                continue
             conversations.append(conv)
 
     # Convert to response
