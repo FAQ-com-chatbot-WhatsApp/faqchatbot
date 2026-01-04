@@ -1,7 +1,7 @@
 """Health-check response schemas for the API."""
 
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
@@ -17,7 +17,7 @@ class HealthOut(BaseModel):
     """Overall health-check response with per-component status."""
 
     status: str
-    components: Dict[str, Any]
+    components: dict[str, Any]
     active_sessions: int = 0
     timestamp: datetime
 
