@@ -32,12 +32,12 @@ logger = logging.getLogger(__name__)
 class MetricsService:
     """
     Service para cálculo e cache de métricas de negócio.
-    
+
     Estratégia de cache:
     - Dashboard summary: TTL 5min (atualização rápida)
     - Conversion metrics: TTL 15min (menos voláteis)
     - Historical data: TTL 1h (dados históricos mudam pouco)
-    
+
     Cache key pattern: metrics:{metric_name}:{period}:{user_id}:{hash_params}
     """
 
@@ -92,7 +92,7 @@ class MetricsService:
     ) -> Any:
         """
         Pattern: Cache-aside
-        
+
         1. Tenta buscar no cache
         2. Se cache miss, computa e salva
         3. Retorna resultado
@@ -105,7 +105,7 @@ class MetricsService:
                 return json.loads(cached)
 
             logger.debug("Cache MISS: %s", cache_key)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.warning("Redis error on GET %s: %s", cache_key, e)
             # Continua sem cache se Redis falhar
 
@@ -120,7 +120,7 @@ class MetricsService:
                 json.dumps(result, default=str)  # default=str para datetime
             )
             logger.debug("Cache SET: %s (TTL=%ss)", cache_key, ttl)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.warning("Redis error on SET %s: %s", cache_key, e)
 
         return result
@@ -136,7 +136,7 @@ class MetricsService:
             if keys_to_delete:
                 self.redis.delete(*keys_to_delete)
                 logger.info("Invalidated %s cache keys matching %s", len(keys_to_delete), pattern)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("Failed to invalidate cache pattern %s: %s", pattern, e)
 
     # =============================================================================
@@ -150,9 +150,9 @@ class MetricsService:
     ) -> dict[str, Any]:
         """
         Resumo executivo do dashboard.
-        
+
         Cache: 5 minutos (dados em tempo real)
-        
+
         Returns:
             {
                 "period": {"start": "2024-12-01", "end": "2024-12-31"},
@@ -202,9 +202,9 @@ class MetricsService:
     ) -> dict[str, Any]:
         """
         Taxa de conversão global ou segmentada.
-        
+
         Cache: 15 minutos
-        
+
         Returns:
             {
                 "period": {...},
@@ -248,9 +248,9 @@ class MetricsService:
     ) -> dict[str, Any]:
         """
         Análise de funil de conversão com drop-off.
-        
+
         Cache: 15 minutos
-        
+
         Returns:
             {
                 "period": {...},
@@ -297,9 +297,9 @@ class MetricsService:
     ) -> dict[str, Any]:
         """
         Estatísticas de tempo até conversão.
-        
+
         Cache: 15 minutos
-        
+
         Returns:
             {
                 "period": {...},
@@ -346,9 +346,9 @@ class MetricsService:
     ) -> dict[str, Any]:
         """
         Estatísticas de tempo de resposta.
-        
+
         Cache: 5 minutos (dados operacionais)
-        
+
         Returns:
             {
                 "period": {...},
@@ -395,9 +395,9 @@ class MetricsService:
     ) -> dict[str, Any]:
         """
         Volume de mensagens ao longo do tempo.
-        
+
         Cache: 15 minutos
-        
+
         Returns:
             {
                 "period": {...},
@@ -449,9 +449,9 @@ class MetricsService:
     ) -> dict[str, Any]:
         """
         Taxa de autonomia do bot.
-        
+
         Cache: 15 minutos
-        
+
         Returns:
             {
                 "period": {...},
@@ -510,6 +510,6 @@ class MetricsService:
                     2
                 ),
             }
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("Failed to get cache stats: %s", e)
             return {}
