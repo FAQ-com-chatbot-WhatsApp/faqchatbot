@@ -3,11 +3,11 @@ and to use robbot.infra.db.base.Base.metadata as target for autogenerate."""
 import os
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from robbot.infra.db.base import Base
+from alembic import context
 from robbot.infra.db import models  # noqa: F401 - import to register models
+from robbot.infra.db.base import Base
 
 # this is the Alembic Config object, which provides access to the values within the .ini file
 config = context.config  # type: ignore
