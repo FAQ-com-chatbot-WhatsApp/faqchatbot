@@ -3,8 +3,6 @@
 Separa credenciais de autenticação dos dados de perfil do usuário,
 seguindo o Princípio de Separação de Responsabilidades de Segurança.
 """
-
-
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
