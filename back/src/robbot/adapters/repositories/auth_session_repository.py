@@ -4,19 +4,19 @@ Gerencia todas as operações de banco de dados relacionadas a sessões de auten
 """
 
 from datetime import UTC, datetime
-from typing import Optional
 
 from sqlalchemy.orm import Session
 
+from robbot.adapters.repositories.base_repository import BaseRepository
 from robbot.infra.db.models.auth_session_model import AuthSessionModel
 
 
-class AuthSessionRepository:
+class AuthSessionRepository(BaseRepository[AuthSessionModel]):
     """Repository encapsulating DB access for authentication sessions."""
 
     def __init__(self, db: Session):
         """Initialize repository with database session."""
-        self.db = db
+        super().__init__(db, AuthSessionModel)
 
     def create(
         self,
@@ -53,7 +53,7 @@ class AuthSessionRepository:
         self.db.refresh(session)
         return session
 
-    def get_by_jti(self, jti: str) -> Optional[AuthSessionModel]:
+    def get_by_jti(self, jti: str) -> AuthSessionModel | None:
         """Get session by refresh token JTI.
 
         Args:
@@ -203,7 +203,7 @@ class AuthSessionRepository:
         self.db.commit()
         return count
 
-    def get_by_id(self, session_id: int) -> Optional[AuthSessionModel]:
+    def get_by_id(self, session_id: int) -> AuthSessionModel | None:
         """Get session by ID.
 
         Args:
