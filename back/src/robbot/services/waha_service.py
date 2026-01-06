@@ -70,7 +70,7 @@ class WAHAService:
             name=data.name,
             webhook_url=data.webhook_url or settings.WAHA_WEBHOOK_URL,
         )
-        logger.info("WAHA session created: %s", waha_response)
+        logger.info("[INFO] WAHA session created: %s", waha_response)
 
         # Save to DB
         session = self.session_repo.create(
@@ -269,7 +269,7 @@ class WAHAService:
             return True
 
         except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.error("Redis rate limit check failed: %s", e)
+            logger.error("[ERROR] Redis rate limit check failed: %s", e)
             return True
 
     async def send_text(self, data: SendTextRequest) -> MessageSentResponse:
@@ -287,7 +287,7 @@ class WAHAService:
             message_id_to_reply=data.reply_to,
         )
 
-        logger.info("Text message sent to %s", data.chat_id)
+        logger.info("[INFO] Text message sent to %s", data.chat_id)
 
         return MessageSentResponse(
             message_id=response.get("id", ""),
@@ -310,7 +310,7 @@ class WAHAService:
             apply_anti_ban=data.apply_anti_ban and settings.WAHA_ANTI_BAN_ENABLED,
         )
 
-        logger.info("Image sent to %s", data.chat_id)
+        logger.info("[INFO] Image sent to %s", data.chat_id)
 
         return MessageSentResponse(
             message_id=response.get("id", ""),
@@ -333,7 +333,7 @@ class WAHAService:
             caption=data.caption,
         )
 
-        logger.info("File sent to %s: %s", data.chat_id, data.filename)
+        logger.info("[INFO] File sent to %s: %s", data.chat_id, data.filename)
 
         return MessageSentResponse(
             message_id=response.get("id", ""),
@@ -356,7 +356,7 @@ class WAHAService:
             title=data.title,
         )
 
-        logger.info("Location sent to %s", data.chat_id)
+        logger.info("[INFO] Location sent to %s", data.chat_id)
 
         return MessageSentResponse(
             message_id=response.get("id", ""),
