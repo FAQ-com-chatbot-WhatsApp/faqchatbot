@@ -324,7 +324,7 @@ class ConversationOrchestrator:
         conv_repo.update(conversation)
         session.flush()
 
-        logger.info("🚨 Urgência detectada (conv_id=%s)", conversation.id)
+        logger.info("[INFO] Urgency detected (conv_id=%s)", conversation.id)
 
     async def _append_name_request_if_needed(
         self,
@@ -613,6 +613,6 @@ def get_conversation_orchestrator() -> ConversationOrchestrator:
 
     if _orchestrator is None:
         _orchestrator = ConversationOrchestrator()
-        logger.info("🎯 ConversationOrchestrator inicializado como singleton")
+        logger.info("[INFO] ConversationOrchestrator initialized as singleton")
 
     return _orchestrator
