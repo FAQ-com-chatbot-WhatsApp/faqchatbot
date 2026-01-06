@@ -675,6 +675,6 @@ def get_prompt_templates() -> PromptTemplates:
 
     if _prompt_templates is None:
         _prompt_templates = PromptTemplates()
-        logger.info(f"🎯 PromptTemplates inicializado com SPIN Selling (version={PromptTemplates.VERSION})")
+        logger.info(f"PromptTemplates initialized with SPIN Selling version={PromptTemplates.VERSION}")
 
     return _prompt_templates
