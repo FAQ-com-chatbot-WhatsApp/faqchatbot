@@ -216,7 +216,7 @@ class DescriptionService:
 
         tags = ', '.join(base_tags[:8])  # Máximo 8 tags
 
-        logger.info("[SUCCESS] Metadata básico gerado: title='%s...', %s tags", title[:30], len(base_tags))
+        logger.info("[SUCCESS] Basic metadata generated: title='%s...', %s tags", title[:30], len(base_tags))
 
         return {
             "generated_title": title,
