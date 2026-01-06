@@ -82,7 +82,7 @@ class PlaybookOrchestrationMixin:
             messages = [{"role": "user", "content": prompt}]
 
             for iteration in range(max_tool_calls):
-                logger.info("Function calling iteration %s/%s", iteration + 1, max_tool_calls)
+                logger.info("[INFO] Function calling iteration %s/%s", iteration + 1, max_tool_calls)
 
                 # Generate response with tools
                 # Note: This is a simplified version
@@ -125,7 +125,7 @@ class PlaybookOrchestrationMixin:
             )
 
         except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.error("Error in function calling loop: %s", e)
+            logger.error("[ERROR] Error in function calling loop: %s", e)
             raise VectorDBError(f"Function calling failed: {e}", original_error=e)
 
     def _build_playbook_aware_prompt(
@@ -220,7 +220,7 @@ IMPORTANTE:
                                 "args": part["function_call"]["args"]
                             }
         except (AttributeError, IndexError, KeyError, TypeError) as e:
-            logger.debug("No function call in response: %s", e)
+            logger.debug("[DEBUG] No function call in response: %s", e)
 
         # No function call found - return None for regular text response
         return None
@@ -256,7 +256,7 @@ IMPORTANTE:
             return text
 
         except ExternalServiceError as e:
-            logger.error("Error transcribing voice message: %s", e)
+            logger.error("[ERROR] Error transcribing voice message: %s", e)
             return None
         except (OSError, ValueError, RuntimeError) as e:
             logger.error(f"Unexpected error transcribing voice message: {e}", exc_info=True)
