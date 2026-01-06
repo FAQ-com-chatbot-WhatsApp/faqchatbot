@@ -9,18 +9,7 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from robbot.adapters.repositories.analytics.bot_performance_analytics_repository import (
-    BotPerformanceAnalyticsRepository,
-)
-from robbot.adapters.repositories.analytics.conversion_analytics_repository import (
-    ConversionAnalyticsRepository,
-)
-from robbot.adapters.repositories.analytics.dashboard_analytics_repository import (
-    DashboardAnalyticsRepository,
-)
-from robbot.adapters.repositories.analytics.performance_analytics_repository import (
-    PerformanceAnalyticsRepository,
-)
+from robbot.adapters.repositories.analytics_repository import AnalyticsRepository
 from robbot.api.v1.dependencies import get_current_user, get_db
 from robbot.domain.enums import Role
 from robbot.infra.db.models.user_model import UserModel
@@ -36,10 +25,7 @@ router = APIRouter(prefix="/metrics", tags=["Metrics"])
 def get_metrics_service(db_session: Session = Depends(get_db)) -> MetricsService:
     """Injeta MetricsService com repositórios especializados"""
     return MetricsService(
-        conversion_repo=ConversionAnalyticsRepository(db_session),
-        performance_repo=PerformanceAnalyticsRepository(db_session),
-        bot_performance_repo=BotPerformanceAnalyticsRepository(db_session),
-        dashboard_repo=DashboardAnalyticsRepository(db_session),
+        analytics_repo=AnalyticsRepository(db_session),
         redis_client=get_redis_client(),
     )
 def check_admin(current_user: UserModel = Depends(get_current_user)):
