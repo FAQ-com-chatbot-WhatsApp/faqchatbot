@@ -60,11 +60,9 @@ def exception_handler(job: Job, exc_type, exc_value, traceback):
     #     send_alert_to_admin(job, exc_value)
 def main():
     """Inicializar e rodar worker RQ."""
-    logger.info("=" * 80)
-    logger.info("🚀 Iniciando RQ Worker")
-    logger.info("=" * 80)
-    logger.info("Redis URL: %s", settings.REDIS_URL)
-    logger.info("Max retries: %s", settings.RQ_MAX_RETRIES)
+    logger.info("[INFO] Starting RQ Worker...")
+    logger.info("[INFO] Redis URL: %s", settings.REDIS_URL)
+    logger.info("[INFO] Max retries: %s", settings.RQ_MAX_RETRIES)
 
     # Obter conexão Redis
     redis_conn = get_redis_client()
@@ -86,7 +84,6 @@ def main():
     ]
 
     logger.info("[SUCCESS] Queues configured: %s", [q.name for q in queues])
-    logger.info("=" * 80)
 
     # Criar worker com nome único baseado no hostname
     import socket
@@ -100,10 +97,9 @@ def main():
     )
 
     # Log de startup
-    logger.info("Worker ID: %s", worker.name)
-    logger.info("Aguardando jobs...")
-    logger.info("Pressione Ctrl+C para parar")
-    logger.info("=" * 80)
+    logger.info("[INFO] Worker ID: %s", worker.name)
+    logger.info("[INFO] Waiting for jobs...")
+    logger.info("[INFO] Press Ctrl+C to stop")
 
     # Iniciar processamento (blocking)
     try:
@@ -112,10 +108,10 @@ def main():
             logging_level="INFO",
         )
     except KeyboardInterrupt:
-        logger.info("\n🛑 Worker interrompido pelo usuário")
+        logger.info("[INFO] Worker interrupted by user")
         sys.exit(0)
     except (ValueError, RuntimeError, ConnectionError) as e:
-        logger.error(f"[ERROR] Worker crashed: {e}", exc_info=True)
+        logger.error("[ERROR] Worker crashed: %s", e, exc_info=True)
         sys.exit(1)
 if __name__ == "__main__":
     main()
