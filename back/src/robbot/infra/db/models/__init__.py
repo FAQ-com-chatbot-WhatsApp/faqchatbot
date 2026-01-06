@@ -1,10 +1,8 @@
 """Database models package exports."""
 
 from robbot.domain.enums import InteractionType
-from robbot.infra.db.models.alert_model import AlertModel
 from robbot.infra.db.models.audit_log_model import AuditLogModel
 from robbot.infra.db.models.auth_session_model import AuthSessionModel
-from robbot.infra.db.models.conversation_context_model import ConversationContextModel
 from robbot.infra.db.models.conversation_message_model import ConversationMessageModel
 from robbot.infra.db.models.conversation_model import ConversationModel
 from robbot.infra.db.models.conversation_tag_model import ConversationTagModel
@@ -30,10 +28,8 @@ from robbot.infra.db.models.webhook_log_model import WebhookLog
 User = UserModel
 
 __all__ = [
-    "AlertModel",
     "AuditLogModel",
     "AuthSessionModel",
-    "ConversationContextModel",
     "ConversationMessageModel",
     "ConversationModel",
     "ConversationTagModel",
