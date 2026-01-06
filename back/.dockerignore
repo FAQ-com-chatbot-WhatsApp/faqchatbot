@@ -92,8 +92,6 @@ docs/
 # ==================================
 # Development Scripts
 # ==================================
-scripts/monitor_workers.sh
-scripts/autoscale_workers.py
 auto-commit.sh
 auto-commit.ps1
 
