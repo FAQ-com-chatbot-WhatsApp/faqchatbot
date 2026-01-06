@@ -100,6 +100,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: runtime-api  # Usa target específico do Dockerfile
+      # BuildKit para builds paralelos e cache otimizado
+      cache_from:
+        - type=local,src=/tmp/.buildx-cache
+      # Argumentos de build para otimização
+      args:
+        BUILDKIT_INLINE_CACHE: 1
+    image: tic-api:latest  # Nome da imagem para reutilização
     container_name: api
     restart: unless-stopped
     env_file:
@@ -134,8 +142,10 @@ services:
     ports:
       - "127.0.0.1:3333:3333"
 
+    # DESENVOLVIMENTO: Volume bind permite hot-reload
+    # PRODUÇÃO: Comente esta linha para usar código do build
     volumes:
-      - .:/app
+      - ./src:/app/src  # Monta apenas /src para hot-reload, não sobrescreve dependências
 
     depends_on:
       db:
@@ -158,9 +168,12 @@ services:
   # RQ Workers (Processamento Assíncrono)
   # ---------------------------------------------------------------------------
   worker:
+    # REUTILIZA imagem da API mas com target worker
     build:
       context: .
-      dockerfile: Dockerfile.worker
+      dockerfile: Dockerfile
+      target: runtime-worker  # Usa target worker do Dockerfile consolidado
+    image: tic-worker:latest
     # container_name removido porque replicas > 1
     restart: unless-stopped
     
@@ -178,8 +191,9 @@ services:
       SMTP_TLS: ${SMTP_TLS:-false}
       SMTP_SENDER: ${SMTP_SENDER:-no-reply@example.local}
 
+    # DESENVOLVIMENTO: Volume bind permite hot-reload
     volumes:
-      - .:/app
+      - ./src:/app/src  # Apenas código fonte, não sobrescreve dependências
 
     depends_on:
       db:
@@ -222,6 +236,50 @@ services:
     ports:
       - "127.0.0.1:1080:1080"  # UI web
       - "127.0.0.1:1025:1025"  # SMTP
+
+  # ---------------------------------------------------------------------------
+  # Autoscaler (Ajuste automático de workers)
+  # ---------------------------------------------------------------------------
+  autoscaler:
+    image: tic-api:latest
+    container_name: autoscaler
+    restart: unless-stopped
+    
+    env_file:
+      - .env
+    
+    environment:
+      PYTHONPATH: /app/src
+      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: postgresql+psycopg2://dba:dba@db:15432/BotDB
+      AUTO_MIGRATE: "false"
+    
+    command: >
+      sh -c "
+        echo 'Autoscaler iniciado - verificando a cada 2 minutos'
+        while true; do
+          python scripts/autoscale_workers.py
+          sleep 120
+        done
+      "
+    
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /app/scripts/autoscale_workers.py || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 volumes:
   db_data:
