@@ -89,7 +89,7 @@ class MetricsService:
 
             logger.debug("Cache MISS: %s", cache_key)
         except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.warning("Redis error on GET %s: %s", cache_key, e)
+            logger.warning("[WARNING] Redis error on GET %s: %s", cache_key, e)
             # Continua sem cache se Redis falhar
 
         # Computar métrica
@@ -104,7 +104,7 @@ class MetricsService:
             )
             logger.debug("Cache SET: %s (TTL=%ss)", cache_key, ttl)
         except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.warning("Redis error on SET %s: %s", cache_key, e)
+            logger.warning("[WARNING] Redis error on SET %s: %s", cache_key, e)
 
         return result
 
@@ -118,9 +118,9 @@ class MetricsService:
 
             if keys_to_delete:
                 self.redis.delete(*keys_to_delete)
-                logger.info("Invalidated %s cache keys matching %s", len(keys_to_delete), pattern)
+                logger.info("[INFO] Invalidated %s cache keys matching %s", len(keys_to_delete), pattern)
         except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.error("Failed to invalidate cache pattern %s: %s", pattern, e)
+            logger.error("[ERROR] Failed to invalidate cache pattern %s: %s", pattern, e)
 
     # =============================================================================
     # DASHBOARD METRICS
@@ -494,5 +494,5 @@ class MetricsService:
                 ),
             }
         except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.error("Failed to get cache stats: %s", e)
+            logger.error("[ERROR] Failed to get cache stats: %s", e)
             return {}
