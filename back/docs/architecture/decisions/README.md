@@ -15,7 +15,10 @@ ADRs documentam o **contexto**, **decisão**, **consequências** e **alternativa
 | [ADR-001](ADR-001-credential-separado-de-user.md) | Credential Separado de User | 03/01/2026 | ✅ Aceito |
 | [ADR-002](ADR-002-analytics-repository-consolidado.md) | Analytics Repository Consolidado | 03/01/2026 | ✅ Aceito |
 | [ADR-003](ADR-003-custom-exceptions-hierarquia.md) | Custom Exceptions com Hierarquia | 30/12/2025 | ✅ Aceito |
-| [ADR-004](ADR-004-clean-architecture-adaptado.md) | Clean Architecture Adaptado | 03/01/2026 | ✅ Aceito || [ADR-005](ADR-005-quebra-analytics-repository.md) | Quebra do Analytics Repository em Repositórios Especializados | 03/01/2026 | ✅ Implementado |
+| [ADR-004](ADR-004-clean-architecture-adaptado.md) | Clean Architecture Adaptado | 03/01/2026 | ✅ Aceito |
+| [ADR-005](ADR-005-analytics-repository-breakdown.md) | Analytics Repository Breakdown | 03/01/2026 | ⚠️ Revertido (ver ADR-007) |
+| [ADR-006](ADR-006-major-technical-refactoring-2026-01.md) | Major Technical Refactoring | 13/01/2026 | ✅ Aceito |
+| [ADR-007](ADR-007-analytics-repository-consolidation.md) | Analytics Repository Consolidation | 18/01/2026 | ✅ Aceito |
 ---
 
 ## 📝 Template para Novos ADRs

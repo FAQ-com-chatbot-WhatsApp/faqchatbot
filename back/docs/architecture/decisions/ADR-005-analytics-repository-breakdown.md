@@ -1,7 +1,11 @@
 # ADR-005: Quebra do Analytics Repository em Repositórios Especializados
 
+> ⚠️ **AVISO: Este ADR foi REVERTIDO pelo [ADR-007](ADR-007-analytics-repository-consolidation.md)**  
+> A divisão em 4 repositórios foi considerada overengineering prematuro (DT-004).  
+> Mantido para histórico e contexto.
+
 **Data:** 03/01/2026  
-**Status:** ✅ Implementado  
+**Status:** ⚠️ Revertido (ver ADR-007)  
 **Decisores:** Time de Desenvolvimento  
 **Tags:** `refactoring`, `god-class`, `analytics`, `clean-code`
 

@@ -24,8 +24,9 @@ Este projeto implementa um bot de WhatsApp com inteligência artificial para ate
 | Documento | Descrição | Status |
 |-----------|-----------|--------|
 | [Arquitetura Técnica](tcc/arquitetura-tecnica.md) | Visão completa da arquitetura, camadas, fluxos e integrações | ✅ Completo |
-| [ADRs - Architecture Decision Records](architecture/decisions/) | Decisões arquiteturais importantes documentadas | ✅ 4 ADRs |
+| [ADRs - Architecture Decision Records](architecture/decisions/) | Decisões arquiteturais importantes documentadas | ✅ 6 ADRs |
 | [Roadmap de Desenvolvimento](tcc/roadmap-desenvolvimento.md) | Planejamento, status atual e próximos passos | ✅ Atualizado |
+| [Logging Guidelines](development/logging-guidelines.md) | Padrões e boas práticas de logging estruturado | ✅ Completo |
 
 ### 🔧 APIs e Integrações
 
@@ -41,8 +42,7 @@ Este projeto implementa um bot de WhatsApp com inteligência artificial para ate
 |-----------|-----------|--------|
 | [Railway Deployment](deployment/railway.md) | Guia de deploy em produção na Railway | ✅ Completo |
 | [Docker Compose](../docker-compose.yml) | Configuração de containers locais | ✅ Completo |
-| [Dockerfile](../Dockerfile) | Imagem Docker da aplicação | ✅ Completo |
-| [Dockerfile Worker](../Dockerfile.worker) | Imagem Docker para workers RQ | ✅ Completo |
+| [Dockerfile](../Dockerfile) | Imagem Docker unificada (API + Worker targets) | ✅ Consolidado |
 
 ### 📝 Documentação Acadêmica (TCC)
 
@@ -60,7 +60,8 @@ Este projeto implementa um bot de WhatsApp com inteligência artificial para ate
 | [ADR-003](architecture/decisions/ADR-003-custom-exceptions-hierarquia.md) | Custom Exceptions com Hierarquia | 30/12/2025 | ✅ Implementado |
 | [ADR-004](architecture/decisions/ADR-004-clean-architecture-adaptado.md) | Clean Architecture Adaptado | 03/01/2026 | ✅ Implementado |
 | [ADR-005](architecture/decisions/ADR-005-quebra-analytics-repository.md) | Quebra do Analytics Repository (God Class) | 03/01/2026 | ✅ Implementado |
-
+analytics-repository-breakdown.md) | Quebra do Analytics Repository (God Class) | 03/01/2026 | ✅ Implementado |
+| [ADR-006](architecture/decisions/ADR-006-major-technical-refactoring-2026-01.md) | Docker Optimization e Refatoração Técnica | 05
 ---
 
 ## 🗂️ Estrutura do Projeto
