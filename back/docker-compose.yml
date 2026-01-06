@@ -115,7 +115,9 @@ services:
 
     environment:
       PYTHONPATH: ${PYTHONPATH:-/app/src}
-      AUTO_MIGRATE: ${AUTO_MIGRATE:-false}
+      AUTO_MIGRATE: ${AUTO_MIGRATE:-true}
+      SERVICE_NAME: "api"
+      LOG_COLOR: "true"
 
       # Database Config
       DATABASE_URL: postgresql+psycopg2://dba:dba@db:5432/BotDB
@@ -158,11 +160,11 @@ services:
         condition: service_healthy
 
     healthcheck:
-      test:
-        ["CMD-SHELL", "curl -fsS http://localhost:3333/api/v1/health || exit 1"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:3333/api/v1/health || exit 1"]
       interval: 10s
-      timeout: 2s
-      retries: 3
+      timeout: 5s
+      retries: 6
+      start_period: 90s
 
   # ---------------------------------------------------------------------------
   # RQ Workers (Processamento Assíncrono)
@@ -184,6 +186,9 @@ services:
       PYTHONPATH: /app/src
       DATABASE_URL: postgresql+psycopg2://dba:dba@db:5432/BotDB
       REDIS_URL: redis://redis:6379/0
+      SERVICE_NAME: "worker"
+      LOG_COLOR: "true"
+      AUTO_MIGRATE: "false"
       SMTP_HOST: ${SMTP_HOST:-maildev}
       SMTP_PORT: ${SMTP_PORT:-1025}
       SMTP_USERNAME: ${SMTP_USERNAME:-}
@@ -251,12 +256,13 @@ services:
     environment:
       PYTHONPATH: /app/src
       REDIS_URL: redis://redis:6379/0
-      DATABASE_URL: postgresql+psycopg2://dba:dba@db:15432/BotDB
+      DATABASE_URL: postgresql+psycopg2://dba:dba@db:5432/BotDB
       AUTO_MIGRATE: "false"
+      SERVICE_NAME: "autoscaler"
+      LOG_COLOR: "true"
     
     command: >
       sh -c "
-        echo 'Autoscaler iniciado - verificando a cada 2 minutos'
         while true; do
           python scripts/autoscale_workers.py
           sleep 120
@@ -273,6 +279,7 @@ services:
     
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./:/app/back:ro
     
     healthcheck:
       test: ["CMD-SHELL", "test -f /app/scripts/autoscale_workers.py || exit 1"]
