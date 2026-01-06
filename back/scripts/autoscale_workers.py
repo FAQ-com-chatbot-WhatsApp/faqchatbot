@@ -22,6 +22,11 @@ import sys
 from datetime import datetime
 
 from robbot.services.worker_analytics_service import WorkerAnalyticsService
+from robbot.core.logging_setup import configure_logging
+import logging
+
+
+logger = logging.getLogger("autoscaler")
 
 
 def execute_scaling(target_workers: int) -> bool:
@@ -39,23 +44,25 @@ def execute_scaling(target_workers: int) -> bool:
         )
 
         if result.returncode == 0:
-            print(f"[{datetime.now()}] SUCCESS: Scaled to {target_workers} workers")
+            logger.info("Scaled to %s workers", target_workers)
             return True
         else:
-            print(f"[{datetime.now()}] ERROR: {result.stderr}")
+            logger.error("Scaling failed: %s", result.stderr)
             return False
 
     except subprocess.TimeoutExpired:
-        print(f"[{datetime.now()}] ERROR: Scaling command timed out")
+        logger.error("Scaling command timed out")
         return False
     except Exception as e:
-        print(f"[{datetime.now()}] ERROR: {e}")
+        logger.error("Scaling exception: %s", e)
         return False
 
 
 def main():
     """Run autoscaling check and execute if needed."""
-    print(f"\n[{datetime.now()}] Starting autoscaling check...")
+    # Ensure structured logging is configured for this script execution
+    configure_logging()
+    logger.info("Starting autoscaling check")
 
     try:
         service = WorkerAnalyticsService()
@@ -65,28 +72,25 @@ def main():
         current_workers = analytics["workers"]["total"]
         pending_jobs = analytics["summary"]["total_pending"]
 
-        print(f"[{datetime.now()}] Current state:")
-        print(f"  Workers: {current_workers}")
-        print(f"  Pending jobs: {pending_jobs}")
-        print(f"  Recommendation: {analytics['autoscaling']['action']}")
-        print(f"  Reason: {reason}")
+        logger.info("Current workers: %s, Pending jobs: %s", current_workers, pending_jobs)
+        logger.info("Recommendation: %s - %s", analytics['autoscaling']['action'], reason)
 
         if should_scale:
-            print(f"[{datetime.now()}] Executing scaling: {current_workers} -> {target} workers")
+            logger.info("Executing scaling: %s -> %s workers", current_workers, target)
             success = execute_scaling(target)
 
             if success:
-                print(f"[{datetime.now()}] Autoscaling completed successfully")
+                logger.info("Autoscaling completed")
                 return 0
             else:
-                print(f"[{datetime.now()}] Autoscaling failed")
+                logger.error("Autoscaling failed")
                 return 1
         else:
-            print(f"[{datetime.now()}] No scaling needed - system stable")
+            logger.info("No scaling needed - system stable")
             return 0
 
     except Exception as e:
-        print(f"[{datetime.now()}] FATAL ERROR: {e}")
+        logger.error("Fatal error during autoscaling: %s", e)
         return 1
 
 
