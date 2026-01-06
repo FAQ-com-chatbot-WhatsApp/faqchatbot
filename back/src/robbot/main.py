@@ -29,7 +29,7 @@ def create_app() -> FastAPI:
     async def lifespan(app: FastAPI):
         """Initialize services on application startup/shutdown."""
         logger = logging.getLogger("robbot.startup")
-        logger.info("Initializing rate limiter...")
+        logger.info("[INFO] Initializing rate limiter...")
         try:
             initialize_rate_limiter()
             logger.info("[SUCCESS] Rate limiter initialized successfully")
@@ -59,7 +59,7 @@ def create_app() -> FastAPI:
         Evita expor detalhes internos na resposta HTTP.
         """
         logger = logging.getLogger("robbot.global")
-        logger.exception("Unhandled exception: %s", exc)
+        logger.exception("[ERROR] Unhandled exception: %s", exc)
 
         return JSONResponse(
             status_code=500, content={"detail": "Internal server error"}
