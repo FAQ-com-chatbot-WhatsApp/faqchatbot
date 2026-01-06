@@ -223,6 +223,6 @@ class NotificationService:
         return self.create_notification(
             user_id=user_id,
             notification_type="TRANSFER_RECEIVED",
-            title="🔄 Conversation Transferred",
+            title="Conversation Transferred",
             message=f"You received a conversation from {from_user_name} (ID: {conversation_id[:8]})",
         )
