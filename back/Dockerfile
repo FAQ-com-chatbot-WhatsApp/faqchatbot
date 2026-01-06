@@ -157,3 +157,19 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 
 # Sobrescreve o comando para executar worker
 CMD ["python", "-m", "robbot.workers.rq_worker"]
+
+# ============================================================================
+# STAGE 5: Runtime - Autoscaler (docker-compose tooling baked in)
+# ============================================================================
+FROM runtime-api AS runtime-autoscaler
+
+# Autoscaler needs docker CLI and compose binary to talk to host docker via mounted socket
+USER root
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends docker-cli ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/*
+RUN curl -L https://github.com/docker/compose/releases/download/v2.32.4/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose \
+    && chmod +x /usr/local/bin/docker-compose
+
+# Run as appuser by default; docker-compose will be invoked as root via compose override
+USER appuser
