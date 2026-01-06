@@ -50,7 +50,7 @@ async def send_clinic_location_via_waha(
     location = get_clinic_location()
     title = custom_title or location["name"]
 
-    logger.info("📍 Enviando localização da clínica para %s", chat_id)
+    logger.info("[INFO] Sending clinic location to %s", chat_id)
 
     async with WAHAClient() as waha:
         result = await waha.send_location(
