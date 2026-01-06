@@ -78,6 +78,64 @@ def scale_workers(
             status_code=status.HTTP_504_GATEWAY_TIMEOUT,
             detail="Scaling operation timed out",
         )
+
+
+@router.post("/autoscale/trigger")
+def trigger_autoscale(
+    current_user=Depends(get_current_user),
+):
+    """Trigger autoscaling check manually.
+
+    Useful for testing or emergency scaling.
+    Analyzes current load and scales up/down automatically.
+    """
+    try:
+        service = WorkerAnalyticsService()
+        should_scale, target, reason = service.should_autoscale()
+
+        if not should_scale:
+            analytics = service.get_analytics()
+            return {
+                "success": True,
+                "action": "no_action",
+                "current_workers": analytics["workers"]["total"],
+                "target_workers": analytics["workers"]["total"],
+                "reason": reason,
+                "message": "System is operating normally - no scaling needed",
+            }
+
+        # Execute scaling
+        result = subprocess.run(
+            ["docker", "compose", "up", "-d", "--scale", f"worker={target}"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+
+        if result.returncode != 0:
+            raise Exception(f"Docker command failed: {result.stderr}")
+
+        analytics = service.get_analytics()
+        return {
+            "success": True,
+            "action": "scaled",
+            "previous_workers": analytics["workers"]["total"],
+            "target_workers": target,
+            "reason": reason,
+            "message": f"Autoscaling executed: {analytics['workers']['total']} → {target} workers",
+        }
+
+    except subprocess.TimeoutExpired:
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="Autoscaling operation timed out",
+        )
+    except Exception as e:  # noqa: BLE001 (blind exception)
+        logger.error("Autoscale trigger failed: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Autoscaling failed: {str(e)}",
+        )
     except Exception as e:  # noqa: BLE001 (blind exception)
         logger.error("Failed to scale workers: %s", e)
         raise HTTPException(
