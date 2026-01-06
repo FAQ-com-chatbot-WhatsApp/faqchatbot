@@ -153,6 +153,44 @@ python -m robbot.workers.worker
 
 ---
 
+## ⚙️ Autoscaling de Workers (RQ)
+
+Parâmetros configuráveis (via `.env` ou `docker-compose.yml`):
+
+- `AUTOSCALER_MIN_WORKERS`: mínimo de workers ativos. Default: `2`.
+- `AUTOSCALER_MAX_WORKERS`: máximo de workers. Default: `5`.
+- `AUTOSCALER_SCALE_UP_THRESHOLD`: jobs por worker para escalar para cima. Default: `5`.
+- `AUTOSCALER_SCALE_DOWN_THRESHOLD`: condição de jobs para reduzir. Default: `0`.
+- `AUTOSCALER_IDLE_TIME_THRESHOLD`: tempo ocioso (segundos) para considerar redução. Default: `300`.
+
+Comportamento:
+
+- Mantém sempre `workers >= AUTOSCALER_MIN_WORKERS`.
+- Escala para cima quando `jobs/worker > AUTOSCALER_SCALE_UP_THRESHOLD` até `AUTOSCALER_MAX_WORKERS`.
+- Reduz apenas se todas as filas sem pendências e todos os workers ociosos, nunca abaixo do mínimo.
+
+Validação rápida:
+
+```bash
+# Rebuild (o autoscaler roda na imagem da API)
+docker compose build --no-cache api
+
+# Reiniciar autoscaler
+docker compose up -d autoscaler
+
+# Checar recomendação/ação
+docker compose exec autoscaler python scripts/autoscale_workers.py
+docker compose logs --no-log-prefix autoscaler
+docker compose ps
+```
+
+Arquivos relacionados:
+
+- Compose: `back/docker-compose.yml` (serviço `autoscaler` com variáveis expostas)
+- Serviço: `back/src/robbot/services/worker_analytics_service.py` (leitura das variáveis e regras)
+
+---
+
 ## 🧪 Testes
 
 ### Rodar Todos os Testes
