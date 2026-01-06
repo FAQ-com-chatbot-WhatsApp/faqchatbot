@@ -44,10 +44,10 @@ def get_queue_stats(db: Session = Depends(get_db), current_user=Depends(get_curr
         }
 
     except (ConnectionError, TimeoutError) as e:
-        logger.error("Erro de conexão ao obter queue stats: %s", e)
+        logger.error("[ERROR] Connection error getting queue stats: %s", e)
         raise HTTPException(status_code=503, detail="Serviço de fila indisponível") from e
     except Exception as e:  # noqa: BLE001 (blind exception)
-        logger.error("Erro ao obter queue stats: %s", e)
+        logger.error("Failed to get queue stats: %s", e)
         raise HTTPException(status_code=500, detail="Erro ao obter estatísticas") from e
 @router.get("/health")
 def queue_health_check():
@@ -69,10 +69,10 @@ def queue_health_check():
         }, status_code
 
     except (ConnectionError, TimeoutError) as e:
-        logger.error("Erro de conexão em queue health check: %s", e)
+        logger.error("[ERROR] Connection error in queue health check: %s", e)
         return {"status": "unhealthy", "error": "Serviço de fila indisponível"}, 503
     except (KeyError, ValueError) as e:
-        logger.error("Erro de validação em queue health check: %s", e)
+        logger.error("[ERROR] Validation error in queue health check: %s", e)
         return {"status": "unhealthy", "error": str(e)}, 503
 @router.get("/jobs/{job_id}")
 def get_job_status(
@@ -105,7 +105,7 @@ def get_job_status(
         }
 
     except Exception as e:  # noqa: BLE001 (blind exception)
-        logger.error("Erro ao obter status do job %s: %s", job_id, e)
+        logger.error("Failed to get job status %s: %s", job_id, e)
         raise HTTPException(status_code=500, detail="Erro ao obter status")
 @router.get("/failed")
 def get_failed_jobs(
@@ -141,7 +141,7 @@ def get_failed_jobs(
         }
 
     except Exception as e:  # noqa: BLE001 (blind exception)
-        logger.error("Erro ao obter failed jobs: %s", e)
+        logger.error("Failed to get failed jobs: %s", e)
         raise HTTPException(status_code=500, detail="Erro ao obter failed jobs")
 # =====================================================================
 # POST ENDPOINTS (Ações)
@@ -185,7 +185,7 @@ def retry_job(
     except HTTPException:
         raise
     except Exception as e:  # noqa: BLE001 (blind exception)
-        logger.error("Erro ao retryar job %s: %s", job_id, e)
+        logger.error("[ERROR] Failed to retry job %s: %s", job_id, e)
         raise HTTPException(status_code=500, detail="Erro ao retryar job")
 @router.post("/jobs/{job_id}/cancel")
 def cancel_job(
@@ -225,7 +225,7 @@ def cancel_job(
     except HTTPException:
         raise
     except Exception as e:  # noqa: BLE001 (blind exception)
-        logger.error("Erro ao cancelar job %s: %s", job_id, e)
+        logger.error("[ERROR] Failed to cancel job %s: %s", job_id, e)
         raise HTTPException(status_code=500, detail="Erro ao cancelar job")
 @router.post("/retry-failed")
 def retry_failed_jobs(
@@ -269,7 +269,7 @@ def retry_failed_jobs(
         }
 
     except Exception as e:  # noqa: BLE001 (blind exception)
-        logger.error("Erro ao retryar failed jobs: %s", e)
+        logger.error("[ERROR] Failed to retry failed jobs: %s", e)
         raise HTTPException(status_code=500, detail="Erro ao retryar jobs")
 @router.delete("/clear-failed")
 def clear_failed_jobs(
@@ -303,5 +303,5 @@ def clear_failed_jobs(
         }
 
     except Exception as e:  # noqa: BLE001 (blind exception)
-        logger.error("Erro ao limpar failed queue: %s", e)
+        logger.error("[ERROR] Failed to clear failed queue: %s", e)
         raise HTTPException(status_code=500, detail="Erro ao limpar failed queue")
