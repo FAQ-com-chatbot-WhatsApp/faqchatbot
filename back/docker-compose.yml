@@ -118,6 +118,12 @@ services:
       AUTO_MIGRATE: ${AUTO_MIGRATE:-true}
       SERVICE_NAME: "api"
       LOG_COLOR: "true"
+      # Autoscaler tuning (kept for consistency; read by autoscaler)
+      AUTOSCALER_MIN_WORKERS: ${AUTOSCALER_MIN_WORKERS:-3}
+      AUTOSCALER_MAX_WORKERS: ${AUTOSCALER_MAX_WORKERS:-5}
+      AUTOSCALER_SCALE_UP_THRESHOLD: ${AUTOSCALER_SCALE_UP_THRESHOLD:-5}
+      AUTOSCALER_SCALE_DOWN_THRESHOLD: ${AUTOSCALER_SCALE_DOWN_THRESHOLD:-0}
+      AUTOSCALER_IDLE_TIME_THRESHOLD: ${AUTOSCALER_IDLE_TIME_THRESHOLD:-300}
 
       # Database Config
       DATABASE_URL: postgresql+psycopg2://dba:dba@db:5432/BotDB
@@ -195,10 +201,18 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_TLS: ${SMTP_TLS:-false}
       SMTP_SENDER: ${SMTP_SENDER:-no-reply@example.local}
+      # Autoscaler tuning (kept for consistency; read by autoscaler)
+      AUTOSCALER_MIN_WORKERS: ${AUTOSCALER_MIN_WORKERS:-3}
+      AUTOSCALER_MAX_WORKERS: ${AUTOSCALER_MAX_WORKERS:-5}
+      AUTOSCALER_SCALE_UP_THRESHOLD: ${AUTOSCALER_SCALE_UP_THRESHOLD:-5}
+      AUTOSCALER_SCALE_DOWN_THRESHOLD: ${AUTOSCALER_SCALE_DOWN_THRESHOLD:-0}
+      AUTOSCALER_IDLE_TIME_THRESHOLD: ${AUTOSCALER_IDLE_TIME_THRESHOLD:-300}
 
     # DESENVOLVIMENTO: Volume bind permite hot-reload
-    volumes:
-      - ./src:/app/src  # Apenas código fonte, não sobrescreve dependências
+    # COMENTADO: ao escalar com docker-compose --scale, volumes podem não funcionar em replicas
+    # Descomente apenas para desenvolvimento sem autoscaler
+    # volumes:
+    #   - ./src:/app/src  # Apenas código fonte, não sobrescreve dependências
 
     depends_on:
       db:
@@ -246,9 +260,14 @@ services:
   # Autoscaler (Ajuste automático de workers)
   # ---------------------------------------------------------------------------
   autoscaler:
-    image: tic-api:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime-autoscaler
+    image: tic-autoscaler:latest
     container_name: autoscaler
     restart: unless-stopped
+    user: "root"
     
     env_file:
       - .env
@@ -260,11 +279,16 @@ services:
       AUTO_MIGRATE: "false"
       SERVICE_NAME: "autoscaler"
       LOG_COLOR: "true"
+      AUTOSCALER_MIN_WORKERS: ${AUTOSCALER_MIN_WORKERS:-3}
+      AUTOSCALER_MAX_WORKERS: ${AUTOSCALER_MAX_WORKERS:-5}
+      AUTOSCALER_SCALE_UP_THRESHOLD: ${AUTOSCALER_SCALE_UP_THRESHOLD:-5}
+      AUTOSCALER_SCALE_DOWN_THRESHOLD: ${AUTOSCALER_SCALE_DOWN_THRESHOLD:-0}
+      AUTOSCALER_IDLE_TIME_THRESHOLD: ${AUTOSCALER_IDLE_TIME_THRESHOLD:-300}
     
     command: >
       sh -c "
         while true; do
-          python scripts/autoscale_workers.py
+          python /app/back/scripts/autoscale_workers.py
           sleep 120
         done
       "
@@ -282,7 +306,7 @@ services:
       - ./:/app/back:ro
     
     healthcheck:
-      test: ["CMD-SHELL", "test -f /app/scripts/autoscale_workers.py || exit 1"]
+      test: ["CMD-SHELL", "test -f /app/back/scripts/autoscale_workers.py || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
