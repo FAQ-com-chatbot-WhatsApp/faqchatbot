@@ -53,12 +53,12 @@ class ChromaClient:
             )
 
             logger.info(
-                f"[SUCCESS] ChromaClient inicializado (collection={collection_name}, "
-                f"path={settings.CHROMA_PERSIST_DIR}, count={self.collection.count()})"
+                "[SUCCESS] ChromaClient initialized (collection=%s, path=%s, count=%s)",
+                collection_name, settings.CHROMA_PERSIST_DIR, self.collection.count()
             )
 
         except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.error(f"[ERROR] Falha ao inicializar ChromaClient: {e}", exc_info=True)
+            logger.error(f"[ERROR] Failed to initialize ChromaClient: {e}", exc_info=True)
             raise VectorDBError(f"Initialization failed: {e}", original_error=e)
 
     def add_conversation(
@@ -104,16 +104,16 @@ class ChromaClient:
             )
 
             logger.info(
-                f"[SUCCESS] Conversa adicionada ao ChromaDB (id={doc_id}, "
-                f"conv_id={conversation_id}, length={len(text)})"
+                "[SUCCESS] Conversation added to ChromaDB (id=%s, conv_id=%s, length=%s)",
+                doc_id, conversation_id, len(text)
             )
 
             return doc_id
 
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(
-                f"[ERROR] Falha ao adicionar conversa ao ChromaDB: {e}",
-                exc_info=True,
+                "[ERROR] Failed to add conversation to ChromaDB: %s",
+                e, exc_info=True,
                 extra={"conversation_id": conversation_id}
             )
             raise VectorDBError(f"Failed to add conversation: {e}", original_error=e)
@@ -172,16 +172,16 @@ class ChromaClient:
                     })
 
             logger.info(
-                f"[SUCCESS] Busca ChromaDB concluída (query_length={len(query)}, "
-                f"n_results={len(formatted_results)}, conv_id={conversation_id})"
+                "[SUCCESS] ChromaDB search completed (query_length=%s, n_results=%s, conv_id=%s)",
+                len(query), len(formatted_results), conversation_id
             )
 
             return formatted_results
 
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(
-                f"[ERROR] Falha ao buscar no ChromaDB: {e}",
-                exc_info=True,
+                "[ERROR] Failed to search ChromaDB: %s",
+                e, exc_info=True,
                 extra={"query": query[:100]}
             )
             raise VectorDBError(f"Search failed: {e}", original_error=e)
@@ -230,16 +230,16 @@ class ChromaClient:
                     })
 
             logger.info(
-                f"[SUCCESS] Contexto obtido do ChromaDB (conv_id={conversation_id}, "
-                f"count={len(formatted_results)})"
+                "[SUCCESS] Context retrieved from ChromaDB (conv_id=%s, count=%s)",
+                conversation_id, len(formatted_results)
             )
 
             return formatted_results
 
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(
-                f"[ERROR] Falha ao obter contexto do ChromaDB: {e}",
-                exc_info=True,
+                "[ERROR] Failed to get context from ChromaDB: %s",
+                e, exc_info=True,
                 extra={"conversation_id": conversation_id}
             )
             raise VectorDBError(f"Failed to get context: {e}", original_error=e)
@@ -264,21 +264,21 @@ class ChromaClient:
             )
 
             if not results or not results['ids']:
-                logger.warning("Nenhum documento encontrado para conv_id=%s", conversation_id)
+                logger.warning("[WARNING] No documents found for conv_id=%s", conversation_id)
                 return 0
 
             # Deletar documentos
             self.collection.delete(ids=results['ids'])
 
             count = len(results['ids'])
-            logger.info("[SUCCESS] Contexto deletado do ChromaDB (conv_id=%s, count=%s)", conversation_id, count)
+            logger.info("[SUCCESS] Context deleted from ChromaDB (conv_id=%s, count=%s)", conversation_id, count)
 
             return count
 
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(
-                f"[ERROR] Falha ao deletar contexto do ChromaDB: {e}",
-                exc_info=True,
+                "[ERROR] Failed to delete context from ChromaDB: %s",
+                e, exc_info=True,
                 extra={"conversation_id": conversation_id}
             )
             raise VectorDBError(f"Delete failed: {e}", original_error=e)
@@ -308,10 +308,10 @@ class ChromaClient:
                 metadata={"description": "WhatsApp conversation contexts"}
             )
 
-            logger.warning("[WARNING] ChromaDB collection resetada: %s", self.collection.name)
+            logger.warning("[WARNING] ChromaDB collection reset: %s", self.collection.name)
 
         except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.error(f"[ERROR] Falha ao resetar ChromaDB: {e}", exc_info=True)
+            logger.error(f"[ERROR] Failed to reset ChromaDB: {e}", exc_info=True)
             raise VectorDBError(f"Reset failed: {e}", original_error=e)
 # Singleton global
 _chroma_client: ChromaClient | None = None
@@ -326,12 +326,12 @@ def get_chroma_client() -> ChromaClient:
 
     if _chroma_client is None:
         _chroma_client = ChromaClient()
-        logger.info("🎯 ChromaClient inicializado como singleton")
+        logger.info("[INFO] ChromaClient initialized as singleton")
 
     return _chroma_client
 def close_chroma_client() -> None:
     """Fechar cliente (cleanup)."""
     global _chroma_client
     if _chroma_client is not None:
-        logger.info("Fechando ChromaClient")
+        logger.info("[INFO] Closing ChromaClient")
         _chroma_client = None
