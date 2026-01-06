@@ -80,7 +80,7 @@ class AuthService:
 
         verification_token = self.email_verification_svc.generate_verification_token(user.id)
 
-        logger.info("User registered: %s (verification token: %s...)", user.email, verification_token[:8])
+        logger.info("[INFO] User registered: %s (verification token: %s...)", user.email, verification_token[:8])
 
         return UserOut.model_validate(user)
 
@@ -110,18 +110,18 @@ class AuthService:
         """
         user = self.repo.get_by_email(email)
         if not user:
-            logger.warning("Login failed: user not found for email %s", email)
+            logger.warning("[WARNING] Login failed: user not found for email %s", email)
             return None
         if not user.is_active:
-            logger.warning("Login failed: user %s is inactive", email)
+            logger.warning("[WARNING] Login failed: user %s is inactive", email)
             return None
 
         if not self.email_verification_svc.is_email_verified(user.id):
-            logger.warning("Login failed: email not verified for user %s", email)
+            logger.warning("[WARNING] Login failed: email not verified for user %s", email)
             raise AuthException("Email not verified. Please check your email for verification link.")
         # Verificar senha via CredentialService
         if not self.credential_svc.verify_password(user.id, password):
-            logger.warning("Login failed: invalid password for user %s", email)
+            logger.warning("[WARNING] Login failed: invalid password for user %s", email)
             try:
                 self.audit_svc.log_action(
                     action="login_failure",
@@ -131,7 +131,7 @@ class AuthService:
                     old_value={"email": email},
                 )
             except SQLAlchemyError:
-                logger.warning("Audit log failed for login_failure")
+                logger.warning("[WARNING] Audit log failed for login_failure")
             return None
 
         from robbot.adapters.repositories.credential_repository import CredentialRepository
@@ -141,7 +141,7 @@ class AuthService:
 
         if mfa_enabled:
             # Return temporary tokens that require MFA verification
-            logger.info("Login successful (MFA required): user %s (id=%s)", email, user.id)
+            logger.info("[INFO] Login successful (MFA required): user %s (id=%s)", email, user.id)
             # Create temporary tokens with short expiration (5 minutes)
             temporary_tokens = security.create_token_for_subject(
                 str(user.id),
