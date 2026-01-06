@@ -27,7 +27,7 @@ def send_email(to: str, subject: str, body: str) -> None:
     Em produção, configure SMTP_HOST/PORT/USERNAME/PASSWORD/TLS via .env.
     """
     if not to:
-        logger.warning("send_email called without recipient")
+        logger.warning("[WARNING] send_email called without recipient")
         return
 
     host = settings.SMTP_HOST
@@ -38,7 +38,7 @@ def send_email(to: str, subject: str, body: str) -> None:
     sender = settings.SMTP_SENDER or "no-reply@example.local"
 
     if not host:
-        logger.info("SMTP not configured (SMTP_HOST missing); skipping email to %s", to)
+        logger.info("[INFO] SMTP not configured (SMTP_HOST missing); skipping email to %s", to)
         return
 
     msg = MIMEText(body, _charset="utf-8")
@@ -55,10 +55,10 @@ def send_email(to: str, subject: str, body: str) -> None:
                     server.starttls()
                     server.ehlo()
                 except smtplib.SMTPException:
-                    logger.warning("SMTP STARTTLS failed; continuing without TLS")
+                    logger.warning("[WARNING] SMTP STARTTLS failed; continuing without TLS")
             if user and password:
                 server.login(user, password)
             server.sendmail(sender, [to], msg.as_string())
-        logger.info("Email sent to %s: %s", to, subject)
+        logger.info("[SUCCESS] Email sent to %s: %s", to, subject)
     except Exception as exc:  # noqa: BLE001 (blind exception)
-        logger.exception("Failed to send email to %s: %s", to, exc)
+        logger.exception("[ERROR] Failed to send email to %s: %s", to, exc)
