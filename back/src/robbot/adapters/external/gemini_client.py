@@ -42,11 +42,11 @@ class GeminiClient:
             )
 
             logger.info(
-                f"[SUCCESS] GeminiClient inicializado (model={settings.GEMINI_MODEL}, "
-                f"temp={settings.GEMINI_TEMPERATURE}, tools={len(tools) if tools else 0})"
+                "[SUCCESS] GeminiClient initialized (model=%s, temp=%s, tools=%s)",
+                settings.GEMINI_MODEL, settings.GEMINI_TEMPERATURE, len(tools) if tools else 0
             )
         except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.error("[ERROR] Falha ao inicializar GeminiClient: %s", e)
+            logger.error("[ERROR] Failed to initialize GeminiClient: %s", e)
             raise LLMError("Gemini", f"Initialization failed: {e}", original_error=e)
 
     def generate_response(
@@ -82,7 +82,8 @@ class GeminiClient:
         for attempt in range(1, max_retries + 1):
             try:
                 logger.info(
-                    f"🤖 Gerando resposta Gemini (tentativa {attempt}/{max_retries})",
+                    "[INFO] Generating Gemini response (attempt %s/%s)",
+                    attempt, max_retries,
                     extra={"prompt_length": len(full_prompt)}
                 )
 
@@ -101,7 +102,8 @@ class GeminiClient:
                 finish_reason = self._extract_finish_reason(response)
 
                 logger.info(
-                    f"[SUCCESS] Resposta gerada com sucesso ({latency_ms}ms, {tokens_used} tokens)",
+                    "[SUCCESS] Response generated successfully (%sms, %s tokens)",
+                    latency_ms, tokens_used,
                     extra={
                         "latency_ms": latency_ms,
                         "tokens": tokens_used,
@@ -121,7 +123,8 @@ class GeminiClient:
                 # Rate limit - aguardar e tentar novamente
                 wait_time = 2 ** attempt  # Exponential backoff
                 logger.warning(
-                    f"[WARNING] Rate limit atingido, aguardando {wait_time}s (tentativa {attempt})"
+                    "[WARNING] Rate limit reached, waiting %ss (attempt %s)",
+                    wait_time, attempt
                 )
                 if attempt < max_retries:
                     time.sleep(wait_time)
@@ -130,14 +133,14 @@ class GeminiClient:
 
             except google_exceptions.DeadlineExceeded as e:
                 # Timeout - tentar novamente
-                logger.warning("[WARNING] Timeout na requisição (tentativa %s)", attempt)
+                logger.warning("[WARNING] Request timeout (attempt %s)", attempt)
                 if attempt < max_retries:
                     continue
                 raise LLMError("Gemini", f"Timeout: {e}", original_error=e)
 
             except google_exceptions.GoogleAPIError as e:
                 # Erro da API Google
-                logger.error(f"[ERROR] Erro Gemini API: {e}", exc_info=True)
+                logger.error("[ERROR] Gemini API error: %s", e, exc_info=True)
                 if attempt < max_retries:
                     time.sleep(1)
                     continue
@@ -145,7 +148,7 @@ class GeminiClient:
 
             except Exception as e:  # noqa: BLE001 (blind exception)
                 # Erro inesperado
-                logger.error(f"[ERROR] Erro inesperado ao chamar Gemini: {e}", exc_info=True)
+                logger.error("[ERROR] Unexpected error calling Gemini: %s", e, exc_info=True)
                 if attempt < max_retries:
                     time.sleep(1)
                     continue
@@ -229,7 +232,7 @@ def get_gemini_client(tools: list | None = None) -> GeminiClient:
 
     if _gemini_client is None:
         _gemini_client = GeminiClient(tools=tools)
-        logger.info("🎯 GeminiClient inicializado como singleton")
+        logger.info("GeminiClient initialized as singleton")
 
     return _gemini_client
 def close_gemini_client() -> None:
