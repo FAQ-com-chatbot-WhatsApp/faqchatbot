@@ -10,7 +10,6 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from robbot.adapters.repositories.alert_repository import AlertRepository
 from robbot.api.v1.dependencies import initialize_rate_limiter
 from robbot.api.v1.routers.api import api_router
 from robbot.config.settings import get_settings
@@ -56,24 +55,11 @@ def create_app() -> FastAPI:
     @application.exception_handler(Exception)
     async def global_exception_handler(_request: Request, exc: Exception):
         """
-        Handler global que registra exceções e persiste um alerta crítico.
+        Handler global que registra exceções não tratadas.
         Evita expor detalhes internos na resposta HTTP.
         """
         logger = logging.getLogger("robbot.global")
         logger.exception("Unhandled exception: %s", exc)
-
-        # Tenta persistir um alerta no banco; não deve impedir resposta ao cliente.
-        try:
-            with get_sync_session() as db:
-                alert_repo = AlertRepository(db)
-                alert_repo.create_alert(
-                    level="critical",
-                    message="Unhandled exception",
-                    metadata={"error": str(exc)},
-                )
-        except Exception:
-            # se falhar ao persistir alerta, apenas loga
-            logger.exception("Failed to persist alert for unhandled exception")
 
         return JSONResponse(
             status_code=500, content={"detail": "Internal server error"}
