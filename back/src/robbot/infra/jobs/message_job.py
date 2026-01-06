@@ -116,7 +116,7 @@ class MessageProcessingJob(BaseJob):
                 if not audio_url:
                     logger.warning("[WARNING] Mensagem de áudio sem URL (type=%s)", message_type)
                 else:
-                    logger.info("🎤 Áudio detectado: %s", audio_url)
+                    logger.info("[INFO] Audio detected: %s", audio_url)
 
             elif message_type == "video":
                 has_video = True
@@ -127,7 +127,7 @@ class MessageProcessingJob(BaseJob):
                 if not video_url:
                     logger.warning("[WARNING] Mensagem de vídeo sem URL")
                 else:
-                    logger.info("🎥 Vídeo detectado: %s", video_url)
+                    logger.info("[INFO] Video detected: %s", video_url)
 
             # Processar com orchestrator (fluxo completo)
             # Isso vai:
