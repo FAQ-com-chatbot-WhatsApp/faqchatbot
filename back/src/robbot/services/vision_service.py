@@ -44,9 +44,9 @@ class VisionService:
             try:
                 self.processor = BlipProcessor.from_pretrained(self.model_name)
                 self.model = BlipForConditionalGeneration.from_pretrained(self.model_name)
-                logger.info("[SUCCESS] Modelo BLIP-2 carregado com sucesso!")
+                logger.info("[SUCCESS] BLIP-2 model loaded successfully")
             except Exception as e:  # noqa: BLE001 (blind exception)
-                logger.error("[ERROR] Erro ao carregar BLIP-2: %s", e)
+                logger.error("[ERROR] Failed to load BLIP-2: %s", e)
                 raise
 
     async def analyze_image(
@@ -74,12 +74,12 @@ class VisionService:
 
         try:
             # 1. Baixar imagem
-            logger.info("📥 Baixando imagem de: %s", image_url)
+            logger.info("[INFO] Downloading image from: %s", image_url)
             image = await self._download_image(image_url)
 
             # 2. Gerar caption básico
             caption = await self._generate_caption(image)
-            logger.info("[SUCCESS] Caption gerado: %s", caption)
+            logger.info("[SUCCESS] Caption generated: %s", caption)
 
             # 3. Gerar descrição detalhada com perguntas contextuais
             detailed_description = await self._generate_detailed_description(
@@ -106,7 +106,7 @@ class VisionService:
             }
 
         except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.error("[ERROR] Erro ao analisar imagem: %s", e)
+            logger.error("[ERROR] Failed to analyze image: %s", e)
             raise
 
     async def _download_image(self, url: str) -> Image.Image:
