@@ -58,7 +58,7 @@ class ReEngagementJob:
                 "errors": int
             }
         """
-        logger.info("🔄 Iniciando job de re-engagement")
+        logger.info("[INFO] Starting re-engagement job")
 
         stats = {
             "status": "success",
@@ -98,7 +98,7 @@ class ReEngagementJob:
         except JobError:
             raise
         except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.error("[ERROR] Erro fatal no job de re-engagement: %s", e)
+            logger.error("[ERROR] Fatal error in re-engagement job: %s", e)
             stats["status"] = "error"
             stats["error_message"] = str(e)
             raise JobError(job_name="reengagement", message=f"Fatal error: {e}", original_error=e)
@@ -168,7 +168,7 @@ class ReEngagementJob:
                 f"[SUCCESS] Mensagem de re-engagement enviada (conv_id={conversation.id})"
             )
         except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.error("[ERROR] Falha ao enviar via WAHA: %s", e)
+            logger.error("[ERROR] Failed to send via WAHA: %s", e)
             raise
 
         # Salvar mensagem outbound
