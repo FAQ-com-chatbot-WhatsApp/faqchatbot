@@ -115,7 +115,8 @@ class QueueService:
         )
 
         logger.info(
-            f"🤖 IA enfileirada (fila: ai) -> {job.job_id}",
+            "[INFO] AI job queued (queue: ai) -> %s",
+            job.job_id,
             extra={
                 "job_id": job.job_id,
                 "queue": "ai",
@@ -323,13 +324,13 @@ class QueueService:
                     # Queue não existe ou job inválido
                     continue
 
-            logger.warning("Job %s não encontrado para retry", job_id)
+            logger.warning("[WARNING] Job %s not found for retry", job_id)
             return False
 
         except QueueError:
             raise
         except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.error("Erro ao retryar job %s: %s", job_id, e)
+            logger.error("[ERROR] Failed to retry job %s: %s", job_id, e)
             raise QueueError(f"Failed to retry job {job_id}: {e}")
 
     def retry_all_failed(self) -> int:
@@ -346,7 +347,7 @@ class QueueService:
             if self.retry_job(job_id):
                 retried += 1
 
-        logger.info("%s jobs falhados reenfileirados", retried)
+        logger.info("[INFO] %s failed jobs re-queued", retried)
         return retried
 
     def clear_failed_queue(self) -> int:
@@ -367,9 +368,9 @@ class QueueService:
                 job = Job.fetch(job_id, connection=queue.connection)
                 job.delete()
             except (QueueError, ValueError) as e:
-                logger.warning("Erro ao deletar job %s: %s", job_id, e)
+                logger.warning("[WARNING] Failed to delete job %s: %s", job_id, e)
 
-        logger.warning("Dead Letter Queue limpa: %s jobs removidos", count)
+        logger.warning("[WARNING] Dead Letter Queue cleaned: %s jobs removed", count)
         return count
 
     def cancel_job(self, job_id: str) -> bool:
@@ -388,7 +389,7 @@ class QueueService:
                 try:
                     job = Job.fetch(job_id, connection=queue.connection)
                     job.cancel()
-                    logger.info("Job %s cancelado", job_id)
+                    logger.info("[INFO] Job %s cancelled", job_id)
                     return True
                 except (QueueError, ValueError):
                     # Job não existe nesta fila
@@ -399,7 +400,7 @@ class QueueService:
         except QueueError:
             raise
         except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.error("Erro ao cancelar job %s: %s", job_id, e)
+            logger.error("[ERROR] Failed to cancel job %s: %s", job_id, e)
             raise QueueError(f"Failed to cancel job {job_id}: {e}")
 
     # =====================================================================
