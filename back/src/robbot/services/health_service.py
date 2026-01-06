@@ -3,7 +3,6 @@ from datetime import UTC, datetime
 from sqlalchemy.orm import Session
 
 from robbot.adapters.external.waha_client import get_waha_client
-from robbot.adapters.repositories.alert_repository import AlertRepository
 from robbot.adapters.repositories.health_repository import HealthRepository
 from robbot.adapters.repositories.session_repository import SessionRepository
 from robbot.config.settings import settings
@@ -20,7 +19,6 @@ class HealthService:
     def __init__(self, db: Session):
         self.db = db
         self.health_repo = HealthRepository(db)
-        self.alert_repo = AlertRepository(db)
 
     async def get_health(self) -> HealthOut:
         """
@@ -79,18 +77,6 @@ class HealthService:
             active_sessions = 0
 
         status_str = "ok" if db_ok and redis_ok and waha_ok and queue_ok else "unhealthy"
-
-        # Se crítico (DB down) e alerts ativados, persistir alerta básico
-        if not db_ok and getattr(settings, "SMTP_SENDER", None) is not None:
-            # Persistir alerta para análise posterior
-            import contextlib
-            with contextlib.suppress(Exception):
-                # Não propagar erro de persistência de alerta no health check
-                self.alert_repo.create_alert(
-                    level="critical",
-                    message="Database unreachable in health check",
-                    metadata={"error": db_error},
-                )
 
         return HealthOut(
             status=status_str,
