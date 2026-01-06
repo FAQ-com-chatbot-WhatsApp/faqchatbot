@@ -13,7 +13,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from robbot.domain.enums import ConversationStatus
 
 if TYPE_CHECKING:
-    from robbot.infra.db.models.conversation_context_model import ConversationContextModel
     from robbot.infra.db.models.conversation_message_model import ConversationMessageModel
     from robbot.infra.db.models.lead_model import LeadModel
     from robbot.infra.db.models.llm_interaction_model import LLMInteractionModel
@@ -92,12 +91,6 @@ class ConversationModel(Base):
     llm_interactions: Mapped[list[LLMInteractionModel]] = relationship(
         "LLMInteractionModel",
         back_populates="conversation",
-        cascade="all, delete-orphan",
-    )
-    context: Mapped[ConversationContextModel] = relationship(
-        "ConversationContextModel",
-        back_populates="conversation",
-        uselist=False,
         cascade="all, delete-orphan",
     )
 
