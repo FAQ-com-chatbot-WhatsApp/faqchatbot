@@ -78,7 +78,7 @@ class RQQueueManager:
                 is_async=True,
             )
             logger.info(
-                f"[SUCCESS] Fila 'escalation' inicializada (timeout={settings.RQ_JOB_TIMEOUT_ESCALATION}s)"
+                f"[SUCCESS] Queue 'escalation' initialized (timeout={settings.RQ_JOB_TIMEOUT_ESCALATION}s)"
             )
         return self._queue_escalation
 
@@ -91,7 +91,7 @@ class RQQueueManager:
                 connection=self.redis_client,
                 is_async=True,
             )
-            logger.info("[SUCCESS] Fila 'failed' (DLQ) inicializada")
+            logger.info("[SUCCESS] Queue 'failed' (DLQ) initialized")
         return self._queue_failed
 
     def get_queue(self, queue_name: str) -> Queue:
@@ -154,7 +154,7 @@ class RQQueueManager:
                     "failed_count": len(failed_registry),
                 }
             except (QueueError, ValueError) as e:
-                logger.error("Erro ao obter stats da fila '%s': %s", name, e)
+                logger.error("[ERROR] Failed to get queue stats '%s': %s", name, e)
                 stats[name] = {"error": str(e)}
 
         return stats
@@ -181,7 +181,7 @@ class RQQueueManager:
         except QueueError:
             raise
         except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.error("Health check falhou: %s", e)
+            logger.error("[ERROR] Health check failed: %s", e)
             raise QueueError(f"Health check failed: {e}")
 # Singleton global
 _queue_manager: RQQueueManager | None = None
@@ -199,12 +199,12 @@ def get_queue_manager(redis_client: Redis | None = None) -> RQQueueManager:
 
     if _queue_manager is None:
         _queue_manager = RQQueueManager(redis_client)
-        logger.info("🎯 RQQueueManager inicializado como singleton")
+        logger.info("[INFO] RQQueueManager initialized as singleton")
 
     return _queue_manager
 def close_queue_manager() -> None:
     """Fechar gerenciador (limpar resources)."""
     global _queue_manager
     if _queue_manager is not None:
-        logger.info("Fechando RQQueueManager")
+        logger.info("[INFO] Closing RQQueueManager")
         _queue_manager = None
