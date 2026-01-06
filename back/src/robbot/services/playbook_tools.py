@@ -65,7 +65,7 @@ def search_playbooks_tool(db: Session, query: str, top_k: int = 3) -> list[dict[
         service = PlaybookService(db)
         results = service.search_playbooks(query, top_k=top_k, active_only=True)
 
-        logger.info("Playbook search: query='%s', results=%s", query, len(results))
+        logger.info("[INFO] Playbook search: query='%s', results=%s", query, len(results))
 
         # Convert to dict for LLM consumption
         return [
@@ -80,7 +80,7 @@ def search_playbooks_tool(db: Session, query: str, top_k: int = 3) -> list[dict[
             for r in results
         ]
     except Exception as e:  # noqa: BLE001 (blind exception)
-        logger.error("Error searching playbooks: %s", e)
+        logger.error("[ERROR] Error searching playbooks: %s", e)
         return []
 # ============================================================================
 # TOOL 2: Get Playbook Steps (with message details)
@@ -120,7 +120,7 @@ def get_playbook_steps_tool(db: Session, playbook_id: str) -> dict[str, Any]:
         service = PlaybookService(db)
         steps = service.get_playbook_steps_with_details(playbook_id)
 
-        logger.info("Retrieved playbook steps: playbook_id=%s, steps=%s", playbook_id, len(steps))
+        logger.info("[INFO] Retrieved playbook steps: playbook_id=%s, steps=%s", playbook_id, len(steps))
 
         return {
             "playbook_id": playbook_id,
@@ -128,7 +128,7 @@ def get_playbook_steps_tool(db: Session, playbook_id: str) -> dict[str, Any]:
             "steps": steps
         }
     except Exception as e:  # noqa: BLE001 (blind exception)
-        logger.error("Error getting playbook steps: %s", e)
+        logger.error("[ERROR] Error getting playbook steps: %s", e)
         return {"playbook_id": playbook_id, "total_steps": 0, "steps": [], "error": str(e)}
 # ============================================================================
 # TOOL 3: Send Playbook Message
@@ -221,7 +221,7 @@ def send_playbook_message_tool(
         }
 
     except Exception as e:  # noqa: BLE001 (blind exception)
-        logger.error("Error sending playbook message: %s", e)
+        logger.error("[ERROR] Error sending playbook message: %s", e)
         return {"success": False, "error": str(e)}
 # ============================================================================
 # TOOL 4: Send Clinic Location
@@ -286,7 +286,7 @@ def send_clinic_location_tool(
             "result": result
         }
     except Exception as e:  # noqa: BLE001 (blind exception)
-        logger.error("[ERROR] Erro ao enviar localização: %s", e)
+        logger.error("[ERROR] Failed to send location: %s", e)
         return {
             "success": False,
             "error": str(e)
@@ -326,5 +326,5 @@ def execute_playbook_tool(
     elif tool_name == "send_clinic_location":
         return send_clinic_location_tool(db, **tool_args)
     else:
-        logger.error("Unknown tool: %s", tool_name)
+        logger.error("[ERROR] Unknown tool: %s", tool_name)
         return {"error": f"Unknown tool: {tool_name}"}
