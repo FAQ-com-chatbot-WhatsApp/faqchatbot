@@ -1,6 +1,7 @@
 """Service for worker analytics and autoscaling."""
 
 import logging
+import os
 from datetime import datetime
 
 from redis import Redis
@@ -14,11 +15,19 @@ class WorkerAnalyticsService:
 
     def __init__(self, redis_client: Redis | None = None):
         self.redis = redis_client or get_redis_client()
-        self.min_workers = 2  # Minimum workers (always)
-        self.max_workers = 5  # Maximum workers
-        self.scale_up_threshold = 5  # Jobs per worker to scale up
-        self.scale_down_threshold = 0  # Jobs to scale down
-        self.idle_time_threshold = 300  # 5 minutes idle to scale down
+        # Defaults
+        default_min = 2
+        default_max = 5
+        default_up_threshold = 5
+        default_down_threshold = 0
+        default_idle_seconds = 300
+
+        # Allow configuration via environment variables
+        self.min_workers = int(os.getenv("AUTOSCALER_MIN_WORKERS", str(default_min)))
+        self.max_workers = int(os.getenv("AUTOSCALER_MAX_WORKERS", str(default_max)))
+        self.scale_up_threshold = int(os.getenv("AUTOSCALER_SCALE_UP_THRESHOLD", str(default_up_threshold)))
+        self.scale_down_threshold = int(os.getenv("AUTOSCALER_SCALE_DOWN_THRESHOLD", str(default_down_threshold)))
+        self.idle_time_threshold = int(os.getenv("AUTOSCALER_IDLE_TIME_THRESHOLD", str(default_idle_seconds)))
 
     def get_queue_stats(self) -> dict[str, dict]:
         """Get statistics for all queues."""
@@ -99,11 +108,12 @@ class WorkerAnalyticsService:
 
     def _calculate_autoscaling_recommendation(self, pending: int, workers: int, idle: int) -> dict:
         """Calculate autoscaling recommendation."""
-        if workers == 0:
+        # Always enforce minimum number of workers
+        if workers < self.min_workers:
             return {
                 "action": "scale_up",
                 "target_workers": self.min_workers,
-                "reason": "No workers available",
+                "reason": "Below minimum workers",
             }
 
         jobs_per_worker = pending / workers if workers > 0 else 0
