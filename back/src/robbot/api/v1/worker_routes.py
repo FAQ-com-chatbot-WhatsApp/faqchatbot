@@ -131,7 +131,7 @@ def trigger_autoscale(
             detail="Autoscaling operation timed out",
         )
     except Exception as e:  # noqa: BLE001 (blind exception)
-        logger.error("Autoscale trigger failed: %s", e)
+        logger.error("[ERROR] Autoscale trigger failed: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Autoscaling failed: {str(e)}",
