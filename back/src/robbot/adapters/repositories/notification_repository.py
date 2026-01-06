@@ -27,6 +27,40 @@ class NotificationRepository(BaseRepository[NotificationModel]):
         """
         super().__init__(db, NotificationModel)
 
+    def create(
+        self,
+        user_id: int,
+        notification_type: str,
+        title: str,
+        message: str,
+        metadata: dict | None = None
+    ) -> NotificationModel:
+        """
+        Create a new notification.
+
+        Args:
+            user_id: ID of the user to notify
+            notification_type: Type of notification
+            title: Notification title
+            message: Notification message
+            metadata: Optional metadata dictionary
+
+        Returns:
+            Created notification model
+        """
+        notification = NotificationModel(
+            user_id=user_id,
+            notification_type=notification_type,
+            title=title,
+            message=message,
+            metadata=metadata or {},
+            read=False
+        )
+        self.db.add(notification)
+        self.db.flush()
+        self.db.refresh(notification)
+        return notification
+
     def get_by_user(
         self,
         user_id: int,
