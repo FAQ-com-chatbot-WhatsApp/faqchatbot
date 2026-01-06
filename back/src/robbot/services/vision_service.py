@@ -40,7 +40,7 @@ class VisionService:
     def _load_model(self):
         """Carregar modelo BLIP-2 sob demanda."""
         if self.model is None:
-            logger.info("🔄 Carregando modelo BLIP-2: %s (~990MB)...", self.model_name)
+            logger.info("Loading BLIP-2 model: %s (~990MB)...", self.model_name)
             try:
                 self.processor = BlipProcessor.from_pretrained(self.model_name)
                 self.model = BlipForConditionalGeneration.from_pretrained(self.model_name)
