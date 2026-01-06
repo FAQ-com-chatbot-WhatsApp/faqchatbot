@@ -207,12 +207,12 @@ class MessageService:
             if transcription:
                 import logging
                 logger = logging.getLogger(__name__)
-                logger.info("[SUCCESS] Áudio transcrito: %s...", transcription[:100])
+                logger.info("[SUCCESS] Audio transcribed: %s...", transcription[:100])
             return transcription
         except Exception as e:  # noqa: BLE001 (blind exception)
             import logging
             logger = logging.getLogger(__name__)
-            logger.error("[ERROR] Erro ao transcrever áudio: %s", e)
+            logger.error("[ERROR] Failed to transcribe audio: %s", e)
             return None
 
     def _generate_description(self, media_url: str, filename: str, caption: str, media_type: str) -> dict:
@@ -239,7 +239,7 @@ class MessageService:
         except Exception as e:  # noqa: BLE001 (blind exception)
             import logging
             logger = logging.getLogger(__name__)
-            logger.error("[ERROR] Erro ao gerar descrição de %s: %s", media_type, e)
+            logger.error("[ERROR] Failed to generate description for %s: %s", media_type, e)
             return {}
 
     def _generate_file_description(self, filename: str, caption: str, file_type: str) -> dict:
@@ -259,7 +259,7 @@ class MessageService:
         except Exception as e:  # noqa: BLE001 (blind exception)
             import logging
             logger = logging.getLogger(__name__)
-            logger.error("[ERROR] Erro ao gerar metadata de %s: %s", file_type, e)
+            logger.error("[ERROR] Failed to generate metadata for %s: %s", file_type, e)
             return {}
 
     def list_messages(
