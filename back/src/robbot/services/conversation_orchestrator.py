@@ -1,24 +1,27 @@
 """
 Conversation Orchestrator - orquestra fluxo completo de conversação.
 
-Este módulo é o componente central que coordena:
+REFATORADO (Sprint 9 - I2):
+Este módulo foi simplificado, delegando responsabilidades para:
+- MessageProcessor: processamento de áudio/vídeo/texto
+- ContextBuilder: gerenciamento de contexto via ChromaDB
+- IntentDetector: detecção de intenção, urgência e score
+- ConversationOrchestrator: apenas coordenação high-level
+
+O orchestrador agora coordena:
 1. Recebimento de mensagens
-2. Busca de contexto (ChromaDB)
-3. Geração de respostas (Gemini + LangChain)
-4. Detecção de intenção
-5. Atualização de score de maturidade
-6. Envio de respostas (WAHA)
-7. Persistência de dados
+2. Detecção de silenciamento (status da conversa)
+3. Coordenação dos processadores especializados
+4. Handoff para humanos
+5. Logging e persistência
 """
 
-import json
 import logging
 from datetime import UTC, datetime
 from typing import Any
 
 from robbot.adapters.external.gemini_client import get_gemini_client
 from robbot.adapters.external.waha_client import WAHAClient
-from robbot.adapters.repositories.conversation_message_repository import ConversationMessageRepository
 from robbot.adapters.repositories.conversation_repository import ConversationRepository
 from robbot.adapters.repositories.lead_interaction_repository import LeadInteractionRepository
 from robbot.adapters.repositories.lead_repository import LeadRepository
@@ -28,46 +31,48 @@ from robbot.core.custom_exceptions import (
     BusinessRuleError,
     DatabaseError,
     LLMError,
-    VectorDBError,
     WAHAError,
 )
 from robbot.domain.enums import (
     ConversationStatus,
     InteractionType,
-    MessageDirection,
 )
-from robbot.infra.db.models.conversation_message_model import ConversationMessageModel
 from robbot.infra.db.models.conversation_model import ConversationModel
 from robbot.infra.db.models.lead_interaction_model import LeadInteractionModel
 from robbot.infra.db.models.lead_model import LeadModel
 from robbot.infra.db.models.llm_interaction_model import LLMInteractionModel
 from robbot.infra.db.session import get_sync_session
-from robbot.infra.vectordb.chroma_client import get_chroma_client
+from robbot.services.context_builder import ContextBuilder
 from robbot.services.handoff_service import HandoffService
+from robbot.services.intent_detector import IntentDetector
+from robbot.services.message_processor import MessageProcessor
 from robbot.services.playbook_tools import PLAYBOOK_TOOLS_DECLARATIONS
-from robbot.services.transcription_service import TranscriptionService
 
 logger = logging.getLogger(__name__)
+
+
 class ConversationOrchestrator:
     """
-    Orquestrador central do fluxo de conversação.
+    Orquestrador central do fluxo de conversação (SIMPLIFICADO).
 
     Responsabilidades:
-    - Coordenar todos os componentes (Gemini, ChromaDB, WAHA, Repositórios)
-    - Implementar lógica de negócio do fluxo de conversação
-    - Gerenciar estado da conversa
-    - Detectar intenções
-    - Atualizar score de maturidade
+    - Coordenar componentes especializados (MessageProcessor, ContextBuilder, IntentDetector)
+    - Gerenciar estado da conversa e regras de negócio
+    - Orquestrar handoffs e escalações
+    - Logging e persistência de interações
     """
 
     def __init__(self):
         self.gemini_client = get_gemini_client(tools=PLAYBOOK_TOOLS_DECLARATIONS)
-        self.chroma_client = get_chroma_client()
         self.prompt_templates = get_prompt_templates()
         self.waha_client = WAHAClient()
-        self.transcription_service = TranscriptionService()
 
-        logger.info("[SUCCESS] ConversationOrchestrator initialized with playbook tools")
+        # Componentes especializados
+        self.message_processor = MessageProcessor()
+        self.context_builder = ContextBuilder()
+        self.intent_detector = IntentDetector(self.gemini_client, self.prompt_templates)
+
+        logger.info("[SUCCESS] ConversationOrchestrator initialized with specialized components")
 
     async def process_inbound_message(
         self,
@@ -83,48 +88,43 @@ class ConversationOrchestrator:
         """
         Processar mensagem inbound e gerar resposta.
 
-        FLUXO COMPLETO:
+        FLUXO SIMPLIFICADO:
         1. Buscar ou criar conversa
-        2. Transcrever áudio/vídeo e gerar descrição visual (se houver)
-        3. Salvar mensagem inbound
-        4. Buscar contexto do ChromaDB
-        5. Detectar intenção
+        2. Processar mídia (MessageProcessor)
+        3. Verificar se bot deve silenciar
+        4. Buscar contexto (ContextBuilder)
+        5. Detectar intenção e urgência (IntentDetector)
         6. Gerar resposta com Gemini
-        7. Atualizar score de maturidade
-        8. Salvar contexto no ChromaDB
-        9. Enviar resposta via WAHA
-        10. Salvar mensagem outbound
-        11. Registrar interação
+        7. Atualizar score (IntentDetector)
+        8. Verificar escalação (IntentDetector)
+        9. Salvar contexto (ContextBuilder)
+        10. Enviar resposta e persistir
 
         Args:
             chat_id: ID do chat
             phone_number: Número do telefone
             message_text: Texto da mensagem
             session_name: Nome da sessão WAHA
-            has_audio: Se mensagem tem áudio (voice)
+            has_audio: Se mensagem tem áudio
             audio_url: URL do arquivo de áudio
             has_video: Se mensagem tem vídeo
             video_url: URL do arquivo de vídeo
 
         Returns:
-            Dict com resultado:
-            {
-                "conversation_id": str,
-                "response_sent": bool,
-                "response_text": str,
-                "intent": str,
-                "maturity_score": int
-            }
+            Dict com resultado
 
         Raises:
             BusinessRuleError: Se falhar na lógica de negócio
-            ExternalServiceError: Se falhar em serviço externo
         """
         try:
             logger.info(
-                f"🔄 Processando mensagem inbound (chat_id={chat_id}, "
-                f"phone={phone_number}, length={len(message_text)}, "
-                f"has_audio={has_audio}, has_video={has_video})"
+                "Processing inbound message: chat_id=%s, phone=%s, length=%s, "
+                "has_audio=%s, has_video=%s",
+                chat_id,
+                phone_number,
+                len(message_text),
+                has_audio,
+                has_video
             )
 
             with get_sync_session() as session:
@@ -133,90 +133,41 @@ class ConversationOrchestrator:
                 )
 
                 # BOT SILENCIA se humano está conversando
-                if conversation.status in [
-                    ConversationStatus.ACTIVE_HUMAN,
-                    ConversationStatus.PENDING_HANDOFF,
-                    ConversationStatus.COMPLETED,
-                    ConversationStatus.CLOSED,
-                ]:
-                    # Apenas salva mensagem, não gera resposta automática
-                    await self._save_inbound_message(
-                        session, conversation.id, message_text
-                    )
-                    logger.info(
-                        f"🤐 Bot silenciado: conversa em status {conversation.status} "
-                        f"(conv_id={conversation.id})"
+                if self._should_bot_silence(conversation):
+                    return await self._handle_silenced_conversation(
+                        session, conversation, message_text
                     )
 
-                    # TODO: Notificar atendente via WebSocket
-                    # await self.notification_service.notify_user(
-                    #     conversation.assigned_to,
-                    #     f"Nova mensagem de {conversation.phone_number}"
-                    # )
+                # Processar mídia (áudio/vídeo)
+                message_text = await self.message_processor.process_media_message(
+                    message_text, has_audio, audio_url, has_video, video_url
+                )
 
-                    session.commit()
-                    return {
-                        "conversation_id": conversation.id,
-                        "response_sent": False,
-                        "bot_silenced": True,
-                        "status": conversation.status.value,
-                    }
-
-                # Process media based on type
-                transcription = None
-
-                # Se é vídeo: transcrever áudio + descrever visual
-                if has_video and video_url:
-                    try:
-                        # 1. Transcrever áudio do vídeo
-                        transcription = await self.transcription_service.transcribe_audio(video_url, language="pt")
-
-                        if transcription:
-                            logger.info("[SUCCESS] Video audio transcribed: %s...", transcription[:100])
-
-                        # 2. Gerar descrição visual com Gemini Vision
-                        # TODO: Implementar descrição assíncrona
-                        # Por ora, apenas marcamos que há vídeo
-                        message_text = f"[Vídeo recebido]\nÁudio: {transcription or 'não transcrito'}"
-
-                    except Exception as e:  # noqa: BLE001 (blind exception)
-                        logger.error("[ERROR] Error processing video: %s", e)
-                        message_text = "[Vídeo recebido - erro no processamento]"
-
-                # If it's only audio, transcribe
-                elif has_audio and audio_url:
-                    try:
-                        transcription = await self.transcription_service.transcribe_audio(audio_url, language="pt")
-
-                        if transcription:
-                            logger.info("[SUCCESS] Audio transcribed: %s...", transcription[:100])
-                            message_text = f"[Áudio transcrito]: {transcription}"
-                        else:
-                            logger.warning("[WARNING] Transcription returned empty")
-                            message_text = "[Áudio recebido - transcrição falhou]"
-                    except Exception as e:  # noqa: BLE001 (blind exception)
-                        logger.error("[ERROR] Error transcribing audio: %s", e)
-                        message_text = "[Áudio recebido - erro na transcrição]"
-
-                await self._save_inbound_message(
+                # Salvar mensagem inbound
+                await self.message_processor.save_inbound_message(
                     session, conversation.id, message_text
                 )
 
-                context_text = await self._get_conversation_context(conversation.id)
-                intent = await self._detect_intent(message_text, context_text)
+                # Buscar contexto conversacional
+                context_text = await self.context_builder.get_conversation_context(
+                    conversation.id
+                )
 
-                is_urgent = await self._detect_urgency(message_text, context_text)
+                # Detectar intenção e urgência
+                intent = await self.intent_detector.detect_intent(message_text, context_text)
+                is_urgent = await self.intent_detector.detect_urgency(message_text, context_text)
+
+                # Atualizar urgência se detectada
                 if is_urgent and not conversation.is_urgent:
-                    conversation.is_urgent = True
-                    conv_repo = ConversationRepository(session)
-                    conv_repo.update(conversation)
-                    session.flush()
-                    logger.info("🚨 Urgência detectada (conv_id=%s)", conversation.id)
+                    await self._mark_as_urgent(session, conversation)
 
-                # Extrair nome do paciente se ainda não temos
+                # Extrair nome se ainda não temos
                 if conversation.lead and conversation.lead.name == conversation.lead.phone_number:
-                    await self._try_extract_name(session, message_text, context_text, conversation)
+                    await self.intent_detector.try_extract_name(
+                        session, message_text, context_text, conversation
+                    )
 
+                # Gerar resposta
                 response_data = await self._generate_response(
                     message_text=message_text,
                     intent=intent,
@@ -226,68 +177,44 @@ class ConversationOrchestrator:
 
                 response_text = response_data["response"]
 
-                # Se ainda não temos nome E score >= 20, solicitar de forma natural
-                should_ask_name = (
-                    conversation.lead
-                    and conversation.lead.name == conversation.lead.phone_number
-                    and conversation.lead.maturity_score >= 20
-                    and conversation.lead.maturity_score < 50
+                # Solicitar nome se apropriado
+                response_text = await self._append_name_request_if_needed(
+                    conversation, context_text, response_text
                 )
 
-                if should_ask_name:
-                    name_request = await self._generate_name_request(
-                        context_text,
-                        conversation.lead.maturity_score
-                    )
-                    if name_request:
-                        response_text = f"{response_text}\n\n{name_request}"
-
-                new_score = await self._update_maturity_score(
+                # Atualizar score
+                new_score = await self.intent_detector.update_maturity_score(
                     session, conversation, message_text, intent
                 )
 
-                # Verificar se precisa escalar para humano
-                should_escalate = await self._check_escalation_needed(
+                # Verificar escalação
+                should_escalate = await self.intent_detector.check_escalation_needed(
                     conversation, intent, message_text, new_score
                 )
 
                 if should_escalate:
-                    # Trigger handoff antes de responder
-                    handoff_service = HandoffService(
-                        ConversationRepository(session),
-                        LeadRepository(session)
+                    response_text = await self._handle_handoff(
+                        session, conversation, new_score
                     )
 
-                    escalation_reason = "score_high" if new_score >= 85 else "bot_confused"
-                    handoff_result = await handoff_service.trigger_handoff(
-                        session=session,
-                        conversation_id=conversation.id,
-                        reason=escalation_reason,
-                        score=new_score,
-                    )
-
-                    # Sobrescrever resposta com mensagem de transição
-                    response_text = handoff_result["message"]
-
-                    logger.info(
-                        f"🚀 Handoff automático triggered: conv={conversation.id}, "
-                        f"reason={escalation_reason}, score={new_score}"
-                    )
-
-                await self._save_to_chroma(
+                # Salvar contexto no ChromaDB
+                await self.context_builder.save_to_chroma(
                     conversation.id,
                     f"User: {message_text}\nBot: {response_text}",
                     {"intent": intent, "score": new_score}
                 )
 
+                # Enviar resposta via WAHA
                 sent = await self._send_response_via_waha(
                     chat_id, response_text, session_name
                 )
 
-                await self._save_outbound_message(
+                # Salvar mensagem outbound
+                await self.message_processor.save_outbound_message(
                     session, conversation.id, response_text
                 )
 
+                # Registrar interação
                 await self._register_interaction(
                     session,
                     conversation.lead_id,
@@ -295,6 +222,7 @@ class ConversationOrchestrator:
                     f"Inbound: {message_text[:50]}... | Outbound: {response_text[:50]}..."
                 )
 
+                # Log LLM interaction
                 await self._log_llm_interaction(
                     session,
                     conversation.id,
@@ -307,8 +235,12 @@ class ConversationOrchestrator:
                 session.commit()
 
                 logger.info(
-                    f"[SUCCESS] Message processed successfully (conv_id={conversation.id}, "
-                    f"intent={intent}, score={new_score}, sent={sent})"
+                    "[SUCCESS] Message processed successfully (conv_id=%s, "
+                    "intent=%s, score=%s, sent=%s)",
+                    conversation.id,
+                    intent,
+                    new_score,
+                    sent
                 )
 
                 return {
@@ -319,13 +251,15 @@ class ConversationOrchestrator:
                     "maturity_score": new_score,
                 }
 
-        except Exception as e:  # noqa: BLE001 (blind exception)
+        except Exception as e:  # noqa: BLE001
             logger.error(
-                f"[ERROR] Failed to process message: {e}",
+                "[ERROR] Failed to process message: %s",
+                e,
                 exc_info=True,
                 extra={"chat_id": chat_id, "phone": phone_number}
             )
 
+            # Tentar fallback
             try:
                 fallback_response = await self._generate_fallback_response(str(e))
                 await self._send_response_via_waha(chat_id, fallback_response, session_name)
@@ -334,6 +268,118 @@ class ConversationOrchestrator:
 
             raise BusinessRuleError(f"Failed to process message: {e}") from e
 
+    # =========================================================================
+    # MÉTODOS PRIVADOS - Lógica de Coordenação
+    # =========================================================================
+
+    def _should_bot_silence(self, conversation: ConversationModel) -> bool:
+        """Verificar se bot deve silenciar (humano conversando)"""
+        return conversation.status in [
+            ConversationStatus.ACTIVE_HUMAN,
+            ConversationStatus.PENDING_HANDOFF,
+            ConversationStatus.COMPLETED,
+            ConversationStatus.CLOSED,
+        ]
+
+    async def _handle_silenced_conversation(
+        self,
+        session: Any,
+        conversation: ConversationModel,
+        message_text: str
+    ) -> dict[str, Any]:
+        """Processar mensagem quando bot está silenciado"""
+        await self.message_processor.save_inbound_message(
+            session, conversation.id, message_text
+        )
+
+        logger.info(
+            "🤐 Bot silenciado: conversa em status %s (conv_id=%s)",
+            conversation.status,
+            conversation.id
+        )
+
+        # TODO: Notificar atendente via WebSocket
+        # await self.notification_service.notify_user(
+        #     conversation.assigned_to,
+        #     f"Nova mensagem de {conversation.phone_number}"
+        # )
+
+        session.commit()
+
+        return {
+            "conversation_id": conversation.id,
+            "response_sent": False,
+            "bot_silenced": True,
+            "status": conversation.status.value,
+        }
+
+    async def _mark_as_urgent(
+        self,
+        session: Any,
+        conversation: ConversationModel
+    ) -> None:
+        """Marcar conversa como urgente"""
+        conversation.is_urgent = True
+        conv_repo = ConversationRepository(session)
+        conv_repo.update(conversation)
+        session.flush()
+
+        logger.info("🚨 Urgência detectada (conv_id=%s)", conversation.id)
+
+    async def _append_name_request_if_needed(
+        self,
+        conversation: ConversationModel,
+        context: str,
+        response_text: str
+    ) -> str:
+        """Adicionar solicitação de nome se apropriado"""
+        should_ask_name = (
+            conversation.lead
+            and conversation.lead.name == conversation.lead.phone_number
+            and 20 <= conversation.lead.maturity_score < 50
+        )
+
+        if should_ask_name:
+            name_request = await self.intent_detector.generate_name_request(
+                context,
+                conversation.lead.maturity_score
+            )
+
+            if name_request:
+                response_text = f"{response_text}\n\n{name_request}"
+
+        return response_text
+
+    async def _handle_handoff(
+        self,
+        session: Any,
+        conversation: ConversationModel,
+        score: int
+    ) -> str:
+        """Executar handoff para humano e retornar mensagem de transição"""
+        handoff_service = HandoffService(
+            ConversationRepository(session),
+            LeadRepository(session)
+        )
+
+        escalation_reason = "score_high" if score >= 85 else "bot_confused"
+
+        handoff_result = await handoff_service.trigger_handoff(
+            session=session,
+            conversation_id=conversation.id,
+            reason=escalation_reason,
+            score=score,
+        )
+
+        logger.info(
+            "Automatic handoff triggered: conv=%s, reason=%s, score=%s",
+            conversation.id,
+            escalation_reason,
+            score
+        )
+
+        return handoff_result["message"]
+
     async def _get_or_create_conversation(
         self,
         session: Any,
@@ -341,24 +387,23 @@ class ConversationOrchestrator:
         phone_number: str
     ) -> ConversationModel:
         """
-        Buscar conversa existente por chat_id ou criar nova com lead associado.
+        Buscar conversa existente ou criar nova com lead associado.
 
         Returns:
-            Conversation: Conversa existente ou recém-criada
+            ConversationModel: Conversa existente ou recém-criada
 
         Raises:
-            DatabaseError: Se falhar ao criar conversa ou lead
+            DatabaseError: Se falhar ao criar
         """
         repo = ConversationRepository(session)
-
         conversation = repo.get_by_chat_id(chat_id)
 
         if conversation:
             logger.info("[SUCCESS] Conversation found (id=%s)", conversation.id)
             return conversation
 
+        # Criar novo lead
         lead_repo = LeadRepository(session)
-
         lead = LeadModel(
             phone_number=phone_number,
             name=phone_number,
@@ -367,6 +412,7 @@ class ConversationOrchestrator:
         lead_repo.create(lead)
         session.flush()
 
+        # Criar nova conversa
         conversation = ConversationModel(  # type: ignore[call-arg]
             chat_id=chat_id,
             phone_number=phone_number,
@@ -377,264 +423,12 @@ class ConversationOrchestrator:
         session.flush()
 
         logger.info(
-            f"[SUCCESS] New conversation created (id={conversation.id}, lead_id={lead.id})"
+            "[SUCCESS] New conversation created (id=%s, lead_id=%s)",
+            conversation.id,
+            lead.id
         )
 
         return conversation
-
-    async def _save_inbound_message(
-        self,
-        session: Any,
-        conversation_id: str,
-        text: str
-    ) -> ConversationMessageModel:
-        """
-        Persistir mensagem recebida do lead no banco.
-
-        Returns:
-            ConversationMessage: Mensagem salva com timestamp UTC
-
-        Raises:
-            DatabaseError: Se falhar ao salvar mensagem
-        """
-        repo = ConversationMessageRepository(session)
-
-        message = ConversationMessageModel(
-            conversation_id=conversation_id,
-            direction=MessageDirection.INBOUND,
-            content=text,
-            timestamp=datetime.now(UTC),
-        )
-        repo.create(message)
-        session.flush()
-
-        logger.info("[SUCCESS] Inbound message saved (id=%s)", message.id)
-
-        return message
-
-    async def _save_outbound_message(
-        self,
-        session: Any,
-        conversation_id: str,
-        text: str
-    ) -> ConversationMessageModel:
-        """
-        Persistir mensagem enviada pelo bot no banco.
-
-        Returns:
-            ConversationMessage: Mensagem salva com timestamp UTC
-
-        Raises:
-            DatabaseError: Se falhar ao salvar mensagem
-        """
-        repo = ConversationMessageRepository(session)
-
-        message = ConversationMessageModel(
-            conversation_id=conversation_id,
-            direction=MessageDirection.OUTBOUND,
-            content=text,
-            timestamp=datetime.now(UTC),
-        )
-        repo.create(message)
-        session.flush()
-
-        logger.info("[SUCCESS] Outbound message saved (id=%s)", message.id)
-
-        return message
-
-    async def _get_conversation_context(self, conversation_id: str) -> str:
-        """
-        Recuperar contexto conversacional do ChromaDB (últimas 5 interações).
-
-        Returns:
-            str: Contexto formatado (vazio se sem histórico)
-
-        Raises:
-            VectorDBError: Se falhar ao acessar ChromaDB
-        """
-        try:
-            results = self.chroma_client.get_context(conversation_id, limit=5)
-
-            if not results:
-                return ""
-
-            context_parts = [r["text"] for r in results]
-            context_text = "\n---\n".join(context_parts)
-
-            logger.info("[SUCCESS] Context retrieved (%s documents)", len(results))
-
-            return context_text
-
-        except VectorDBError:
-            raise
-        except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.warning("[WARNING] Failed to fetch context: %s", e)
-            raise VectorDBError(f"Failed to get context: {e}")
-
-    async def _try_extract_name(
-        self,
-        session: Any,
-        message: str,
-        context: str,
-        conversation: ConversationModel
-    ) -> None:
-        """
-        Tentar extrair nome do paciente da mensagem de forma inteligente.
-        Atualiza o lead se encontrar nome com confiança >= 70%.
-        """
-        try:
-            prompt = self.prompt_templates.format_name_extraction_prompt(message, context)
-            response = self.gemini_client.generate_response(prompt)
-
-            # Parse JSON response
-            result = json.loads(response["response"].strip())
-
-            name = result.get("name")
-            confidence = result.get("confidence", 0)
-
-            if name and name != "null" and confidence >= 70:
-                # Update lead name
-                lead_repo = LeadRepository(session)
-                conversation.lead.name = name
-                lead_repo.update(conversation.lead)
-                session.flush()
-
-                logger.info(
-                    f"[SUCCESS] Name extracted: '{name}' (confidence={confidence}%, "
-                    f"source={result.get('source')})"
-                )
-
-        except (json.JSONDecodeError, LLMError) as e:
-            logger.debug("Could not extract name: %s", e)
-        except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.warning("[WARNING] Error trying to extract name: %s", e)
-
-    async def _generate_name_request(
-        self,
-        context: str,
-        score: int
-    ) -> str | None:
-        """
-        Gerar pergunta natural para descobrir o nome do paciente.
-        Integra a pergunta de forma fluida no fluxo SPIN.
-
-        Returns:
-            str com a pergunta ou None se não for apropriado perguntar
-        """
-        try:
-            # Determinar fase SPIN baseada no score
-            if score < 30:
-                spin_phase = "SITUATION"
-            elif score < 50:
-                spin_phase = "PROBLEM"
-            elif score < 75:
-                spin_phase = "IMPLICATION"
-            elif score < 85:
-                spin_phase = "NEED_PAYOFF"
-            else:
-                spin_phase = "READY"
-
-            prompt = self.prompt_templates.format_name_request_prompt(
-                context, spin_phase, score
-            )
-
-            response = self.gemini_client.generate_response(prompt)
-            name_request = response["response"].strip()
-
-            logger.info("[SUCCESS] Name request generated (phase=%s, score=%s)", spin_phase, score)
-
-            return name_request
-
-        except LLMError as e:
-            logger.warning("[WARNING] Failed to generate name request: %s", e)
-            return None
-
-    async def _detect_urgency(self, message: str, context: str) -> bool:
-        """
-        Detectar se a mensagem é urgente usando LLM.
-
-        Palavras-chave de urgência:
-        - emergência, urgente, URGENTE, EMERGÊNCIA
-        - dor, problema sério, imediato
-        - não funciona, quebrado, parado
-        - preciso agora, hoje mesmo
-        """
-        try:
-            urgent_keywords = [
-                "urgente", "emergência", "emergencia", "imediato", "agora",
-                "hoje", "dor", "problema sério", "não funciona", "quebrado",
-                "parado", "crítico", "critico", "grave", "help", "socorro"
-            ]
-
-            message_lower = message.lower()
-            has_keyword = any(keyword in message_lower for keyword in urgent_keywords)
-
-            if not has_keyword:
-                return False
-
-            prompt = f"""Analise se esta mensagem indica uma situação URGENTE que requer atenção imediata:
-
-Mensagem: "{message}"
-Contexto: {context[:200]}
-
-Uma mensagem é URGENTE se:
-- Usa palavras como "urgente", "emergência", "imediato", "agora"
-- Relata problemas sérios/críticos que impedem trabalho
-- Expressa dor ou situação grave
-- Requer ação imediata
-
-Responda apenas: SIM ou NÃO"""
-
-            response = self.gemini_client.generate_response(prompt)
-            result = response["response"].strip().upper()
-
-            is_urgent = "SIM" in result
-
-            if is_urgent:
-                logger.warning("[WARNING] URGENCY detected: %s...", message[:50])
-
-            return is_urgent
-
-        except LLMError:
-            raise
-        except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.warning("[WARNING] Error detecting urgency: %s", e)
-            return has_keyword if 'has_keyword' in locals() else False
-
-    async def _detect_intent(self, message: str, context: str) -> str:
-        """
-        Classificar intenção da mensagem usando Gemini (10 categorias).
-
-        Returns:
-            str: Intent classificado (INTERESSE_PRODUTO, AGENDAMENTO, etc.) ou 'OUTRO'
-
-        Raises:
-            LLMError: Se Gemini falhar após retries
-        """
-        try:
-            prompt = self.prompt_templates.format_intent_prompt(message, context)
-
-            response = self.gemini_client.generate_response(prompt)
-            intent = response["response"].strip().upper()
-
-            valid_intents = [
-                "INTERESSE_PRODUTO", "DUVIDA_TECNICA", "ORCAMENTO",
-                "AGENDAMENTO", "RECLAMACAO", "INFORMACAO",
-                "SAUDACAO", "DESPEDIDA", "CONFIRMACAO", "OUTRO"
-            ]
-
-            if intent not in valid_intents:
-                intent = "OUTRO"
-
-            logger.info("[SUCCESS] Intent detected: %s", intent)
-
-            return intent
-
-        except LLMError:
-            raise
-        except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.warning("[WARNING] Failed to detect intent: %s", e)
-            return "OUTRO"
 
     async def _generate_response(
         self,
@@ -644,7 +438,7 @@ Responda apenas: SIM ou NÃO"""
         conversation: ConversationModel
     ) -> dict[str, Any]:
         """
-        Gerar resposta contextualizada usando Gemini com template específico por intenção.
+        Gerar resposta contextualizada usando Gemini.
 
         Returns:
             dict: {"response": str, "tokens_used": int, "latency_ms": int}
@@ -667,81 +461,6 @@ Responda apenas: SIM ou NÃO"""
 
         return response_data
 
-    async def _update_maturity_score(
-        self,
-        session: Any,
-        conversation: ConversationModel,
-        message: str,
-        intent: str
-    ) -> int:
-        """
-        Atualizar score de maturidade do lead baseado em engajamento e intenção.
-
-        Scoring inteligente implementado (Card 085):
-        - Considera engajamento do lead
-        - Pondera dados fornecidos
-        - Analisa intenção detectada
-
-        Returns:
-            int: Novo score de maturidade (0-100)
-        """
-        try:
-            current_score = conversation.lead.maturity_score if conversation.lead else 0
-
-            score_delta = {
-                "INTERESSE_PRODUTO": 10,
-                "ORCAMENTO": 15,
-                "AGENDAMENTO": 20,
-                "CONFIRMACAO": 25,
-                "DUVIDA_TECNICA": 5,
-                "INFORMACAO": 3,
-                "SAUDACAO": 1,
-                "OUTRO": 0,
-            }.get(intent, 0)
-
-            new_score = min(100, current_score + score_delta)
-
-            if conversation.lead:
-                lead_repo = LeadRepository(session)
-                conversation.lead.maturity_score = new_score
-                lead_repo.update(conversation.lead)
-                session.flush()
-
-            logger.info(
-                f"[SUCCESS] Score updated (lead_id={conversation.lead_id}, "
-                f"{current_score} → {new_score}, delta={score_delta})"
-            )
-
-            return new_score
-
-        except DatabaseError:
-            raise
-        except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.warning("[WARNING] Failed to update score: %s", e)
-            raise DatabaseError(f"Failed to update maturity score: {e}")
-
-    async def _save_to_chroma(
-        self,
-        conversation_id: str,
-        text: str,
-        metadata: dict[str, Any]
-    ) -> None:
-        """
-        Persistir par de mensagens (User/Bot) no ChromaDB para contexto futuro.
-        """
-        try:
-            self.chroma_client.add_conversation(
-                conversation_id=conversation_id,
-                text=text,
-                metadata=metadata
-            )
-            logger.info("[SUCCESS] Context saved to ChromaDB (conv_id=%s)", conversation_id)
-        except VectorDBError:
-            raise
-        except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.warning("[WARNING] Failed to save to ChromaDB: %s", e)
-            raise VectorDBError(f"Failed to save to ChromaDB: {e}")
-
     async def _send_response_via_waha(
         self,
         chat_id: str,
@@ -749,21 +468,27 @@ Responda apenas: SIM ou NÃO"""
         session: str
     ) -> bool:
         """
-        Enviar mensagem de texto via WAHA WhatsApp API.
+        Enviar mensagem via WAHA.
 
         Returns:
             bool: True se enviado com sucesso
+
+        Raises:
+            WAHAError: Se falhar ao enviar
         """
         try:
             await self.waha_client.send_text(
                 chatId=chat_id,
                 text=text
             )
+
             logger.info("[SUCCESS] Response sent via WAHA (chat_id=%s)", chat_id)
+
             return True
+
         except WAHAError:
             raise
-        except Exception as e:  # noqa: BLE001 (blind exception)
+        except Exception as e:  # noqa: BLE001
             logger.error("[ERROR] Failed to send via WAHA: %s", e)
             raise WAHAError(f"Failed to send message: {e}", original_error=e)
 
@@ -775,7 +500,10 @@ Responda apenas: SIM ou NÃO"""
         notes: str
     ) -> None:
         """
-        Registrar interação no histórico do lead para análise de engajamento.
+        Registrar interação no histórico do lead.
+
+        Raises:
+            DatabaseError: Se falhar ao registrar
         """
         if not lead_id:
             return
@@ -796,6 +524,7 @@ Responda apenas: SIM ou NÃO"""
                 notes=notes,
                 timestamp=datetime.now(UTC),
             )
+
             repo.create(interaction)
             session.flush()
 
@@ -803,70 +532,9 @@ Responda apenas: SIM ou NÃO"""
 
         except DatabaseError:
             raise
-        except Exception as e:  # noqa: BLE001 (blind exception)
+        except Exception as e:  # noqa: BLE001
             logger.warning("[WARNING] Failed to register interaction: %s", e)
             raise DatabaseError(f"Failed to register interaction: {e}")
-
-    async def _check_escalation_needed(
-        self,
-        conversation: ConversationModel,
-        intent: str,
-        message: str,
-        score: int,
-    ) -> bool:
-        """
-        Verifica se precisa escalar para humano.
-
-        Critérios de escalação:
-        1. Score >= 85 (lead muito maduro)
-        2. 3 ou mais intents OUTRO consecutivos (bot confuso)
-        3. Cliente pede explicitamente falar com humano
-        4. Múltiplas detecções de baixa confiança
-
-        Args:
-            conversation: Conversa atual
-            intent: Intenção detectada
-            message: Mensagem do cliente
-            score: Score de maturidade atual
-
-        Returns:
-            bool: True se deve escalar
-        """
-        # Criterion 1: High score (lead ready)
-        if score >= 85:
-            logger.info(
-                f"[INFO] Escalation needed: high score ({score}) - conv={conversation.id}"
-            )
-            return True
-
-        # Criterion 2: Client explicitly asks for human
-        human_keywords = [
-            "falar com alguém",
-            "atendente",
-            "pessoa de verdade",
-            "humano",
-            "gerente",
-            "supervisor",
-        ]
-
-        message_lower = message.lower()
-        if any(keyword in message_lower for keyword in human_keywords):
-            logger.info(
-                f"[INFO] Escalation needed: client requested human - conv={conversation.id}"
-            )
-            return True
-
-        # Criterion 3: Bot confused (intent OUTRO multiple times)
-        # TODO: Implement consecutive OUTRO counter
-        # For now, only log if intent is OUTRO with frequency
-        if intent == "OUTRO":
-            # In production, we would check history in ChromaDB
-            # For v1, just log
-            logger.info(
-                f"[WARNING] Intent OUTRO detected - may need escalation - conv={conversation.id}"
-            )
-
-        return False
 
     async def _log_llm_interaction(
         self,
@@ -878,7 +546,10 @@ Responda apenas: SIM ou NÃO"""
         latency_ms: int
     ) -> None:
         """
-        Registrar interação com LLM para auditoria e análise de custos.
+        Registrar interação com LLM para auditoria.
+
+        Raises:
+            DatabaseError: Se falhar ao registrar
         """
         try:
             repo = LLMInteractionRepository(session)
@@ -891,6 +562,7 @@ Responda apenas: SIM ou NÃO"""
                 latency_ms=latency_ms,
                 timestamp=datetime.now(UTC),
             )
+
             repo.create(interaction)
             session.flush()
 
@@ -898,16 +570,16 @@ Responda apenas: SIM ou NÃO"""
 
         except DatabaseError:
             raise
-        except Exception as e:  # noqa: BLE001 (blind exception)
+        except Exception as e:  # noqa: BLE001
             logger.warning("[WARNING] Failed to log LLM interaction: %s", e)
             raise DatabaseError(f"Failed to log LLM interaction: {e}")
 
     async def _generate_fallback_response(self, error: str) -> str:
         """
-        Gerar resposta de fallback amigável quando ocorre erro no processamento.
+        Gerar resposta de fallback quando ocorre erro.
 
         Returns:
-            str: Mensagem de fallback (template ou do Gemini)
+            str: Mensagem de fallback amigável
         """
         try:
             prompt = self.prompt_templates.format_fallback_prompt(
@@ -916,6 +588,7 @@ Responda apenas: SIM ou NÃO"""
             )
 
             response = self.gemini_client.generate_response(prompt, max_retries=1)
+
             return response["response"]
 
         except LLMError:
@@ -923,8 +596,12 @@ Responda apenas: SIM ou NÃO"""
                 "Desculpe, estou com dificuldades técnicas no momento. "
                 "Um atendente humano entrará em contato em breve."
             )
+
+
 # Singleton global
 _orchestrator: ConversationOrchestrator | None = None
+
+
 def get_conversation_orchestrator() -> ConversationOrchestrator:
     """
     Obter instância singleton do orchestrador.
