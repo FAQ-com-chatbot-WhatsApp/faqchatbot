@@ -196,7 +196,7 @@ class QueueService:
         )
 
         logger.info(
-            f"⏰ Job agendado -> {scheduled_job.job_id} "
+            f"Job scheduled: {scheduled_job.job_id} "
             f"(executa em {scheduled_job.scheduled_for})",
             extra={
                 "job_id": scheduled_job.job_id,
