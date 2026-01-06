@@ -13,18 +13,7 @@ from uuid import UUID
 
 from redis import Redis
 
-from robbot.adapters.repositories.analytics.bot_performance_analytics_repository import (
-    BotPerformanceAnalyticsRepository,
-)
-from robbot.adapters.repositories.analytics.conversion_analytics_repository import (
-    ConversionAnalyticsRepository,
-)
-from robbot.adapters.repositories.analytics.dashboard_analytics_repository import (
-    DashboardAnalyticsRepository,
-)
-from robbot.adapters.repositories.analytics.performance_analytics_repository import (
-    PerformanceAnalyticsRepository,
-)
+from robbot.adapters.repositories.analytics_repository import AnalyticsRepository
 
 logger = logging.getLogger(__name__)
 
@@ -47,16 +36,10 @@ class MetricsService:
 
     def __init__(
         self,
-        conversion_repo: ConversionAnalyticsRepository,
-        performance_repo: PerformanceAnalyticsRepository,
-        bot_performance_repo: BotPerformanceAnalyticsRepository,
-        dashboard_repo: DashboardAnalyticsRepository,
+        analytics_repo: AnalyticsRepository,
         redis_client: Redis,
     ):
-        self.conversion = conversion_repo
-        self.performance = performance_repo
-        self.bot_performance = bot_performance_repo
-        self.dashboard = dashboard_repo
+        self.analytics = analytics_repo
         self.redis = redis_client
 
     # =============================================================================
@@ -177,7 +160,7 @@ class MetricsService:
         result = self._get_cached_or_compute(
             cache_key,
             self.CACHE_TTL_REALTIME,
-            self.dashboard.get_dashboard_summary,
+            self.analytics.get_dashboard_summary,
             start_date,
             end_date,
         )
@@ -226,7 +209,7 @@ class MetricsService:
         result = self._get_cached_or_compute(
             cache_key,
             self.CACHE_TTL_METRICS,
-            self.conversion.get_conversion_rate,
+            self.analytics.get_conversion_rate,
             start_date,
             end_date,
             segment_by,
@@ -277,7 +260,7 @@ class MetricsService:
         result = self._get_cached_or_compute(
             cache_key,
             self.CACHE_TTL_METRICS,
-            self.conversion.get_conversion_funnel,
+            self.analytics.get_conversion_funnel,
             start_date,
             end_date,
         )
@@ -321,7 +304,7 @@ class MetricsService:
         result = self._get_cached_or_compute(
             cache_key,
             self.CACHE_TTL_METRICS,
-            self.conversion.get_time_to_conversion,
+            self.analytics.get_time_to_conversion,
             start_date,
             end_date,
         )
@@ -372,7 +355,7 @@ class MetricsService:
         result = self._get_cached_or_compute(
             cache_key,
             self.CACHE_TTL_REALTIME,
-            self.performance.get_response_time_stats,
+            self.analytics.get_response_time_stats,
             start_date,
             end_date,
             user_id,
@@ -423,7 +406,7 @@ class MetricsService:
         result = self._get_cached_or_compute(
             cache_key,
             self.CACHE_TTL_METRICS,
-            self.performance.get_message_volume,
+            self.analytics.get_message_volume,
             start_date,
             end_date,
             granularity,
@@ -472,7 +455,7 @@ class MetricsService:
         result = self._get_cached_or_compute(
             cache_key,
             self.CACHE_TTL_METRICS,
-            self.bot_performance.get_bot_autonomy_rate,
+            self.analytics.get_bot_autonomy_rate,
             start_date,
             end_date,
         )
