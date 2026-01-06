@@ -158,7 +158,7 @@ class WAHAClient:
             payload["config"]["webhooks"] = [
                 {"url": webhook_url, "events": ["message"]}]
 
-        logger.info("Creating WAHA session: %s", name)
+        logger.info("[INFO] Creating WAHA session: %s", name)
         return await self._request("POST", "/api/sessions", json=payload)
 
     async def start_session(self, name: str) -> dict[str, Any]:
@@ -172,7 +172,7 @@ class WAHAClient:
 
         Docs: POST /api/sessions/{name}/start
         """
-        logger.info("Starting WAHA session: %s", name)
+        logger.info("[INFO] Starting WAHA session: %s", name)
         return await self._request("POST", f"/api/sessions/{name}/start")
 
     async def stop_session(self, name: str) -> dict[str, Any]:
@@ -186,7 +186,7 @@ class WAHAClient:
 
         Docs: POST /api/sessions/{name}/stop
         """
-        logger.info("Stopping WAHA session: %s", name)
+        logger.info("[INFO] Stopping WAHA session: %s", name)
         return await self._request("POST", f"/api/sessions/{name}/stop")
 
     async def restart_session(self, name: str) -> dict[str, Any]:
@@ -200,7 +200,7 @@ class WAHAClient:
 
         Docs: POST /api/sessions/{name}/restart
         """
-        logger.info("Restarting WAHA session: %s", name)
+        logger.info("[INFO] Restarting WAHA session: %s", name)
         return await self._request("POST", f"/api/sessions/{name}/restart")
 
     async def get_session_status(self, name: str) -> dict[str, Any]:
@@ -240,7 +240,7 @@ class WAHAClient:
 
         Docs: POST /api/sessions/{name}/logout
         """
-        logger.info("Logging out WAHA session: %s", name)
+        logger.info("[INFO] Logging out WAHA session: %s", name)
         return await self._request("POST", f"/api/sessions/{name}/logout")
 
     # ========================================================================
@@ -346,7 +346,7 @@ class WAHAClient:
         if mentions:
             payload["mentions"] = mentions
 
-        logger.info("Sending text to %s: %s...", chat_id, text[:50])
+        logger.info("[INFO] Sending text to %s: %s...", chat_id, text[:50])
         return await self._request("POST", "/api/sendText", json=payload)
 
     async def send_image(
@@ -385,7 +385,7 @@ class WAHAClient:
         if caption:
             payload["caption"] = caption
 
-        logger.info("Sending image to %s", chat_id)
+        logger.info("[INFO] Sending image to %s", chat_id)
         return await self._request("POST", "/api/sendImage", json=payload)
 
     async def send_file(
@@ -421,7 +421,7 @@ class WAHAClient:
         if caption:
             payload["caption"] = caption
 
-        logger.info("Sending file to %s: %s", chat_id, filename)
+        logger.info("[INFO] Sending file to %s: %s", chat_id, filename)
         return await self._request("POST", "/api/sendFile", json=payload)
 
     async def send_location(
@@ -455,7 +455,7 @@ class WAHAClient:
         if title:
             payload["title"] = title
 
-        logger.info("Sending location to %s", chat_id)
+        logger.info("[INFO] Sending location to %s", chat_id)
         return await self._request("POST", "/api/sendLocation", json=payload)
 
     # ========================================================================
@@ -498,7 +498,7 @@ class WAHAClient:
 
         except Exception as e:  # noqa: BLE001 (blind exception)
             # Don't fail message sending if anti-ban flow fails
-            logger.warning("Anti-ban flow error (non-critical): %s", e)
+            logger.warning("[WARNING] Anti-ban flow error (non-critical): %s", e)
 
     # ========================================================================
     # MESSAGE MANAGEMENT
@@ -527,7 +527,7 @@ class WAHAClient:
         endpoint = f"/api/{session}/chats/{chat_id}/messages/{message_id}"
         payload = {"text": text}
 
-        logger.info("Editing message %s in %s", message_id, chat_id)
+        logger.info("[INFO] Editing message %s in %s", message_id, chat_id)
         return await self._request("PUT", endpoint, json=payload)
 
     async def delete_message(
@@ -550,7 +550,7 @@ class WAHAClient:
         """
         endpoint = f"/api/{session}/chats/{chat_id}/messages/{message_id}"
 
-        logger.info("Deleting message %s from %s", message_id, chat_id)
+        logger.info("[INFO] Deleting message %s from %s", message_id, chat_id)
         return await self._request("DELETE", endpoint)
 
     async def get_messages(
@@ -621,7 +621,7 @@ class WAHAClient:
         if image_url:
             payload["image"] = {"url": image_url}
 
-        logger.info("Sending link with custom preview to %s: %s", chat_id, title)
+        logger.info("[INFO] Sending link with custom preview to %s: %s", chat_id, title)
         return await self._request("POST", "/api/send/link-custom-preview", json=payload)
 
     async def send_event(
@@ -675,7 +675,7 @@ class WAHAClient:
         if reply_to:
             payload["reply_to"] = reply_to
 
-        logger.info("Sending event '%s' to %s", name, chat_id)
+        logger.info("[INFO] Sending event '%s' to %s", name, chat_id)
         return await self._request("POST", f"/api/{session}/events", json=payload)
 
     # ========================================================================
@@ -745,7 +745,7 @@ class WAHAClient:
         if convert:
             payload["convert"] = convert
 
-        logger.info("Sending voice to %s", chat_id)
+        logger.info("[INFO] Sending voice to %s", chat_id)
         return await self._request("POST", "/api/sendVoice", json=payload)
 
     async def send_video(
@@ -793,7 +793,7 @@ class WAHAClient:
         if convert:
             payload["convert"] = convert
 
-        logger.info("Sending video to %s", chat_id)
+        logger.info("[INFO] Sending video to %s", chat_id)
         return await self._request("POST", "/api/sendVideo", json=payload)
 
     # ========================================================================
@@ -839,7 +839,7 @@ class WAHAClient:
         if footer:
             payload["footer"] = footer
 
-        logger.info("Sending buttons to %s", chat_id)
+        logger.info("[INFO] Sending buttons to %s", chat_id)
         return await self._request("POST", "/api/sendButtons", json=payload)
 
     async def send_list(
@@ -888,7 +888,7 @@ class WAHAClient:
         if reply_to:
             payload["reply_to"] = reply_to
 
-        logger.info("Sending list to %s", chat_id)
+        logger.info("[INFO] Sending list to %s", chat_id)
         return await self._request("POST", "/api/sendList", json=payload)
 
     async def send_poll(
@@ -925,7 +925,7 @@ class WAHAClient:
             "poll": poll_obj,
         }
 
-        logger.info("Sending poll to %s", chat_id)
+        logger.info("[INFO] Sending poll to %s", chat_id)
         return await self._request("POST", "/api/sendPoll", json=payload)
 
     async def send_poll_vote(
@@ -955,7 +955,7 @@ class WAHAClient:
             "optionIndex": option_index,
         }
 
-        logger.info("Voting on poll in %s", chat_id)
+        logger.info("[INFO] Voting on poll in %s", chat_id)
         return await self._request("POST", "/api/sendPollVote", json=payload)
 
     async def send_contact_vcard(
