@@ -30,6 +30,53 @@ if [ -z "${DATABASE_URL}" ]; then
 fi
 export DATABASE_URL
 
+ts() { date +"%H:%M:%S.%3N"; }
+LOG_TAG="Entrypoint"
+SERVICE_NAME="${SERVICE_NAME:-app}"
+LOG_COLOR="${LOG_COLOR:-false}"
+
+# ANSI cores
+RESET="\033[0m"
+BLUE="\033[34m"; GREEN="\033[32m"; YELLOW="\033[33m"; RED="\033[31m"; BRIGHT_RED="\033[91m"
+CYAN="\033[36m"; MAGENTA="\033[35m"; WHITE="\033[37m"
+
+service_color() {
+  case "$SERVICE_NAME" in
+    api) echo "$CYAN" ;;
+    worker) echo "$MAGENTA" ;;
+    autoscaler) echo "$YELLOW" ;;
+    *) echo "$WHITE" ;;
+  esac
+}
+
+level_color() {
+  case "$1" in
+    DEBUG) echo "$BLUE" ;;
+    INFO) echo "$GREEN" ;;
+    WARNING) echo "$YELLOW" ;;
+    ERROR) echo "$RED" ;;
+    CRITICAL) echo "$BRIGHT_RED" ;;
+    *) echo "$WHITE" ;;
+  esac
+}
+
+log() { # $1=LEVEL $2=message
+  local level="$1"; shift
+  local msg="$*"
+  if [ "${LOG_COLOR,,}" = "true" ]; then
+    printf "%b%s%b | [%s] %b%s%b (%s/%d): %s\n" \
+      "$(service_color)" "$SERVICE_NAME" "$RESET" \
+      "$(ts)" \
+      "$(level_color "$level")" "$level" "$RESET" \
+      "$LOG_TAG" "$$" "$msg"
+  else
+    echo "${SERVICE_NAME} | [$(ts)] ${level} (${LOG_TAG}/$$): ${msg}"
+  fi
+}
+log_info() { log "INFO" "$1"; }
+log_warn() { log "WARNING" "$1"; }
+log_error() { log "ERROR" "$1"; }
+
 # Exibe de forma segura (mas sem expor senha)
 display_db_url() {
   local url="${DATABASE_URL}"
@@ -37,16 +84,16 @@ display_db_url() {
   echo "${url}" | sed -E 's#(://[^:]+):[^@]+@#\1:***@#'
 }
 
-echo "Entrypoint iniciado"
-echo "DATABASE_URL=$(display_db_url)"
-echo "AUTO_MIGRATE=${AUTO_MIGRATE}"
-echo "WAIT_FOR_DB=${WAIT_FOR_DB}"
-echo "DB host=${POSTGRES_HOST} port=${POSTGRES_PORT} user=${POSTGRES_USER} db=${POSTGRES_DB}"
-echo "DB wait retries=${DB_WAIT_RETRIES} sleep=${DB_WAIT_SLEEP}s"
+log_info "Entrypoint iniciado"
+log_info "DATABASE_URL=$(display_db_url)"
+log_info "AUTO_MIGRATE=${AUTO_MIGRATE}"
+log_info "WAIT_FOR_DB=${WAIT_FOR_DB}"
+log_info "DB host=${POSTGRES_HOST} port=${POSTGRES_PORT} user=${POSTGRES_USER} db=${POSTGRES_DB}"
+log_info "DB wait retries=${DB_WAIT_RETRIES} sleep=${DB_WAIT_SLEEP}s"
 
 # Função para lidar com sinais e terminar imediatamente
 _on_exit() {
-  echo "Entrypoint recebendo sinal, encerrando..."
+  log_warn "Sinal recebido, encerrando..."
   exit 0
 }
 trap _on_exit INT TERM
@@ -54,39 +101,36 @@ trap _on_exit INT TERM
 # Função que aguarda o banco de dados ficar pronto
 wait_for_db() {
   if [ "${WAIT_FOR_DB}" = "false" ]; then
-    echo "WAIT_FOR_DB=false — pulando espera pelo banco"
+    log_info "WAIT_FOR_DB=false — pulando espera pelo banco"
     return 0
   fi
 
-  echo "Aguardando disponibilidade do banco de dados..."
+  log_info "Aguardando disponibilidade do banco de dados..."
 
   # Se pg_isready estiver disponível (postgres client instalado), usa-o (mais simples e rápido)
   if command -v pg_isready >/dev/null 2>&1; then
-    echo "Usando pg_isready para checar o DB"
+    log_info "Usando pg_isready para checar o DB"
     export PGPASSWORD="${POSTGRES_PASSWORD:-}"
     local tries=0
     while [ "${tries}" -lt "${DB_WAIT_RETRIES}" ]; do
       if pg_isready -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT}" -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" >/dev/null 2>&1; then
-        echo "Banco de dados está disponível (pg_isready)"
+        log_info "Banco de dados está disponível (pg_isready)"
         return 0
       fi
       tries=$((tries + 1))
-      printf '.'
       sleep "${DB_WAIT_SLEEP}"
     done
-    echo
-    echo "Timeout aguardando pg_isready. Saindo com erro." >&2
+    log_error "Timeout aguardando pg_isready. Saindo com erro."
     return 1
   fi
 
   # Fallback para python + psycopg2 se pg_isready não estiver presente
   if command -v python >/dev/null 2>&1 || command -v python3 >/dev/null 2>&1; then
-    echo "pg_isready não encontrado — tentando conexão via psycopg2 (python)"
+    log_info "pg_isready não encontrado — tentando conexão via psycopg2 (python)"
     python - <<'PY'
 import os, sys, time
 dsn = os.environ.get("DATABASE_URL")
 if not dsn:
-    print("DATABASE_URL não definido", file=sys.stderr)
     sys.exit(2)
 # psycopg2 prefere esquema postgresql://
 dsn_conn = dsn.replace("postgresql+psycopg2://", "postgresql://")
@@ -97,51 +141,54 @@ for attempt in range(max_tries):
         import psycopg2
         conn = psycopg2.connect(dsn_conn, connect_timeout=3)
         conn.close()
-        print("Database is available (psycopg2)")
         sys.exit(0)
     except Exception as exc:
-        print(f"Waiting for database... ({attempt+1}/{max_tries}) - {exc}", file=sys.stderr)
         time.sleep(sleep_seconds)
-print("Timed out waiting for database", file=sys.stderr)
 sys.exit(1)
 PY
-    return $?
+    rc=$?
+    if [ "$rc" -eq 0 ]; then
+      log_info "Banco de dados está disponível (psycopg2)"
+    else
+      log_error "Timeout aguardando conexão via psycopg2"
+    fi
+    return "$rc"
   fi
 
-  echo "Nenhuma ferramenta disponível para checar o DB (pg_isready ou python). Configure WAIT_FOR_DB=false se deseja pular." >&2
+  log_error "Nenhuma ferramenta disponível para checar o DB (pg_isready ou python). Configure WAIT_FOR_DB=false para pular."
   return 2
 }
 
 # Executa a espera pelo banco (se configurado)
 if ! wait_for_db; then
-  echo "Falha ao aguardar o banco de dados" >&2
+  log_error "Falha ao aguardar o banco de dados"
   exit 1
 fi
 
 # Executa migrações se necessário
 if [ -f "./alembic.ini" ] && [ "${AUTO_MIGRATE,,}" = "true" ]; then
   if command -v alembic >/dev/null 2>&1; then
-    echo "AUTO_MIGRATE=true e alembic.ini encontrado — executando alembic upgrade head"
+    log_info "AUTO_MIGRATE=true e alembic.ini encontrado — executando alembic upgrade head"
     if ! alembic upgrade head; then
-      echo "Alembic falhou" >&2
+      log_error "Alembic falhou"
       exit 1
     fi
   else
-    echo "alembic não está disponível no PATH — pulando migrações" >&2
+    log_warn "alembic não está disponível no PATH — pulando migrações"
   fi
 else
   if [ -f "./alembic.ini" ]; then
-    echo "alembic.ini encontrado, mas AUTO_MIGRATE != true (${AUTO_MIGRATE}) — pulando migrações"
+    log_info "alembic.ini encontrado, mas AUTO_MIGRATE != true (${AUTO_MIGRATE}) — pulando migrações"
   else
-    echo "Nenhum alembic.ini encontrado — pulando migrações"
+    log_info "Nenhum alembic.ini encontrado — pulando migrações"
   fi
 fi
 
 # Exec do comando final (CMD do Dockerfile ou command do compose)
 if [ "$#" -eq 0 ]; then
-  echo "Nenhum comando fornecido para executar. Saindo." >&2
+  log_error "Nenhum comando fornecido para executar. Saindo."
   exit 1
 fi
 
-echo "Iniciando aplicação: $*"
+log_info "Iniciando aplicação"
 exec "$@"
