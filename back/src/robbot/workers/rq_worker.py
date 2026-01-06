@@ -27,12 +27,10 @@ from robbot.config.settings import settings
 from robbot.infra.redis.client import get_redis_client
 from robbot.infra.redis.queue import get_queue_manager
 
-# Configurar logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)],
-)
+from robbot.core.logging_setup import configure_logging
+
+# Configurar logging estruturado
+configure_logging()
 
 logger = logging.getLogger(__name__)
 def exception_handler(job: Job, exc_type, exc_value, traceback):
@@ -60,9 +58,9 @@ def exception_handler(job: Job, exc_type, exc_value, traceback):
     #     send_alert_to_admin(job, exc_value)
 def main():
     """Inicializar e rodar worker RQ."""
-    logger.info("[INFO] Starting RQ Worker...")
-    logger.info("[INFO] Redis URL: %s", settings.REDIS_URL)
-    logger.info("[INFO] Max retries: %s", settings.RQ_MAX_RETRIES)
+    logger.info("Starting RQ Worker...")
+    logger.info("Redis URL: %s", settings.REDIS_URL)
+    logger.info("Max retries: %s", settings.RQ_MAX_RETRIES)
 
     # Obter conexão Redis
     redis_conn = get_redis_client()
@@ -70,9 +68,9 @@ def main():
     # Test connection
     try:
         redis_conn.ping()
-        logger.info("[SUCCESS] Connection to Redis established")
+        logger.info("Connection to Redis established")
     except (ConnectionError, TimeoutError) as e:
-        logger.error("[ERROR] Failed to connect to Redis: %s", e)
+        logger.error("Failed to connect to Redis: %s", e)
         sys.exit(1)
 
     # Get queues
@@ -83,7 +81,7 @@ def main():
         queue_manager.queue_escalation,  # Low priority
     ]
 
-    logger.info("[SUCCESS] Queues configured: %s", [q.name for q in queues])
+    logger.info("Queues configured: %s", [q.name for q in queues])
 
     # Criar worker com nome único baseado no hostname
     import socket
@@ -97,9 +95,9 @@ def main():
     )
 
     # Log de startup
-    logger.info("[INFO] Worker ID: %s", worker.name)
-    logger.info("[INFO] Waiting for jobs...")
-    logger.info("[INFO] Press Ctrl+C to stop")
+    logger.info("Worker ID: %s", worker.name)
+    logger.info("Waiting for jobs...")
+    logger.info("Press Ctrl+C to stop")
 
     # Iniciar processamento (blocking)
     try:
@@ -108,10 +106,10 @@ def main():
             logging_level="INFO",
         )
     except KeyboardInterrupt:
-        logger.info("[INFO] Worker interrupted by user")
+        logger.info("Worker interrupted by user")
         sys.exit(0)
     except (ValueError, RuntimeError, ConnectionError) as e:
-        logger.error("[ERROR] Worker crashed: %s", e, exc_info=True)
+        logger.error("Worker crashed: %s", e, exc_info=True)
         sys.exit(1)
 if __name__ == "__main__":
     main()
