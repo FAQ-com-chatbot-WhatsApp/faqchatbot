@@ -27,12 +27,15 @@ from robbot.services.worker_analytics_service import WorkerAnalyticsService
 def execute_scaling(target_workers: int) -> bool:
     """Execute docker compose scale command."""
     try:
+        cmd = ["docker", "compose", "up", "-d", "--scale", f"worker={target_workers}"]
+        cwd = "/app/back" if sys.platform.startswith("linux") else None
+
         result = subprocess.run(
-            ["docker", "compose", "up", "-d", "--scale", f"worker={target_workers}"],
+            cmd,
             capture_output=True,
             text=True,
             timeout=60,
-            cwd="/app" if sys.platform.startswith("linux") else ".",
+            cwd=cwd,
         )
 
         if result.returncode == 0:
