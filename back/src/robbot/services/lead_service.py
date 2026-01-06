@@ -49,7 +49,7 @@ class LeadService:
         """
         existing = self.repo.get_by_phone(phone_number)
         if existing:
-            logger.warning("Lead já existe (phone=%s)", phone_number)
+            logger.warning("[WARNING] Lead already exists (phone=%s)", phone_number)
             return existing
 
         lead = LeadModel(
@@ -61,7 +61,7 @@ class LeadService:
 
         created = self.repo.create(lead)
 
-        logger.info("[SUCCESS] Lead criado (id=%s, phone=%s)", created.id, phone_number)
+        logger.info("[SUCCESS] Lead created (id=%s, phone=%s)", created.id, phone_number)
 
         return created
 
@@ -97,7 +97,8 @@ class LeadService:
         updated = self.repo.update(lead)
 
         logger.info(
-            f"[SUCCESS] Score atualizado (lead_id={lead_id}, {old_score} → {new_score})"
+            "[SUCCESS] Score updated (lead_id=%s, %s -> %s)",
+            lead_id, old_score, new_score
         )
 
         return updated
@@ -127,7 +128,7 @@ class LeadService:
         lead.assigned_to_user_id = user_id
         updated = self.repo.update(lead)
 
-        logger.info("[SUCCESS] Lead atribuído (lead_id=%s, user_id=%s)", lead_id, user_id)
+        logger.info("[SUCCESS] Lead assigned (lead_id=%s, user_id=%s)", lead_id, user_id)
 
         return updated
 
@@ -151,7 +152,7 @@ class LeadService:
         lead.maturity_score = 100
         updated = self.repo.update(lead)
 
-        logger.info("[SUCCESS] Lead convertido (lead_id=%s)", lead_id)
+        logger.info("[SUCCESS] Lead converted (lead_id=%s)", lead_id)
 
         return updated
 
@@ -180,7 +181,7 @@ class LeadService:
         lead.maturity_score = 0
         updated = self.repo.update(lead)
 
-        logger.info("[SUCCESS] Lead marcado como perdido (lead_id=%s, reason=%s)", lead_id, reason)
+        logger.info("[SUCCESS] Lead marked as lost (lead_id=%s, reason=%s)", lead_id, reason)
 
         return updated
 
@@ -298,7 +299,7 @@ class LeadService:
         secretaries = [u for u in all_users if u.role == "user"]
 
         if not secretaries:
-            logger.warning("Nenhuma secretária disponível para atribuição")
+            logger.warning("[WARNING] No secretary available for assignment")
             return None
 
         # Balanceamento de carga: atribuir para secretária com menos leads ativos
@@ -311,8 +312,8 @@ class LeadService:
         updated = self.repo.update(lead)
 
         logger.info(
-            f"[SUCCESS] Lead auto-atribuído (lead_id={lead_id}, "
-            f"user_id={selected_secretary.id})"
+            "[SUCCESS] Lead auto-assigned (lead_id=%s, user_id=%s)",
+            lead_id, selected_secretary.id
         )
 
         return updated
@@ -335,7 +336,7 @@ class LeadService:
             raise NotFoundException(f"Lead {lead_id} not found")
 
         if lead.deleted_at:
-            logger.warning("Lead já estava deletado (lead_id=%s)", lead_id)
+            logger.warning("[WARNING] Lead was already deleted (lead_id=%s)", lead_id)
             return lead
 
         lead.deleted_at = datetime.now(UTC)
@@ -364,12 +365,12 @@ class LeadService:
             raise NotFoundException(f"Lead {lead_id} not found")
 
         if not lead.deleted_at:
-            logger.warning("Lead não estava deletado (lead_id=%s)", lead_id)
+            logger.warning("[WARNING] Lead was not deleted (lead_id=%s)", lead_id)
             return lead
 
         lead.deleted_at = None
         updated = self.repo.update(lead)
 
-        logger.info("[SUCCESS] Lead restaurado (lead_id=%s)", lead_id)
+        logger.info("[SUCCESS] Lead restored (lead_id=%s)", lead_id)
 
         return updated
