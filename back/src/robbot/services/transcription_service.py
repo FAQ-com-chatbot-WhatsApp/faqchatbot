@@ -66,7 +66,7 @@ class TranscriptionService:
         self._load_model()
 
         try:
-            logger.info("🎤 Starting audio transcription from: %s", audio_url)
+            logger.info("[INFO] Starting audio transcription from: %s", audio_url)
 
             # Download audio file
             audio_content = await self._download_audio(audio_url)
