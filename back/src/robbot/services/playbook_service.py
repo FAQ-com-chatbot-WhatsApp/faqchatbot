@@ -312,7 +312,7 @@ class PlaybookService:
             )
 
             if not results['ids'][0]:
-                logger.info("No playbooks found for query: %s", query)
+                logger.info("[INFO] No playbooks found for query: %s", query)
                 return []
 
             # Format results
