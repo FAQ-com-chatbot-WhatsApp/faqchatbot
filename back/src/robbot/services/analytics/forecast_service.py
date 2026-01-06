@@ -26,14 +26,14 @@ try:
     HAS_NUMPY = True
 except ImportError:
     HAS_NUMPY = False
-    logger.warning("NumPy não instalado - usando estatísticas básicas")
+    logger.warning("[WARNING] NumPy not installed - using basic statistics")
 
 try:
     from sklearn import ensemble  # noqa: F401 (imported but unused)
     HAS_SKLEARN = True
 except ImportError:
     HAS_SKLEARN = False
-    logger.warning("scikit-learn não instalado - ML features limitados")
+    logger.warning("[WARNING] scikit-learn not installed - ML features limited")
 class ForecastService:
     """
     Service para análise preditiva e forecasting.
@@ -45,9 +45,9 @@ class ForecastService:
     def __init__(self):
         self.has_ml = HAS_NUMPY and HAS_SKLEARN
         if self.has_ml:
-            logger.info("[SUCCESS] ForecastService inicializado com ML capabilities")
+            logger.info("[SUCCESS] ForecastService initialized with ML capabilities")
         else:
-            logger.warning("[WARNING] ForecastService inicializado em modo básico (sem ML libs)")
+            logger.warning("[WARNING] ForecastService initialized in basic mode (no ML libs)")
 
     async def forecast_demand(
         self,
@@ -119,7 +119,7 @@ class ForecastService:
                     "confidence": "medium" if self.has_ml else "low"
                 })
 
-            logger.info("[SUCCESS] Demand forecast gerado para %s dias", days_ahead)
+            logger.info("[SUCCESS] Demand forecast generated for %s days", days_ahead)
             return {
                 "status": "success",
                 "forecast": forecast,
@@ -128,7 +128,7 @@ class ForecastService:
             }
 
         except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.error(f"Erro ao gerar forecast: {e}", exc_info=True)
+            logger.error(f"[ERROR] Failed to generate forecast: {e}", exc_info=True)
             return {
                 "status": "error",
                 "message": str(e)
@@ -193,7 +193,7 @@ class ForecastService:
             factors.append({"factor": "data_completeness", "impact": round(completeness_contrib, 3), "value": f"{int(completeness * 100)}%"})
 
             confidence = "high" if total_score >= 0.75 else ("medium" if total_score >= 0.50 else "low")
-            logger.info("[SUCCESS] Conversion probability calculada para lead %s: %.2f", lead_id, total_score)
+            logger.info("[SUCCESS] Conversion probability calculated for lead %s: %.2f", lead_id, total_score)
 
             return {
                 "status": "success",
@@ -204,7 +204,7 @@ class ForecastService:
                 "model": "heuristic" if not HAS_SKLEARN else "hybrid"
             }
         except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.error(f"Erro ao calcular conversion probability: {e}", exc_info=True)
+            logger.error(f"[ERROR] Failed to calculate conversion probability: {e}", exc_info=True)
             return {"status": "error", "message": str(e)}
 
     async def detect_anomalies(
@@ -262,10 +262,10 @@ class ForecastService:
                     })
 
             if anomalies:
-                logger.warning("[WARNING] %s anomalias detectadas em %s", len(anomalies), metric_name)
+                logger.warning("[WARNING] %s anomalies detected in %s", len(anomalies), metric_name)
             return sorted(anomalies, key=lambda x: abs(x["z_score"]), reverse=True)
         except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.error(f"Erro ao detectar anomalias: {e}", exc_info=True)
+            logger.error(f"[ERROR] Failed to detect anomalies: {e}", exc_info=True)
             return []
 
     async def recommend_reengagement_time(
@@ -316,8 +316,8 @@ class ForecastService:
                 confidence = 0.85 if total_responses >= 10 else (0.65 if total_responses >= 5 else 0.45)
                 reason = f"Análise de {total_responses} interações históricas"
 
-            day_names = ["segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo"]
-            logger.info("[SUCCESS] Reengagement: %ss às %sh", day_names[best_day], best_hour)
+            day_names = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+            logger.info("[SUCCESS] Reengagement: %ss at %sh", day_names[best_day], best_hour)
 
             return {
                 "status": "success",
@@ -330,5 +330,5 @@ class ForecastService:
                 "response_rate": round(total_responses / len(interaction_history), 2) if interaction_history else 0
             }
         except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.error(f"Erro ao recomendar reengagement time: {e}", exc_info=True)
+            logger.error(f"[ERROR] Failed to recommend reengagement time: {e}", exc_info=True)
             return {"status": "error", "message": str(e)}
