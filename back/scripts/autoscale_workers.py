@@ -17,23 +17,25 @@ Uso:
     */2 * * * * cd /path/to/project && python scripts/autoscale_workers.py >> /var/log/autoscale.log 2>&1
 """
 
+import logging
 import subprocess
 import sys
-from datetime import datetime
 
-from robbot.services.worker_analytics_service import WorkerAnalyticsService
 from robbot.core.logging_setup import configure_logging
-import logging
+from robbot.services.worker_analytics_service import WorkerAnalyticsService
 
 
 logger = logging.getLogger("autoscaler")
 
 
 def execute_scaling(target_workers: int) -> bool:
-    """Execute docker compose scale command."""
+    """Execute docker-compose scale command via docker.sock."""
     try:
-        cmd = ["docker", "compose", "up", "-d", "--scale", f"worker={target_workers}"]
-        cwd = "/app/back" if sys.platform.startswith("linux") else None
+        compose_bin = "/usr/local/bin/docker-compose"
+        # Use 'up -d --no-recreate --scale worker=N' to ONLY scale worker service
+        # --no-recreate prevents restarting other services (including autoscaler itself)
+        cmd = [compose_bin, "up", "-d", "--no-recreate", "--scale", f"worker={target_workers}", "worker"]
+        cwd = "/app/back"
 
         result = subprocess.run(
             cmd,
@@ -47,7 +49,7 @@ def execute_scaling(target_workers: int) -> bool:
             logger.info("Scaled to %s workers", target_workers)
             return True
         else:
-            logger.error("Scaling failed: %s", result.stderr)
+            logger.error("Scaling failed: rc=%s, stdout=%s, stderr=%s", result.returncode, result.stdout, result.stderr)
             return False
 
     except subprocess.TimeoutExpired:
