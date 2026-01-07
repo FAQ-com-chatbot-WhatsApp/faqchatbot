@@ -125,9 +125,9 @@ Hoje, temos:
 
 ## Por Que Isso Importa
 
-Este projeto não é apenas tecnologia. **É sobre respeitar o tempo das pacientes.** É sobre dar a cada mulher que busca ajuda a certeza de que ela será ouvida — às 23h, no domingo, no feriado.
+Este projeto não é apenas tecnologia. **É sobre respeitar o tempo das pacientes.** É sobre dar a cada futuro cliente que busca ajuda a certeza de que será ouvido — às 23h, no domingo, no feriado.
 
-É sobre liberar a secretária do peso das perguntas repetitivas para que ela possa fazer o que humanos fazem melhor: **acolher, entender nuances, criar conexão real.**
+É sobre liberar a secretária os atendentes das perguntas repetitivas para que possam fazer o que humanos fazem melhor: **acolher, entender nuances, criar conexão real.**
 
 E é sobre transformar leads em pacientes de verdade — porque no final, **cada mensagem não respondida é uma vida que a clínica poderia ter impactado, mas não impactou.**
 
