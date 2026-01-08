@@ -43,7 +43,7 @@ class TestPerformanceReportsL1:
         mock_result.fetchone.return_value = mock_row
         analytics_repo.db.execute = MagicMock(return_value=mock_result)
 
-        result = analytics_repo.get_bot_response_time_stats(start_date, end_date)
+        result = analytics_repo.get_bot_llm_latency_stats(start_date, end_date)
 
         # Verifica estrutura do response quando vazio
         assert "avg_ms" in result
