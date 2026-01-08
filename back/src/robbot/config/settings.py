@@ -114,6 +114,48 @@ class Settings(BaseSettings):
         default="failed", description="Nome da fila de jobs falhados (DLQ)"
     )
 
+    # Analytics Performance Thresholds
+    ANALYTICS_LATENCY_THRESHOLD_MS: int = Field(
+        default=5000, description="Threshold de latência para alertas (ms)"
+    )
+    ANALYTICS_ERROR_RATE_THRESHOLD: float = Field(
+        default=5.0, description="Threshold de taxa de erro para alertas (%)"
+    )
+    ANALYTICS_REALTIME_WINDOW_MINUTES: int = Field(
+        default=5, description="Janela de tempo para métricas real-time"
+    )
+    ANALYTICS_ACTIVE_CONVERSATIONS_WARNING: int = Field(
+        default=50, description="Threshold warning para conversas ativas"
+    )
+    ANALYTICS_ACTIVE_CONVERSATIONS_CRITICAL: int = Field(
+        default=100, description="Threshold crítico para conversas ativas"
+    )
+
+    # Analytics Cache TTL
+    ANALYTICS_CACHE_TTL_REALTIME: int = Field(
+        default=30, description="TTL cache para dados real-time (segundos)"
+    )
+    ANALYTICS_CACHE_TTL_METRICS: int = Field(
+        default=900, description="TTL cache para métricas (segundos)"
+    )
+    ANALYTICS_CACHE_TTL_HISTORICAL: int = Field(
+        default=3600, description="TTL cache para dados históricos (segundos)"
+    )
+    ANALYTICS_CACHE_TTL_REPORTS: int = Field(
+        default=1800, description="TTL cache para relatórios (segundos)"
+    )
+
+    # WebSocket Rate Limiting
+    WEBSOCKET_MAX_CONNECTIONS_PER_USER: int = Field(
+        default=3, description="Máximo de conexões WebSocket por usuário"
+    )
+    WEBSOCKET_MESSAGE_RATE_LIMIT: int = Field(
+        default=10, description="Máximo de mensagens por segundo"
+    )
+    WEBSOCKET_IDLE_TIMEOUT_MINUTES: int = Field(
+        default=30, description="Timeout para conexões idle (minutos)"
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
