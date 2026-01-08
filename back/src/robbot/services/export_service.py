@@ -1,8 +1,8 @@
 """
-Export Service - Sprint 12 L1
+Export Service - Sprint 12 L1 (Refatorado Sprint 12.1)
 
 Serviço para exportação de relatórios em PDF e Excel.
-Mantém KISS: apenas o essencial, sem over-engineering.
+Error handling adicionado para debugging.
 """
 
 import io
@@ -24,6 +24,8 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
+
+from robbot.core.custom_exceptions import ExportError
 
 logger = logging.getLogger(__name__)
 
