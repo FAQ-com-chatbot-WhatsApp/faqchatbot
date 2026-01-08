@@ -36,6 +36,8 @@ dependencies = [
     "pyotp>=2.9.0",
     "reportlab>=4.4.7",
     "openpyxl>=3.1.5",
+    "pyyaml>=6.0.3",
+    "python-jose[cryptography]>=3.5.0",
 ]
 
 [dependency-groups]
