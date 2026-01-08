@@ -2,7 +2,13 @@
 Metrics Service
 
 Service de alto nível para cálculo e cache de métricas.
-Implementa caching inteligente no Redis com TTL configurável.
+Implementa caching inteligente no Redis com TTL configurável via settings.
+
+Refatorado Sprint 12.1:
+- TTL baseado em settings (não hardcoded)
+- Validação de params em cache_key
+- Cache em métodos agregadores
+- Dependency injection para QueueManager
 """
 
 import json
@@ -14,33 +20,35 @@ from uuid import UUID
 from redis import Redis
 
 from robbot.adapters.repositories.analytics_repository import AnalyticsRepository
+from robbot.config.settings import get_settings
+from robbot.infra.redis.queue import QueueManager
 
 logger = logging.getLogger(__name__)
+settings = get_settings()
 
-# Service for business metrics with Redis caching
+
 class MetricsService:
     """
     Service para cálculo e cache de métricas de negócio.
 
     Estratégia de cache:
-    - Dashboard summary: TTL 5min (atualização rápida)
-    - Conversion metrics: TTL 15min (menos voláteis)
-    - Historical data: TTL 1h (dados históricos mudam pouco)
+    - Real-time data: settings.ANALYTICS_CACHE_TTL_REALTIME (30s)
+    - Metrics: settings.ANALYTICS_CACHE_TTL_METRICS (15min)
+    - Historical data: settings.ANALYTICS_CACHE_TTL_HISTORICAL (1h)
+    - Reports: settings.ANALYTICS_CACHE_TTL_REPORTS (30min)
 
     Cache key pattern: metrics:{metric_name}:{period}:{user_id}:{hash_params}
     """
-
-    CACHE_TTL_REALTIME = 300  # 5 minutos
-    CACHE_TTL_METRICS = 900  # 15 minutos
-    CACHE_TTL_HISTORICAL = 3600  # 1 hora
 
     def __init__(
         self,
         analytics_repo: AnalyticsRepository,
         redis_client: Redis,
+        queue_manager: QueueManager | None = None,
     ):
         self.analytics = analytics_repo
         self.redis = redis_client
+        self.queue_manager = queue_manager  # Injected dependency
 
     # =============================================================================
     # UTILITY METHODS
@@ -54,12 +62,28 @@ class MetricsService:
         user_id: UUID | None = None,
         **kwargs,
     ) -> str:
-        """Gera chave de cache consistente"""
+        """
+        Gera chave de cache consistente.
+
+        IMPORTANTE: Todos os params que afetam o resultado DEVEM estar em kwargs.
+        Exemplo: se method tem param 'limit', DEVE passar limit=value.
+
+        Args:
+            metric_name: Nome da métrica
+            start_date: Data inicial
+            end_date: Data final
+            user_id: ID do usuário (opcional)
+            **kwargs: Params extras que afetam resultado (limit, granularity, etc)
+
+        Returns:
+            Cache key string
+        """
         period = f"{start_date.date()}_{end_date.date()}"
         user_part = f"user_{user_id}" if user_id else "global"
 
         # Hash dos parâmetros extras (sorted para consistência)
         if kwargs:
+            # Ordenar e serializar params para garantir consistência
             params_str = "_".join(f"{k}={v}" for k, v in sorted(kwargs.items()))
             return f"metrics:{metric_name}:{period}:{user_part}:{params_str}"
 
@@ -159,7 +183,7 @@ class MetricsService:
 
         result = self._get_cached_or_compute(
             cache_key,
-            self.CACHE_TTL_REALTIME,
+            settings.ANALYTICS_CACHE_TTL_REALTIME,
             self.analytics.get_dashboard_summary,
             start_date,
             end_date,
@@ -208,7 +232,7 @@ class MetricsService:
 
         result = self._get_cached_or_compute(
             cache_key,
-            self.CACHE_TTL_METRICS,
+            settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_conversion_rate,
             start_date,
             end_date,
@@ -259,7 +283,7 @@ class MetricsService:
 
         result = self._get_cached_or_compute(
             cache_key,
-            self.CACHE_TTL_METRICS,
+            settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_conversion_funnel,
             start_date,
             end_date,
@@ -303,7 +327,7 @@ class MetricsService:
 
         result = self._get_cached_or_compute(
             cache_key,
-            self.CACHE_TTL_METRICS,
+            settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_time_to_conversion,
             start_date,
             end_date,
@@ -354,8 +378,8 @@ class MetricsService:
 
         result = self._get_cached_or_compute(
             cache_key,
-            self.CACHE_TTL_REALTIME,
-            self.analytics.get_response_time_stats,
+            settings.ANALYTICS_CACHE_TTL_REALTIME,
+            self.analytics.get_human_response_time_stats,
             start_date,
             end_date,
             user_id,
@@ -405,7 +429,7 @@ class MetricsService:
 
         result = self._get_cached_or_compute(
             cache_key,
-            self.CACHE_TTL_METRICS,
+            settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_message_volume,
             start_date,
             end_date,
@@ -454,7 +478,7 @@ class MetricsService:
 
         result = self._get_cached_or_compute(
             cache_key,
-            self.CACHE_TTL_METRICS,
+            settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_bot_autonomy_rate,
             start_date,
             end_date,
@@ -503,8 +527,8 @@ class MetricsService:
 
         result = self._get_cached_or_compute(
             cache_key,
-            self.CACHE_TTL_METRICS,
-            self.analytics.get_bot_response_time_stats,
+            settings.ANALYTICS_CACHE_TTL_METRICS,
+            self.analytics.get_bot_llm_latency_stats,
             start_date,
             end_date,
         )
@@ -547,7 +571,7 @@ class MetricsService:
 
         result = self._get_cached_or_compute(
             cache_key,
-            self.CACHE_TTL_METRICS,
+            settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_handoff_rate_stats,
             start_date,
             end_date,
@@ -588,7 +612,7 @@ class MetricsService:
 
         result = self._get_cached_or_compute(
             cache_key,
-            self.CACHE_TTL_METRICS,
+            settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_peak_hours_stats,
             start_date,
             end_date,
@@ -629,7 +653,7 @@ class MetricsService:
 
         result = self._get_cached_or_compute(
             cache_key,
-            self.CACHE_TTL_METRICS,
+            settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_conversations_by_status,
             start_date,
             end_date,
@@ -653,7 +677,7 @@ class MetricsService:
 
         Combina todas as métricas de performance em um único response.
 
-        Cache: 15 minutos
+        Cache: 30 minutos (resultado agregado final)
 
         Returns:
             {
@@ -664,22 +688,35 @@ class MetricsService:
                 "status_distribution": [...]
             }
         """
-        # Cada método já tem seu próprio cache, então apenas agregamos
-        bot_response = self.get_bot_response_time(start_date, end_date)
-        handoff = self.get_handoff_rate(start_date, end_date)
-        peak = self.get_peak_hours(start_date, end_date)
-        status_dist = self.get_conversations_by_status(start_date, end_date)
+        # Cachear resultado agregado (não apenas componentes)
+        cache_key = self._generate_cache_key(
+            "performance_report",
+            start_date,
+            end_date,
+        )
 
-        return {
-            "period": {
-                "start": start_date.date().isoformat(),
-                "end": end_date.date().isoformat(),
-            },
-            "bot_response_time": bot_response["bot_response_time"],
-            "handoff_stats": handoff["handoff_stats"],
-            "peak_hours": peak["peak_hours"],
-            "status_distribution": status_dist["status_distribution"],
-        }
+        def _compute():
+            bot_response = self.get_bot_response_time(start_date, end_date)
+            handoff = self.get_handoff_rate(start_date, end_date)
+            peak = self.get_peak_hours(start_date, end_date)
+            status_dist = self.get_conversations_by_status(start_date, end_date)
+
+            return {
+                "period": {
+                    "start": start_date.date().isoformat(),
+                    "end": end_date.date().isoformat(),
+                },
+                "bot_response_time": bot_response["bot_response_time"],
+                "handoff_stats": handoff["handoff_stats"],
+                "peak_hours": peak["peak_hours"],
+                "status_distribution": status_dist["status_distribution"],
+            }
+
+        return self._get_cached_or_compute(
+            cache_key,
+            settings.ANALYTICS_CACHE_TTL_REPORTS,
+            _compute,
+        )
     # =============================================================================
     # CONVERSION REPORTS EXTENDED (Sprint 12 - L2)
     # =============================================================================
@@ -716,7 +753,7 @@ class MetricsService:
 
         result = self._get_cached_or_compute(
             cache_key,
-            self.CACHE_TTL_METRICS,
+            settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_time_to_conversion_extended,
             start_date,
             end_date,
@@ -762,7 +799,7 @@ class MetricsService:
 
         result = self._get_cached_or_compute(
             cache_key,
-            self.CACHE_TTL_METRICS,
+            settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_conversion_by_source,
             start_date,
             end_date,
@@ -804,7 +841,7 @@ class MetricsService:
 
         result = self._get_cached_or_compute(
             cache_key,
-            self.CACHE_TTL_METRICS,
+            settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_lost_leads_analysis,
             start_date,
             end_date,
@@ -853,7 +890,7 @@ class MetricsService:
 
         result = self._get_cached_or_compute(
             cache_key,
-            self.CACHE_TTL_METRICS,
+            settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_conversion_trend,
             start_date,
             end_date,
@@ -879,7 +916,7 @@ class MetricsService:
 
         Combina todas as métricas de conversão estendidas.
 
-        Cache: Cada método já tem seu próprio cache
+        Cache: 30 minutos (resultado agregado final)
 
         Returns:
             {
@@ -890,22 +927,35 @@ class MetricsService:
                 "trend_daily": [...]
             }
         """
-        # Cada método já tem cache, então apenas agregamos
-        time_conv = self.get_time_to_conversion_extended(start_date, end_date)
-        by_source = self.get_conversion_by_source(start_date, end_date)
-        lost = self.get_lost_leads_analysis(start_date, end_date)
-        trend = self.get_conversion_trend(start_date, end_date, granularity="day")
+        # Cachear resultado agregado
+        cache_key = self._generate_cache_key(
+            "conversion_report_extended",
+            start_date,
+            end_date,
+        )
 
-        return {
-            "period": {
-                "start": start_date.date().isoformat(),
-                "end": end_date.date().isoformat(),
-            },
-            "time_to_conversion": time_conv["time_stats"],
-            "conversion_by_source": by_source["sources"],
-            "lost_leads": lost["lost_leads"],
-            "trend_daily": trend["trend"],
-        }
+        def _compute():
+            time_conv = self.get_time_to_conversion_extended(start_date, end_date)
+            by_source = self.get_conversion_by_source(start_date, end_date)
+            lost = self.get_lost_leads_analysis(start_date, end_date)
+            trend = self.get_conversion_trend(start_date, end_date, granularity="day")
+
+            return {
+                "period": {
+                    "start": start_date.date().isoformat(),
+                    "end": end_date.date().isoformat(),
+                },
+                "time_to_conversion": time_conv["time_stats"],
+                "conversion_by_source": by_source["sources"],
+                "lost_leads": lost["lost_leads"],
+                "trend_daily": trend["trend"],
+            }
+
+        return self._get_cached_or_compute(
+            cache_key,
+            settings.ANALYTICS_CACHE_TTL_REPORTS,
+            _compute,
+        )
 
     # =============================================================================
     # L3: CONVERSATION ANALYSIS METHODS
@@ -930,7 +980,7 @@ class MetricsService:
                 ]
             }
         """
-        cache_key = self._build_cache_key(
+        cache_key = self._generate_cache_key(
             "activity_heatmap",
             start_date,
             end_date,
@@ -938,7 +988,7 @@ class MetricsService:
 
         result = self._get_cached_or_compute(
             cache_key,
-            self.CACHE_TTL_METRICS,
+            settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_message_frequency_by_hour,
             start_date,
             end_date,
@@ -972,7 +1022,7 @@ class MetricsService:
                 ]
             }
         """
-        cache_key = self._build_cache_key(
+        cache_key = self._generate_cache_key(
             "keyword_frequency",
             start_date,
             end_date,
@@ -981,7 +1031,7 @@ class MetricsService:
 
         result = self._get_cached_or_compute(
             cache_key,
-            self.CACHE_TTL_METRICS,
+            settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_keyword_frequency,
             start_date,
             end_date,
@@ -1017,7 +1067,7 @@ class MetricsService:
                 }
             }
         """
-        cache_key = self._build_cache_key(
+        cache_key = self._generate_cache_key(
             "sentiment_distribution",
             start_date,
             end_date,
@@ -1025,7 +1075,7 @@ class MetricsService:
 
         result = self._get_cached_or_compute(
             cache_key,
-            self.CACHE_TTL_METRICS,
+            settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_message_sentiment_distribution,
             start_date,
             end_date,
@@ -1058,7 +1108,7 @@ class MetricsService:
                 ]
             }
         """
-        cache_key = self._build_cache_key(
+        cache_key = self._generate_cache_key(
             "topic_distribution",
             start_date,
             end_date,
@@ -1066,7 +1116,7 @@ class MetricsService:
 
         result = self._get_cached_or_compute(
             cache_key,
-            self.CACHE_TTL_METRICS,
+            settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_conversation_topics,
             start_date,
             end_date,
@@ -1090,7 +1140,7 @@ class MetricsService:
 
         Combina todas as métricas de análise textual.
 
-        Cache: Cada método já tem seu próprio cache
+        Cache: 30 minutos (resultado agregado final)
 
         Returns:
             {
@@ -1101,20 +1151,33 @@ class MetricsService:
                 "topic_distribution": [...]
             }
         """
-        # Cada método já tem cache, apenas agregamos
-        heatmap = self.get_activity_heatmap(start_date, end_date)
-        keywords = self.get_keyword_frequency(start_date, end_date, limit=50)
-        sentiment = self.get_sentiment_distribution(start_date, end_date)
-        topics = self.get_topic_distribution(start_date, end_date)
+        # Cachear resultado agregado
+        cache_key = self._generate_cache_key(
+            "conversation_analysis_report",
+            start_date,
+            end_date,
+        )
 
-        return {
-            "period_start": start_date.isoformat(),
-            "period_end": end_date.isoformat(),
-            "activity_heatmap": heatmap["heatmap"],
-            "top_keywords": keywords["keywords"],
-            "sentiment_distribution": sentiment["sentiment"],
-            "topic_distribution": topics["topics"],
-        }
+        def _compute():
+            heatmap = self.get_activity_heatmap(start_date, end_date)
+            keywords = self.get_keyword_frequency(start_date, end_date, limit=50)
+            sentiment = self.get_sentiment_distribution(start_date, end_date)
+            topics = self.get_topic_distribution(start_date, end_date)
+
+            return {
+                "period_start": start_date.isoformat(),
+                "period_end": end_date.isoformat(),
+                "activity_heatmap": heatmap["heatmap"],
+                "top_keywords": keywords["keywords"],
+                "sentiment_distribution": sentiment["sentiment"],
+                "topic_distribution": topics["topics"],
+            }
+
+        return self._get_cached_or_compute(
+            cache_key,
+            settings.ANALYTICS_CACHE_TTL_REPORTS,
+            _compute,
+        )
 
     # =============================================================================
     # L4: REAL-TIME DASHBOARD METHODS
