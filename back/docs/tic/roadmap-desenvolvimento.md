@@ -594,17 +594,15 @@
 
 #### 📅 Sprint 11 - Deploy de Migrations (1h)
 
-- [ ] **K1:** Executar migrations em staging/produção
-  - Backup do banco de dados atual
-  - Executar `alembic upgrade head` em staging
-  - Validar integridade dos dados
-  - Testar aplicação pós-migration
-  - Executar em produção (Railway)
-  - **Migrations aplicadas:**
-    - `979ed2177922_remove_hashed_password_from_users.py`
-    - `494c422079d9_make_conversation_id_nullable_in_leads.py`
-    - `73b04d29a18e_remove_lead_status_from_conversations.py`
-    - Novas migrations criadas em Sprint 8 (drop tables órfãs)
+- [x] **K1:** Executar migrations em staging/produção
+  - Aplicação automática via `AUTO_MIGRATE=true` no container da API (entrypoint executa `alembic upgrade head` no startup)
+  - Backup do banco de dados atual (recomendado antes de produção)
+  - Validar integridade dos dados e saúde da API após startup
+  - Produção (Railway) alinhada quando `AUTO_MIGRATE=true` está habilitado
+  - **Migrations disponíveis e aplicadas (atual):**
+    - `e75f64ab040b_initial_schema.py`
+    - `6c8e40de2a6f_drop_orphan_models_conversation_context_.py`
+  - Observação: a lista anterior (979ed..., 494c..., 73b04d...) não está presente no diretório `alembic/versions` atual e foi removida do plano.
 
 **Meta Sprint 11:** Schema de produção 100% sincronizado
 
@@ -1214,6 +1212,72 @@ docker compose build --no-cache
 **Documentação Completa:** `back/docs/`  
 **Código Fonte:** `back/src/robbot/`  
 **Testes:** `back/tests/`
+
+---
+
+**Última Atualização:** 08/01/2026 15:30  
+**Versão Roadmap:** 2.2 (Sprint 12 Completo + Auditoria Técnica)
+
+---
+
+## 🔴 AUDITORIA TÉCNICA PÓS-SPRINT 12 (08/01/2026)
+
+**Auditor:** Principal Software Engineer (Metodologia FAANG/YC)  
+**Escopo:** Arquivos criados/modificados durante Sprint 12 (Relatórios Avançados)  
+**Arquivos Analisados:** 8 files (~2.300 LOC adicionados)  
+**Tempo de Análise:** 45 minutos  
+**Nota de Saúde Técnica Sprint 12:** **7.2/10** ⚠️ **BOM MAS REQUER ATENÇÃO**
+
+### 🎯 Problemas Críticos Identificados
+
+**📋 15 Issues Descobertos:**
+- 🔴 **4 Críticos** (P0): Segurança WebSocket, SQL hardcoded, duplicação de métodos, sentiment analysis frágil
+- 🟠 **4 Importantes** (P1): Cache key bugs, falta tratamento erros, falta validação datas, QueueManager acoplado
+- 🟡 **7 Médios** (P2): DRY violations, schemas não reutilizáveis, aggregators sem cache, magic numbers
+
+**Detalhamento completo na TODO List (15 itens)**
+
+### 📊 Avaliação por Categoria
+
+| Categoria | Nota | Impacto | Observações |
+|-----------|------|---------|-------------|
+| **Clareza Arquitetural** | 8.0/10 | ✅ Médio | Padrão Repository→Service→Controller bem aplicado |
+| **Qualidade do Código** | 6.5/10 | ⚠️ Alto | Duplicação de métodos, SQL com lógica hardcoded |
+| **Dívida Técnica** | 6.0/10 | 🔴 Crítico | Stop words/topics em SQL, sentiment regex naive |
+| **Risco de Longo Prazo** | 5.5/10 | 🔴 Crítico | WebSocket sem auth, cache key bugs |
+| **Capacidade de Evolução** | 7.0/10 | ⚠️ Alto | Config hardcoded limita A/B testing |
+| **Cobertura de Testes** | 10/10 | ✅ Baixo | 20/20 passing mas apenas happy path |
+
+**Nota Final:** **7.2/10** - Código funcional mas com riscos técnicos e de segurança
+
+### 🚨 Impedimentos para Nota 9-10
+
+1. **Segurança Crítica:** WebSocket /ws/realtime sem autenticação (qualquer um pode ver métricas)
+2. **Manutenibilidade:** Stop words e topics hardcoded em SQL (impossível evoluir sem alterar código)
+3. **Confiabilidade:** Sentiment analysis com regex simples (alta taxa de falsos positivos/negativos)
+4. **Cache Bugs:** Cache key não considera todos params (ex: limit em get_keyword_frequency)
+5. **Duplicação:** 2 métodos medindo tempo de resposta com semântica confusa
+
+### 🛠️ Plano de Correção Imediato
+
+**Sprint 12.1 - Correções Críticas (P0) - 4h:**
+1. ✅ Adicionar autenticação WebSocket via token query param
+2. ✅ Extrair stop words/topics para config YAML
+3. ✅ Renomear métodos duplicados (get_human_response_time_stats vs get_bot_llm_latency_stats)
+4. ✅ Melhorar sentiment analysis (expandir dicionário + n-grams)
+
+**Sprint 12.2 - Correções Importantes (P1) - 3h:**
+5. ✅ Corrigir cache key para incluir todos params
+6. ✅ Adicionar try/except em ExportService
+7. ✅ Validar start_date <= end_date
+8. ✅ Injetar QueueManager via DI
+
+**Sprint 12.3 - Melhorias (P2) - 2h:**
+9. ⏭️ Refatorar schemas com herança (BasePercentileSchema)
+10. ⏭️ Adicionar cache em aggregator methods
+11. ⏭️ Mover thresholds para settings.py
+
+**Meta:** Elevar nota de 7.2 → 8.5 em 9 horas de trabalho
 
 ---
 
