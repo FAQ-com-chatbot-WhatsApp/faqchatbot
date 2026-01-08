@@ -713,6 +713,105 @@
 						"description": "Deletar um usuário.\n\n**Requer:** Bearer token (admin)"
 					},
 					"response": []
+				},
+				{
+					"name": "Get My User",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users/me",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"me"
+							]
+						},
+						"description": "Obter dados do usuário autenticado.\n\n**Requer:** Bearer token"
+					},
+					"response": []
+				},
+				{
+					"name": "Update My User",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"novo@clinica.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/users/me",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"me"
+							]
+						},
+						"description": "Atualizar dados do próprio perfil.\n\n**Requer:** Bearer token"
+					},
+					"response": []
+				},
+				{
+					"name": "Block User",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users/:user_id/block",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								":user_id",
+								"block"
+							],
+							"variable": [
+								{
+									"key": "user_id",
+									"value": "{{user_id}}"
+								}
+							]
+						},
+						"description": "Bloquear usuário (admin only).\n\n**Requer:** Bearer token (admin)"
+					},
+					"response": []
+				},
+				{
+					"name": "Unblock User",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/users/:user_id/unblock",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								":user_id",
+								"unblock"
+							],
+							"variable": [
+								{
+									"key": "user_id",
+									"value": "{{user_id}}"
+								}
+							]
+						},
+						"description": "Desbloquear usuário (admin only).\n\n**Requer:** Bearer token (admin)"
+					},
+					"response": []
 				}
 			]
 		},
@@ -2199,6 +2298,641 @@
 								"description": "Edita mensagem de texto enviada.\n\n**Importante:** IDs devem ser URL encoded."
 							},
 							"response": []
+						},
+						{
+							"name": "Delete Message",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/waha/chats/:chat_id/messages/:message_id",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"waha",
+										"chats",
+										":chat_id",
+										"messages",
+										":message_id"
+									],
+									"variable": [
+										{
+											"key": "chat_id",
+											"value": "5511999999999@c.us"
+										},
+										{
+											"key": "message_id",
+											"value": "true_5511999999999@c.us_AAA"
+										}
+									]
+								},
+								"description": "Deleta mensagem enviada.\n\n**Importante:** IDs devem ser URL encoded."
+							},
+							"response": []
+						},
+						{
+							"name": "Send Poll Vote",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"chat_id\": \"5511999999999@c.us\",\n  \"message_id\": \"true_5511999999999@c.us_AAA\",\n  \"options\": [0]\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/waha/messages/send-poll-vote",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"waha",
+										"messages",
+										"send-poll-vote"
+									]
+								},
+								"description": "Vota em uma enquete.\n\nOptions é array de índices (0-based)."
+							},
+							"response": []
+						},
+						{
+							"name": "Send Link Preview",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"chat_id\": \"5511999999999@c.us\",\n  \"url\": \"https://example.com\",\n  \"title\": \"Título Customizado\",\n  \"description\": \"Descrição customizada\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/waha/messages/send-link-preview",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"waha",
+										"messages",
+										"send-link-preview"
+									]
+								},
+								"description": "Envia link com preview customizado."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Chat Messages",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/waha/chats/:chat_id/messages?limit=50",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"waha",
+										"chats",
+										":chat_id",
+										"messages"
+									],
+									"query": [
+										{
+											"key": "limit",
+											"value": "50"
+										}
+									],
+									"variable": [
+										{
+											"key": "chat_id",
+											"value": "5511999999999@c.us"
+										}
+									]
+								},
+								"description": "Retorna mensagens de um chat."
+							},
+							"response": []
+						},
+						{
+							"name": "Send Event",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"session\": \"default\",\n  \"event\": \"typing\",\n  \"chat_id\": \"5511999999999@c.us\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/waha/events",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"waha",
+										"events"
+									]
+								},
+								"description": "Envia evento (typing, recording, etc)."
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Contacts",
+					"item": [
+						{
+							"name": "Check Number",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/waha/check-number?phone=5511999999999",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"waha",
+										"check-number"
+									],
+									"query": [
+										{
+											"key": "phone",
+											"value": "5511999999999"
+										}
+									]
+								},
+								"description": "Verifica se número está registrado no WhatsApp."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Contact About",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/waha/contact-about?phone=5511999999999",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"waha",
+										"contact-about"
+									],
+									"query": [
+										{
+											"key": "phone",
+											"value": "5511999999999"
+										}
+									]
+								},
+								"description": "Retorna status/sobre do contato."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Contact Picture",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/waha/contact-picture?phone=5511999999999",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"waha",
+										"contact-picture"
+									],
+									"query": [
+										{
+											"key": "phone",
+											"value": "5511999999999"
+										}
+									]
+								},
+								"description": "Retorna foto de perfil do contato."
+							},
+							"response": []
+						},
+						{
+							"name": "Block Contact",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"phone\": \"5511999999999\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/waha/contact/block",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"waha",
+										"contact",
+										"block"
+									]
+								},
+								"description": "Bloqueia contato."
+							},
+							"response": []
+						},
+						{
+							"name": "Unblock Contact",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"phone\": \"5511999999999\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/waha/contact/unblock",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"waha",
+										"contact",
+										"unblock"
+									]
+								},
+								"description": "Desbloqueia contato."
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Presence",
+					"item": [
+						{
+							"name": "Set Presence",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"presence\": \"available\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/waha/presence",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"waha",
+										"presence"
+									]
+								},
+								"description": "Define status de presença (available/unavailable)."
+							},
+							"response": []
+						},
+						{
+							"name": "Get All Presence",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/waha/presence/all",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"waha",
+										"presence",
+										"all"
+									]
+								},
+								"description": "Retorna presença de todos os contatos."
+							},
+							"response": []
+						},
+						{
+							"name": "Get Chat Presence",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/waha/presence/:chat_id",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"waha",
+										"presence",
+										":chat_id"
+									],
+									"variable": [
+										{
+											"key": "chat_id",
+											"value": "5511999999999@c.us"
+										}
+									]
+								},
+								"description": "Retorna presença de um chat específico."
+							},
+							"response": []
+						},
+						{
+							"name": "Subscribe Presence",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/waha/presence/:chat_id/subscribe",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"waha",
+										"presence",
+										":chat_id",
+										"subscribe"
+									],
+									"variable": [
+										{
+											"key": "chat_id",
+											"value": "5511999999999@c.us"
+										}
+									]
+								},
+								"description": "Inscreve para receber updates de presença."
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Auth & Server",
+					"item": [
+						{
+							"name": "Get Auth QR",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/waha/auth/qr",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"waha",
+										"auth",
+										"qr"
+									]
+								},
+								"description": "Retorna QR code para autenticação."
+							},
+							"response": []
+						},
+						{
+							"name": "Request Auth Code",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"phone\": \"5511999999999\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/waha/auth/request-code",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"waha",
+										"auth",
+										"request-code"
+									]
+								},
+								"description": "Solicita código de autenticação por SMS."
+							},
+							"response": []
+						},
+						{
+							"name": "Reject Call",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"call_id\": \"call123\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/waha/call/reject",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"waha",
+										"call",
+										"reject"
+									]
+								},
+								"description": "Rejeita chamada de voz/vídeo."
+							},
+							"response": []
+						},
+						{
+							"name": "Convert Voice",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"file_url\": \"https://example.com/audio.mp3\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/waha/media/convert-voice",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"waha",
+										"media",
+										"convert-voice"
+									]
+								},
+								"description": "Converte áudio para formato de voz WhatsApp."
+							},
+							"response": []
+						},
+						{
+							"name": "Convert Video",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"file_url\": \"https://example.com/video.avi\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/waha/media/convert-video",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"waha",
+										"media",
+										"convert-video"
+									]
+								},
+								"description": "Converte vídeo para formato WhatsApp."
+							},
+							"response": []
+						},
+						{
+							"name": "Server Health",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/waha/server/health",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"waha",
+										"server",
+										"health"
+									]
+								},
+								"description": "Verifica saúde do servidor WAHA."
+							},
+							"response": []
+						},
+						{
+							"name": "Server Ping",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/waha/server/ping",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"waha",
+										"server",
+										"ping"
+									]
+								},
+								"description": "Pinga servidor WAHA."
+							},
+							"response": []
+						},
+						{
+							"name": "Server Version",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/waha/server/version",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"waha",
+										"server",
+										"version"
+									]
+								},
+								"description": "Retorna versão do servidor WAHA."
+							},
+							"response": []
+						},
+						{
+							"name": "Server Status",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/waha/server/status",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"waha",
+										"server",
+										"status"
+									]
+								},
+								"description": "Retorna status do servidor WAHA."
+							},
+							"response": []
+						},
+						{
+							"name": "Screenshot",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/waha/screenshot",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"waha",
+										"screenshot"
+									]
+								},
+								"description": "Captura screenshot da sessão WhatsApp."
+							},
+							"response": []
 						}
 					]
 				}
@@ -3206,6 +3940,600 @@
 							]
 						},
 						"description": "**Gerar descrição AI com Gemini Vision**.\n\nPara mensagens de:\n- **Imagem**: Analisa conteúdo visual\n- **Vídeo**: Analisa thumbnail/preview\n- **Texto**: Analisa conteúdo textual\n- **Documento**: Analisa nome e tipo\n\nRetorna:\n- `generated_title`: Título descritivo (máx 50 chars)\n- `generated_description`: Descrição detalhada (100-200 palavras)\n- `suggested_tags`: Tags relevantes (comma-separated)\n\n**Uso típico**:\n1. Admin faz upload de imagem\n2. Clica \"Gerar Descrição com AI\"\n3. Gemini Vision analisa\n4. Admin revisa e edita se necessário\n5. Salva mensagem com descrição\n\nIsso ajuda o LLM a entender o conteúdo das mensagens nos playbooks."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🤝 Handoff",
+			"item": [
+				{
+					"name": "Trigger Handoff",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"score_high\",\n  \"additional_context\": \"Lead com score 90 - pronto para agendamento\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/conversations/:conversation_id/handoff",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"conversations",
+								":conversation_id",
+								"handoff"
+							],
+							"variable": [
+								{
+									"key": "conversation_id",
+									"value": "{{conversation_id}}"
+								}
+							]
+						},
+						"description": "Disparar handoff bot→humano.\n\n**Motivos válidos**: score_high, bot_confused, manual"
+					},
+					"response": []
+				},
+				{
+					"name": "Assign Handoff to Agent",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": \"uuid-do-agente\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/conversations/:conversation_id/assign",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"conversations",
+								":conversation_id",
+								"assign"
+							],
+							"variable": [
+								{
+									"key": "conversation_id",
+									"value": "{{conversation_id}}"
+								}
+							]
+						},
+						"description": "Atribuir conversa a agente específico."
+					},
+					"response": []
+				},
+				{
+					"name": "Complete Handoff",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/conversations/:conversation_id/complete",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"conversations",
+								":conversation_id",
+								"complete"
+							],
+							"variable": [
+								{
+									"key": "conversation_id",
+									"value": "{{conversation_id}}"
+								}
+							]
+						},
+						"description": "Marcar handoff como completo após atendimento humano."
+					},
+					"response": []
+				},
+				{
+					"name": "Return to Bot",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/conversations/:conversation_id/return-to-bot",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"conversations",
+								":conversation_id",
+								"return-to-bot"
+							],
+							"variable": [
+								{
+									"key": "conversation_id",
+									"value": "{{conversation_id}}"
+								}
+							]
+						},
+						"description": "Devolver conversa do humano para o bot."
+					},
+					"response": []
+				},
+				{
+					"name": "List Pending Handoffs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/conversations/pending-handoff",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"conversations",
+								"pending-handoff"
+							]
+						},
+						"description": "Listar conversas aguardando atendimento humano (fila de espera)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📊 Dashboard & Metrics",
+			"item": [
+				{
+					"name": "Dashboard Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/metrics/dashboard?start_date=2026-01-01&end_date=2026-01-08",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"metrics",
+								"dashboard"
+							],
+							"query": [
+								{
+									"key": "start_date",
+									"value": "2026-01-01"
+								},
+								{
+									"key": "end_date",
+									"value": "2026-01-08"
+								}
+							]
+						},
+						"description": "Obter resumo completo do dashboard com todas as métricas principais."
+					},
+					"response": []
+				},
+				{
+					"name": "Conversion Funnel",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/metrics/conversion-funnel",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"metrics",
+								"conversion-funnel"
+							]
+						},
+						"description": "Visualizar funil de conversão de leads (NEW → ENGAGED → INTERESTED → READY → SCHEDULED)."
+					},
+					"response": []
+				},
+				{
+					"name": "Bot Autonomy",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/metrics/bot-autonomy",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"metrics",
+								"bot-autonomy"
+							]
+						},
+						"description": "Medir autonomia do bot (% conversas sem handoff)."
+					},
+					"response": []
+				},
+				{
+					"name": "Performance - Bot Response Time",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/metrics/performance/bot-response-time",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"metrics",
+								"performance",
+								"bot-response-time"
+							]
+						},
+						"description": "Tempo médio de resposta do bot."
+					},
+					"response": []
+				},
+				{
+					"name": "Performance - Handoff Rate",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/metrics/performance/handoff-rate",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"metrics",
+								"performance",
+								"handoff-rate"
+							]
+						},
+						"description": "Taxa de handoff (% conversas que precisaram de humano)."
+					},
+					"response": []
+				},
+				{
+					"name": "Performance - Peak Hours",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/metrics/performance/peak-hours",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"metrics",
+								"performance",
+								"peak-hours"
+							]
+						},
+						"description": "Identificar horários de pico de conversas (útil para dimensionamento)."
+					},
+					"response": []
+				},
+				{
+					"name": "Performance - Conversations by Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/metrics/performance/conversations-by-status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"metrics",
+								"performance",
+								"conversations-by-status"
+							]
+						},
+						"description": "Distribuição de conversas por status (ACTIVE_BOT, PENDING_HANDOFF, ACTIVE_HUMAN, COMPLETED, CLOSED)."
+					},
+					"response": []
+				},
+				{
+					"name": "Performance Report (JSON)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/metrics/performance/report?period=30d",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"metrics",
+								"performance",
+								"report"
+							],
+							"query": [
+								{
+									"key": "period",
+									"value": "30d"
+								}
+							]
+						},
+						"description": "Gerar relatório completo de performance em JSON."
+					},
+					"response": []
+				},
+				{
+					"name": "Performance Report (PDF Export)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/metrics/performance/report/export/pdf",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"metrics",
+								"performance",
+								"report",
+								"export",
+								"pdf"
+							]
+						},
+						"description": "Exportar relatório de performance em PDF."
+					},
+					"response": []
+				},
+				{
+					"name": "Performance Report (Excel Export)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/metrics/performance/report/export/excel",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"metrics",
+								"performance",
+								"report",
+								"export",
+								"excel"
+							]
+						},
+						"description": "Exportar relatório de performance em Excel."
+					},
+					"response": []
+				},
+				{
+					"name": "Conversion - Extended Analysis",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/metrics/conversion/extended",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"metrics",
+								"conversion",
+								"extended"
+							]
+						},
+						"description": "Análise detalhada de conversão com breakdown por estágio e tempos médios."
+					},
+					"response": []
+				},
+				{
+					"name": "Conversion - By Source",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/metrics/conversion/by-source",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"metrics",
+								"conversion",
+								"by-source"
+							]
+						},
+						"description": "Taxa de conversão segmentada por origem do lead (instagram, facebook, google_ads)."
+					},
+					"response": []
+				},
+				{
+					"name": "Conversion - Lost Leads",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/metrics/conversion/lost-leads",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"metrics",
+								"conversion",
+								"lost-leads"
+							]
+						},
+						"description": "Identificar leads perdidos e motivos (no_response, price_objection, competitor)."
+					},
+					"response": []
+				},
+				{
+					"name": "Conversion - Trend",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/metrics/conversion/trend?period=30d",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"metrics",
+								"conversion",
+								"trend"
+							],
+							"query": [
+								{
+									"key": "period",
+									"value": "30d"
+								}
+							]
+						},
+						"description": "Tendência de conversão ao longo do tempo."
+					},
+					"response": []
+				},
+				{
+					"name": "Conversion Report",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/metrics/conversion/report",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"metrics",
+								"conversion",
+								"report"
+							]
+						},
+						"description": "Relatório completo de conversão consolidado com recomendações."
+					},
+					"response": []
+				},
+				{
+					"name": "Conversation - Keywords",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/metrics/conversation/keywords",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"metrics",
+								"conversation",
+								"keywords"
+							]
+						},
+						"description": "Identificar keywords mais mencionadas em conversas."
+					},
+					"response": []
+				},
+				{
+					"name": "Conversation - Sentiment",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/metrics/conversation/sentiment",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"metrics",
+								"conversation",
+								"sentiment"
+							]
+						},
+						"description": "Distribuição de sentimento nas conversas (positive, neutral, negative)."
+					},
+					"response": []
+				},
+				{
+					"name": "Conversation - Topics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/metrics/conversation/topics",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"metrics",
+								"conversation",
+								"topics"
+							]
+						},
+						"description": "Identificar tópicos mais discutidos (agrupamento semântico de keywords)."
+					},
+					"response": []
+				},
+				{
+					"name": "Conversation - Heatmap",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/metrics/conversation/heatmap",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"metrics",
+								"conversation",
+								"heatmap"
+							]
+						},
+						"description": "Mapa de calor de conversas por dia da semana × hora."
+					},
+					"response": []
+				},
+				{
+					"name": "Conversation Report",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/metrics/conversation/report",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"metrics",
+								"conversation",
+								"report"
+							]
+						},
+						"description": "Relatório consolidado de análise de conversação."
+					},
+					"response": []
+				},
+				{
+					"name": "Realtime Dashboard (WebSocket)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/metrics/realtime/dashboard",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"metrics",
+								"realtime",
+								"dashboard"
+							]
+						},
+						"description": "Dashboard em tempo real via WebSocket (eventos a cada 5-10 segundos)."
 					},
 					"response": []
 				}
