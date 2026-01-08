@@ -16,6 +16,17 @@ class PeriodSchema(BaseModel):
     """Período de análise"""
     start: date = Field(..., description="Data inicial")
     end: date = Field(..., description="Data final")
+
+
+class BasePercentileSchema(BaseModel):
+    """Schema base para métricas com percentis de tempo"""
+    avg_hours: float = Field(..., ge=0, description="Média (horas)")
+    median_hours: float = Field(..., ge=0, description="Mediana (horas)")
+    p95_hours: float = Field(..., ge=0, description="95º percentil (horas)")
+    min_hours: float = Field(..., ge=0, description="Mínimo (horas)")
+    max_hours: float = Field(..., ge=0, description="Máximo (horas)")
+
+
 # =============================================================================
 # DASHBOARD SCHEMAS
 # =============================================================================
@@ -107,13 +118,11 @@ class ConversionFunnelResponse(BaseModel):
             }
         }
     )
-class TimeToConversionStatsSchema(BaseModel):
+class TimeToConversionStatsSchema(BasePercentileSchema):
     """Estatísticas de tempo até conversão"""
-    avg_hours: float = Field(..., ge=0, description="Média (horas)")
-    median_hours: float = Field(..., ge=0, description="Mediana (horas)")
-    min_hours: float = Field(..., ge=0, description="Mínimo (horas)")
-    max_hours: float = Field(..., ge=0, description="Máximo (horas)")
-    p95_hours: float = Field(..., ge=0, description="95º percentil (horas)")
+    pass
+
+
 class TimeToConversionResponse(BaseModel):
     """Response do tempo até conversão"""
     period: PeriodSchema
@@ -121,15 +130,12 @@ class TimeToConversionResponse(BaseModel):
 # =============================================================================# CONVERSION REPORTS EXTENDED SCHEMAS (Sprint 12 - L2)
 # =============================================================================
 
-class TimeToConversionExtendedStatsSchema(BaseModel):
+class TimeToConversionExtendedStatsSchema(BasePercentileSchema):
     """Estatísticas ESTENDIDAS de tempo até conversão (com p75, p90)"""
-    avg_hours: float = Field(..., ge=0, description="Média (horas)")
-    median_hours: float = Field(..., ge=0, description="Mediana (horas)")
     p75_hours: float = Field(..., ge=0, description="75º percentil (horas)")
     p90_hours: float = Field(..., ge=0, description="90º percentil (horas)")
-    p95_hours: float = Field(..., ge=0, description="95º percentil (horas)")
-    min_hours: float = Field(..., ge=0, description="Mínimo (horas)")
-    max_hours: float = Field(..., ge=0, description="Máximo (horas)")
+
+
 class TimeToConversionExtendedResponse(BaseModel):
     """Response estendido do tempo até conversão"""
     period: PeriodSchema
