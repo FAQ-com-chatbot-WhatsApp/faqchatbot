@@ -298,6 +298,294 @@ class AnalyticsRepository:
             "p95_hours": round(float(row.p95_hours), 2),
         }
 
+    def get_time_to_conversion_extended(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+    ) -> dict[str, float]:
+        """
+        Estatísticas ESTENDIDAS de tempo até conversão (Sprint 12 - L2).
+
+        Adiciona p75 e p90 às métricas existentes.
+
+        Returns:
+            {
+                "avg_hours": 48.5,
+                "median_hours": 36.0,
+                "p75_hours": 60.0,
+                "p90_hours": 96.0,
+                "p95_hours": 120.0,
+                "min_hours": 2.0,
+                "max_hours": 168.0
+            }
+        """
+        query = text("""
+            SELECT
+                AVG(EXTRACT(EPOCH FROM (l.converted_at - l.created_at)) / 3600) as avg_hours,
+                PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (l.converted_at - l.created_at)) / 3600) as median_hours,
+                PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (l.converted_at - l.created_at)) / 3600) as p75_hours,
+                PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (l.converted_at - l.created_at)) / 3600) as p90_hours,
+                PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (l.converted_at - l.created_at)) / 3600) as p95_hours,
+                MIN(EXTRACT(EPOCH FROM (l.converted_at - l.created_at)) / 3600) as min_hours,
+                MAX(EXTRACT(EPOCH FROM (l.converted_at - l.created_at)) / 3600) as max_hours
+            FROM leads l
+            WHERE l.status = 'CONVERTED'
+                AND l.converted_at IS NOT NULL
+                AND l.created_at >= :start_date
+                AND l.created_at <= :end_date
+                AND l.deleted_at IS NULL
+        """)
+
+        result = self.db.execute(query, {"start_date": start_date, "end_date": end_date})
+        row = result.fetchone()
+
+        if not row or row.avg_hours is None:
+            return {
+                "avg_hours": 0.0,
+                "median_hours": 0.0,
+                "p75_hours": 0.0,
+                "p90_hours": 0.0,
+                "p95_hours": 0.0,
+                "min_hours": 0.0,
+                "max_hours": 0.0,
+            }
+
+        return {
+            "avg_hours": round(float(row.avg_hours), 2),
+            "median_hours": round(float(row.median_hours), 2),
+            "p75_hours": round(float(row.p75_hours), 2),
+            "p90_hours": round(float(row.p90_hours), 2),
+            "p95_hours": round(float(row.p95_hours), 2),
+            "min_hours": round(float(row.min_hours), 2),
+            "max_hours": round(float(row.max_hours), 2),
+        }
+
+    def get_conversion_by_source(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+    ) -> list[dict[str, Any]]:
+        """
+        Taxa de conversão por origem/canal (Sprint 12 - L2).
+
+        Usa conversation.chat_id para identificar origem (WhatsApp groups vs direct).
+
+        Returns:
+            [
+                {
+                    "source": "direct",
+                    "total_leads": 120,
+                    "converted_leads": 45,
+                    "conversion_rate": 37.5
+                },
+                {
+                    "source": "group",
+                    "total_leads": 30,
+                    "converted_leads": 5,
+                    "conversion_rate": 16.67
+                }
+            ]
+        """
+        query = text("""
+            WITH lead_sources AS (
+                SELECT
+                    l.id,
+                    l.status,
+                    CASE
+                        WHEN c.chat_id LIKE '%@g.us' THEN 'group'
+                        ELSE 'direct'
+                    END as source
+                FROM leads l
+                LEFT JOIN conversations c ON l.conversation_id = c.id
+                WHERE l.created_at >= :start_date
+                    AND l.created_at <= :end_date
+                    AND l.deleted_at IS NULL
+            )
+            SELECT
+                source,
+                COUNT(*) as total_leads,
+                COUNT(*) FILTER (WHERE status = 'CONVERTED') as converted_leads,
+                (COUNT(*) FILTER (WHERE status = 'CONVERTED')::float / COUNT(*) * 100) as conversion_rate
+            FROM lead_sources
+            GROUP BY source
+            ORDER BY conversion_rate DESC
+        """)
+
+        result = self.db.execute(query, {"start_date": start_date, "end_date": end_date})
+        rows = result.fetchall()
+
+        return [
+            {
+                "source": row.source or "unknown",
+                "total_leads": row.total_leads or 0,
+                "converted_leads": row.converted_leads or 0,
+                "conversion_rate": round(float(row.conversion_rate or 0), 2),
+            }
+            for row in rows
+        ]
+
+    def get_lost_leads_analysis(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+    ) -> dict[str, Any]:
+        """
+        Análise de leads perdidos (Sprint 12 - L2).
+
+        Retorna leads com status LOST + última interação + motivo inferido.
+
+        Returns:
+            {
+                "total_lost": 45,
+                "lost_by_status": [
+                    {"previous_status": "ENGAGED", "count": 20, "percentage": 44.44},
+                    {"previous_status": "INTERESTED", "count": 15, "percentage": 33.33},
+                    ...
+                ],
+                "avg_time_before_lost_hours": 36.5
+            }
+        """
+        query = text("""
+            WITH lost_leads AS (
+                SELECT
+                    l.id,
+                    l.status,
+                    l.created_at,
+                    l.updated_at,
+                    EXTRACT(EPOCH FROM (l.updated_at - l.created_at)) / 3600 as time_before_lost_hours,
+                    (
+                        SELECT li.interaction_type
+                        FROM lead_interactions li
+                        WHERE li.lead_id = l.id
+                        ORDER BY li.created_at DESC
+                        LIMIT 1
+                    ) as last_interaction_type
+                FROM leads l
+                WHERE l.status = 'LOST'
+                    AND l.created_at >= :start_date
+                    AND l.created_at <= :end_date
+                    AND l.deleted_at IS NULL
+            )
+            SELECT
+                COUNT(*) as total_lost,
+                AVG(time_before_lost_hours) as avg_time_before_lost_hours
+            FROM lost_leads
+        """)
+
+        result = self.db.execute(query, {"start_date": start_date, "end_date": end_date})
+        row = result.fetchone()
+
+        if not row or row.total_lost == 0:
+            return {
+                "total_lost": 0,
+                "lost_by_maturity_range": [],
+                "avg_time_before_lost_hours": 0.0,
+            }
+
+        # Query para distribuição por range de maturity score
+        maturity_query = text("""
+            SELECT
+                CASE
+                    WHEN l.maturity_score < 20 THEN '0-19 (muito baixo)'
+                    WHEN l.maturity_score < 40 THEN '20-39 (baixo)'
+                    WHEN l.maturity_score < 60 THEN '40-59 (médio)'
+                    WHEN l.maturity_score < 80 THEN '60-79 (alto)'
+                    ELSE '80-100 (muito alto)'
+                END as maturity_range,
+                COUNT(*) as count
+            FROM leads l
+            WHERE l.status = 'LOST'
+                AND l.created_at >= :start_date
+                AND l.created_at <= :end_date
+                AND l.deleted_at IS NULL
+            GROUP BY maturity_range
+            ORDER BY maturity_range
+        """)
+
+        maturity_result = self.db.execute(
+            maturity_query, {"start_date": start_date, "end_date": end_date}
+        )
+        maturity_rows = maturity_result.fetchall()
+
+        total_lost = row.total_lost
+        lost_by_maturity = [
+            {
+                "maturity_range": mr.maturity_range,
+                "count": mr.count,
+                "percentage": round((mr.count / total_lost * 100), 2),
+            }
+            for mr in maturity_rows
+        ]
+
+        return {
+            "total_lost": total_lost,
+            "lost_by_maturity_range": lost_by_maturity,
+            "avg_time_before_lost_hours": round(
+                float(row.avg_time_before_lost_hours or 0), 2
+            ),
+        }
+
+    def get_conversion_trend(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        granularity: str = "day",  # day, week, month
+    ) -> list[dict[str, Any]]:
+        """
+        Tendência temporal de conversão (Sprint 12 - L2).
+
+        Agrega conversões por período (dia/semana/mês).
+
+        Returns:
+            [
+                {
+                    "period": "2026-01-01",
+                    "total_leads": 25,
+                    "converted_leads": 8,
+                    "conversion_rate": 32.0
+                },
+                ...
+            ]
+        """
+        if granularity == "week":
+            trunc = "week"
+        elif granularity == "month":
+            trunc = "month"
+        else:
+            trunc = "day"
+
+        query = text(
+            """
+            SELECT
+                date_trunc(:granularity, l.created_at) as period,
+                COUNT(*) as total_leads,
+                COUNT(*) FILTER (WHERE l.status = 'CONVERTED') as converted_leads,
+                (COUNT(*) FILTER (WHERE l.status = 'CONVERTED')::float / COUNT(*) * 100) as conversion_rate
+            FROM leads l
+            WHERE l.created_at >= :start_date
+                AND l.created_at <= :end_date
+                AND l.deleted_at IS NULL
+            GROUP BY period
+            ORDER BY period
+        """
+        )
+
+        result = self.db.execute(
+            query,
+            {"granularity": trunc, "start_date": start_date, "end_date": end_date},
+        )
+        rows = result.fetchall()
+
+        return [
+            {
+                "period": row.period.date().isoformat() if row.period else None,
+                "total_leads": row.total_leads or 0,
+                "converted_leads": row.converted_leads or 0,
+                "conversion_rate": round(float(row.conversion_rate or 0), 2),
+            }
+            for row in rows
+        ]
+
     # =========================================================================
     # SEÇÃO 2: PERFORMANCE ANALYTICS (Tempo de Resposta e Volume)
     # =========================================================================
@@ -566,4 +854,624 @@ class AnalyticsRepository:
             "avg_messages_per_conversation": round(
                 float(row.avg_messages_per_conversation or 0), 2
             ),
+        }
+
+    # =========================================================================
+    # SEÇÃO 5: PERFORMANCE REPORTS (Sprint 12 - L1)
+    # =========================================================================
+
+    def get_bot_response_time_stats(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+    ) -> dict[str, Any]:
+        """
+        Estatísticas de tempo de resposta do bot (via LLM latency).
+
+        Returns:
+            {
+                "avg_ms": 1500.5,
+                "median_ms": 1200.0,
+                "p95_ms": 3000.0,
+                "p99_ms": 5000.0,
+                "min_ms": 500,
+                "max_ms": 8000,
+                "total_interactions": 1250
+            }
+        """
+        query = text("""
+            SELECT
+                AVG(latency_ms) as avg_ms,
+                PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY latency_ms) as median_ms,
+                PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY latency_ms) as p95_ms,
+                PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY latency_ms) as p99_ms,
+                MIN(latency_ms) as min_ms,
+                MAX(latency_ms) as max_ms,
+                COUNT(*) as total_interactions
+            FROM llm_interactions
+            WHERE created_at >= :start_date
+                AND created_at <= :end_date
+                AND latency_ms IS NOT NULL
+        """)
+
+        result = self.db.execute(
+            query,
+            {"start_date": start_date, "end_date": end_date},
+        )
+        row = result.fetchone()
+
+        if not row or row.avg_ms is None:
+            return {
+                "avg_ms": 0.0,
+                "median_ms": 0.0,
+                "p95_ms": 0.0,
+                "p99_ms": 0.0,
+                "min_ms": 0,
+                "max_ms": 0,
+                "total_interactions": 0,
+            }
+
+        return {
+            "avg_ms": round(float(row.avg_ms), 2),
+            "median_ms": round(float(row.median_ms), 2),
+            "p95_ms": round(float(row.p95_ms), 2),
+            "p99_ms": round(float(row.p99_ms), 2),
+            "min_ms": int(row.min_ms),
+            "max_ms": int(row.max_ms),
+            "total_interactions": row.total_interactions,
+        }
+
+    def get_handoff_rate_stats(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+    ) -> dict[str, Any]:
+        """
+        Taxa de resolução automática vs handoff para humanos.
+
+        Returns:
+            {
+                "total_conversations": 500,
+                "bot_resolved": 350,
+                "handoff_required": 150,
+                "handoff_rate": 30.0,
+                "auto_resolution_rate": 70.0
+            }
+        """
+        query = text("""
+            SELECT
+                COUNT(*) as total_conversations,
+                COUNT(*) FILTER (WHERE handoff_at IS NULL) as bot_resolved,
+                COUNT(*) FILTER (WHERE handoff_at IS NOT NULL) as handoff_required
+            FROM conversations
+            WHERE created_at >= :start_date
+                AND created_at <= :end_date
+        """)
+
+        result = self.db.execute(
+            query,
+            {"start_date": start_date, "end_date": end_date},
+        )
+        row = result.fetchone()
+
+        if not row or row.total_conversations == 0:
+            return {
+                "total_conversations": 0,
+                "bot_resolved": 0,
+                "handoff_required": 0,
+                "handoff_rate": 0.0,
+                "auto_resolution_rate": 0.0,
+            }
+
+        total = row.total_conversations
+        bot_resolved = row.bot_resolved or 0
+        handoff_required = row.handoff_required or 0
+
+        handoff_rate = (handoff_required / total * 100) if total > 0 else 0.0
+        auto_resolution_rate = (bot_resolved / total * 100) if total > 0 else 0.0
+
+        return {
+            "total_conversations": total,
+            "bot_resolved": bot_resolved,
+            "handoff_required": handoff_required,
+            "handoff_rate": round(handoff_rate, 2),
+            "auto_resolution_rate": round(auto_resolution_rate, 2),
+        }
+
+    def get_peak_hours_stats(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+    ) -> list[dict[str, Any]]:
+        """
+        Horários de pico de atendimento (agregado por hora do dia).
+
+        Returns:
+            [
+                {"hour": 9, "message_count": 450, "conversation_count": 85},
+                {"hour": 10, "message_count": 520, "conversation_count": 95},
+                ...
+            ]
+        """
+        query = text("""
+            SELECT
+                EXTRACT(HOUR FROM created_at) as hour,
+                COUNT(*) as message_count,
+                COUNT(DISTINCT conversation_id) as conversation_count
+            FROM conversation_messages
+            WHERE created_at >= :start_date
+                AND created_at <= :end_date
+            GROUP BY hour
+            ORDER BY hour
+        """)
+
+        result = self.db.execute(
+            query,
+            {"start_date": start_date, "end_date": end_date},
+        )
+        rows = result.fetchall()
+
+        return [
+            {
+                "hour": int(row.hour),
+                "message_count": row.message_count or 0,
+                "conversation_count": row.conversation_count or 0,
+            }
+            for row in rows
+        ]
+
+    def get_conversations_by_status(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+    ) -> list[dict[str, Any]]:
+        """
+        Distribuição de conversas por status.
+
+        Returns:
+            [
+                {"status": "ACTIVE_BOT", "count": 150, "percentage": 30.0},
+                {"status": "PENDING_HANDOFF", "count": 50, "percentage": 10.0},
+                ...
+            ]
+        """
+        query = text("""
+            WITH status_counts AS (
+                SELECT
+                    status,
+                    COUNT(*) as count
+                FROM conversations
+                WHERE created_at >= :start_date
+                    AND created_at <= :end_date
+                GROUP BY status
+            ),
+            total_count AS (
+                SELECT SUM(count) as total FROM status_counts
+            )
+            SELECT
+                sc.status,
+                sc.count,
+                (sc.count::float / tc.total * 100) as percentage
+            FROM status_counts sc, total_count tc
+            ORDER BY sc.count DESC
+        """)
+
+        result = self.db.execute(
+            query,
+            {"start_date": start_date, "end_date": end_date},
+        )
+        rows = result.fetchall()
+
+        if not rows:
+            return []
+
+        return [
+            {
+                "status": row.status,
+                "count": row.count,
+                "percentage": round(float(row.percentage), 2),
+            }
+            for row in rows
+        ]
+
+    # =====================================================================
+    # Seção 6: Análise de Conversas (L3)
+    # =====================================================================
+
+    def get_message_frequency_by_hour(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+    ) -> list[dict[str, Any]]:
+        """
+        Heatmap de atividade: mensagens por dia da semana e hora do dia.
+
+        Returns:
+            [
+                {"day_of_week": 0, "hour": 9, "message_count": 150},
+                {"day_of_week": 0, "hour": 10, "message_count": 180},
+                ...
+            ]
+        """
+        query = text("""
+            SELECT
+                EXTRACT(DOW FROM created_at) as day_of_week,
+                EXTRACT(HOUR FROM created_at) as hour,
+                COUNT(*) as message_count
+            FROM conversation_messages
+            WHERE created_at >= :start_date
+                AND created_at <= :end_date
+            GROUP BY day_of_week, hour
+            ORDER BY day_of_week, hour
+        """)
+
+        result = self.db.execute(
+            query,
+            {"start_date": start_date, "end_date": end_date},
+        )
+        rows = result.fetchall()
+
+        return [
+            {
+                "day_of_week": int(row.day_of_week),
+                "hour": int(row.hour),
+                "message_count": row.message_count or 0,
+            }
+            for row in rows
+        ]
+
+    def get_keyword_frequency(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        limit: int = 50,
+    ) -> list[dict[str, Any]]:
+        """
+        Palavras-chave mais frequentes nas mensagens INBOUND.
+
+        Returns:
+            [
+                {"keyword": "agendamento", "count": 250},
+                {"keyword": "preço", "count": 180},
+                ...
+            ]
+        """
+        query = text("""
+            WITH message_words AS (
+                SELECT
+                    LOWER(unnest(string_to_array(body, ' '))) as word
+                FROM conversation_messages
+                WHERE created_at >= :start_date
+                    AND created_at <= :end_date
+                    AND direction = 'INBOUND'
+                    AND LENGTH(body) > 0
+            ),
+            cleaned_words AS (
+                SELECT
+                    regexp_replace(word, '[^a-záàâãéèêíïóôõöúçñ]', '', 'g') as clean_word
+                FROM message_words
+                WHERE LENGTH(word) > 3
+            ),
+            stop_words AS (
+                SELECT unnest(ARRAY[
+                    'para', 'com', 'que', 'por', 'uma', 'esse', 'essa', 
+                    'como', 'mais', 'pela', 'pelo', 'muito', 'está',
+                    'tem', 'aqui', 'quando', 'onde', 'quem', 'qual'
+                ]) as word
+            )
+            SELECT
+                clean_word as keyword,
+                COUNT(*) as count
+            FROM cleaned_words
+            WHERE clean_word NOT IN (SELECT word FROM stop_words)
+                AND LENGTH(clean_word) > 0
+            GROUP BY clean_word
+            ORDER BY count DESC
+            LIMIT :limit
+        """)
+
+        result = self.db.execute(
+            query,
+            {"start_date": start_date, "end_date": end_date, "limit": limit},
+        )
+        rows = result.fetchall()
+
+        return [
+            {
+                "keyword": row.keyword,
+                "count": row.count,
+            }
+            for row in rows
+        ]
+
+    def get_message_sentiment_distribution(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+    ) -> dict[str, Any]:
+        """
+        Análise de sentimento baseada em palavras-chave de sentimento.
+
+        Returns:
+            {
+                "positive": 350,
+                "negative": 80,
+                "neutral": 570,
+                "total_messages": 1000
+            }
+        """
+        query = text("""
+            WITH sentiment_keywords AS (
+                SELECT
+                    id,
+                    LOWER(body) as body_lower,
+                    CASE
+                        WHEN LOWER(body) ~ '(obrigad|legal|ótimo|excelente|bom|perfeito|maravilh|adorei|amei)' THEN 'positive'
+                        WHEN LOWER(body) ~ '(ruim|péssimo|horrível|problema|erro|demora|insatisfeit|cancelar|reclamar)' THEN 'negative'
+                        ELSE 'neutral'
+                    END as sentiment
+                FROM conversation_messages
+                WHERE created_at >= :start_date
+                    AND created_at <= :end_date
+                    AND direction = 'INBOUND'
+            )
+            SELECT
+                COUNT(*) FILTER (WHERE sentiment = 'positive') as positive,
+                COUNT(*) FILTER (WHERE sentiment = 'negative') as negative,
+                COUNT(*) FILTER (WHERE sentiment = 'neutral') as neutral,
+                COUNT(*) as total_messages
+            FROM sentiment_keywords
+        """)
+
+        result = self.db.execute(
+            query,
+            {"start_date": start_date, "end_date": end_date},
+        )
+        row = result.fetchone()
+
+        if not row or row.total_messages == 0:
+            return {
+                "positive": 0,
+                "negative": 0,
+                "neutral": 0,
+                "total_messages": 0,
+            }
+
+        return {
+            "positive": row.positive or 0,
+            "negative": row.negative or 0,
+            "neutral": row.neutral or 0,
+            "total_messages": row.total_messages,
+        }
+
+    def get_conversation_topics(
+        self,
+        start_date: datetime,
+        end_date: datetime,
+    ) -> list[dict[str, Any]]:
+        """
+        Topics mais discutidos baseados em keywords temáticas.
+
+        Returns:
+            [
+                {"topic": "Agendamento", "count": 250, "percentage": 35.0},
+                {"topic": "Preços", "count": 150, "percentage": 21.0},
+                ...
+            ]
+        """
+        query = text("""
+            WITH topic_detection AS (
+                SELECT
+                    id,
+                    CASE
+                        WHEN LOWER(body) ~ '(agendar|agendamento|marcar|consulta|horário|disponível)' THEN 'Agendamento'
+                        WHEN LOWER(body) ~ '(preço|valor|custo|quanto|pagar|pagamento)' THEN 'Preços'
+                        WHEN LOWER(body) ~ '(localização|endereço|onde|fica|chegar)' THEN 'Localização'
+                        WHEN LOWER(body) ~ '(procedimento|tratamento|serviço|plano)' THEN 'Procedimentos'
+                        WHEN LOWER(body) ~ '(cancelar|desmarcar|remarcar|alterar)' THEN 'Reagendamento'
+                        WHEN LOWER(body) ~ '(dúvida|pergunta|informação|saber|duvida)' THEN 'Dúvidas'
+                        ELSE 'Outros'
+                    END as topic
+                FROM conversation_messages
+                WHERE created_at >= :start_date
+                    AND created_at <= :end_date
+                    AND direction = 'INBOUND'
+            ),
+            topic_counts AS (
+                SELECT
+                    topic,
+                    COUNT(*) as count
+                FROM topic_detection
+                GROUP BY topic
+            ),
+            total_count AS (
+                SELECT SUM(count) as total FROM topic_counts
+            )
+            SELECT
+                tc.topic,
+                tc.count,
+                (tc.count::float / t.total * 100) as percentage
+            FROM topic_counts tc, total_count t
+            ORDER BY tc.count DESC
+        """)
+
+        result = self.db.execute(
+            query,
+            {"start_date": start_date, "end_date": end_date},
+        )
+        rows = result.fetchall()
+
+        return [
+            {
+                "topic": row.topic,
+                "count": row.count,
+                "percentage": round(float(row.percentage), 2),
+            }
+            for row in rows
+        ]
+
+    # =====================================================================
+    # Seção 7: Real-time Dashboard (L4)
+    # =====================================================================
+
+    def get_active_conversations(self) -> list[dict[str, Any]]:
+        """
+        Conversas ativas no momento (últimos 5 minutos).
+
+        Returns:
+            [
+                {
+                    "id": "uuid",
+                    "chat_id": "5511999999999@c.us",
+                    "status": "ACTIVE_BOT",
+                    "last_message_at": "2026-01-08T14:35:00",
+                    "minutes_since_last_message": 2
+                }
+            ]
+        """
+        query = text("""
+            SELECT
+                id,
+                chat_id,
+                status,
+                last_message_at,
+                EXTRACT(EPOCH FROM (NOW() - last_message_at)) / 60 as minutes_since_last_message
+            FROM conversations
+            WHERE last_message_at >= NOW() - INTERVAL '5 minutes'
+                AND status IN ('ACTIVE_BOT', 'ACTIVE_HUMAN', 'PENDING_HANDOFF')
+            ORDER BY last_message_at DESC
+            LIMIT 100
+        """)
+
+        result = self.db.execute(query)
+        rows = result.fetchall()
+
+        return [
+            {
+                "id": row.id,
+                "chat_id": row.chat_id,
+                "status": row.status,
+                "last_message_at": row.last_message_at.isoformat(),
+                "minutes_since_last_message": round(float(row.minutes_since_last_message), 1),
+            }
+            for row in rows
+        ]
+
+    def get_performance_alerts(
+        self,
+        latency_threshold_ms: int = 5000,
+        error_rate_threshold: float = 5.0,
+    ) -> dict[str, Any]:
+        """
+        Alertas de performance baseados em thresholds.
+
+        Args:
+            latency_threshold_ms: Latência máxima aceitável em ms (default: 5000ms)
+            error_rate_threshold: Taxa de erro máxima em % (default: 5%)
+
+        Returns:
+            {
+                "high_latency_count": 10,
+                "high_latency_avg_ms": 6500,
+                "error_rate": 7.5,
+                "total_interactions_last_hour": 500,
+                "failed_interactions": 38
+            }
+        """
+        query = text("""
+            WITH recent_interactions AS (
+                SELECT
+                    id,
+                    latency_ms,
+                    error,
+                    error_message
+                FROM llm_interactions
+                WHERE created_at >= NOW() - INTERVAL '1 hour'
+            )
+            SELECT
+                COUNT(*) FILTER (WHERE latency_ms > :latency_threshold) as high_latency_count,
+                AVG(latency_ms) FILTER (WHERE latency_ms > :latency_threshold) as high_latency_avg_ms,
+                COUNT(*) FILTER (WHERE error = true) as failed_interactions,
+                COUNT(*) as total_interactions,
+                (COUNT(*) FILTER (WHERE error = true)::float / NULLIF(COUNT(*), 0) * 100) as error_rate
+            FROM recent_interactions
+        """)
+
+        result = self.db.execute(
+            query,
+            {
+                "latency_threshold": latency_threshold_ms,
+            },
+        )
+        row = result.fetchone()
+
+        if not row or row.total_interactions == 0:
+            return {
+                "high_latency_count": 0,
+                "high_latency_avg_ms": 0.0,
+                "error_rate": 0.0,
+                "total_interactions_last_hour": 0,
+                "failed_interactions": 0,
+            }
+
+        return {
+            "high_latency_count": row.high_latency_count or 0,
+            "high_latency_avg_ms": round(float(row.high_latency_avg_ms or 0), 2),
+            "error_rate": round(float(row.error_rate or 0), 2),
+            "total_interactions_last_hour": row.total_interactions,
+            "failed_interactions": row.failed_interactions or 0,
+        }
+
+    def get_realtime_summary(self) -> dict[str, Any]:
+        """
+        Sumário de métricas em tempo real (últimos 5 minutos).
+
+        Returns:
+            {
+                "active_conversations": 15,
+                "messages_per_minute": 8.2,
+                "avg_response_time_ms": 1500,
+                "bot_resolution_rate": 85.0
+            }
+        """
+        query = text("""
+            WITH recent_data AS (
+                SELECT
+                    COUNT(DISTINCT c.id) as active_conversations,
+                    COUNT(DISTINCT cm.id) as total_messages,
+                    AVG(li.latency_ms) as avg_latency,
+                    COUNT(DISTINCT c.id) FILTER (WHERE c.handoff_at IS NULL AND c.status = 'COMPLETED') as bot_resolved,
+                    COUNT(DISTINCT c.id) FILTER (WHERE c.status IN ('COMPLETED', 'PENDING_HANDOFF', 'ACTIVE_HUMAN')) as total_completed
+                FROM conversations c
+                LEFT JOIN conversation_messages cm ON cm.conversation_id = c.id
+                    AND cm.created_at >= NOW() - INTERVAL '5 minutes'
+                LEFT JOIN llm_interactions li ON li.conversation_id = c.id
+                    AND li.created_at >= NOW() - INTERVAL '5 minutes'
+                WHERE c.last_message_at >= NOW() - INTERVAL '5 minutes'
+            )
+            SELECT
+                active_conversations,
+                total_messages,
+                (total_messages::float / 5.0) as messages_per_minute,
+                avg_latency,
+                (bot_resolved::float / NULLIF(total_completed, 0) * 100) as bot_resolution_rate
+            FROM recent_data
+        """)
+
+        result = self.db.execute(query)
+        row = result.fetchone()
+
+        if not row:
+            return {
+                "active_conversations": 0,
+                "messages_per_minute": 0.0,
+                "avg_response_time_ms": 0.0,
+                "bot_resolution_rate": 0.0,
+            }
+
+        return {
+            "active_conversations": row.active_conversations or 0,
+            "messages_per_minute": round(float(row.messages_per_minute or 0), 2),
+            "avg_response_time_ms": round(float(row.avg_latency or 0), 2),
+            "bot_resolution_rate": round(float(row.bot_resolution_rate or 0), 2),
         }
