@@ -41,6 +41,12 @@ class VectorDBError(ExternalServiceError):
 
 class ValidationError(RobbotError):
     """Erro de validação de dados."""
+
+
+class ExportError(RobbotError):
+    """Erro durante exportação de relatórios (PDF/Excel)."""
+
+
 class ConfigurationError(RobbotError):
     """Erro de configuração do sistema."""
 class JobError(RobbotError):
