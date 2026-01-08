@@ -83,6 +83,11 @@ def main():
 
     logger.info("Queues configured: %s", [q.name for q in queues])
 
+    # Limpar workers fantasma antes de iniciar (previne conflitos)
+    from rq.registry import clean_registries
+    clean_registries(redis_conn)
+    logger.info("Cleaned stale worker registries")
+
     # Criar worker com nome único baseado no hostname
     import socket
     worker_name = f"worker-{socket.gethostname()}"
@@ -92,10 +97,13 @@ def main():
         connection=redis_conn,
         name=worker_name,
         exception_handlers=[exception_handler],
+        default_worker_ttl=420,  # 7 minutos - expira automaticamente se inativo
+        job_monitoring_interval=5,  # Verifica jobs a cada 5s
     )
 
     # Log de startup
     logger.info("Worker ID: %s", worker.name)
+    logger.info("Worker TTL: 420s (auto-expire if inactive)")
     logger.info("Waiting for jobs...")
     logger.info("Press Ctrl+C to stop")
 
