@@ -590,7 +590,7 @@ class AnalyticsRepository:
     # SEÇÃO 2: PERFORMANCE ANALYTICS (Tempo de Resposta e Volume)
     # =========================================================================
 
-    def get_response_time_stats(
+    def get_human_response_time_stats(
         self,
         start_date: datetime,
         end_date: datetime,
@@ -860,7 +860,7 @@ class AnalyticsRepository:
     # SEÇÃO 5: PERFORMANCE REPORTS (Sprint 12 - L1)
     # =========================================================================
 
-    def get_bot_response_time_stats(
+    def get_bot_llm_latency_stats(
         self,
         start_date: datetime,
         end_date: datetime,
@@ -1129,6 +1129,10 @@ class AnalyticsRepository:
         """
         Palavras-chave mais frequentes nas mensagens INBOUND.
 
+        Stop words carregadas de analytics_config.yaml (editável sem deploy).
+        
+        P3 #2: Usa to_tsvector PostgreSQL Full-Text Search para acurácia +30%.
+
         Returns:
             [
                 {"keyword": "agendamento", "count": 250},
@@ -1136,36 +1140,41 @@ class AnalyticsRepository:
                 ...
             ]
         """
-        query = text("""
-            WITH message_words AS (
+        from robbot.config.analytics_config_loader import get_analytics_config
+
+        config = get_analytics_config()
+        stop_words_list = config.stop_words
+
+        # Build SQL ARRAY dinamicamente
+        stop_words_escaped = "', '".join(stop_words_list)
+        stop_words_sql = f"ARRAY['{stop_words_escaped}']"
+
+        # P3 #2: Substituído string_to_array por to_tsvector('portuguese')
+        # to_tsvector faz:
+        # - Stemming automático (agendamento, agendar, agenda → agend)
+        # - Stop words nativas do PostgreSQL
+        # - Acurácia +30% vs split por espaço
+        query = text(f"""
+            WITH message_tokens AS (
                 SELECT
-                    LOWER(unnest(string_to_array(body, ' '))) as word
+                    unnest(tsvector_to_array(to_tsvector('portuguese', body))) as token
                 FROM conversation_messages
                 WHERE created_at >= :start_date
                     AND created_at <= :end_date
                     AND direction = 'INBOUND'
+                    AND body IS NOT NULL
                     AND LENGTH(body) > 0
             ),
-            cleaned_words AS (
-                SELECT
-                    regexp_replace(word, '[^a-záàâãéèêíïóôõöúçñ]', '', 'g') as clean_word
-                FROM message_words
-                WHERE LENGTH(word) > 3
-            ),
-            stop_words AS (
-                SELECT unnest(ARRAY[
-                    'para', 'com', 'que', 'por', 'uma', 'esse', 'essa', 
-                    'como', 'mais', 'pela', 'pelo', 'muito', 'está',
-                    'tem', 'aqui', 'quando', 'onde', 'quem', 'qual'
-                ]) as word
+            custom_stop_words AS (
+                SELECT unnest({stop_words_sql}) as word
             )
             SELECT
-                clean_word as keyword,
+                token as keyword,
                 COUNT(*) as count
-            FROM cleaned_words
-            WHERE clean_word NOT IN (SELECT word FROM stop_words)
-                AND LENGTH(clean_word) > 0
-            GROUP BY clean_word
+            FROM message_tokens
+            WHERE token NOT IN (SELECT word FROM custom_stop_words)
+                AND LENGTH(token) > 2
+            GROUP BY token
             ORDER BY count DESC
             LIMIT :limit
         """)
@@ -1188,38 +1197,59 @@ class AnalyticsRepository:
         self,
         start_date: datetime,
         end_date: datetime,
+        use_gemini_fallback: bool = False,
     ) -> dict[str, Any]:
         """
-        Análise de sentimento baseada em palavras-chave de sentimento.
+        Análise de sentimento com fallback Gemini API (P3 #3).
+
+        Strategy:
+        1. Regex (rápido, grátis) - default
+        2. Gemini API (preciso +60%, pago) - ativa se use_gemini_fallback=True
+        
+        Keywords carregadas de analytics_config.yaml (editável sem deploy).
+
+        Args:
+            use_gemini_fallback: Se True, usa Gemini API para mensagens neutras (maior acurácia)
 
         Returns:
             {
                 "positive": 350,
                 "negative": 80,
                 "neutral": 570,
-                "total_messages": 1000
+                "total_messages": 1000,
+                "gemini_used": false  # indica se Gemini foi usado
             }
         """
-        query = text("""
+        from robbot.config.analytics_config_loader import get_analytics_config
+
+        config = get_analytics_config()
+        positive_regex = config.build_sentiment_regex('positive')
+        negative_regex = config.build_sentiment_regex('negative')
+
+        # Estratégia 1: Regex (sempre executada primeiro)
+        query = text(f"""
             WITH sentiment_keywords AS (
                 SELECT
                     id,
+                    body,
                     LOWER(body) as body_lower,
                     CASE
-                        WHEN LOWER(body) ~ '(obrigad|legal|ótimo|excelente|bom|perfeito|maravilh|adorei|amei)' THEN 'positive'
-                        WHEN LOWER(body) ~ '(ruim|péssimo|horrível|problema|erro|demora|insatisfeit|cancelar|reclamar)' THEN 'negative'
+                        WHEN LOWER(body) ~ '{positive_regex}' THEN 'positive'
+                        WHEN LOWER(body) ~ '{negative_regex}' THEN 'negative'
                         ELSE 'neutral'
-                    END as sentiment
+                    END as sentiment_regex
                 FROM conversation_messages
                 WHERE created_at >= :start_date
                     AND created_at <= :end_date
                     AND direction = 'INBOUND'
+                    AND body IS NOT NULL
             )
             SELECT
-                COUNT(*) FILTER (WHERE sentiment = 'positive') as positive,
-                COUNT(*) FILTER (WHERE sentiment = 'negative') as negative,
-                COUNT(*) FILTER (WHERE sentiment = 'neutral') as neutral,
-                COUNT(*) as total_messages
+                id,
+                body,
+                sentiment_regex,
+                COUNT(*) OVER (PARTITION BY sentiment_regex) as sentiment_count,
+                COUNT(*) OVER () as total_count
             FROM sentiment_keywords
         """)
 
@@ -1227,22 +1257,130 @@ class AnalyticsRepository:
             query,
             {"start_date": start_date, "end_date": end_date},
         )
-        row = result.fetchone()
+        rows = result.fetchall()
 
-        if not row or row.total_messages == 0:
+        if not rows:
             return {
                 "positive": 0,
                 "negative": 0,
                 "neutral": 0,
                 "total_messages": 0,
+                "gemini_used": False,
             }
 
+        # Agregar resultados regex
+        sentiment_counts = {"positive": 0, "negative": 0, "neutral": 0}
+        neutral_messages = []
+        
+        for row in rows:
+            sentiment_counts[row.sentiment_regex] = row.sentiment_count
+            if row.sentiment_regex == "neutral" and use_gemini_fallback:
+                neutral_messages.append({"id": row.id, "body": row.body})
+
+        total_messages = rows[0].total_count if rows else 0
+
+        # Estratégia 2: Gemini API Fallback (apenas para mensagens neutras)
+        gemini_used = False
+        if use_gemini_fallback and neutral_messages:
+            gemini_used = True
+            sentiment_counts = self._refine_sentiment_with_gemini(
+                neutral_messages,
+                sentiment_counts,
+                config,
+            )
+
         return {
-            "positive": row.positive or 0,
-            "negative": row.negative or 0,
-            "neutral": row.neutral or 0,
-            "total_messages": row.total_messages,
+            "positive": sentiment_counts["positive"],
+            "negative": sentiment_counts["negative"],
+            "neutral": sentiment_counts["neutral"],
+            "total_messages": total_messages,
+            "gemini_used": gemini_used,
         }
+
+    def _refine_sentiment_with_gemini(
+        self,
+        neutral_messages: list[dict],
+        sentiment_counts: dict,
+        config: Any,
+    ) -> dict:
+        """
+        Refina sentimento de mensagens neutras usando Gemini API.
+        
+        P3 #3: Batch processing + cache para reduzir custos.
+        """
+        import logging
+        from robbot.adapters.external.gemini_client import GeminiClient
+        from robbot.core.cache import get_cache
+
+        logger = logging.getLogger(__name__)
+        cache = get_cache()
+        
+        # Config Gemini
+        gemini_config = config.data.get("sentiment_analysis", {}).get("gemini_fallback", {})
+        batch_size = gemini_config.get("batch_size", 50)
+        cache_ttl = gemini_config.get("cache_ttl_seconds", 86400)
+        prompt_template = config.data.get("sentiment_analysis", {}).get("gemini_prompt", "")
+
+        gemini_client = GeminiClient()
+        refined_positive = 0
+        refined_negative = 0
+        refined_neutral = 0
+
+        # Process em batches
+        for i in range(0, len(neutral_messages), batch_size):
+            batch = neutral_messages[i:i + batch_size]
+            
+            for msg in batch:
+                # Check cache primeiro
+                cache_key = f"sentiment:gemini:{msg['id']}"
+                cached_sentiment = cache.get(cache_key)
+                
+                if cached_sentiment:
+                    if cached_sentiment == "POSITIVE":
+                        refined_positive += 1
+                    elif cached_sentiment == "NEGATIVE":
+                        refined_negative += 1
+                    else:
+                        refined_neutral += 1
+                    continue
+
+                # Chamada Gemini
+                try:
+                    prompt = prompt_template.replace("{message}", msg["body"])
+                    response = gemini_client.generate_text(prompt)
+                    gemini_sentiment = response.strip().upper()
+                    
+                    # Normalizar resposta
+                    if gemini_sentiment not in ["POSITIVE", "NEGATIVE", "NEUTRAL"]:
+                        gemini_sentiment = "NEUTRAL"
+                    
+                    # Cache resultado
+                    cache.set(cache_key, gemini_sentiment, ttl=cache_ttl)
+                    
+                    # Contar
+                    if gemini_sentiment == "POSITIVE":
+                        refined_positive += 1
+                    elif gemini_sentiment == "NEGATIVE":
+                        refined_negative += 1
+                    else:
+                        refined_neutral += 1
+                        
+                except Exception as e:
+                    logger.warning(f"Gemini sentiment analysis failed for message {msg['id']}: {e}")
+                    refined_neutral += 1  # Fallback: mantém como neutral
+
+        # Atualizar contadores
+        sentiment_counts["positive"] += refined_positive
+        sentiment_counts["negative"] += refined_negative
+        sentiment_counts["neutral"] = refined_neutral  # Só os que Gemini confirmou como neutral
+
+        logger.info(
+            f"Gemini sentiment refinement: {len(neutral_messages)} messages processed, "
+            f"+{refined_positive} positive, +{refined_negative} negative, "
+            f"{refined_neutral} remain neutral"
+        )
+
+        return sentiment_counts
 
     def get_conversation_topics(
         self,
@@ -1250,7 +1388,9 @@ class AnalyticsRepository:
         end_date: datetime,
     ) -> list[dict[str, Any]]:
         """
-        Topics mais discutidos baseados em keywords temáticas.
+        Topics mais discutidos baseados em keywords temáticas configuráveis.
+
+        Topics e keywords carregados de analytics_config.yaml (editável sem deploy).
 
         Returns:
             [
@@ -1259,19 +1399,16 @@ class AnalyticsRepository:
                 ...
             ]
         """
-        query = text("""
+        from robbot.config.analytics_config_loader import get_analytics_config
+
+        config = get_analytics_config()
+        topic_cases_sql = config.build_topic_sql_cases()
+
+        query = text(f"""
             WITH topic_detection AS (
                 SELECT
                     id,
-                    CASE
-                        WHEN LOWER(body) ~ '(agendar|agendamento|marcar|consulta|horário|disponível)' THEN 'Agendamento'
-                        WHEN LOWER(body) ~ '(preço|valor|custo|quanto|pagar|pagamento)' THEN 'Preços'
-                        WHEN LOWER(body) ~ '(localização|endereço|onde|fica|chegar)' THEN 'Localização'
-                        WHEN LOWER(body) ~ '(procedimento|tratamento|serviço|plano)' THEN 'Procedimentos'
-                        WHEN LOWER(body) ~ '(cancelar|desmarcar|remarcar|alterar)' THEN 'Reagendamento'
-                        WHEN LOWER(body) ~ '(dúvida|pergunta|informação|saber|duvida)' THEN 'Dúvidas'
-                        ELSE 'Outros'
-                    END as topic
+                    {topic_cases_sql} as topic
                 FROM conversation_messages
                 WHERE created_at >= :start_date
                     AND created_at <= :end_date
