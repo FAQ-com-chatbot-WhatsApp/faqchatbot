@@ -48,14 +48,20 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install --system -e . --no-deps || true
 
 # Instala deps do pyproject.toml (exceto ML: torch, transformers, faster-whisper)
+# IMPORTANTE: openpyxl e reportlab são necessários para export_service.py
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=cache,target=/root/.cache/pip \
     uv pip install --system \
-    alembic bcrypt chromadb email-validator fastapi google-generativeai httpx \
+    alembic bcrypt chromadb email-validator fastapi google-genai google-api-core httpx \
     langchain langchain-google-genai passlib pillow psycopg2-binary pydantic \
     pydantic-settings pyjwt python-dotenv python-multipart redis redis-om \
     requests rq sqlalchemy tiktoken uvicorn pyotp qrcode sentry-sdk schedule \
-    gunicorn watchfiles hiredis python-jose cryptography openai
+    gunicorn watchfiles hiredis python-jose cryptography openai pyyaml
+
+# Instala dependências de exportação separadamente (podem ter deps adicionais)
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=cache,target=/root/.cache/pip \
+    uv pip install --system openpyxl reportlab
 
 # ============================================================================
 # STAGE 2: ML Dependencies (separado para paralelização)
