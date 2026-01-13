@@ -1,208 +1,68 @@
-# Plan: Adequação Arquitetura e Documentação Monorepo
+---
+title: Monorepo Architecture and Documentation Refactor
+version: 1.0
+date_created: 2026-01-13
+last_updated: 2026-01-13
+---
+# Implementation Plan: Monorepo Architecture and Documentation Refactor
 
-Corrigir inconsistências entre documentação (instructions.md) e implementação real (ADRs), simplificar estrutura backend removendo aninhamentos desnecessários, e organizar monorepo mantendo backend Python e frontend Node.js completamente independentes.
+Fix inconsistencies between documentation (instructions.md) and actual implementation (ADRs), simplify backend structure by removing unnecessary nesting, and organize monorepo while keeping Python backend and Node.js frontend completely independent.
 
-## Steps
+## Architecture and design
 
-### 1. Corrigir instructions.md vs ADRs
+The Clinica Go project follows Adapted Clean Architecture (ADR-004) with Python/FastAPI backend and Node.js/Next.js frontend completely independent. This plan aims to:
 
-Atualizar `back/.github/instructions/instructions.md` removendo referências a `domain/entities/` (deletado em ADR-006), remover `domain/dtos/` (não existe), atualizar mapeamento para refletir que Models ORM servem como entities, Schemas servem como DTOs, documentar estrutura real pós-refatoração Janeiro 2026.
+1. **Align documentation with actual implementation** - Remove references to `domain/entities/` and `domain/dtos/` that were consolidated per ADR-006
+2. **Simplify API structure** - Remove unnecessary nesting `api/v1/routers/` to `api/routes.py`
+3. **Organize monorepo** - Centralize architectural documentation at root, keep specific docs in each subproject
+4. **Standardize tooling** - Add `.editorconfig` and root README.md for developers
 
-**Arquivos afetados:**
-- `back/.github/instructions/instructions.md`
-
-**Mudanças necessárias:**
-- Remover seção `domain/entities/*.py`
-- Remover seção `domain/dtos/*.py`
-- Atualizar seção Domain para mencionar apenas `domain/enums.py`
-- Adicionar nota: "Models ORM (infra/db/models/) servem como entities"
-- Adicionar nota: "Schemas Pydantic servem como DTOs"
-- Atualizar exemplo concreto de auth para não mencionar entities
-
-### 2. Simplificar estrutura API backend
-
-Achatar `back/src/robbot/api/v1/` para `back/src/robbot/api/`, mover routers/api.py para routes.py, mover dependencies.py para raiz de api/, atualizar todos os imports em main.py e controllers (estimado 20-30 arquivos), deletar pasta v1/ vazia.
-
-**Estrutura atual:**
+**Current → Target API Structure:**
 ```
-api/
-└── v1/
-    ├── routers/
-    │   └── api.py
-    └── dependencies.py
+api/v1/routers/api.py         →  api/routes.py
+api/v1/dependencies.py        →  api/dependencies.py
 ```
 
-**Estrutura alvo:**
-```
-api/
-├── routes.py        (era routers/api.py)
-└── dependencies.py  (movido da v1/)
-```
+**Risks:**
+- Breaking ~20-30 imports in controllers when simplifying API - mitigate with grep + tests
+- Losing git history - mitigate with `git mv`
+- Deployment conflicts - internal changes only, public API unchanged
 
-**Arquivos a modificar:**
-- `back/src/robbot/main.py` - atualizar import de `robbot.api.v1.routers.api` para `robbot.api.routes`
-- Todos os controllers em `back/src/robbot/adapters/controllers/` - verificar se importam algo de api.v1
-- `back/src/robbot/api/v1/routers/api.py` - mover para `back/src/robbot/api/routes.py`
-- `back/src/robbot/api/v1/dependencies.py` - mover para `back/src/robbot/api/dependencies.py`
+## Tasks
 
-**Padrão de atualização de imports:**
-```python
-# ANTES
-from robbot.api.v1.dependencies import get_current_user
-from robbot.api.v1.routers.api import api_router
+### Phase 1: Documentation (low risk)
+- [ ] Update `back/.github/instructions/instructions.md` removing references to `domain/entities/` and `domain/dtos/`
+- [ ] Document that ORM Models serve as entities and Pydantic Schemas as DTOs
+- [ ] Update auth example to reflect actual structure
 
-# DEPOIS
-from robbot.api.dependencies import get_current_user
-from robbot.api.routes import api_router
-```
+### Phase 2: File reorganization (low risk)
+- [ ] Move `back/docs/architecture/` → `docs/architecture/` using `git mv`
+- [ ] Move `auto-commit.sh` and `auto-commit.ps1` → `scripts/` using `git mv`
+- [ ] Create `docs/README.md` with general documentation index
+- [ ] Keep `back/docs/{api,deployment,development,tic}` (backend-specific)
 
-### 3. Reorganizar documentação e scripts
+### Phase 3: Monorepo configuration (zero risk)
+- [ ] Create root `README.md` documenting project structure
+- [ ] Create root `.editorconfig` with standards (Python indent=4, JS/TS indent=2)
+- [ ] Document commands to run backend (`docker-compose up`) and frontend (`npm run dev`)
 
-Mover `back/docs/architecture/` para root `docs/architecture/` (decisões são do projeto inteiro), mover `auto-commit.sh` e `auto-commit.ps1` para root `scripts/`, manter back/docs/api/ e back/docs/deployment/ (específicos do backend).
+### Phase 4: Cleanup (zero risk)
+- [ ] Delete `back/src/robbot/infra/migrations/` (empty folder)
+- [ ] Validate root `.gitignore` covers Python and Node.js artifacts
 
-**Movimentações:**
-```
-back/docs/architecture/          → docs/architecture/
-auto-commit.sh                   → scripts/auto-commit.sh
-auto-commit.ps1                  → scripts/auto-commit.ps1
-```
+### Phase 5: API simplification (high impact - execute last)
+- [ ] Search all `robbot.api.v1` imports using `grep -r "robbot.api.v1" back/src/`
+- [ ] Move `api/v1/routers/api.py` → `api/routes.py` with `git mv`
+- [ ] Move `api/v1/dependencies.py` → `api/dependencies.py` with `git mv`
+- [ ] Update import in `back/src/robbot/main.py`
+- [ ] Update imports in all controllers (~20-30 files)
+- [ ] Delete empty `back/src/robbot/api/v1/` folder
+- [ ] Run `cd back && pytest tests/` for validation
 
-**Manter no backend:**
-```
-back/docs/api/                   (Postman collection - específico backend)
-back/docs/deployment/            (Railway deploy - específico backend)
-back/docs/development/           (Logging guidelines - específico backend)
-back/docs/tic/                   (Documentação acadêmica - específico backend)
-back/docs/README.md              (Índice docs backend)
-```
+## Open questions
 
-**Criar novo arquivo:**
-- `docs/README.md` - Índice geral da documentação do projeto
+1. **Rename back/ to backend/?** Better monorepo convention or keep `back/` for compatibility with existing configs (Dockerfile, docker-compose.yml, Railway deployments)?
 
-### 4. Criar configuração monorepo root
+2. **Automated refactoring tool?** The change from `robbot.api.v1` to `robbot.api` affects ~20-30 files - use manual find/replace or automated tool like `rope` or `bowler`?
 
-Criar root README.md documentando estrutura (backend Python independente, frontend Node independente), criar root .editorconfig para consistência de código, documentar como rodar cada projeto separadamente, adicionar seção de ADRs e arquitetura.
-
-**Arquivos a criar:**
-
-**README.md (root):**
-```markdown
-# Clinica Go
-
-Monorepo com backend Python (FastAPI) e frontend Node.js (Next.js) independentes.
-
-## Estrutura
-
-- `back/` - Backend Python (FastAPI + PostgreSQL + Redis)
-- `frontend/` - Frontend Next.js (React 19 + Tailwind v4)
-- `docs/` - Documentação arquitetural (ADRs)
-- `scripts/` - Scripts utilitários do projeto
-
-## Backend
-
-Tecnologias: Python 3.11+, FastAPI, PostgreSQL, Redis, SQLAlchemy, Alembic
-
-Ver: [back/README.md](back/README.md)
-
-## Frontend
-
-Tecnologias: TypeScript, Next.js 16, React 19, Tailwind CSS v4, shadcn/ui
-
-Ver: [frontend/README.md](frontend/README.md)
-
-## Arquitetura
-
-Decisões arquiteturais documentadas em [docs/architecture/decisions/](docs/architecture/decisions/)
-
-## Como Rodar
-
-### Backend
-```bash
-cd back
-docker-compose up
-```
-
-### Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-## Estrutura Técnica
-
-- Backend e Frontend são completamente independentes
-- Comunicação via HTTP REST API
-- Backend expõe API em `/api/v1/`
-- OpenAPI spec disponível em `/openapi.json`
-```
-
-**.editorconfig (root):**
-```ini
-root = true
-
-[*]
-charset = utf-8
-end_of_line = lf
-insert_final_newline = true
-trim_trailing_whitespace = true
-
-[*.{js,jsx,ts,tsx,json,css}]
-indent_style = space
-indent_size = 2
-
-[*.{py}]
-indent_style = space
-indent_size = 4
-
-[*.{md,yml,yaml}]
-indent_style = space
-indent_size = 2
-```
-
-### 5. Limpeza backend
-
-Deletar `back/src/robbot/infra/migrations/` (pasta vazia, Alembic em `back/alembic/` já gerencia), validar que `.gitignore` root cobre artifacts de ambos projetos, rodar testes backend para garantir que mudanças de imports não quebraram nada.
-
-**Ações:**
-- Deletar diretório `back/src/robbot/infra/migrations/`
-- Revisar `.gitignore` root (já está adequado)
-- Executar `pytest` em back/ após mudanças de imports
-
-**Comando de validação:**
-```bash
-cd back
-pytest tests/
-```
-
-## Further Considerations
-
-1. **Renomear back/ para backend/**: Melhor convenção para monorepo ou manter back/ para compatibilidade com configs existentes (Dockerfile, docker-compose, Railway)?
-
-2. **Atualizar imports**: Mudança de `robbot.api.v1` para `robbot.api` afeta aproximadamente 20-30 arquivos - fazer manualmente ou usar ferramenta de refactoring automatizada?
-
-3. **ADRs novos**: Criar ADR-008 documentando simplificação de api/v1/ e ADR-009 para organização monorepo ou apenas atualizar documentação existente?
-
-4. **Frontend integration**: Manter frontend como design system standalone ou planejar integração futura com backend via HTTP API (OpenAPI spec já existe)?
-
-## Riscos e Mitigações
-
-### Risco: Quebrar imports ao remover api/v1/
-- **Mitigação**: Usar grep/search para encontrar todos os imports antes de modificar
-- **Validação**: Rodar pytest completo após mudanças
-
-### Risco: Perder histórico git ao mover arquivos
-- **Mitigação**: Usar `git mv` ao invés de copiar/deletar
-- **Comando**: `git mv back/docs/architecture docs/architecture`
-
-### Risco: Conflito com deployments existentes
-- **Mitigação**: Mudanças são internas, API pública não muda
-- **Validação**: Verificar que Railway/Docker configs não quebram
-
-## Ordem de Execução
-
-1. Step 1 (instructions.md) - Documentação apenas, zero risco
-2. Step 3 (mover docs/scripts) - Apenas movimentação, baixo risco
-3. Step 4 (criar configs root) - Criação de novos arquivos, zero risco
-4. Step 5 (limpeza) - Deletar pasta vazia, zero risco
-5. Step 2 (api/v1) - Maior impacto, fazer por último com testes
+3. **Document via ADR?** Create ADR-008 (api/v1/ simplification) and ADR-009 (monorepo organization) or just update existing documentation?
