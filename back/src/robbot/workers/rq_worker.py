@@ -83,12 +83,14 @@ def main():
 
     logger.info("Queues configured: %s", [q.name for q in queues])
 
-    # Limpar workers fantasma antes de iniciar (previne conflitos)
+    # Clean stale worker registries before starting (prevents conflicts)
+    # NOTE: clean_registries must be called per queue, not with a list
     from rq.registry import clean_registries
-    clean_registries(redis_conn)
+    for queue in queues:
+        clean_registries(queue)
     logger.info("Cleaned stale worker registries")
 
-    # Criar worker com nome único baseado no hostname
+    # Create worker with unique name based on hostname
     import socket
     worker_name = f"worker-{socket.gethostname()}"
 
