@@ -9,7 +9,7 @@ import logging
 import time
 from typing import Any
 
-import google.generativeai as genai
+import google.genai as genai
 from google.api_core import exceptions as google_exceptions
 
 from robbot.config.settings import settings
