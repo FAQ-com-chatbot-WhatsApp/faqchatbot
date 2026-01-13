@@ -18,29 +18,35 @@ Uso:
 """
 
 import logging
+import socket
 import sys
 
 from rq import Worker
 from rq.job import Job
+from rq.registry import clean_registries
 
 from robbot.config.settings import settings
+from robbot.core.logging_setup import configure_logging
 from robbot.infra.redis.client import get_redis_client
 from robbot.infra.redis.queue import get_queue_manager
-
-from robbot.core.logging_setup import configure_logging
 
 # Configurar logging estruturado
 configure_logging()
 
 logger = logging.getLogger(__name__)
-def exception_handler(job: Job, exc_type, exc_value, traceback):
+
+
+def exception_handler(job: Job, exc_type, exc_value, traceback_):
     """
     Handler customizado para exceções em jobs.
 
     Registra erro detalhado e pode enviar alertas se necessário.
     """
     logger.error(
-        f"Job {job.id} falhou: {exc_type.__name__}: {exc_value}",
+        "Job %s falhou: %s: %s",
+        job.id,
+        exc_type.__name__,
+        exc_value,
         extra={
             "job_id": job.id,
             "queue": job.origin,
@@ -53,9 +59,8 @@ def exception_handler(job: Job, exc_type, exc_value, traceback):
         exc_info=True,
     )
 
-    # TODO: Integrar com sistema de alertas (Sentry, email, etc)
-    # if isinstance(exc_value, CriticalError):
-    #     send_alert_to_admin(job, exc_value)
+    # NOTE: Integrar com sistema de alertas (Sentry, email, etc)
+    _ = traceback_  # consumed to avoid unused-argument warning
 def main():
     """Inicializar e rodar worker RQ."""
     logger.info("Starting RQ Worker...")
@@ -85,13 +90,11 @@ def main():
 
     # Clean stale worker registries before starting (prevents conflicts)
     # NOTE: clean_registries must be called per queue, not with a list
-    from rq.registry import clean_registries
     for queue in queues:
         clean_registries(queue)
     logger.info("Cleaned stale worker registries")
 
     # Create worker with unique name based on hostname
-    import socket
     worker_name = f"worker-{socket.gethostname()}"
 
     worker = Worker(
