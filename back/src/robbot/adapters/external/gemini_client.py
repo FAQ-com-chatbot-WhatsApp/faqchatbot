@@ -16,6 +16,10 @@ from robbot.config.settings import settings
 from robbot.core.custom_exceptions import LLMError
 
 logger = logging.getLogger(__name__)
+
+_singleton: dict[str, "GeminiClient | None"] = {"client": None}
+
+
 class GeminiClient:
     """
     Client para Google Gemini API com retry logic e error handling.
@@ -30,16 +34,19 @@ class GeminiClient:
     def __init__(self, tools: list | None = None):
         """Inicializar cliente Gemini com configurações do settings."""
         try:
-            genai.configure(api_key=settings.GOOGLE_API_KEY)
+            self._tools = tools or []
 
-            self.model = genai.GenerativeModel(
-                model_name=settings.GEMINI_MODEL,
-                generation_config={
-                    "temperature": settings.GEMINI_TEMPERATURE,
-                    "max_output_tokens": settings.GEMINI_MAX_TOKENS,
-                },
-                tools=tools
-            )
+            try:
+                genai.configure(api_key=settings.GOOGLE_API_KEY)
+            except AttributeError as e:
+                raise LLMError("Gemini", "google.genai.configure not available") from e
+
+            self.client = genai.Client()
+
+            self._generation_config = {
+                "temperature": settings.GEMINI_TEMPERATURE,
+                "max_output_tokens": settings.GEMINI_MAX_TOKENS,
+            }
 
             logger.info(
                 "[SUCCESS] GeminiClient initialized (model=%s, temp=%s, tools=%s)",
@@ -47,7 +54,7 @@ class GeminiClient:
             )
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("[ERROR] Failed to initialize GeminiClient: %s", e)
-            raise LLMError("Gemini", f"Initialization failed: {e}", original_error=e)
+            raise LLMError("Gemini", f"Initialization failed: {e}", original_error=e) from e
 
     def generate_response(
         self,
@@ -90,7 +97,18 @@ class GeminiClient:
                 start_time = time.time()
 
                 # Chamar Gemini API
-                response = self.model.generate_content(full_prompt)
+                request_payload: dict[str, Any] = {
+                    "model": settings.GEMINI_MODEL,
+                    "contents": full_prompt,
+                }
+
+                if self._tools:
+                    request_payload["tools"] = self._tools
+
+                if self._generation_config:
+                    request_payload["generation_config"] = self._generation_config
+
+                response = self.client.models.generate_content(**request_payload)
 
                 latency_ms = int((time.time() - start_time) * 1000)
 
@@ -129,14 +147,14 @@ class GeminiClient:
                 if attempt < max_retries:
                     time.sleep(wait_time)
                     continue
-                raise LLMError("Gemini", f"Rate limit exceeded: {e}", original_error=e)
+                raise LLMError("Gemini", f"Rate limit exceeded: {e}", original_error=e) from e
 
             except google_exceptions.DeadlineExceeded as e:
                 # Timeout - tentar novamente
                 logger.warning("[WARNING] Request timeout (attempt %s)", attempt)
                 if attempt < max_retries:
                     continue
-                raise LLMError("Gemini", f"Timeout: {e}", original_error=e)
+                raise LLMError("Gemini", f"Timeout: {e}", original_error=e) from e
 
             except google_exceptions.GoogleAPIError as e:
                 # Erro da API Google
@@ -144,7 +162,7 @@ class GeminiClient:
                 if attempt < max_retries:
                     time.sleep(1)
                     continue
-                raise LLMError("Gemini", f"API error: {e}", original_error=e)
+                raise LLMError("Gemini", f"API error: {e}", original_error=e) from e
 
             except Exception as e:  # noqa: BLE001 (blind exception)
                 # Erro inesperado
@@ -152,7 +170,7 @@ class GeminiClient:
                 if attempt < max_retries:
                     time.sleep(1)
                     continue
-                raise LLMError("Gemini", f"Unexpected error: {e}", original_error=e)
+                raise LLMError("Gemini", f"Unexpected error: {e}", original_error=e) from e
 
         # Se chegou aqui, todas as tentativas falharam
         raise LLMError("Gemini", "All retry attempts failed")
@@ -216,28 +234,19 @@ class GeminiClient:
             pass
 
         return "UNKNOWN"
-# Singleton global
-_gemini_client: GeminiClient | None = None
+
+
 def get_gemini_client(tools: list | None = None) -> GeminiClient:
-    """
-    Obter instância singleton do cliente Gemini.
-
-    Args:
-        tools: Lista de tools para function calling (opcional)
-
-    Returns:
-        GeminiClient singleton
-    """
-    global _gemini_client
-
-    if _gemini_client is None:
-        _gemini_client = GeminiClient(tools=tools)
+    """Obter instância singleton do cliente Gemini."""
+    client = _singleton.get("client")
+    if client is None:
+        _singleton["client"] = GeminiClient(tools=tools)
         logger.info("GeminiClient initialized as singleton")
+    return _singleton["client"]  # type: ignore[return-value]
 
-    return _gemini_client
+
 def close_gemini_client() -> None:
     """Fechar cliente (cleanup)."""
-    global _gemini_client
-    if _gemini_client is not None:
+    if _singleton.get("client") is not None:
         logger.info("Fechando GeminiClient")
-        _gemini_client = None
+    _singleton["client"] = None
