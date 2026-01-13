@@ -137,8 +137,8 @@ services:
       REDIS_URL: redis://redis:6379/0
 
       # SMTP (Maildev em desenvolvimento)
-      SMTP_HOST: ${SMTP_HOST:-maildev}
-      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_HOST: maildev
+      SMTP_PORT: 1025
       SMTP_USERNAME: ${SMTP_USERNAME:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_TLS: ${SMTP_TLS:-false}
@@ -195,8 +195,8 @@ services:
       SERVICE_NAME: "worker"
       LOG_COLOR: "true"
       AUTO_MIGRATE: "false"
-      SMTP_HOST: ${SMTP_HOST:-maildev}
-      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_HOST: maildev
+      SMTP_PORT: 1025
       SMTP_USERNAME: ${SMTP_USERNAME:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_TLS: ${SMTP_TLS:-false}
