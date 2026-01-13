@@ -21,7 +21,7 @@ from redis import Redis
 
 from robbot.adapters.repositories.analytics_repository import AnalyticsRepository
 from robbot.config.settings import get_settings
-from robbot.infra.redis.queue import QueueManager
+from robbot.infra.redis.queue import RQQueueManager
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -44,7 +44,7 @@ class MetricsService:
         self,
         analytics_repo: AnalyticsRepository,
         redis_client: Redis,
-        queue_manager: QueueManager | None = None,
+        queue_manager: RQQueueManager | None = None,
     ):
         self.analytics = analytics_repo
         self.redis = redis_client
