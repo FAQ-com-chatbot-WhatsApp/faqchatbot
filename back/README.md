@@ -292,7 +292,83 @@ git branch -a
 
 ## ⚙️ Configuração Inicial
 
-### 1️⃣ Preparar Auto Commit
+### 1️⃣ Preparar Arquivo de Ambiente (.env)
+
+O projeto utiliza um arquivo `.env` para gerenciar segredos e configurações.
+
+1.  **Navegue até a pasta `back`**:
+    ```bash
+    cd <seu-diretorio>/clinica_go/back
+    ```
+
+2.  **Copie o arquivo de exemplo**:
+    ```bash
+    # No Git Bash
+    cp .env.example .env
+
+    # No PowerShell
+    Copy-Item .env.example .env
+    ```
+
+3.  **Preencha as variáveis obrigatórias** no arquivo `.env` recém-criado:
+    -   `SECRET_KEY`: Gere uma chave segura. Você pode usar o comando `openssl rand -hex 32` no Git Bash ou um gerador online.
+    -   `GOOGLE_API_KEY`: Obtenha sua chave de API no [Google AI Studio](https://ai.google.dev/).
+
+### 2️⃣ Obter Credenciais da API do WhatsApp (WAHA)
+
+O serviço `waha` precisa de credenciais que são geradas na primeira vez que ele é executado. Siga estes passos **exatamente**.
+
+1.  **Verifique o `.env`**: Certifique-se de que as seguintes variáveis estejam **vazias** no seu arquivo `.env`:
+    ```dotenv
+    WAHA_API_KEY=
+    WAHA_DASHBOARD_USERNAME=
+    WAHA_DASHBOARD_PASSWORD=
+    WHATSAPP_SWAGGER_USERNAME=
+    WHATSAPP_SWAGGER_PASSWORD=
+    ```
+
+2.  **Inicie apenas o serviço `waha`**:
+    ```bash
+    # Certifique-se de estar na pasta 'back/'
+    docker compose up -d waha
+    ```
+
+3.  **Capture as credenciais geradas**: Verifique os logs do `waha` para encontrar as chaves geradas.
+    ```bash
+    docker compose logs waha
+    ```
+    Você verá uma saída parecida com esta:
+    ```
+    ⬇️ ⬇️ ⬇️ ⬇️ ⬇️ ⬇️ ⬇️ ⬇️ ⬇️ ⬇️ ⬇️ ⬇️
+    Generated credentials (persist to .env or WAHA_* env vars)
+    Save these values to your environment (.env or WAHA_*) to reuse them; new keys are generated on every start otherwise.
+
+    cat <<'EOF' > .env
+
+    WAHA_API_KEY=3d05309716bd4dbcbb87102778f050d7
+    WAHA_DASHBOARD_PASSWORD=50a84a5765484c5c9ab805d6bc470e33
+    WHATSAPP_SWAGGER_PASSWORD=50a84a5765484c5c9ab805d6bc470e33
+    EOF
+
+    Generated credentials ready to copy
+    ⬆️ ⬆️ ⬆️ ⬆️ ⬆️ ⬆️ ⬆️ ⬆️ ⬆️ ⬆️ ⬆️ ⬆️
+    ```
+
+4.  **Atualize o `.env`**: Copie os valores gerados (`WAHA_API_KEY`, `WAHA_DASHBOARD_PASSWORD`, etc.) para o seu arquivo `.env`. Para os usernames, você pode usar `admin`.
+    ```dotenv
+    WAHA_API_KEY=3d05309716bd4dbcbb87102778f050d7
+    WAHA_DASHBOARD_USERNAME=admin
+    WAHA_DASHBOARD_PASSWORD=50a84a5765484c5c9ab805d6bc470e33
+    WHATSAPP_SWAGGER_USERNAME=admin
+    WHATSAPP_SWAGGER_PASSWORD=50a84a5765484c5c9ab805d6bc470e33
+    ```
+
+5.  **Pare o serviço `waha`** antes de prosseguir:
+    ```bash
+    docker compose stop waha
+    ```
+
+### 3️⃣ Preparar Auto Commit
 
 <table>
 <tr>
