@@ -1,102 +1,112 @@
-# 📚 Documentação Técnica - Clinica Go Backend
+# 📚 Technical Documentation - Clinica Go Backend
 
-**Projeto:** Sistema de atendimento automatizado com IA para clínica  
+**Project:** AI-powered automated customer service system for a medical clinic  
 **Stack:** FastAPI + PostgreSQL + Redis + Gemini AI + WAHA + LangChain + ChromaDB  
-**Última Atualização:** 03/01/2026
+**Last Updated:** 2026-01-13
 
 ---
 
-## 🎯 Visão Geral
+## 🎯 Overview
 
-Este projeto implementa um bot de WhatsApp com inteligência artificial para atendimento automatizado de clínica médica, incluindo:
-- Respostas automáticas com Gemini AI
-- Sistema de leads e conversão
-- Handoff para atendimento humano
-- Analytics e métricas completas
-- Autenticação robusta com MFA
+This project implements a WhatsApp bot with artificial intelligence for automated medical clinic service, including:
+- Automatic responses with Gemini AI
+- Lead and conversion system
+- Handoff to human agents
+- Comprehensive analytics and metrics
+- Robust authentication with MFA
 
 ---
 
-## 📖 Índice de Documentação
+## 📖 Documentation Index
 
-### 🏗️ Arquitetura e Design
+### 🏗️ Core Concepts and Services
 
-| Documento | Descrição | Status |
+| Document | Description |
+|-----------|-----------|
+| [Core Concepts](core/README.md) | Core concepts and cross-cutting concerns. |
+| [Services](services/README.md) | Business logic and orchestration services. |
+
+### 🏛️ Architecture and Design
+
+| Document | Description | Status |
 |-----------|-----------|--------|
-| [Arquitetura Técnica](tcc/arquitetura-tecnica.md) | Visão completa da arquitetura, camadas, fluxos e integrações | ✅ Completo |
-| [ADRs - Architecture Decision Records](architecture/decisions/) | Decisões arquiteturais importantes documentadas | ✅ 6 ADRs |
-| [Roadmap de Desenvolvimento](tcc/roadmap-desenvolvimento.md) | Planejamento, status atual e próximos passos | ✅ Atualizado |
-| [Logging Guidelines](development/logging-guidelines.md) | Padrões e boas práticas de logging estruturado | ✅ Completo |
+| [Technical Architecture](tic/arquitetura-tecnica.md) | Complete view of the architecture, layers, flows, and integrations | ✅ Complete |
+| [ADRs - Architecture Decision Records](architecture/decisions/) | Important architectural decisions documented | ✅ 6 ADRs |
+| [Development Roadmap](tic/roadmap-desenvolvimento.md) | Planning, current status, and next steps | ✅ Updated |
+| [Logging Guidelines](development/logging-guidelines.md) | Standards and best practices for structured logging | ✅ Complete |
 
-### 🔧 APIs e Integrações
+### 🔧 APIs and Integrations
 
-| Documento | Descrição | Status |
+| Document | Description | Status |
 |-----------|-----------|--------|
-| [Postman Collection](api/postman/WPP_Bot_API.postman_collection.json) | Coleção completa de endpoints para testes | ✅ Completo |
-| [Postman Environment](api/postman/WPP_Bot_API.postman_environment.json) | Variáveis de ambiente para dev/prod | ✅ Completo |
-| [README API](api/postman/README.md) | Instruções de uso da API | ✅ Completo |
+| [Postman Collection](api/postman/WPP_Bot_API.postman_collection.json) | Complete collection of endpoints for testing | ✅ Complete |
+| [Postman Environment](api/postman/WPP_Bot_API.postman_environment.json) | Environment variables for dev/prod | ✅ Complete |
+| [API README](api/postman/README.md) | API usage instructions | ✅ Complete |
 
-### 🚀 Deployment e Infraestrutura
+### 🚀 Deployment and Infrastructure
 
-| Documento | Descrição | Status |
+| Document | Description | Status |
 |-----------|-----------|--------|
-| [Railway Deployment](deployment/railway.md) | Guia de deploy em produção na Railway | ✅ Completo |
-| [Docker Compose](../docker-compose.yml) | Configuração de containers locais | ✅ Completo |
-| [Dockerfile](../Dockerfile) | Imagem Docker unificada (API + Worker targets) | ✅ Consolidado |
+| [Railway Deployment](deployment/railway.md) | Production deployment guide on Railway | ✅ Complete |
+| [Docker Compose](../docker-compose.yml) | Local container configuration | ✅ Complete |
+| [Dockerfile](../Dockerfile) | Unified Docker image (API + Worker targets) | ✅ Consolidated |
 
-### 📝 Documentação Acadêmica (TCC)
+### 📝 Academic Documentation (TCC)
 
-| Documento | Descrição | Status |
+| Document | Description | Status |
 |-----------|-----------|--------|
-| [Casos de Teste e Validação](tcc/casos-teste-validacao.md) | Cenários de teste e validação funcional | ✅ Completo |
-| [Slides da Apresentação](tcc/slides.md) | Slides para apresentação do TCC | ✅ Completo |
+| [Test Cases and Validation](tic/casos-teste-validacao.md) | Test and functional validation scenarios | ✅ Complete |
+| [Presentation Slides](tic/slides.md) | Slides for the TCC presentation | ✅ Complete |
 
 ### 🎓 Architecture Decision Records (ADRs)
 
-| ADR | Título | Data | Status |
+| ADR | Title | Date | Status |
 |-----|--------|------|--------|
-| [ADR-001](architecture/decisions/ADR-001-credential-separado-de-user.md) | Credential Separado de User | 03/01/2026 | ✅ Implementado |
-| [ADR-002](architecture/decisions/ADR-002-analytics-repository-consolidado.md) | Analytics Repository Consolidado | 03/01/2026 | ✅ Implementado |
-| [ADR-003](architecture/decisions/ADR-003-custom-exceptions-hierarquia.md) | Custom Exceptions com Hierarquia | 30/12/2025 | ✅ Implementado |
-| [ADR-004](architecture/decisions/ADR-004-clean-architecture-adaptado.md) | Clean Architecture Adaptado | 03/01/2026 | ✅ Implementado |
-| [ADR-005](architecture/decisions/ADR-005-quebra-analytics-repository.md) | Quebra do Analytics Repository (God Class) | 03/01/2026 | ✅ Implementado |
-analytics-repository-breakdown.md) | Quebra do Analytics Repository (God Class) | 03/01/2026 | ✅ Implementado |
-| [ADR-006](architecture/decisions/ADR-006-major-technical-refactoring-2026-01.md) | Docker Optimization e Refatoração Técnica | 05
+| [ADR-001](architecture/decisions/ADR-001-credential-separated-from-user.md) | Credential Separated from User | 2026-01-03 | ✅ Implemented |
+| [ADR-002](architecture/decisions/ADR-002-analytics-repository-consolidated.md) | Consolidated Analytics Repository | 2026-01-03 | ✅ Implemented |
+| [ADR-003](architecture/decisions/ADR-003-custom-exceptions-hierarchy.md) | Custom Exceptions with Hierarchy | 2025-12-30 | ✅ Implemented |
+| [ADR-004](architecture/decisions/ADR-004-clean-architecture-adapted.md) | Adapted Clean Architecture | 2026-01-03 | ✅ Implemented |
+| [ADR-005](architecture/decisions/ADR-005-quebra-analytics-repository.md) | Analytics Repository Breakdown (God Class) | 2026-01-03 | ✅ Implemented |
+| [ADR-006](architecture/decisions/ADR-006-major-technical-refactoring-2026-01.md) | Docker Optimization and Technical Refactoring | 2026-01-05 | ✅ Implemented |
+
 ---
 
-## 🗂️ Estrutura do Projeto
+## 🗂️ Project Structure
 
 ```
 back/
-├── alembic/                    # Migrations do banco de dados
-│   └── versions/               # 22 migrations (19 originais + 3 novas)
-├── docs/                       # Documentação completa
-│   ├── architecture/           # ADRs e decisões arquiteturais
-│   ├── api/postman/            # Coleções Postman
-│   ├── deployment/             # Guias de deploy
-│   └── tcc/                    # Documentação acadêmica
-├── scripts/                    # Scripts utilitários
-│   ├── entrypoint.sh           # Entrypoint do container
-│   └── wait-for-db.sh          # Aguarda DB estar pronto
-├── src/robbot/                 # Código-fonte principal
+├── alembic/                    # Database migrations
+│   └── versions/               # 22 migrations (19 original + 3 new)
+├── docs/                       # Complete documentation
+│   ├── core/                   # Core concepts and cross-cutting concerns
+│   ├── services/               # Business logic and orchestration services
+│   ├── architecture/           # ADRs and architectural decisions
+│   ├── api/postman/            # Postman collections
+│   ├── deployment/             # Deployment guides
+│   └── tic/                    # Academic documentation
+├── scripts/                    # Utility scripts
+│   ├── entrypoint.sh           # Container entrypoint
+│   └── wait-for-db.sh          # Waits for the DB to be ready
+├── src/robbot/                 # Main source code
 │   ├── adapters/               # Controllers, Repositories, External APIs
-│   ├── api/                    # Routers FastAPI
-│   ├── common/                 # Utilitários compartilhados
-│   ├── config/                 # Configurações e prompts
+│   ├── api/                    # FastAPI Routers
+│   ├── common/                 # Shared utilities
+│   ├── config/                 # Configurations and prompts
 │   ├── core/                   # Exceptions, security, logging
-│   ├── domain/                 # Entities e Enums de domínio
+│   ├── domain/                 # Domain Entities and Enums
 │   ├── infra/                  # DB Models, Jobs, Redis, VectorDB
 │   ├── schemas/                # Pydantic DTOs
-│   ├── services/               # Lógica de negócio
-│   └── workers/                # Workers RQ
-└── tests/                      # Testes automatizados
-    ├── integration/            # Testes de integração
-    └── unit/                   # Testes unitários
+│   ├── services/               # Business logic
+│   └── workers/                # RQ Workers
+└── tests/                      # Automated tests
+    ├── integration/            # Integration tests
+    └── unit/                   # Unit tests
 ```
 
 ---
 
 ## 🚀 Quick Start
+
 
 ### 1. Setup Inicial
 
