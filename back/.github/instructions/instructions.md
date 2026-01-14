@@ -1,5 +1,5 @@
 ---
-applyTo: "true"
+applyTo: "**"
 ---
 
 # Diretrizes para o LLM — Projeto "robbot"
