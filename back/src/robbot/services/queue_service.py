@@ -17,6 +17,8 @@ from robbot.infra.jobs.scheduler_job import ScheduledJob
 from robbot.infra.redis.queue import get_queue_manager
 
 logger = logging.getLogger(__name__)
+
+
 class QueueService:
     """
     Service para gerenciar jobs assíncronos.
@@ -197,8 +199,7 @@ class QueueService:
         )
 
         logger.info(
-            f"Job scheduled: {scheduled_job.job_id} "
-            f"(executa em {scheduled_job.scheduled_for})",
+            f"Job scheduled: {scheduled_job.job_id} (executa em {scheduled_job.scheduled_for})",
             extra={
                 "job_id": scheduled_job.job_id,
                 "scheduled_for": scheduled_job.scheduled_for.isoformat(),
@@ -279,12 +280,14 @@ class QueueService:
         for job_id in list(failed_registry.get_job_ids())[:limit]:
             try:
                 job = Job.fetch(job_id, connection=queue.connection)
-                failed_jobs.append({
-                    "job_id": job_id,
-                    "type": job.func_name or "unknown",
-                    "failed_at": job.ended_at.isoformat() if job.ended_at else None,
-                    "error": job.exc_info,
-                })
+                failed_jobs.append(
+                    {
+                        "job_id": job_id,
+                        "type": job.func_name or "unknown",
+                        "failed_at": job.ended_at.isoformat() if job.ended_at else None,
+                        "error": job.exc_info,
+                    }
+                )
             except (QueueError, ValueError):
                 # Job inválido - pular
                 continue
@@ -419,8 +422,12 @@ class QueueService:
             "queues": self.queue_manager.health_check(),
             "queue_manager": "ok",
         }
+
+
 # Singleton
 _queue_service: QueueService | None = None
+
+
 def get_queue_service() -> QueueService:
     """Obter instância singleton de QueueService."""
     global _queue_service
