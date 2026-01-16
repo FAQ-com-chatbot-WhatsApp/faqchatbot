@@ -11,13 +11,17 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
+from robbot.adapters.repositories.conversation_message_repository import ConversationMessageRepository
 from robbot.core.custom_exceptions import NotFoundException
 from robbot.core.security import get_current_user
 from robbot.domain.enums import ConversationStatus, Role
+from robbot.infra.db.models.conversation_message_model import ConversationMessageModel
 from robbot.infra.db.session import get_db
 from robbot.services.conversation_service import ConversationService
 
 router = APIRouter()
+
+
 # ===== SCHEMAS =====
 class ConversationOut(BaseModel):
     """Response schema for conversation."""
@@ -34,37 +38,45 @@ class ConversationOut(BaseModel):
     updated_at: str
 
     model_config = ConfigDict(from_attributes=True)
+
+
 class ConversationListOut(BaseModel):
     """Response schema for conversation list."""
 
     conversations: list[ConversationOut]
     total: int
+
+
 class UpdateStatusRequest(BaseModel):
     """Request schema for status update."""
 
     new_status: str
+
+
 class TransferRequest(BaseModel):
     """Request schema for transfer."""
 
     user_id: int
+
+
 class CloseRequest(BaseModel):
     """Request schema for close."""
 
     reason: str
+
+
 class UpdateNotesRequest(BaseModel):
     """Request schema for updating notes."""
 
     notes: str = Field(..., max_length=5000)
+
+
 # ===== ENDPOINTS =====
-@router.get(
-    "/conversations", response_model=ConversationListOut, tags=["Conversations"]
-)
+@router.get("/conversations", response_model=ConversationListOut, tags=["Conversations"])
 def list_conversations(
     status: str | None = Query(None, description="Filter by status"),
     urgent_only: bool = Query(False, description="Show only urgent conversations"),
-    assigned_to_me: bool = Query(
-        False, description="Show only assigned to current user"
-    ),
+    assigned_to_me: bool = Query(False, description="Show only assigned to current user"),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     current_user: dict = Depends(get_current_user),
@@ -117,6 +129,8 @@ def list_conversations(
     ]
 
     return ConversationListOut(conversations=conversations_out, total=total)
+
+
 @router.get(
     "/conversations/{conversation_id}",
     response_model=ConversationOut,
@@ -124,7 +138,7 @@ def list_conversations(
 )
 def get_conversation(
     conversation_id: str,
-    current_user: dict = Depends(get_current_user),
+    _current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -150,11 +164,13 @@ def get_conversation(
         created_at=conversation.created_at.isoformat(),
         updated_at=conversation.updated_at.isoformat(),
     )
-@router.put("/conversations/{conversation_id}/status", tags=["Conversations"])
+
+
+@router.put("/{conversation_id}/status", tags=["Conversations"])
 def update_conversation_status(
     conversation_id: str,
     request: UpdateStatusRequest,
-    current_user: dict = Depends(get_current_user),
+    _current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -171,10 +187,8 @@ def update_conversation_status(
 
     try:
         new_status = ConversationStatus[request.new_status.upper()]
-    except KeyError:
-        raise HTTPException(
-            status_code=400, detail=f"Invalid status: {request.new_status}"
-        )
+    except KeyError as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid status: {request.new_status}") from exc
 
     try:
         conversation = service.update_status(conversation_id, new_status)
@@ -185,14 +199,16 @@ def update_conversation_status(
             "new_status": conversation.status.value,
         }
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:  # noqa: BLE001 (blind exception)
-        raise HTTPException(status_code=500, detail=f"Failed to update status: {e!s}")
-@router.post("/conversations/{conversation_id}/transfer", tags=["Conversations"])
+        raise HTTPException(status_code=500, detail=f"Failed to update status: {e!s}") from e
+
+
+@router.post("/{conversation_id}/transfer", tags=["Conversations"])
 def transfer_conversation(
     conversation_id: str,
     request: TransferRequest,
-    current_user: dict = Depends(get_current_user),
+    _current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -212,14 +228,16 @@ def transfer_conversation(
             "status": conversation.status.value,
         }
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:  # noqa: BLE001 (blind exception)
-        raise HTTPException(status_code=500, detail=f"Failed to transfer: {e!s}")
-@router.post("/conversations/{conversation_id}/close", tags=["Conversations"])
+        raise HTTPException(status_code=500, detail=f"Failed to transfer: {e!s}") from e
+
+
+@router.post("/{conversation_id}/close", tags=["Conversations"])
 def close_conversation(
     conversation_id: str,
     request: CloseRequest,
-    current_user: dict = Depends(get_current_user),
+    _current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -239,14 +257,16 @@ def close_conversation(
             "reason": request.reason,
         }
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:  # noqa: BLE001 (blind exception)
-        raise HTTPException(status_code=500, detail=f"Failed to close: {e!s}")
-@router.put("/conversations/{conversation_id}/notes", tags=["Conversations"])
+        raise HTTPException(status_code=500, detail=f"Failed to close: {e!s}") from e
+
+
+@router.put("/{conversation_id}/notes", tags=["Conversations"])
 def update_conversation_notes(
     conversation_id: str,
     request: UpdateNotesRequest,
-    current_user: dict = Depends(get_current_user),
+    _current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -266,11 +286,13 @@ def update_conversation_notes(
             "conversation_id": conversation.id,
             "notes": conversation.notes,
         }
-    except NotFoundException:
-        raise HTTPException(status_code=404, detail="Conversation not found")
+    except NotFoundException as exc:
+        raise HTTPException(status_code=404, detail="Conversation not found") from exc
     except Exception as e:  # noqa: BLE001 (blind exception)
-        raise HTTPException(status_code=500, detail=f"Failed to update notes: {e!s}")
-@router.get("/conversations/export", tags=["Conversations"])
+        raise HTTPException(status_code=500, detail=f"Failed to update notes: {e!s}") from e
+
+
+@router.get("/export", tags=["Conversations"])
 def export_conversations(
     export_format: str = Query("csv", description="Export format (csv only)"),
     start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),
@@ -371,9 +393,9 @@ def export_conversations(
             "Content-Disposition": f"attachment; filename=conversations_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
         },
     )
-@router.get(
-    "/conversations/search", response_model=ConversationListOut, tags=["Conversations"]
-)
+
+
+@router.get("/conversations/search", response_model=ConversationListOut, tags=["Conversations"])
 def search_conversations(
     q: str = Query(..., min_length=3, description="Search query (min 3 chars)"),
     limit: int = Query(50, ge=1, le=100),
@@ -388,19 +410,17 @@ def search_conversations(
     Searches in message content using PostgreSQL full-text search.
     Non-admin users can only search their own assigned conversations.
     """
-    from robbot.adapters.repositories.conversation_message_repository import (
-        ConversationMessageRepository,
-    )
-
     ConversationMessageRepository(db)
     service = ConversationService(db)
 
     # Search messages with full-text query using the model directly
-    from robbot.infra.db.models.conversation_message_model import ConversationMessageModel
 
-    result = db.query(ConversationMessageModel).filter(
-        ConversationMessageModel.content.ilike(f"%{q}%")
-    ).limit(limit * 5).all()  # Get more messages to find unique conversations
+    result = (
+        db.query(ConversationMessageModel)
+        .filter(ConversationMessageModel.content.ilike(f"%{q}%"))
+        .limit(limit * 5)
+        .all()
+    )  # Get more messages to find unique conversations
 
     # Get unique conversation IDs
     conversation_ids = list({msg.conversation_id for msg in result})[:limit]
@@ -432,6 +452,4 @@ def search_conversations(
         for c in conversations
     ]
 
-    return ConversationListOut(
-        conversations=conversations_out, total=len(conversations_out)
-    )
+    return ConversationListOut(conversations=conversations_out, total=len(conversations_out))
