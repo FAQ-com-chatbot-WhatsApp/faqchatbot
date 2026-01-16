@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 # Optional ML dependencies
 try:
     import numpy as np
+
     HAS_NUMPY = True
 except ImportError:
     HAS_NUMPY = False
@@ -30,10 +31,13 @@ except ImportError:
 
 try:
     from sklearn import ensemble  # noqa: F401 (imported but unused)
+
     HAS_SKLEARN = True
 except ImportError:
     HAS_SKLEARN = False
     logger.warning("[WARNING] scikit-learn not installed - ML features limited")
+
+
 class ForecastService:
     """
     Service para análise preditiva e forecasting.
@@ -68,10 +72,7 @@ class ForecastService:
             Forecast com volume previsto, bounds inferior/superior
         """
         if not historical_data:
-            return {
-                "status": "error",
-                "message": "Dados históricos necessários para forecast"
-            }
+            return {"status": "error", "message": "Dados históricos necessários para forecast"}
 
         try:
             # Calcular média e desvio padrão dos últimos 30 dias
@@ -83,7 +84,7 @@ class ForecastService:
             else:
                 avg_volume = sum(recent_volumes) / len(recent_volumes)
                 variance = sum((x - avg_volume) ** 2 for x in recent_volumes) / len(recent_volumes)
-                std_volume = variance ** 0.5
+                std_volume = variance**0.5
 
             # Detectar tendência (crescimento/decrescimento)
             if len(historical_data) >= 7:
@@ -98,7 +99,7 @@ class ForecastService:
             base_date = datetime.now()
 
             for i in range(days_ahead):
-                predicted_date = base_date + timedelta(days=i+1)
+                predicted_date = base_date + timedelta(days=i + 1)
 
                 # Previsão = média + tendência * dias + ajuste de sazonalidade
                 base_prediction = avg_volume + (trend * i)
@@ -111,28 +112,27 @@ class ForecastService:
                 lower_bound = int(predicted_volume - (2 * std_volume))
                 upper_bound = int(predicted_volume + (2 * std_volume))
 
-                forecast.append({
-                    "date": predicted_date.strftime("%Y-%m-%d"),
-                    "predicted_volume": max(0, predicted_volume),
-                    "lower_bound": max(0, lower_bound),
-                    "upper_bound": max(0, upper_bound),
-                    "confidence": "medium" if self.has_ml else "low"
-                })
+                forecast.append(
+                    {
+                        "date": predicted_date.strftime("%Y-%m-%d"),
+                        "predicted_volume": max(0, predicted_volume),
+                        "lower_bound": max(0, lower_bound),
+                        "upper_bound": max(0, upper_bound),
+                        "confidence": "medium" if self.has_ml else "low",
+                    }
+                )
 
             logger.info("[SUCCESS] Demand forecast generated for %s days", days_ahead)
             return {
                 "status": "success",
                 "forecast": forecast,
                 "model": "statistical" if not self.has_ml else "ml_enhanced",
-                "note": "Para ML avançado, instalar: pip install prophet"
+                "note": "Para ML avançado, instalar: pip install prophet",
             }
 
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(f"[ERROR] Failed to generate forecast: {e}", exc_info=True)
-            return {
-                "status": "error",
-                "message": str(e)
-            }
+            return {"status": "error", "message": str(e)}
 
     async def predict_lead_conversion_probability(
         self,
@@ -158,7 +158,7 @@ class ForecastService:
                 "maturity_score": 0.40,
                 "message_engagement": 0.25,
                 "response_speed": 0.20,
-                "data_completeness": 0.15
+                "data_completeness": 0.15,
             }
 
             factors = []
@@ -168,7 +168,13 @@ class ForecastService:
             maturity = lead_data.get("maturity_score", 0) / 100.0
             maturity_contrib = maturity * score_weights["maturity_score"]
             total_score += maturity_contrib
-            factors.append({"factor": "maturity_score", "impact": round(maturity_contrib, 3), "value": lead_data.get("maturity_score", 0)})
+            factors.append(
+                {
+                    "factor": "maturity_score",
+                    "impact": round(maturity_contrib, 3),
+                    "value": lead_data.get("maturity_score", 0),
+                }
+            )
 
             # 2. Engajamento
             msg_count = lead_data.get("message_count", 0)
@@ -182,7 +188,9 @@ class ForecastService:
             speed_score = 1.0 if response_time < 300 else (0.7 if response_time < 3600 else 0.3)
             speed_contrib = speed_score * score_weights["response_speed"]
             total_score += speed_contrib
-            factors.append({"factor": "response_speed", "impact": round(speed_contrib, 3), "value": f"{int(response_time)}s"})
+            factors.append(
+                {"factor": "response_speed", "impact": round(speed_contrib, 3), "value": f"{int(response_time)}s"}
+            )
 
             # 4. Completude de dados
             has_email = lead_data.get("has_email", False)
@@ -190,7 +198,13 @@ class ForecastService:
             completeness = (0.5 if has_email else 0) + (0.5 if assigned else 0)
             completeness_contrib = completeness * score_weights["data_completeness"]
             total_score += completeness_contrib
-            factors.append({"factor": "data_completeness", "impact": round(completeness_contrib, 3), "value": f"{int(completeness * 100)}%"})
+            factors.append(
+                {
+                    "factor": "data_completeness",
+                    "impact": round(completeness_contrib, 3),
+                    "value": f"{int(completeness * 100)}%",
+                }
+            )
 
             confidence = "high" if total_score >= 0.75 else ("medium" if total_score >= 0.50 else "low")
             logger.info("[SUCCESS] Conversion probability calculated for lead %s: %.2f", lead_id, total_score)
@@ -201,7 +215,7 @@ class ForecastService:
                 "conversion_probability": round(total_score, 3),
                 "confidence": confidence,
                 "factors": sorted(factors, key=lambda x: x["impact"], reverse=True),
-                "model": "heuristic" if not HAS_SKLEARN else "hybrid"
+                "model": "heuristic" if not HAS_SKLEARN else "hybrid",
             }
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(f"[ERROR] Failed to calculate conversion probability: {e}", exc_info=True)
@@ -250,16 +264,18 @@ class ForecastService:
 
                 if abs(z_score) > threshold_sigma:
                     severity = "critical" if abs(z_score) > 3.5 else ("high" if abs(z_score) > 3.0 else "medium")
-                    anomalies.append({
-                        "date": data_point.get("date", "unknown"),
-                        "metric": metric_name,
-                        "value": value,
-                        "expected_value": round(mean, 2),
-                        "z_score": round(z_score, 2),
-                        "deviation_percent": round(((value - mean) / mean) * 100, 1),
-                        "severity": severity,
-                        "type": "spike" if z_score > 0 else "drop"
-                    })
+                    anomalies.append(
+                        {
+                            "date": data_point.get("date", "unknown"),
+                            "metric": metric_name,
+                            "value": value,
+                            "expected_value": round(mean, 2),
+                            "z_score": round(z_score, 2),
+                            "deviation_percent": round(((value - mean) / mean) * 100, 1),
+                            "severity": severity,
+                            "type": "spike" if z_score > 0 else "drop",
+                        }
+                    )
 
             if anomalies:
                 logger.warning("[WARNING] %s anomalies detected in %s", len(anomalies), metric_name)
@@ -292,7 +308,7 @@ class ForecastService:
                 "best_hour": 14,
                 "best_day_of_week": 2,
                 "confidence": 0.3,
-                "reason": "Padrão geral (sem histórico suficiente)"
+                "reason": "Padrão geral (sem histórico suficiente)",
             }
 
         try:
@@ -327,7 +343,7 @@ class ForecastService:
                 "best_day_name": day_names[best_day],
                 "confidence": round(confidence, 2),
                 "reason": reason,
-                "response_rate": round(total_responses / len(interaction_history), 2) if interaction_history else 0
+                "response_rate": round(total_responses / len(interaction_history), 2) if interaction_history else 0,
             }
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(f"[ERROR] Failed to recommend reengagement time: {e}", exc_info=True)
