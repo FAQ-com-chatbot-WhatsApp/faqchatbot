@@ -5,16 +5,20 @@ Responsabilidades:
 - Transcrever áudios (via faster-whisper)
 - Processar vídeos (transcrever áudio + descrever visual)
 - Salvar mensagens inbound/outbound no banco
+
+REFACTORED: Dependency injection of TranscriptionService (Issue #4: Session Management)
 """
 
 import logging
 from datetime import UTC, datetime
 from typing import Any
 
+from sqlalchemy.orm import Session
+
+from robbot.adapters.repositories.conversation_message_repository import ConversationMessageRepository
 from robbot.core.custom_exceptions import DatabaseError
 from robbot.domain.enums import MessageDirection
 from robbot.infra.db.models.conversation_message_model import ConversationMessageModel
-from robbot.adapters.repositories.conversation_message_repository import ConversationMessageRepository
 from robbot.services.transcription_service import TranscriptionService
 
 logger = logging.getLogger(__name__)
@@ -23,8 +27,16 @@ logger = logging.getLogger(__name__)
 class MessageProcessor:
     """Processa mensagens multimídia e persistência"""
 
-    def __init__(self):
-        self.transcription_service = TranscriptionService()
+    def __init__(self, db: Session, transcription_service: TranscriptionService):
+        """
+        Initialize MessageProcessor with DI.
+
+        Args:
+            db: SQLAlchemy session for database operations
+            transcription_service: Injected TranscriptionService for audio/video processing
+        """
+        self.db = db
+        self.transcription_service = transcription_service
 
     async def process_media_message(
         self,
@@ -62,9 +74,7 @@ class MessageProcessor:
         """Processar vídeo: transcrever áudio + marcar presença de vídeo"""
         try:
             # 1. Transcrever áudio do vídeo
-            transcription = await self.transcription_service.transcribe_audio(
-                video_url, language="pt"
-            )
+            transcription = await self.transcription_service.transcribe_audio(video_url, language="pt")
 
             if transcription:
                 logger.info("[SUCCESS] Video audio transcribed: %s...", transcription[:100])
@@ -81,9 +91,7 @@ class MessageProcessor:
     async def _process_audio(self, audio_url: str) -> str:
         """Processar áudio: transcrever para texto"""
         try:
-            transcription = await self.transcription_service.transcribe_audio(
-                audio_url, language="pt"
-            )
+            transcription = await self.transcription_service.transcribe_audio(audio_url, language="pt")
 
             if transcription:
                 logger.info("[SUCCESS] Audio transcribed: %s...", transcription[:100])
@@ -96,12 +104,7 @@ class MessageProcessor:
             logger.error("[ERROR] Error transcribing audio: %s", e)
             return "[Áudio recebido - erro na transcrição]"
 
-    async def save_inbound_message(
-        self,
-        session: Any,
-        conversation_id: str,
-        text: str
-    ) -> ConversationMessageModel:
+    async def save_inbound_message(self, session: Any, conversation_id: str, text: str) -> ConversationMessageModel:
         """
         Persistir mensagem recebida do cliente no banco.
 
@@ -131,12 +134,7 @@ class MessageProcessor:
             logger.error("[ERROR] Failed to save inbound message: %s", e)
             raise DatabaseError(f"Failed to save inbound message: {e}")
 
-    async def save_outbound_message(
-        self,
-        session: Any,
-        conversation_id: str,
-        text: str
-    ) -> ConversationMessageModel:
+    async def save_outbound_message(self, session: Any, conversation_id: str, text: str) -> ConversationMessageModel:
         """
         Persistir mensagem enviada pelo bot no banco.
 
