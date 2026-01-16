@@ -12,12 +12,20 @@ from typing import Any
 from robbot.config.settings import settings
 
 logger = logging.getLogger(__name__)
+
+
 class JobFailureError(Exception):
     """Exceção para falhas não-recuperáveis em jobs."""
+
     pass
+
+
 class JobRetryableError(Exception):
     """Exceção para falhas recuperáveis (serão retentadas)."""
+
     pass
+
+
 class BaseJob(ABC):
     """
     Classe base para todos os jobs assíncronos.
@@ -131,8 +139,7 @@ class BaseJob(ABC):
             raise error
         else:
             logger.error(
-                f"[JOB:{self.job_id}] [ERROR] Failed after {self.MAX_RETRIES} attempts. "
-                f"Moving to DLQ. Error: {error}",
+                f"[JOB:{self.job_id}] [ERROR] Failed after {self.MAX_RETRIES} attempts. Moving to DLQ. Error: {error}",
                 extra=self._log_context(),
             )
             raise JobFailureError(str(error))
