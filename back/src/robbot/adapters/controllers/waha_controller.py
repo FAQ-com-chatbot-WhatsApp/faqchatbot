@@ -54,10 +54,10 @@ def _get_waha_service(db: Session = Depends(get_db)) -> WAHAService:
 
 def _handle_waha_error(e: ExternalServiceError) -> HTTPException:
     """Handle WAHA errors by mapping them to appropriate HTTP status codes.
-    
+
     Args:
         e: The external service error from WAHA
-        
+
     Returns:
         HTTPException with appropriate status code
     """
@@ -105,7 +105,7 @@ async def create_session(
     """Create new WhatsApp session.
 
     **Admin only** - Creates session in WAHA and saves to database.
-    
+
     If session already exists in WAHA (status 409), still creates the DB record
     to track it, then returns 201 (idempotent behavior).
     """
@@ -116,7 +116,7 @@ async def create_session(
     except ExternalServiceError as e:
         # Special handling for 409: session already exists in WAHA
         # Create DB record to track it and return success
-        if hasattr(e, 'status_code') and e.status_code == 422:  # WAHA 422 = conflict/exists
+        if e.status_code == 422:  # WAHA 422 = conflict/exists
             # Check if we need to create DB record
             session_repo = SessionRepository(db)
             existing = session_repo.get_by_name(data.name)
@@ -132,7 +132,7 @@ async def create_session(
                         pass
                 from robbot.config.settings import settings
                 webhook_url = webhook_url or settings.WAHA_WEBHOOK_URL
-                
+
                 # Create DB record for existing WAHA session
                 existing = session_repo.create(
                     name=data.name,
@@ -140,7 +140,7 @@ async def create_session(
                 )
             # Return 201 as if created (idempotent behavior)
             return SessionOut.model_validate(existing)
-        
+
         # For other WAHA errors, map status codes
         raise _handle_waha_error(e) from e
 
