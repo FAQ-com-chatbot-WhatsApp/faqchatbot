@@ -24,6 +24,8 @@ from robbot.schemas.waha import (
 )
 
 logger = logging.getLogger(__name__)
+
+
 class WAHAService:
     """
     Unified WAHA service for sessions + messages.
@@ -58,24 +60,41 @@ class WAHAService:
             Created session
 
         Raises:
-            ValueError: If session already exists
+            ValueError: If session already exists in DB or WAHA
+            WAHAError: For other WAHA API errors
         """
         # Check if session exists in DB
         existing = self.session_repo.get_by_name(data.name)
         if existing:
-            raise ValueError(f"Session '{data.name}' already exists")
+            raise ValueError(f"Session '{data.name}' already exists in database")
 
-        # Create session in WAHA
-        waha_response = await self.waha_client.create_session(
-            name=data.name,
-            webhook_url=data.webhook_url or settings.WAHA_WEBHOOK_URL,
-        )
-        logger.info("[INFO] WAHA session created: %s", waha_response)
+        # Determine webhook_url: prefer provided, else first config webhook, else default
+        webhook_url = data.webhook_url or None
+        if not webhook_url and data.config:
+            try:
+                webhooks = data.config.get("webhooks") or []
+                if isinstance(webhooks, list) and webhooks:
+                    webhook_url = webhooks[0].get("url")
+            except Exception:
+                webhook_url = None
+        webhook_url = webhook_url or settings.WAHA_WEBHOOK_URL
+
+        # Try to create session in WAHA
+        try:
+            waha_response = await self.waha_client.create_session(
+                name=data.name,
+                webhook_url=webhook_url,
+                config=data.config or None,
+            )
+            logger.info("[INFO] WAHA session created: %s", waha_response)
+        except Exception as e:
+            # Re-raise; let controller handle (may be conflict if session exists in WAHA)
+            raise
 
         # Save to DB
         session = self.session_repo.create(
             name=data.name,
-            webhook_url=data.webhook_url or settings.WAHA_WEBHOOK_URL,
+            webhook_url=webhook_url,
         )
 
         return SessionOut.model_validate(session)
@@ -109,7 +128,8 @@ class WAHAService:
             qr_code=status_data.get("qr"),
         )
 
-        return SessionStatus(**status_data)
+        # Include qr_code alias for compatibility
+        return SessionStatus(**status_data, qr_code=status_data.get("qr"))
 
     async def stop_session(self, name: str) -> dict:
         """Stop WhatsApp session.
@@ -178,14 +198,17 @@ class WAHAService:
         # Update DB if status changed
         current_status = status_data.get("status")
         if current_status != session.status:
+            me_data = status_data.get("me")
+            connected_phone = me_data.get("id") if isinstance(me_data, dict) else None
             self.session_repo.update_status(
                 session_id=session.id,
                 status=current_status,
                 qr_code=status_data.get("qr"),
-                connected_phone=status_data.get("me", {}).get("id"),
+                connected_phone=connected_phone,
             )
 
-        return SessionStatus(**status_data)
+        # Include qr_code alias for compatibility
+        return SessionStatus(**status_data, qr_code=status_data.get("qr"))
 
     async def get_qr_code(self, name: str) -> dict:
         """Get QR code for session pairing.
@@ -197,6 +220,14 @@ class WAHAService:
             QR code data (base64 image)
         """
         return await self.waha_client.get_qr_code(name)
+
+    async def list_sessions(self) -> list[dict]:
+        """List all WAHA sessions (directly from WAHA). 
+
+        Returns:
+            List of session dicts as provided by WAHA
+        """
+        return await self.waha_client.list_sessions()
 
     async def logout_session(self, name: str) -> dict:
         """Logout from WhatsApp (unlink device).
@@ -235,8 +266,7 @@ class WAHAService:
                 name=settings.WAHA_SESSION_NAME,
                 webhook_url=settings.WAHA_WEBHOOK_URL,
             )
-            logger.info(
-                f"Created default session: {settings.WAHA_SESSION_NAME}")
+            logger.info(f"Created default session: {settings.WAHA_SESSION_NAME}")
         return session
 
     # ========================================================================
@@ -256,9 +286,7 @@ class WAHAService:
         try:
             count = self.redis_client.get(key)
             if count and int(count) >= settings.WAHA_MESSAGES_PER_HOUR:
-                logger.warning(
-                    f"Rate limit exceeded for {chat_id}: {count}/{settings.WAHA_MESSAGES_PER_HOUR} msg/hour"
-                )
+                logger.warning(f"Rate limit exceeded for {chat_id}: {count}/{settings.WAHA_MESSAGES_PER_HOUR} msg/hour")
                 return False
 
             pipe = self.redis_client.pipeline()
@@ -275,9 +303,7 @@ class WAHAService:
     async def send_text(self, data: SendTextRequest) -> MessageSentResponse:
         """Send text message with anti-ban and rate limiting."""
         if not await self._check_rate_limit(data.chat_id):
-            raise ValueError(
-                f"Rate limit exceeded: max {settings.WAHA_MESSAGES_PER_HOUR} msg/hour"
-            )
+            raise ValueError(f"Rate limit exceeded: max {settings.WAHA_MESSAGES_PER_HOUR} msg/hour")
 
         response = await self.waha_client.send_text(
             session=self.session_name,
@@ -298,9 +324,7 @@ class WAHAService:
     async def send_image(self, data: SendImageRequest) -> MessageSentResponse:
         """Send image message."""
         if not await self._check_rate_limit(data.chat_id):
-            raise ValueError(
-                f"Rate limit exceeded: max {settings.WAHA_MESSAGES_PER_HOUR} msg/hour"
-            )
+            raise ValueError(f"Rate limit exceeded: max {settings.WAHA_MESSAGES_PER_HOUR} msg/hour")
 
         response = await self.waha_client.send_image(
             session=self.session_name,
@@ -321,9 +345,7 @@ class WAHAService:
     async def send_file(self, data: SendFileRequest) -> MessageSentResponse:
         """Send file/document message."""
         if not await self._check_rate_limit(data.chat_id):
-            raise ValueError(
-                f"Rate limit exceeded: max {settings.WAHA_MESSAGES_PER_HOUR} msg/hour"
-            )
+            raise ValueError(f"Rate limit exceeded: max {settings.WAHA_MESSAGES_PER_HOUR} msg/hour")
 
         response = await self.waha_client.send_file(
             session=self.session_name,
@@ -344,9 +366,7 @@ class WAHAService:
     async def send_location(self, data: SendLocationRequest) -> MessageSentResponse:
         """Send location message."""
         if not await self._check_rate_limit(data.chat_id):
-            raise ValueError(
-                f"Rate limit exceeded: max {settings.WAHA_MESSAGES_PER_HOUR} msg/hour"
-            )
+            raise ValueError(f"Rate limit exceeded: max {settings.WAHA_MESSAGES_PER_HOUR} msg/hour")
 
         response = await self.waha_client.send_location(
             session=self.session_name,
