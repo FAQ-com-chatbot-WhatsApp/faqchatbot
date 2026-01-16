@@ -1,4 +1,7 @@
 """PlaybookService orchestrating playbook business logic and RAG search."""
+# pylint: disable=line-too-long
+# Justification: Descriptive variable names and comprehensive logging messages
+# improve readability despite exceeding 100 characters
 
 import logging
 from uuid import UUID
@@ -22,6 +25,8 @@ from robbot.schemas.playbook import PlaybookSearchResult
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
+
+
 class PlaybookService:
     """
     Service layer for playbook operations with RAG semantic search.
@@ -51,7 +56,7 @@ class PlaybookService:
             )
             self.playbooks_collection = self.chroma_client.get_or_create_collection(
                 name="playbooks",
-                metadata={"hnsw:space": "cosine", "description": "Playbook embeddings for semantic search"}
+                metadata={"hnsw:space": "cosine", "description": "Playbook embeddings for semantic search"},
             )
             logger.info("[SUCCESS] PlaybookService initialized (playbooks count=%s)", self.playbooks_collection.count())
         except Exception as e:  # noqa: BLE001 (blind exception)
@@ -60,7 +65,9 @@ class PlaybookService:
 
     # ===== TOPIC OPERATIONS =====
 
-    def create_topic(self, name: str, description: str | None = None, category: str | None = None, active: bool = True) -> TopicModel:
+    def create_topic(
+        self, name: str, description: str | None = None, category: str | None = None, active: bool = True
+    ) -> TopicModel:
         """
         Create a new topic.
 
@@ -99,7 +106,9 @@ class PlaybookService:
 
     # ===== PLAYBOOK OPERATIONS =====
 
-    def create_playbook(self, topic_id: str, name: str, description: str | None = None, active: bool = True) -> PlaybookModel:
+    def create_playbook(
+        self, topic_id: str, name: str, description: str | None = None, active: bool = True
+    ) -> PlaybookModel:
         """
         Create playbook and auto-index for semantic search.
 
@@ -133,9 +142,9 @@ class PlaybookService:
         """Get playbook by ID."""
         return self.playbook_repo.get_by_id(playbook_id)
 
-    def list_playbooks_by_topic(self, topic_id: str, active_only: bool = False) -> list[PlaybookModel]:
+    def list_playbooks_by_topic(self, topic_id: str) -> list[PlaybookModel]:
         """List playbooks by topic."""
-        return self.playbook_repo.list_by_topic(topic_id, active_only=active_only)
+        return self.playbook_repo.list_by_topic(topic_id)
 
     def update_playbook(self, playbook_id: str, **kwargs) -> PlaybookModel | None:
         """Update playbook and reindex."""
@@ -144,7 +153,7 @@ class PlaybookService:
             try:
                 self._generate_playbook_embedding(playbook_id)
                 logger.info("[SUCCESS] Playbook %s updated and reindexed", playbook_id)
-            except Exception as e:  # noqa: BLE001 (blind exception)
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.warning("[WARNING] Playbook updated but reindexing failed: %s", e)
         return updated
 
@@ -156,7 +165,7 @@ class PlaybookService:
             try:
                 self.playbooks_collection.delete(ids=[embedding.chroma_doc_id])
                 logger.info("[SUCCESS] Removed playbook %s from ChromaDB", playbook_id)
-            except Exception as e:  # noqa: BLE001 (blind exception)
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.warning("[WARNING] Failed to remove from ChromaDB: %s", e)
 
         # Delete from database (cascades)
@@ -204,9 +213,9 @@ class PlaybookService:
 
         return created
 
-    def get_playbook_steps(self, playbook_id: str, include_messages: bool = False) -> list[PlaybookStepModel]:
+    def get_playbook_steps(self, playbook_id: str) -> list[PlaybookStepModel]:
         """Get all steps for a playbook in order."""
-        return self.step_repo.list_by_playbook(playbook_id, include_messages=include_messages)
+        return self.step_repo.list_by_playbook(playbook_id)
 
     def get_playbook_steps_with_details(self, playbook_id: str) -> list[dict]:
         """
@@ -227,7 +236,7 @@ class PlaybookService:
             "media_url": "..."  # For media/document
         }
         """
-        steps = self.step_repo.list_by_playbook(playbook_id, include_messages=True)
+        steps = self.step_repo.list_by_playbook(playbook_id)
         result = []
 
         for step in steps:
@@ -277,16 +286,15 @@ class PlaybookService:
             return False
 
         playbook_id = step.playbook_id
-        success = self.step_repo.delete(step_id)
+        self.step_repo.delete(step_id)
 
-        if success:
-            try:
-                self._generate_playbook_embedding(playbook_id)
-                logger.info("[SUCCESS] Step deleted from playbook %s, reindexed", playbook_id)
-            except Exception as e:  # noqa: BLE001 (blind exception)
-                logger.warning("[WARNING] Step deleted but reindexing failed: %s", e)
+        try:
+            self._generate_playbook_embedding(playbook_id)
+            logger.info("[SUCCESS] Step deleted from playbook %s, reindexed", playbook_id)
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            logger.warning("[WARNING] Step deleted but reindexing failed: %s", e)
 
-        return success
+        return True
 
     # ===== SEMANTIC SEARCH (RAG) =====
 
@@ -305,35 +313,33 @@ class PlaybookService:
         try:
             # Query ChromaDB
             where_filter = {"active": True} if active_only else None
-            results = self.playbooks_collection.query(
-                query_texts=[query],
-                n_results=top_k,
-                where=where_filter
-            )
+            results = self.playbooks_collection.query(query_texts=[query], n_results=top_k, where=where_filter)
 
-            if not results['ids'][0]:
+            if not results["ids"][0]:
                 logger.info("[INFO] No playbooks found for query: %s", query)
                 return []
 
             # Format results
             playbook_results = []
-            for i, _chroma_doc_id in enumerate(results['ids'][0]):
-                metadata = results['metadatas'][0][i]
-                distance = results['distances'][0][i]
+            for i, _chroma_doc_id in enumerate(results["ids"][0]):
+                metadata = results["metadatas"][0][i]
+                distance = results["distances"][0][i]
 
-                playbook_results.append(PlaybookSearchResult(
-                    playbook_id=metadata['playbook_id'],
-                    name=metadata['playbook_name'],
-                    description=metadata.get('description'),
-                    topic_name=metadata.get('topic_name', 'Unknown'),
-                    relevance_score=round(1 - distance, 3)  # Convert distance to similarity score
-                ))
+                playbook_results.append(
+                    PlaybookSearchResult(
+                        playbook_id=metadata["playbook_id"],
+                        name=metadata["playbook_name"],
+                        description=metadata.get("description"),
+                        topic_name=metadata.get("topic_name", "Unknown"),
+                        relevance_score=round(1 - distance, 3),  # Convert distance to similarity score
+                    )
+                )
 
             logger.info("[SUCCESS] Found %s playbooks for query: %s", len(playbook_results), query)
             return playbook_results
 
-        except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.error(f"[ERROR] Semantic search failed for query '{query}': {e}", exc_info=True)
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            logger.error("[ERROR] Semantic search failed for query '%s': %s", query, e, exc_info=True)
             return []
 
     # ===== PRIVATE METHODS =====
@@ -372,13 +378,13 @@ class PlaybookService:
             # Steps and messages
             for step in steps:
                 parts.append(f"Step {step['step_order']}: {step['message_type']}")
-                if step.get('message_title'):
+                if step.get("message_title"):
                     parts.append(f"Title: {step['message_title']}")
-                if step.get('message_description'):
+                if step.get("message_description"):
                     parts.append(f"Description: {step['message_description']}")
-                if step.get('message_tags'):
+                if step.get("message_tags"):
                     parts.append(f"Tags: {step['message_tags']}")
-                if step.get('context_hint'):
+                if step.get("context_hint"):
                     parts.append(f"Context: {step['context_hint']}")
 
             embedding_text = " ".join(parts)
@@ -394,21 +400,23 @@ class PlaybookService:
                 self.playbooks_collection.update(
                     ids=[existing.chroma_doc_id],
                     documents=[embedding_text],
-                    metadatas=[{
-                        "playbook_id": playbook_id,
-                        "topic_id": playbook.topic_id,
-                        "playbook_name": playbook.name,
-                        "description": playbook.description or "",
-                        "topic_name": topic.name if topic else "Unknown",
-                        "active": playbook.active
-                    }]
+                    metadatas=[
+                        {
+                            "playbook_id": playbook_id,
+                            "topic_id": playbook.topic_id,
+                            "playbook_name": playbook.name,
+                            "description": playbook.description or "",
+                            "topic_name": topic.name if topic else "Unknown",
+                            "active": playbook.active,
+                        }
+                    ],
                 )
 
                 # Update in database
-                self.embedding_repo.update(
-                    playbook_id=playbook_id,
-                    embedding_text=embedding_text
-                )
+                existing_embedding = self.embedding_repo.get_by_playbook_id(playbook_id=playbook_id)
+                if existing_embedding:
+                    existing_embedding.embedding_text = embedding_text
+                    self.embedding_repo.update(existing_embedding)
 
                 logger.debug("[SUCCESS] Updated embedding for playbook %s", playbook_id)
             else:
@@ -416,26 +424,26 @@ class PlaybookService:
                 self.playbooks_collection.add(
                     ids=[chroma_doc_id],
                     documents=[embedding_text],
-                    metadatas=[{
-                        "playbook_id": playbook_id,
-                        "topic_id": playbook.topic_id,
-                        "playbook_name": playbook.name,
-                        "description": playbook.description or "",
-                        "topic_name": topic.name if topic else "Unknown",
-                        "active": playbook.active
-                    }]
+                    metadatas=[
+                        {
+                            "playbook_id": playbook_id,
+                            "topic_id": playbook.topic_id,
+                            "playbook_name": playbook.name,
+                            "description": playbook.description or "",
+                            "topic_name": topic.name if topic else "Unknown",
+                            "active": playbook.active,
+                        }
+                    ],
                 )
 
                 # Save reference in database
                 embedding = PlaybookEmbedding(
-                    playbook_id=playbook_id,
-                    embedding_text=embedding_text,
-                    chroma_doc_id=chroma_doc_id
+                    playbook_id=playbook_id, embedding_text=embedding_text, chroma_doc_id=chroma_doc_id
                 )
                 self.embedding_repo.create(embedding)
 
                 logger.debug("[SUCCESS] Created embedding for playbook %s", playbook_id)
 
-        except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.error(f"[ERROR] Failed to generate embedding for playbook {playbook_id}: {e}", exc_info=True)
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            logger.error("[ERROR] Failed to generate embedding for playbook %s: %s", playbook_id, e, exc_info=True)
             raise
