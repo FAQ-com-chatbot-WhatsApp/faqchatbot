@@ -118,25 +118,20 @@ class ConversationOrchestrator:
         """
         try:
             logger.info(
-                "Processing inbound message: chat_id=%s, phone=%s, length=%s, "
-                "has_audio=%s, has_video=%s",
+                "Processing inbound message: chat_id=%s, phone=%s, length=%s, has_audio=%s, has_video=%s",
                 chat_id,
                 phone_number,
                 len(message_text),
                 has_audio,
-                has_video
+                has_video,
             )
 
             with get_sync_session() as session:
-                conversation = await self._get_or_create_conversation(
-                    session, chat_id, phone_number
-                )
+                conversation = await self._get_or_create_conversation(session, chat_id, phone_number)
 
                 # BOT SILENCIA se humano está conversando
                 if self._should_bot_silence(conversation):
-                    return await self._handle_silenced_conversation(
-                        session, conversation, message_text
-                    )
+                    return await self._handle_silenced_conversation(session, conversation, message_text)
 
                 # Processar mídia (áudio/vídeo)
                 message_text = await self.message_processor.process_media_message(
@@ -144,14 +139,10 @@ class ConversationOrchestrator:
                 )
 
                 # Salvar mensagem inbound
-                await self.message_processor.save_inbound_message(
-                    session, conversation.id, message_text
-                )
+                await self.message_processor.save_inbound_message(session, conversation.id, message_text)
 
                 # Buscar contexto conversacional
-                context_text = await self.context_builder.get_conversation_context(
-                    conversation.id
-                )
+                context_text = await self.context_builder.get_conversation_context(conversation.id)
 
                 # Detectar intenção e urgência
                 intent = await self.intent_detector.detect_intent(message_text, context_text)
@@ -163,9 +154,7 @@ class ConversationOrchestrator:
 
                 # Extrair nome se ainda não temos
                 if conversation.lead and conversation.lead.name == conversation.lead.phone_number:
-                    await self.intent_detector.try_extract_name(
-                        session, message_text, context_text, conversation
-                    )
+                    await self.intent_detector.try_extract_name(session, message_text, context_text, conversation)
 
                 # Gerar resposta
                 response_data = await self._generate_response(
@@ -178,9 +167,7 @@ class ConversationOrchestrator:
                 response_text = response_data["response"]
 
                 # Solicitar nome se apropriado
-                response_text = await self._append_name_request_if_needed(
-                    conversation, context_text, response_text
-                )
+                response_text = await self._append_name_request_if_needed(conversation, context_text, response_text)
 
                 # Atualizar score
                 new_score = await self.intent_detector.update_maturity_score(
@@ -193,33 +180,27 @@ class ConversationOrchestrator:
                 )
 
                 if should_escalate:
-                    response_text = await self._handle_handoff(
-                        session, conversation, new_score
-                    )
+                    response_text = await self._handle_handoff(session, conversation, new_score)
 
                 # Salvar contexto no ChromaDB
                 await self.context_builder.save_to_chroma(
                     conversation.id,
                     f"User: {message_text}\nBot: {response_text}",
-                    {"intent": intent, "score": new_score}
+                    {"intent": intent, "score": new_score},
                 )
 
                 # Enviar resposta via WAHA
-                sent = await self._send_response_via_waha(
-                    chat_id, response_text, session_name
-                )
+                sent = await self._send_response_via_waha(chat_id, response_text, session_name)
 
                 # Salvar mensagem outbound
-                await self.message_processor.save_outbound_message(
-                    session, conversation.id, response_text
-                )
+                await self.message_processor.save_outbound_message(session, conversation.id, response_text)
 
                 # Registrar interação
                 await self._register_interaction(
                     session,
                     conversation.lead_id,
                     intent,
-                    f"Inbound: {message_text[:50]}... | Outbound: {response_text[:50]}..."
+                    f"Inbound: {message_text[:50]}... | Outbound: {response_text[:50]}...",
                 )
 
                 # Log LLM interaction
@@ -229,18 +210,17 @@ class ConversationOrchestrator:
                     f"Intent: {intent} | {message_text[:100]}",
                     response_text[:200],
                     response_data.get("tokens_used", 0),
-                    response_data.get("latency_ms", 0)
+                    response_data.get("latency_ms", 0),
                 )
 
                 session.commit()
 
                 logger.info(
-                    "[SUCCESS] Message processed successfully (conv_id=%s, "
-                    "intent=%s, score=%s, sent=%s)",
+                    "[SUCCESS] Message processed successfully (conv_id=%s, intent=%s, score=%s, sent=%s)",
                     conversation.id,
                     intent,
                     new_score,
-                    sent
+                    sent,
                 )
 
                 return {
@@ -256,7 +236,7 @@ class ConversationOrchestrator:
                 "[ERROR] Failed to process message: %s",
                 e,
                 exc_info=True,
-                extra={"chat_id": chat_id, "phone": phone_number}
+                extra={"chat_id": chat_id, "phone": phone_number},
             )
 
             # Tentar fallback
@@ -282,21 +262,12 @@ class ConversationOrchestrator:
         ]
 
     async def _handle_silenced_conversation(
-        self,
-        session: Any,
-        conversation: ConversationModel,
-        message_text: str
+        self, session: Any, conversation: ConversationModel, message_text: str
     ) -> dict[str, Any]:
         """Processar mensagem quando bot está silenciado"""
-        await self.message_processor.save_inbound_message(
-            session, conversation.id, message_text
-        )
+        await self.message_processor.save_inbound_message(session, conversation.id, message_text)
 
-        logger.info(
-            "🤐 Bot silenciado: conversa em status %s (conv_id=%s)",
-            conversation.status,
-            conversation.id
-        )
+        logger.info("🤐 Bot silenciado: conversa em status %s (conv_id=%s)", conversation.status, conversation.id)
 
         # TODO: Notificar atendente via WebSocket
         # await self.notification_service.notify_user(
@@ -313,11 +284,7 @@ class ConversationOrchestrator:
             "status": conversation.status.value,
         }
 
-    async def _mark_as_urgent(
-        self,
-        session: Any,
-        conversation: ConversationModel
-    ) -> None:
+    async def _mark_as_urgent(self, session: Any, conversation: ConversationModel) -> None:
         """Marcar conversa como urgente"""
         conversation.is_urgent = True
         conv_repo = ConversationRepository(session)
@@ -327,10 +294,7 @@ class ConversationOrchestrator:
         logger.info("[INFO] Urgency detected (conv_id=%s)", conversation.id)
 
     async def _append_name_request_if_needed(
-        self,
-        conversation: ConversationModel,
-        context: str,
-        response_text: str
+        self, conversation: ConversationModel, context: str, response_text: str
     ) -> str:
         """Adicionar solicitação de nome se apropriado"""
         should_ask_name = (
@@ -340,27 +304,16 @@ class ConversationOrchestrator:
         )
 
         if should_ask_name:
-            name_request = await self.intent_detector.generate_name_request(
-                context,
-                conversation.lead.maturity_score
-            )
+            name_request = await self.intent_detector.generate_name_request(context, conversation.lead.maturity_score)
 
             if name_request:
                 response_text = f"{response_text}\n\n{name_request}"
 
         return response_text
 
-    async def _handle_handoff(
-        self,
-        session: Any,
-        conversation: ConversationModel,
-        score: int
-    ) -> str:
+    async def _handle_handoff(self, session: Any, conversation: ConversationModel, score: int) -> str:
         """Executar handoff para humano e retornar mensagem de transição"""
-        handoff_service = HandoffService(
-            ConversationRepository(session),
-            LeadRepository(session)
-        )
+        handoff_service = HandoffService(ConversationRepository(session), LeadRepository(session))
 
         escalation_reason = "score_high" if score >= 85 else "bot_confused"
 
@@ -372,20 +325,12 @@ class ConversationOrchestrator:
         )
 
         logger.info(
-            "Automatic handoff triggered: conv=%s, reason=%s, score=%s",
-            conversation.id,
-            escalation_reason,
-            score
+            "Automatic handoff triggered: conv=%s, reason=%s, score=%s", conversation.id, escalation_reason, score
         )
 
         return handoff_result["message"]
 
-    async def _get_or_create_conversation(
-        self,
-        session: Any,
-        chat_id: str,
-        phone_number: str
-    ) -> ConversationModel:
+    async def _get_or_create_conversation(self, session: Any, chat_id: str, phone_number: str) -> ConversationModel:
         """
         Buscar conversa existente ou criar nova com lead associado.
 
@@ -414,28 +359,17 @@ class ConversationOrchestrator:
 
         # Criar nova conversa
         conversation = ConversationModel(  # type: ignore[call-arg]
-            chat_id=chat_id,
-            phone_number=phone_number,
-            status=ConversationStatus.ACTIVE,
-            lead_id=lead.id
+            chat_id=chat_id, phone_number=phone_number, status=ConversationStatus.ACTIVE, lead_id=lead.id
         )
         repo.create(conversation)
         session.flush()
 
-        logger.info(
-            "[SUCCESS] New conversation created (id=%s, lead_id=%s)",
-            conversation.id,
-            lead.id
-        )
+        logger.info("[SUCCESS] New conversation created (id=%s, lead_id=%s)", conversation.id, lead.id)
 
         return conversation
 
     async def _generate_response(
-        self,
-        message_text: str,
-        intent: str,
-        context: str,
-        conversation: ConversationModel
+        self, message_text: str, intent: str, context: str, conversation: ConversationModel
     ) -> dict[str, Any]:
         """
         Gerar resposta contextualizada usando Gemini.
@@ -451,22 +385,17 @@ class ConversationOrchestrator:
             intent=intent,
             context=context,
             maturity_score=conversation.lead.maturity_score if conversation.lead else 0,
-            lead_status=conversation.lead.status.value if conversation.lead else 'NEW',
-            last_interaction="Agora"
+            lead_status=conversation.lead.status.value if conversation.lead else "NEW",
+            last_interaction="Agora",
         )
 
         response_data = self.gemini_client.generate_response(prompt)
 
-        logger.info("[SUCCESS] Response generated (%s tokens)", response_data['tokens_used'])
+        logger.info("[SUCCESS] Response generated (%s tokens)", response_data["tokens_used"])
 
         return response_data
 
-    async def _send_response_via_waha(
-        self,
-        chat_id: str,
-        text: str,
-        session: str
-    ) -> bool:
+    async def _send_response_via_waha(self, chat_id: str, text: str, session: str) -> bool:
         """
         Enviar mensagem via WAHA.
 
@@ -477,10 +406,7 @@ class ConversationOrchestrator:
             WAHAError: Se falhar ao enviar
         """
         try:
-            await self.waha_client.send_text(
-                chatId=chat_id,
-                text=text
-            )
+            await self.waha_client.send_text(chat_id=chat_id, text=text, session=session)
 
             logger.info("[SUCCESS] Response sent via WAHA (chat_id=%s)", chat_id)
 
@@ -492,13 +418,7 @@ class ConversationOrchestrator:
             logger.error("[ERROR] Failed to send via WAHA: %s", e)
             raise WAHAError(f"Failed to send message: {e}", original_error=e)
 
-    async def _register_interaction(
-        self,
-        session: Any,
-        lead_id: str | None,
-        interaction_type: str,
-        notes: str
-    ) -> None:
+    async def _register_interaction(self, session: Any, lead_id: str | None, interaction_type: str, notes: str) -> None:
         """
         Registrar interação no histórico do lead.
 
@@ -537,13 +457,7 @@ class ConversationOrchestrator:
             raise DatabaseError(f"Failed to register interaction: {e}")
 
     async def _log_llm_interaction(
-        self,
-        session: Any,
-        conversation_id: str,
-        prompt: str,
-        response: str,
-        tokens: int,
-        latency_ms: int
+        self, session: Any, conversation_id: str, prompt: str, response: str, tokens: int, latency_ms: int
     ) -> None:
         """
         Registrar interação com LLM para auditoria.
@@ -582,10 +496,7 @@ class ConversationOrchestrator:
             str: Mensagem de fallback amigável
         """
         try:
-            prompt = self.prompt_templates.format_fallback_prompt(
-                situation="Erro ao processar mensagem",
-                error=error
-            )
+            prompt = self.prompt_templates.format_fallback_prompt(situation="Erro ao processar mensagem", error=error)
 
             response = self.gemini_client.generate_response(prompt, max_retries=1)
 
@@ -593,8 +504,7 @@ class ConversationOrchestrator:
 
         except LLMError:
             return (
-                "Desculpe, estou com dificuldades técnicas no momento. "
-                "Um atendente humano entrará em contato em breve."
+                "Desculpe, estou com dificuldades técnicas no momento. Um atendente humano entrará em contato em breve."
             )
 
 
