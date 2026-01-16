@@ -27,13 +27,12 @@ class NotificationRepository(BaseRepository[NotificationModel]):
         """
         super().__init__(db, NotificationModel)
 
-    def create(
+    def create(  # pylint: disable=arguments-differ
         self,
         user_id: int,
         notification_type: str,
         title: str,
         message: str,
-        metadata: dict | None = None
     ) -> NotificationModel:
         """
         Create a new notification.
@@ -43,30 +42,19 @@ class NotificationRepository(BaseRepository[NotificationModel]):
             notification_type: Type of notification
             title: Notification title
             message: Notification message
-            metadata: Optional metadata dictionary
 
         Returns:
             Created notification model
         """
         notification = NotificationModel(
-            user_id=user_id,
-            notification_type=notification_type,
-            title=title,
-            message=message,
-            metadata=metadata or {},
-            read=False
+            user_id=user_id, type=notification_type, title=title, message=message, read=False
         )
         self.db.add(notification)
         self.db.flush()
         self.db.refresh(notification)
         return notification
 
-    def get_by_user(
-        self,
-        user_id: int,
-        unread_only: bool = False,
-        limit: int = 50
-    ) -> list[NotificationModel]:
+    def get_by_user(self, user_id: int, unread_only: bool = False, limit: int = 50) -> list[NotificationModel]:
         """
         Get notifications for a specific user.
 
@@ -100,11 +88,7 @@ class NotificationRepository(BaseRepository[NotificationModel]):
         Returns:
             Count of unread notifications
         """
-        stmt = (
-            select(NotificationModel)
-            .where(NotificationModel.user_id == user_id)
-            .where(not NotificationModel.read)
-        )
+        stmt = select(NotificationModel).where(NotificationModel.user_id == user_id).where(not NotificationModel.read)
         return len(list(self.db.scalars(stmt).all()))
 
     def mark_as_read(self, notification_id: str) -> NotificationModel | None:
@@ -133,11 +117,7 @@ class NotificationRepository(BaseRepository[NotificationModel]):
         Returns:
             Count of notifications marked as read
         """
-        stmt = (
-            select(NotificationModel)
-            .where(NotificationModel.user_id == user_id)
-            .where(not NotificationModel.read)
-        )
+        stmt = select(NotificationModel).where(NotificationModel.user_id == user_id).where(not NotificationModel.read)
         notifications = list(self.db.scalars(stmt).all())
 
         for notification in notifications:
