@@ -70,7 +70,7 @@ class IntentDetector:
             raise
         except Exception as e:  # noqa: BLE001
             logger.warning("[WARNING] Failed to detect intent: %s", e)
-            raise LLMError(f"Failed to detect intent: {e}")
+            raise LLMError(f"Failed to detect intent: {e}") from e
 
     async def detect_urgency(self, message: str, context: str) -> bool:
         """
@@ -231,7 +231,7 @@ class IntentDetector:
             raise
         except Exception as e:  # noqa: BLE001
             logger.warning("[WARNING] Failed to update score: %s", e)
-            raise DatabaseError(f"Failed to update maturity score: {e}")
+            raise DatabaseError(f"Failed to update maturity score: {e}") from e
 
     async def check_escalation_needed(
         self,
