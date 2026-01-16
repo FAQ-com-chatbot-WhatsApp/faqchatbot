@@ -32,13 +32,11 @@ class MessageModel(Base):
     tags = Column(String(500), nullable=True, index=True)  # Comma-separated tags
 
     # Audio transcription fields (for voice messages)
-    has_audio = Column(Boolean, default=False, nullable=False, server_default='false')
+    has_audio = Column(Boolean, default=False, nullable=False, server_default="false")
     audio_url = Column(String(500), nullable=True)  # URL to audio file
     transcription = Column(Text, nullable=True)  # Transcribed text from audio
 
-    created_at = Column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -47,9 +45,7 @@ class MessageModel(Base):
     )
 
     # Relationships
-    media = relationship(
-        "MessageMediaModel", back_populates="message", cascade="all, delete-orphan"
-    )
+    media = relationship("MessageMediaModel", back_populates="message", cascade="all, delete-orphan")
     location = relationship(
         "MessageLocationModel",
         back_populates="message",
