@@ -12,6 +12,8 @@ from robbot.infra.db.session import get_sync_session
 from robbot.infra.jobs.base_job import BaseJob, JobRetryableError
 
 logger = logging.getLogger(__name__)
+
+
 class MessageProcessingJob(BaseJob):
     """
     Job para processar mensagens WhatsApp (entrada/saída).
@@ -74,7 +76,7 @@ class MessageProcessingJob(BaseJob):
         logger.info(
             "Processando mensagem %s para %s",
             self.message_direction,
-            self.message_data.get('phone'),
+            self.message_data.get("phone"),
             extra=self._log_context(),
         )
 
@@ -111,7 +113,9 @@ class MessageProcessingJob(BaseJob):
             if message_type in ["voice", "ptt", "audio"]:
                 has_audio = True
                 # WAHA fornece URL do áudio no campo media ou _data
-                audio_url = self.message_data.get("media", {}).get("url") or self.message_data.get("_data", {}).get("url")
+                audio_url = self.message_data.get("media", {}).get("url") or self.message_data.get("_data", {}).get(
+                    "url"
+                )
 
                 if not audio_url:
                     logger.warning("[WARNING] Mensagem de áudio sem URL (type=%s)", message_type)
@@ -121,7 +125,9 @@ class MessageProcessingJob(BaseJob):
             elif message_type == "video":
                 has_video = True
                 has_audio = True  # Vídeo também tem áudio para transcrever
-                video_url = self.message_data.get("media", {}).get("url") or self.message_data.get("_data", {}).get("url")
+                video_url = self.message_data.get("media", {}).get("url") or self.message_data.get("_data", {}).get(
+                    "url"
+                )
                 audio_url = video_url  # Mesmo URL (extrairemos áudio)
 
                 if not video_url:
@@ -142,20 +148,23 @@ class MessageProcessingJob(BaseJob):
             # 9. Enviar via WAHA
             # 10. Salvar resposta
             import asyncio
-            result = asyncio.run(orchestrator.process_inbound_message(
-                chat_id=chat_id,
-                phone_number=phone,
-                message_text=text,
-                session_name=self.message_data.get("session", "default"),
-                has_audio=has_audio,
-                audio_url=audio_url,
-                has_video=has_video,
-                video_url=video_url,
-            ))
+
+            result = asyncio.run(
+                orchestrator.process_inbound_message(
+                    chat_id=chat_id,
+                    phone_number=phone,
+                    message_text=text,
+                    session_name=self.message_data.get("session", "default"),
+                    has_audio=has_audio,
+                    audio_url=audio_url,
+                    has_video=has_video,
+                    video_url=video_url,
+                )
+            )
 
             logger.info(
                 "[SUCCESS] Mensagem processada com orchestrator (conv_id=%s)",
-                result['conversation_id'],
+                result["conversation_id"],
                 extra=self._log_context(),
             )
 
@@ -183,6 +192,7 @@ class MessageProcessingJob(BaseJob):
                 conv_msg_repo = ConversationMessageRepository(db)
 
                 from robbot.infra.db.models import MessageModel
+
                 message_record = MessageModel(
                     conversation_id=self.conversation_id,
                     direction=self.message_direction,
@@ -238,6 +248,8 @@ class MessageProcessingJob(BaseJob):
             if "database" in str(e).lower() or "connection" in str(e).lower():
                 raise JobRetryableError(f"Erro de BD: {e}") from e
             raise JobRetryableError(f"Erro inesperado: {e}") from e
+
+
 class MessageBatchProcessingJob(BaseJob):
     """
     Job para processar lote de mensagens (útil para sincronização).
