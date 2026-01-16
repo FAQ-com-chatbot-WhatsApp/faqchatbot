@@ -11,7 +11,9 @@ from robbot.infra.db.session import get_db
 from robbot.infra.jobs.reengagement_job import run_reengagement_job
 
 router = APIRouter()
-@router.post("/jobs/reengagement", tags=["Jobs"])
+
+
+@router.post("/reengagement", tags=["Jobs"])
 def trigger_reengagement_job(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -38,7 +40,4 @@ def trigger_reengagement_job(
             "result": result,
         }
     except Exception as e:  # noqa: BLE001 (blind exception)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to run re-engagement job: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to run re-engagement job: {str(e)}")
