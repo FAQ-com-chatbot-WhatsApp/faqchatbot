@@ -61,6 +61,8 @@ def exception_handler(job: Job, exc_type, exc_value, traceback_):
 
     # NOTE: Integrar com sistema de alertas (Sentry, email, etc)
     _ = traceback_  # consumed to avoid unused-argument warning
+
+
 def main():
     """Inicializar e rodar worker RQ."""
     logger.info("Starting RQ Worker...")
@@ -81,8 +83,8 @@ def main():
     # Get queues
     queue_manager = get_queue_manager(redis_conn)
     queues = [
-        queue_manager.queue_messages,    # High priority
-        queue_manager.queue_ai,          # Medium priority
+        queue_manager.queue_messages,  # High priority
+        queue_manager.queue_ai,  # Medium priority
         queue_manager.queue_escalation,  # Low priority
     ]
 
@@ -124,5 +126,7 @@ def main():
     except (ValueError, RuntimeError, ConnectionError) as e:
         logger.error("Worker crashed: %s", e, exc_info=True)
         sys.exit(1)
+
+
 if __name__ == "__main__":
     main()
