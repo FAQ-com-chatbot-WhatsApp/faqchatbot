@@ -18,9 +18,7 @@ class UserModel(Base):
     full_name = Column(String(255), nullable=True)
     is_active = Column(Boolean, default=True)
     role = Column(String(50), default=Role.USER.value)
-    created_at = Column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     # Relationships
     assigned_leads = relationship(
@@ -36,6 +34,4 @@ class UserModel(Base):
         uselist=False,
         cascade="all, delete-orphan",
     )
-    auth_sessions = relationship(
-        "AuthSessionModel", back_populates="user", cascade="all, delete-orphan"
-    )
+    auth_sessions = relationship("AuthSessionModel", back_populates="user", cascade="all, delete-orphan")
