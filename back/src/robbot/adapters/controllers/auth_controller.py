@@ -68,17 +68,17 @@ async def test_create_verified_user(payload: SignupRequest, db: Session = Depend
     """⚠️ APENAS PARA TESTES: Cria usuário com email já verificado.
 
     Este endpoint NÃO DEVE SER EXPOSTO EM PRODUÇÃO.
-    
+
     Válido apenas quando ENV != 'production'.
     Usado para testes de API que precisam fazer login sem verificação de email.
-    
+
     Args:
         payload: Dados de signup (email, password, full_name, role)
         db: Database session
 
     Returns:
         UserOut com usuário criado e email_verified=True
-        
+
     Raises:
         HTTPException 403: Se chamado em ambiente de produção
         HTTPException 400: Se usuário já existe
@@ -90,13 +90,13 @@ async def test_create_verified_user(payload: SignupRequest, db: Session = Depend
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Test endpoint not available in production",
         )
-    
+
     service = AuthService(db)
     try:
         user = service.signup(payload)
     except Exception as exc:  # noqa: BLE001 (blind exception)
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    
+
     # Mark email as verified
     from robbot.adapters.repositories.credential_repository import CredentialRepository
     cred_repo = CredentialRepository(db)
@@ -104,7 +104,7 @@ async def test_create_verified_user(payload: SignupRequest, db: Session = Depend
     if cred:
         cred.email_verified = True
         db.commit()
-    
+
     return user
 
 
