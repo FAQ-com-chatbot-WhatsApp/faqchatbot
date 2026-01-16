@@ -9,7 +9,7 @@ Responsabilidades:
 """
 
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -18,6 +18,7 @@ from robbot.adapters.repositories.auth_session_repository import AuthSessionRepo
 from robbot.adapters.repositories.token_repository import TokenRepository
 from robbot.adapters.repositories.user_repository import UserRepository
 from robbot.common.utils import send_email
+from robbot.config.settings import settings
 from robbot.core import security
 from robbot.core.custom_exceptions import AuthException
 from robbot.schemas.auth import SignupRequest
@@ -29,6 +30,8 @@ from robbot.services.email_verification_service import EmailVerificationService
 from robbot.services.mfa_service import MfaService
 
 logger = logging.getLogger(__name__)
+
+
 class AuthService:
     """Camada de serviço que implementa regras de negócio de autenticação.
 
@@ -67,11 +70,9 @@ class AuthService:
         security.validate_password_policy(payload.password)
 
         from robbot.schemas.user import UserCreate
+
         user_data = UserCreate(
-            email=payload.email,
-            password=payload.password,
-            full_name=payload.full_name,
-            role=payload.role
+            email=payload.email, password=payload.password, full_name=payload.full_name, role=payload.role
         )
         hashed = security.get_password_hash(payload.password)
         user = self.repo.create_user(user_data, hashed)
@@ -81,6 +82,33 @@ class AuthService:
         verification_token = self.email_verification_svc.generate_verification_token(user.id)
 
         logger.info("[INFO] User registered: %s (verification token: %s...)", user.email, verification_token[:8])
+
+        # Send verification email
+        # Use API endpoint directly since frontend may not be running in dev
+        verification_link = f"http://localhost:3333/api/v1/auth/email/verify?token={verification_token}"
+        email_body = f"""
+Welcome to Clinica Go!
+
+Please verify your email address by clicking the link below:
+
+{verification_link}
+
+This link will expire in {settings.EMAIL_VERIFICATION_TOKEN_EXPIRATION_HOURS} hours.
+
+If you didn't create this account, please ignore this email.
+
+---
+Verification token: {verification_token}
+"""
+        try:
+            send_email(
+                to=user.email,
+                subject="Verify your email address - Clinica Go",
+                body=email_body
+            )
+            logger.info("[INFO] Verification email sent to %s", user.email)
+        except Exception as e:
+            logger.error("[ERROR] Failed to send verification email to %s: %s", user.email, e)
 
         return UserOut.model_validate(user)
 
@@ -134,7 +162,10 @@ class AuthService:
                 logger.warning("[WARNING] Audit log failed for login_failure")
             return None
 
+        # pylint: disable=import-outside-toplevel
+        # Justification: Avoid circular import dependency between repositories
         from robbot.adapters.repositories.credential_repository import CredentialRepository
+
         credential_repo = CredentialRepository(self.repo.db)
         credential = credential_repo.get_by_user_id(user.id)
         mfa_enabled = credential.mfa_enabled if credential else False
@@ -143,17 +174,13 @@ class AuthService:
             # Return temporary tokens that require MFA verification
             logger.info("[INFO] Login successful (MFA required): user %s (id=%s)", email, user.id)
             # Create temporary tokens with short expiration (5 minutes)
-            temporary_tokens = security.create_token_for_subject(
-                str(user.id),
-                minutes=5,
-                token_type="mfa-pending"
-            )
+            temporary_tokens = security.create_token_for_subject(str(user.id), minutes=5, token_type="mfa-pending")
             # Don't create session yet - will be created after MFA verification
             return Token(
                 access_token=temporary_tokens,
                 refresh_token="",  # No refresh token until MFA verified
                 mfa_required=True,
-                user=user
+                user=user,
             )
 
         # Normal login flow (MFA disabled)
@@ -216,6 +243,22 @@ class AuthService:
         sess = self.session_repo.get_by_jti(jti)
         if not sess or sess.is_revoked or sess.is_expired:
             raise AuthException("Session invalid or revoked")
+
+        # Check idle timeout (30 days of inactivity)
+        idle_timeout_days = 30
+        last_used = sess.last_used_at or sess.created_at
+        # Normalize timezone to avoid naive/aware datetime subtraction errors
+        if last_used.tzinfo is None:
+            last_used = last_used.replace(tzinfo=UTC)
+        idle_duration = datetime.now(UTC) - last_used
+        if idle_duration > timedelta(days=idle_timeout_days):
+            # Revoke session due to inactivity
+            self.session_repo.revoke(sess.id)
+            raise AuthException(
+                f"Session expired due to inactivity (no activity for {idle_timeout_days} days). "
+                "Please login again to create a new session."
+            )
+
         # Update session metadata (last_used + device info if provided)
         device_name = security.parse_device_name(user_agent) if user_agent else None
         self.session_repo.update_last_used(
@@ -295,10 +338,8 @@ class AuthService:
         user = self.repo.get_by_email(email)
         if not user:
             return
-        token = security.create_token_for_subject(
-            str(user.id), minutes=15, token_type="pw-reset")
-        send_email(to=email, subject="Password recovery",
-                   body=f"Use this token to reset: {token}")
+        token = security.create_token_for_subject(str(user.id), minutes=15, token_type="pw-reset")
+        send_email(to=email, subject="Password recovery", body=f"Use this token to reset: {token}")
 
     def reset_password(self, token: str, new_password: str) -> None:
         """Redefine senha se token válido e senha atende política.
