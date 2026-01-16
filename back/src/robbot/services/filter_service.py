@@ -96,7 +96,7 @@ class FilterService:
         # Pagination
         query = query.offset(filters.skip).limit(filters.limit)
 
-        logger.debug(f"Applied {filters.__class__.__name__} to query")
+        logger.debug("Applied %s to query", filters.__class__.__name__)
         return query
 
     @staticmethod
@@ -161,7 +161,7 @@ class FilterService:
         # Pagination
         query = query.offset(filters.skip).limit(filters.limit)
 
-        logger.debug(f"Applied {filters.__class__.__name__} to query")
+        logger.debug("Applied %s to query", filters.__class__.__name__)
         return query
 
     @staticmethod
@@ -213,7 +213,7 @@ class FilterService:
         # Pagination
         query = query.offset(filters.skip).limit(filters.limit)
 
-        logger.debug(f"Applied {filters.__class__.__name__} to query")
+        logger.debug("Applied %s to query", filters.__class__.__name__)
         return query
 
     @staticmethod
@@ -243,5 +243,5 @@ class FilterService:
         if hasattr(model, column_name):
             return getattr(model, column_name)
 
-        logger.warning(f"Sort column '{column_name}' not found on {model.__name__}")
+        logger.warning("Sort column '%s' not found on %s", column_name, model.__name__)
         return None
