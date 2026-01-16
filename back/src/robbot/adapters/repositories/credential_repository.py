@@ -20,9 +20,7 @@ class CredentialRepository(BaseRepository[CredentialModel]):
 
     def get_by_user_id(self, user_id: int) -> CredentialModel | None:
         """Retrieve credential by user ID."""
-        return (
-            self.db.query(CredentialModel).filter(CredentialModel.user_id == user_id).first()
-        )
+        return self.db.query(CredentialModel).filter(CredentialModel.user_id == user_id).first()
 
     def create(self, user_id: int, hashed_password: str) -> CredentialModel:
         """Create new credential for user.
@@ -45,9 +43,7 @@ class CredentialRepository(BaseRepository[CredentialModel]):
         self.db.refresh(credential)
         return credential
 
-    def update_password(
-        self, credential: CredentialModel, new_hashed_password: str
-    ) -> CredentialModel:
+    def update_password(self, credential: CredentialModel, new_hashed_password: str) -> CredentialModel:
         """Update user password.
 
         Args:
@@ -64,9 +60,7 @@ class CredentialRepository(BaseRepository[CredentialModel]):
         self.db.refresh(credential)
         return credential
 
-    def set_reset_token(
-        self, credential: CredentialModel, token: str, expires_at: datetime
-    ) -> CredentialModel:
+    def set_reset_token(self, credential: CredentialModel, token: str, expires_at: datetime) -> CredentialModel:
         """Set password reset token.
 
         Args:
@@ -140,9 +134,7 @@ class CredentialRepository(BaseRepository[CredentialModel]):
         self.db.refresh(credential)
         return credential
 
-    def enable_mfa(
-        self, credential: CredentialModel, secret: str, backup_codes: str
-    ) -> CredentialModel:
+    def enable_mfa(self, credential: CredentialModel, secret: str, backup_codes: str) -> CredentialModel:
         """Enable MFA for credential.
 
         Args:
@@ -191,11 +183,7 @@ class CredentialRepository(BaseRepository[CredentialModel]):
         Returns:
             Credential model if found, None otherwise
         """
-        return (
-            self.db.query(CredentialModel)
-            .filter(CredentialModel.email_verification_token == token)
-            .first()
-        )
+        return self.db.query(CredentialModel).filter(CredentialModel.email_verification_token == token).first()
 
     def mark_email_verified(self, credential: CredentialModel) -> CredentialModel:
         """Mark email as verified.
