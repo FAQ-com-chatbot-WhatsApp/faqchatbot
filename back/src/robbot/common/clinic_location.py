@@ -6,6 +6,8 @@ from robbot.config.settings import get_settings
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
+
+
 def get_clinic_location() -> dict:
     """
     Retornar dados de localização da Clínica GO.
@@ -25,10 +27,10 @@ def get_clinic_location() -> dict:
         "longitude": settings.CLINIC_LONGITUDE,
         "maps_url": settings.CLINIC_MAPS_URL,
     }
+
+
 async def send_clinic_location_via_waha(
-    chat_id: str,
-    session_name: str = "default",
-    custom_title: str | None = None
+    chat_id: str, session_name: str = "default", custom_title: str | None = None
 ) -> dict:
     """
     Enviar localização da Clínica GO via WAHA.
@@ -58,15 +60,15 @@ async def send_clinic_location_via_waha(
             session=session_name,
             latitude=location["latitude"],
             longitude=location["longitude"],
-            title=title
+            title=title,
         )
 
     logger.info("[SUCCESS] Clinic location sent successfully")
     return result
+
+
 def send_clinic_location_via_waha_sync(
-    chat_id: str,
-    session_name: str = "default",
-    custom_title: str | None = None
+    chat_id: str, session_name: str = "default", custom_title: str | None = None
 ) -> dict:
     """
     Versão síncrona de send_clinic_location_via_waha.
@@ -81,9 +83,9 @@ def send_clinic_location_via_waha_sync(
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-    return loop.run_until_complete(
-        send_clinic_location_via_waha(chat_id, session_name, custom_title)
-    )
+    return loop.run_until_complete(send_clinic_location_via_waha(chat_id, session_name, custom_title))
+
+
 # Atalhos para acesso rápido
 CLINIC_NAME = settings.CLINIC_NAME
 CLINIC_ADDRESS = settings.CLINIC_ADDRESS
