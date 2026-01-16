@@ -1,12 +1,10 @@
 """
-Context Builder - Gerencia contexto conversacional via ChromaDB.
+Context Builder - Manages conversational context via a VectorStore (e.g., ChromaDB).
 
-Responsabilidades:
-- Recuperar histórico de conversas do ChromaDB
-- Salvar novas interações no ChromaDB
-- Formatar contexto para o LLM
-
-REFACTORED: Dependency injection of VectorStore interface (Issue #3: Missing Abstractions)
+Responsibilities:
+- Retrieve conversation history from the vector store
+- Persist new interactions to the vector store
+- Format context for the LLM
 """
 
 import logging
@@ -19,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class ContextBuilder:
-    """Gerencia contexto conversacional via ChromaDB"""
+    """Manage conversational context using an injected `VectorStore`."""
 
     def __init__(self, vector_store: VectorStore):
         """
@@ -32,17 +30,17 @@ class ContextBuilder:
 
     async def get_conversation_context(self, conversation_id: str, limit: int = 5) -> str:
         """
-        Recuperar contexto conversacional do ChromaDB.
+        Retrieve formatted conversational context from the vector store.
 
         Args:
-            conversation_id: ID da conversa
-            limit: Número máximo de interações passadas
+            conversation_id: Conversation identifier
+            limit: Max number of past interactions to include
 
         Returns:
-            str: Contexto formatado (vazio se sem histórico)
+            Formatted context string (empty if no history)
 
         Raises:
-            VectorDBError: Se falhar ao acessar ChromaDB
+            VectorDBError: If access to the vector store fails
         """
         try:
             results = await self.vector_store.search(conversation_id, limit=limit)
@@ -61,19 +59,19 @@ class ContextBuilder:
             raise
         except Exception as e:  # noqa: BLE001
             logger.warning("[WARNING] Failed to fetch context: %s", e)
-            raise VectorDBError(f"Failed to get context: {e}")
+            raise VectorDBError(f"Failed to get context: {e}") from e
 
     async def save_to_chroma(self, conversation_id: str, text: str, metadata: dict[str, Any]) -> None:
         """
-        Persistir par de mensagens (User/Bot) no ChromaDB para contexto futuro.
+        Persist a user/bot message pair into the vector store for future context.
 
         Args:
-            conversation_id: ID da conversa
-            text: Texto do par User/Bot
-            metadata: Metadados (intent, score, etc)
+            conversation_id: Conversation identifier
+            text: Text content of the interaction
+            metadata: Metadata (intent, score, etc.)
 
         Raises:
-            VectorDBError: Se falhar ao salvar no ChromaDB
+            VectorDBError: If saving to the vector store fails
         """
         try:
             await self.vector_store.add(conversation_id, text, metadata)
@@ -83,4 +81,4 @@ class ContextBuilder:
             raise
         except Exception as e:  # noqa: BLE001
             logger.warning("[WARNING] Failed to save to ChromaDB: %s", e)
-            raise VectorDBError(f"Failed to save to ChromaDB: {e}")
+            raise VectorDBError(f"Failed to save to ChromaDB: {e}") from e
