@@ -21,17 +21,11 @@ class PlaybookEmbeddingModel(Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid4()))
     playbook_id = Column(
-        String(36),
-        ForeignKey('playbooks.id', ondelete='CASCADE'),
-        nullable=False,
-        unique=True,
-        index=True
+        String(36), ForeignKey("playbooks.id", ondelete="CASCADE"), nullable=False, unique=True, index=True
     )
     embedding_text = Column(Text, nullable=False)  # Combined text from playbook + steps for embedding
     chroma_doc_id = Column(String(255), nullable=True, unique=True, index=True)  # ChromaDB document ID
-    created_at = Column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),
