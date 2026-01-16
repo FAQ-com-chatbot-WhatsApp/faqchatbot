@@ -11,11 +11,16 @@ from robbot.core.custom_exceptions import ExternalServiceError, QueueError
 from robbot.schemas.waha import WebhookLogOut, WebhookPayload
 from robbot.services.queue_service import get_queue_service
 
-router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
+router = APIRouter()
+
 logger = logging.getLogger(__name__)
+
+
 def _get_webhook_repo(db: Session = Depends(get_db)) -> WebhookLogRepository:
     """Dependency to create WebhookLogRepository."""
     return WebhookLogRepository(db)
+
+
 @router.post(
     "/waha",
     response_model=WebhookLogOut,
@@ -23,7 +28,7 @@ def _get_webhook_repo(db: Session = Depends(get_db)) -> WebhookLogRepository:
 )
 async def receive_waha_webhook(
     payload: WebhookPayload,
-    request: Request,
+    _request: Request,
     repo: WebhookLogRepository = Depends(_get_webhook_repo),
 ):
     """Receive webhook from WAHA.
@@ -40,7 +45,9 @@ async def receive_waha_webhook(
     - `session.status` - Session status change
     """
     logger.info(
-        f"Webhook received: {payload.event} from session {payload.session}",
+        "Webhook received: %s from session %s",
+        payload.event,
+        payload.session,
         extra={"event": payload.event, "session": payload.session},
     )
 
@@ -65,7 +72,8 @@ async def receive_waha_webhook(
             )
 
             logger.info(
-                f"[SUCCESS] Mensagem enfileirada para processamento: {job_id}",
+                "[SUCCESS] Mensagem enfileirada para processamento: %s",
+                job_id,
                 extra={
                     "job_id": job_id,
                     "phone": phone,
@@ -75,24 +83,29 @@ async def receive_waha_webhook(
             )
         else:
             logger.debug(
-                f"Evento '{payload.event}' registrado mas não enfileirado",
+                "Evento '%s' registrado mas não enfileirado",
+                payload.event,
                 extra={"event": payload.event, "webhook_log_id": log.id},
             )
 
     except (QueueError, ExternalServiceError) as e:
         logger.error(
-            f"Erro ao enfileirar mensagem: {e}",
+            "Erro ao enfileirar mensagem: %s",
+            e,
             extra={"webhook_log_id": log.id, "error": str(e)},
             exc_info=True,
         )
     except Exception as e:  # noqa: BLE001 (blind exception)
         logger.error(
-            f"Erro inesperado ao processar webhook: {e}",
+            "Erro inesperado ao processar webhook: %s",
+            e,
             extra={"webhook_log_id": log.id, "error": str(e)},
             exc_info=True,
         )
 
     return WebhookLogOut.model_validate(log)
+
+
 @router.get(
     "/waha/logs",
     response_model=list[WebhookLogOut],
