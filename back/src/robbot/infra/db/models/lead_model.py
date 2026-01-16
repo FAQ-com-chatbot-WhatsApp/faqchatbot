@@ -24,6 +24,8 @@ if TYPE_CHECKING:
     from robbot.infra.db.models.conversation_model import ConversationModel
     from robbot.infra.db.models.lead_interaction_model import LeadInteractionModel
     from robbot.infra.db.models.user_model import UserModel
+
+
 class LeadModel(Base):
     """Model for leads (prospects ready for scheduling).
 
@@ -32,9 +34,7 @@ class LeadModel(Base):
 
     __tablename__ = "leads"
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=lambda: str(uuid4()), index=True
-    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()), index=True)
 
     conversation_id: Mapped[str | None] = mapped_column(
         String(36),
@@ -45,64 +45,38 @@ class LeadModel(Base):
         comment="One lead per conversation (optional - leads can exist without conversations)",
     )
 
-    name: Mapped[str] = mapped_column(
-        String(255), nullable=False,
-        comment="Lead name"
-    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False, comment="Lead name")
 
-    phone_number: Mapped[str] = mapped_column(
-        String(20), nullable=False, index=True,
-        comment="Contact phone number"
-    )
+    phone_number: Mapped[str] = mapped_column(String(20), nullable=False, index=True, comment="Contact phone number")
 
-    email: Mapped[str | None] = mapped_column(
-        String(255), nullable=True,
-        comment="Email if provided"
-    )
+    email: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="Email if provided")
 
     status: Mapped[LeadStatus] = mapped_column(
-        SQLEnum(LeadStatus),
-        nullable=False,
-        default=LeadStatus.NEW,
-        index=True,
-        comment="Lead maturity status"
+        SQLEnum(LeadStatus), nullable=False, default=LeadStatus.NEW, index=True, comment="Lead maturity status"
     )
 
-    maturity_score: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
-        default=0,
-        comment="Lead score (0-100)"
-    )
+    maturity_score: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Lead score (0-100)")
 
-    notes: Mapped[str | None] = mapped_column(
-        Text, nullable=True,
-        comment="Internal notes about the lead"
-    )
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="Internal notes about the lead")
 
     assigned_to_user_id: Mapped[int | None] = mapped_column(
         Integer,
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
-        comment="Assigned secretary user ID"
+        comment="Assigned secretary user ID",
     )
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, nullable=False, index=True
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
     converted_at: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True,
-        comment="When lead was converted (scheduled)"
+        DateTime, nullable=True, comment="When lead was converted (scheduled)"
     )
 
     # Relationships
-    conversation: Mapped["ConversationModel"] = relationship(
-        "ConversationModel", back_populates="lead"
-    )
+    conversation: Mapped["ConversationModel"] = relationship("ConversationModel", back_populates="lead")
     assigned_to: Mapped["UserModel"] = relationship(
         "UserModel", back_populates="assigned_leads", foreign_keys=[assigned_to_user_id]
     )
@@ -112,14 +86,8 @@ class LeadModel(Base):
 
     # Constraints
     __table_args__ = (
-        CheckConstraint(
-            "maturity_score >= 0 AND maturity_score <= 100",
-            name="check_maturity_score_range"
-        ),
+        CheckConstraint("maturity_score >= 0 AND maturity_score <= 100", name="check_maturity_score_range"),
     )
 
     def __repr__(self) -> str:
-        return (
-            f"<LeadModel(id='{self.id}', name='{self.name}', "
-            f"status='{self.status}', score={self.maturity_score})>"
-        )
+        return f"<LeadModel(id='{self.id}', name='{self.name}', status='{self.status}', score={self.maturity_score})>"
