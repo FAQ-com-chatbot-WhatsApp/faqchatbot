@@ -50,7 +50,9 @@ class GeminiClient:
 
             logger.info(
                 "[SUCCESS] GeminiClient initialized (model=%s, temp=%s, tools=%s)",
-                settings.GEMINI_MODEL, settings.GEMINI_TEMPERATURE, len(tools) if tools else 0
+                settings.GEMINI_MODEL,
+                settings.GEMINI_TEMPERATURE,
+                len(tools) if tools else 0,
             )
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("[ERROR] Failed to initialize GeminiClient: %s", e)
@@ -90,8 +92,9 @@ class GeminiClient:
             try:
                 logger.info(
                     "[INFO] Generating Gemini response (attempt %s/%s)",
-                    attempt, max_retries,
-                    extra={"prompt_length": len(full_prompt)}
+                    attempt,
+                    max_retries,
+                    extra={"prompt_length": len(full_prompt)},
                 )
 
                 start_time = time.time()
@@ -113,7 +116,7 @@ class GeminiClient:
                 latency_ms = int((time.time() - start_time) * 1000)
 
                 # Extrair texto da resposta
-                response_text = response.text if hasattr(response, 'text') else str(response)
+                response_text = response.text if hasattr(response, "text") else str(response)
 
                 # Extrair metadados
                 tokens_used = self._extract_token_count(response)
@@ -121,12 +124,13 @@ class GeminiClient:
 
                 logger.info(
                     "[SUCCESS] Response generated successfully (%sms, %s tokens)",
-                    latency_ms, tokens_used,
+                    latency_ms,
+                    tokens_used,
                     extra={
                         "latency_ms": latency_ms,
                         "tokens": tokens_used,
                         "model": settings.GEMINI_MODEL,
-                    }
+                    },
                 )
 
                 return {
@@ -139,11 +143,8 @@ class GeminiClient:
 
             except google_exceptions.ResourceExhausted as e:
                 # Rate limit - aguardar e tentar novamente
-                wait_time = 2 ** attempt  # Exponential backoff
-                logger.warning(
-                    "[WARNING] Rate limit reached, waiting %ss (attempt %s)",
-                    wait_time, attempt
-                )
+                wait_time = 2**attempt  # Exponential backoff
+                logger.warning("[WARNING] Rate limit reached, waiting %ss (attempt %s)", wait_time, attempt)
                 if attempt < max_retries:
                     time.sleep(wait_time)
                     continue
@@ -201,19 +202,16 @@ class GeminiClient:
             Número de tokens usados
         """
         try:
-            if hasattr(response, 'usage_metadata'):
+            if hasattr(response, "usage_metadata"):
                 metadata = response.usage_metadata
                 # Total = input + output tokens
-                return (
-                    getattr(metadata, 'prompt_token_count', 0) +
-                    getattr(metadata, 'candidates_token_count', 0)
-                )
+                return getattr(metadata, "prompt_token_count", 0) + getattr(metadata, "candidates_token_count", 0)
         except (AttributeError, TypeError):
             pass
 
         # Fallback: estimar baseado em caracteres
         # Aproximação: 1 token ~= 4 caracteres
-        return len(response.text) // 4 if hasattr(response, 'text') else 0
+        return len(response.text) // 4 if hasattr(response, "text") else 0
 
     def _extract_finish_reason(self, response: Any) -> str:
         """
@@ -226,9 +224,9 @@ class GeminiClient:
             Motivo de término
         """
         try:
-            if hasattr(response, 'candidates') and response.candidates:
+            if hasattr(response, "candidates") and response.candidates:
                 candidate = response.candidates[0]
-                if hasattr(candidate, 'finish_reason'):
+                if hasattr(candidate, "finish_reason"):
                     return str(candidate.finish_reason)
         except (AttributeError, IndexError, TypeError):
             pass
