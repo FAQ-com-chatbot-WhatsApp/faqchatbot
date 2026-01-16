@@ -1,4 +1,5 @@
 """Repository for LLMInteraction entity."""
+
 from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.base_repository import BaseRepository
@@ -12,11 +13,7 @@ class LLMInteractionRepository(BaseRepository[LLMInteractionModel]):
         """Initialize repository with database session."""
         super().__init__(session, LLMInteractionModel)
 
-    def get_by_conversation_id(
-        self,
-        conversation_id: str,
-        limit: int = 50
-    ) -> list[LLMInteractionModel]:
+    def get_by_conversation_id(self, conversation_id: str, limit: int = 50) -> list[LLMInteractionModel]:
         """
         Get interactions by conversation ID.
 
@@ -35,11 +32,7 @@ class LLMInteractionRepository(BaseRepository[LLMInteractionModel]):
             .all()
         )
 
-    def get_by_user_id(
-        self,
-        user_id: int,
-        limit: int = 50
-    ) -> list[LLMInteractionModel]:
+    def get_by_user_id(self, user_id: int, limit: int = 50) -> list[LLMInteractionModel]:
         """
         Get interactions by user ID.
 
