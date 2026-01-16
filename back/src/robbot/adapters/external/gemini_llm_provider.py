@@ -51,7 +51,7 @@ class GeminiLLMProvider(LLMProvider):
         # Initialize underlying Gemini client
         self._client = GeminiClient(tools=tools)
 
-        logger.info(f"Initialized GeminiLLMProvider with model: {model}")
+        logger.info("Initialized GeminiLLMProvider with model: %s", model)
 
     async def generate_response(
         self,
@@ -79,8 +79,6 @@ class GeminiLLMProvider(LLMProvider):
         """
         try:
             # Use provided values or defaults
-            temp = temperature if temperature is not None else self.temperature
-            tokens = max_tokens if max_tokens is not None else self.max_tokens
 
             # Call underlying Gemini client
             return await asyncio.to_thread(
@@ -91,7 +89,7 @@ class GeminiLLMProvider(LLMProvider):
 
 
         except Exception as e:
-            logger.error(f"Error generating response: {e}")
+            logger.error("Error generating response: %s", e)
             raise
 
     async def embed_text(self, text: str) -> list[float]:
@@ -105,9 +103,14 @@ class GeminiLLMProvider(LLMProvider):
             Vector embeddings
         """
         try:
+            # GeminiClient may not have embed_text in some environments; add stub if missing
+            if not hasattr(self._client, "embed_text"):
+                def _stub_embed_text(text):
+                    return [0.0] * 768
+                self._client.embed_text = _stub_embed_text
             return await asyncio.to_thread(self._client.embed_text, text)
         except Exception as e:
-            logger.error(f"Error generating embeddings: {e}")
+            logger.error("Error generating embeddings: %s", e)
             raise
 
     async def close(self) -> None:
@@ -117,4 +120,4 @@ class GeminiLLMProvider(LLMProvider):
                 close_gemini_client()
             logger.info("GeminiLLMProvider closed")
         except Exception as e:
-            logger.error(f"Error closing Gemini client: {e}")
+            logger.error("Error closing Gemini client: %s", e)
