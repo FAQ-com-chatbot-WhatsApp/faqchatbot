@@ -9,6 +9,8 @@ from robbot.schemas.topic import DeletedResponse, TopicCreate, TopicList, TopicO
 from robbot.services.playbook_service import PlaybookService
 
 router = APIRouter()
+
+
 @router.post("/", response_model=TopicOut, status_code=status.HTTP_201_CREATED)
 def create_topic(
     payload: TopicCreate,
@@ -31,6 +33,8 @@ def create_topic(
         active=payload.active,
     )
     return TopicOut.model_validate(created)
+
+
 @router.get("/{topic_id}", response_model=TopicOut)
 def get_topic(
     topic_id: str,
@@ -43,6 +47,8 @@ def get_topic(
     if not topic:
         raise HTTPException(status_code=404, detail=f"Topic {topic_id} not found")
     return TopicOut.model_validate(topic)
+
+
 @router.get("/", response_model=TopicList)
 def list_topics(
     active_only: bool = False,
@@ -61,10 +67,9 @@ def list_topics(
     """
     service = PlaybookService(db)
     topics = service.list_topics(active_only=active_only, skip=skip, limit=limit)
-    return TopicList(
-        topics=[TopicOut.model_validate(t) for t in topics],
-        total=len(topics)
-    )
+    return TopicList(topics=[TopicOut.model_validate(t) for t in topics], total=len(topics))
+
+
 @router.patch("/{topic_id}", response_model=TopicOut)
 def update_topic(
     topic_id: str,
@@ -87,6 +92,8 @@ def update_topic(
         raise HTTPException(status_code=404, detail=f"Topic {topic_id} not found")
 
     return TopicOut.model_validate(updated)
+
+
 @router.delete("/{topic_id}", response_model=DeletedResponse)
 def delete_topic(
     topic_id: str,
