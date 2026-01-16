@@ -108,7 +108,7 @@ class ConversationService:
         # Update status
         conversation = repo.update_status(conversation_id, new_status)
 
-        logger.info(f"[SUCCESS] Status updated (conv_id={conversation_id}, {old_status} → {new_status})")
+        logger.info("[SUCCESS] Status updated (conv_id=%s, %s → %s)", conversation_id, old_status, new_status)
 
         return conversation
 
@@ -139,7 +139,7 @@ class ConversationService:
         conversation.closed_at = datetime.now(UTC)
         conversation = repo.update(conversation)
 
-        logger.info(f"[SUCCESS] Conversation closed (id={conversation_id}, reason={reason})")
+        logger.info("[SUCCESS] Conversation closed (id=%s, reason=%s)", conversation_id, reason)
 
         return conversation
 
@@ -197,7 +197,7 @@ class ConversationService:
         self.db.commit()
         self.db.refresh(conversation)
 
-        logger.info(f"[SUCCESS] Conversation transferred (id={conversation_id}, user_id={user_id})")
+        logger.info("[SUCCESS] Conversation transferred (id=%s, user_id=%s)", conversation_id, user_id)
 
         return conversation
 
