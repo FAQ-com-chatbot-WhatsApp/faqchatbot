@@ -4,17 +4,18 @@ Testes de integração para Relatório de Análise de Conversas (L3).
 Valida queries SQL e transformações de dados.
 """
 
-import pytest
-from datetime import datetime, timedelta
+from datetime import datetime
 from unittest.mock import MagicMock
+
+import pytest
+
 from robbot.adapters.repositories.analytics_repository import AnalyticsRepository
 
 
 @pytest.fixture
 def mock_db_session():
     """Mock da sessão do banco de dados."""
-    session = MagicMock()
-    return session
+    return MagicMock()
 
 
 @pytest.fixture
@@ -104,18 +105,14 @@ def test_sentiment_distribution_query_structure(analytics_repo, mock_db_session)
     mock_result = MagicMock()
     mock_result.fetchall.return_value = [
         MagicMock(
-            id="msg-1",
-            body="Obrigado pela atenção!",
-            sentiment_regex="positive",
-            sentiment_count=350,
-            total_count=1000
+            id="msg-1", body="Obrigado pela atenção!", sentiment_regex="positive", sentiment_count=350, total_count=1000
         ),
         MagicMock(
             id="msg-2",
             body="Gostaria de mais informações",
             sentiment_regex="neutral",
             sentiment_count=570,
-            total_count=1000
+            total_count=1000,
         ),
     ]
     mock_db_session.execute.return_value = mock_result
@@ -195,6 +192,7 @@ def test_sentiment_distribution_empty_data(analytics_repo, mock_db_session):
 # P3 #1: EDGE CASES (Testes adicionais para cobertura +10%)
 # =========================================================================
 
+
 def test_keyword_frequency_empty_period(analytics_repo, mock_db_session):
     """Testa extração de keywords quando período não tem mensagens."""
     # Arrange
@@ -218,7 +216,7 @@ def test_sentiment_invalid_dates(analytics_repo, mock_db_session):
     """Testa que sentiment retorna vazio quando start_date > end_date."""
     # Arrange
     start_date = datetime(2026, 12, 31)  # DEPOIS
-    end_date = datetime(2026, 1, 1)      # ANTES
+    end_date = datetime(2026, 1, 1)  # ANTES
 
     # Mock result vazio - P3 #3: fetchall retorna lista vazia
     mock_result = MagicMock()
@@ -253,7 +251,7 @@ def test_topics_null_handling(analytics_repo, mock_db_session):
     # Assert
     assert result == []
     assert len(result) == 0
-    
+
     # Verifica que query filtra NULL corretamente
     call_args = mock_db_session.execute.call_args
     # A query deve ter WHERE body IS NOT NULL ou equivalente

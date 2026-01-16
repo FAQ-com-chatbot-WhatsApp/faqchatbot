@@ -4,9 +4,10 @@ Testes de integração para Sprint 12 - L1: Relatório de Performance de Atendim
 Testa os novos endpoints e métodos implementados.
 """
 
-import pytest
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock
+
+import pytest
 
 from robbot.adapters.repositories.analytics_repository import AnalyticsRepository
 
@@ -17,8 +18,7 @@ class TestPerformanceReportsL1:
     @pytest.fixture
     def mock_db_session(self):
         """Mock da sessão do banco"""
-        session = MagicMock()
-        return session
+        return MagicMock()
 
     @pytest.fixture
     def analytics_repo(self, mock_db_session):
@@ -35,7 +35,7 @@ class TestPerformanceReportsL1:
     def test_bot_response_time_stats_query_structure(self, analytics_repo, date_range):
         """Testa se a query de bot response time está bem estruturada"""
         start_date, end_date = date_range
-        
+
         # Mock do resultado vazio
         mock_result = MagicMock()
         mock_row = MagicMock()
@@ -58,7 +58,7 @@ class TestPerformanceReportsL1:
     def test_handoff_rate_stats_query_structure(self, analytics_repo, date_range):
         """Testa se a query de handoff rate está bem estruturada"""
         start_date, end_date = date_range
-        
+
         # Mock do resultado vazio
         mock_result = MagicMock()
         mock_row = MagicMock()
@@ -78,19 +78,19 @@ class TestPerformanceReportsL1:
     def test_peak_hours_stats_query_structure(self, analytics_repo, date_range):
         """Testa se a query de peak hours está bem estruturada"""
         start_date, end_date = date_range
-        
+
         # Mock do resultado com dados fictícios
         mock_result = MagicMock()
         mock_row1 = MagicMock()
         mock_row1.hour = 9
         mock_row1.message_count = 100
         mock_row1.conversation_count = 20
-        
+
         mock_row2 = MagicMock()
         mock_row2.hour = 14
         mock_row2.message_count = 150
         mock_row2.conversation_count = 30
-        
+
         mock_result.fetchall.return_value = [mock_row1, mock_row2]
         analytics_repo.db.execute = MagicMock(return_value=mock_result)
 
@@ -106,14 +106,14 @@ class TestPerformanceReportsL1:
     def test_conversations_by_status_query_structure(self, analytics_repo, date_range):
         """Testa se a query de conversations by status está bem estruturada"""
         start_date, end_date = date_range
-        
+
         # Mock do resultado com dados fictícios
         mock_result = MagicMock()
         mock_row = MagicMock()
         mock_row.status = "ACTIVE_BOT"
         mock_row.count = 100
         mock_row.percentage = 50.0
-        
+
         mock_result.fetchall.return_value = [mock_row]
         analytics_repo.db.execute = MagicMock(return_value=mock_result)
 
@@ -129,7 +129,7 @@ class TestPerformanceReportsL1:
     def test_handoff_rate_calculation(self, analytics_repo, date_range):
         """Testa cálculo correto das taxas de handoff"""
         start_date, end_date = date_range
-        
+
         # Mock com dados reais
         mock_result = MagicMock()
         mock_row = MagicMock()

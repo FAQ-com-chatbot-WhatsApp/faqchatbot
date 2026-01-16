@@ -1,4 +1,3 @@
-
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -17,6 +16,8 @@ def db_session_instance():
         yield session
     finally:
         session.close()
+
+
 def test_set_and_verify_password(db_session):
     svc = CredentialService(db_session)
     user_id = 100
@@ -27,6 +28,8 @@ def test_set_and_verify_password(db_session):
     # verify
     assert svc.verify_password(user_id, "StrongPass123!") is True
     assert svc.verify_password(user_id, "WrongPass!") is False
+
+
 def test_change_password(db_session):
     svc = CredentialService(db_session)
     user_id = 101

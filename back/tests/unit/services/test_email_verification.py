@@ -1,4 +1,3 @@
-
 """Unit tests for email verification functionality.
 
 FASE 4: Tests for email verification workflow:
@@ -7,6 +6,7 @@ FASE 4: Tests for email verification workflow:
 - Email verification with token
 - Resend verification email
 """
+
 import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
@@ -26,7 +26,8 @@ def db_session_instance():
 
     # Create tables manually
     with engine.connect() as conn:
-        conn.execute(text("""
+        conn.execute(
+            text("""
             CREATE TABLE users (
                 id INTEGER PRIMARY KEY,
                 email VARCHAR(255) UNIQUE NOT NULL,
@@ -35,9 +36,11 @@ def db_session_instance():
                 role VARCHAR(50) DEFAULT 'user' NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-        """))
+        """)
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text("""
             CREATE TABLE credentials (
                 id INTEGER PRIMARY KEY,
                 user_id INTEGER UNIQUE NOT NULL,
@@ -56,9 +59,11 @@ def db_session_instance():
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
-        """))
+        """)
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text("""
             CREATE TABLE auth_sessions (
                 id INTEGER PRIMARY KEY,
                 user_id INTEGER NOT NULL,
@@ -74,17 +79,21 @@ def db_session_instance():
                 revocation_reason VARCHAR(255),
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
-        """))
+        """)
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text("""
             CREATE TABLE revoked_tokens (
                 id INTEGER PRIMARY KEY,
                 token VARCHAR(512) UNIQUE NOT NULL,
                 revoked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
             )
-        """))
+        """)
+        )
 
-        conn.execute(text("""
+        conn.execute(
+            text("""
             CREATE TABLE audit_logs (
                 id INTEGER PRIMARY KEY,
                 action VARCHAR(100) NOT NULL,
@@ -95,7 +104,8 @@ def db_session_instance():
                 new_value TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
             )
-        """))
+        """)
+        )
 
         conn.commit()
 
@@ -103,16 +113,14 @@ def db_session_instance():
     session = session_factory()
     yield session
     session.close()
+
+
 def test_signup_creates_unverified_user(db_session):
     """Test that signup creates user with email_verified=false."""
     auth_service = AuthService(db_session)
     credential_repo = CredentialRepository(db_session)
 
-    signup_data = SignupRequest(
-        email="test@example.com",
-        password="SecurePass123!",
-        full_name="Test User"
-    )
+    signup_data = SignupRequest(email="test@example.com", password="SecurePass123!", full_name="Test User")
 
     user = auth_service.signup(signup_data)
 
@@ -126,26 +134,23 @@ def test_signup_creates_unverified_user(db_session):
     assert credential.email_verified is False
     assert credential.email_verification_token is not None
     assert len(credential.email_verification_token) > 30  # Secure token
+
+
 def test_login_blocked_for_unverified_email(db_session):
     """Test that login is blocked if email is not verified."""
     auth_service = AuthService(db_session)
 
     # Create user
-    signup_data = SignupRequest(
-        email="test@example.com",
-        password="SecurePass123!",
-        full_name="Test User"
-    )
+    signup_data = SignupRequest(email="test@example.com", password="SecurePass123!", full_name="Test User")
     auth_service.signup(signup_data)
 
     # Try to login (should fail - email not verified)
     with pytest.raises(AuthException, match="Email not verified"):
         auth_service.authenticate_user(
-            "test@example.com",
-            "SecurePass123!",
-            user_agent="Mozilla/5.0",
-            ip_address="127.0.0.1"
+            "test@example.com", "SecurePass123!", user_agent="Mozilla/5.0", ip_address="127.0.0.1"
         )
+
+
 def test_verify_email_success(db_session):
     """Test successful email verification."""
     auth_service = AuthService(db_session)
@@ -153,11 +158,7 @@ def test_verify_email_success(db_session):
     credential_repo = CredentialRepository(db_session)
 
     # Create user
-    signup_data = SignupRequest(
-        email="test@example.com",
-        password="SecurePass123!",
-        full_name="Test User"
-    )
+    signup_data = SignupRequest(email="test@example.com", password="SecurePass123!", full_name="Test User")
     user = auth_service.signup(signup_data)
 
     # Get verification token
@@ -172,6 +173,8 @@ def test_verify_email_success(db_session):
     credential = credential_repo.get_by_user_id(user.id)
     assert credential.email_verified is True
     assert credential.email_verification_token is None  # Token cleared
+
+
 def test_login_allowed_after_verification(db_session):
     """Test that login works after email verification."""
     auth_service = AuthService(db_session)
@@ -179,11 +182,7 @@ def test_login_allowed_after_verification(db_session):
     credential_repo = CredentialRepository(db_session)
 
     # Create user
-    signup_data = SignupRequest(
-        email="test@example.com",
-        password="SecurePass123!",
-        full_name="Test User"
-    )
+    signup_data = SignupRequest(email="test@example.com", password="SecurePass123!", full_name="Test User")
     user = auth_service.signup(signup_data)
 
     # Verify email
@@ -192,21 +191,22 @@ def test_login_allowed_after_verification(db_session):
 
     # Login should work now
     token_result = auth_service.authenticate_user(
-        "test@example.com",
-        "SecurePass123!",
-        user_agent="Mozilla/5.0",
-        ip_address="127.0.0.1"
+        "test@example.com", "SecurePass123!", user_agent="Mozilla/5.0", ip_address="127.0.0.1"
     )
 
     assert token_result is not None
     assert token_result.access_token is not None
     assert token_result.refresh_token is not None
+
+
 def test_verify_email_invalid_token(db_session):
     """Test email verification with invalid token."""
     email_verification_service = EmailVerificationService(db_session)
 
     with pytest.raises(AuthException, match="Invalid verification token"):
         email_verification_service.verify_email("invalid_token_12345")
+
+
 def test_verify_email_already_verified(db_session):
     """Test that verifying already-verified email raises error."""
     auth_service = AuthService(db_session)
@@ -214,11 +214,7 @@ def test_verify_email_already_verified(db_session):
     credential_repo = CredentialRepository(db_session)
 
     # Create and verify user
-    signup_data = SignupRequest(
-        email="test@example.com",
-        password="SecurePass123!",
-        full_name="Test User"
-    )
+    signup_data = SignupRequest(email="test@example.com", password="SecurePass123!", full_name="Test User")
     user = auth_service.signup(signup_data)
     credential = credential_repo.get_by_user_id(user.id)
     token = credential.email_verification_token
@@ -227,6 +223,8 @@ def test_verify_email_already_verified(db_session):
     # Try to verify again (token already invalidated)
     with pytest.raises(AuthException, match="Invalid verification token"):
         email_verification_service.verify_email(token)
+
+
 def test_resend_verification_email(db_session):
     """Test resending verification email generates new token."""
     # Disable rate limiting for unit test
@@ -236,11 +234,7 @@ def test_resend_verification_email(db_session):
     credential_repo = CredentialRepository(db_session)
 
     # Create user
-    signup_data = SignupRequest(
-        email="test@example.com",
-        password="SecurePass123!",
-        full_name="Test User"
-    )
+    signup_data = SignupRequest(email="test@example.com", password="SecurePass123!", full_name="Test User")
     user = auth_service.signup(signup_data)
 
     # Get first token
@@ -254,6 +248,8 @@ def test_resend_verification_email(db_session):
     assert new_token != first_token
     credential = credential_repo.get_by_user_id(user.id)
     assert credential.email_verification_token == new_token
+
+
 def test_resend_email_already_verified(db_session):
     """Test that resending email for verified account raises error."""
     auth_service = AuthService(db_session)
@@ -261,11 +257,7 @@ def test_resend_email_already_verified(db_session):
     credential_repo = CredentialRepository(db_session)
 
     # Create and verify user
-    signup_data = SignupRequest(
-        email="test@example.com",
-        password="SecurePass123!",
-        full_name="Test User"
-    )
+    signup_data = SignupRequest(email="test@example.com", password="SecurePass123!", full_name="Test User")
     user = auth_service.signup(signup_data)
     credential = credential_repo.get_by_user_id(user.id)
     email_verification_service.verify_email(credential.email_verification_token)

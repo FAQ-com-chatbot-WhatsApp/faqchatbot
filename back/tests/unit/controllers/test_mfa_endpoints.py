@@ -1,4 +1,3 @@
-
 """Unit tests for MFA endpoints (FASE 5)."""
 
 from unittest.mock import Mock, patch
@@ -14,6 +13,8 @@ from robbot.main import app
 def mock_db():
     """Mock database session."""
     return Mock()
+
+
 @pytest.fixture
 def mock_current_user():
     """Mock authenticated user."""
@@ -21,6 +22,8 @@ def mock_current_user():
     user.id = 1
     user.email = "test@example.com"
     return user
+
+
 @pytest.fixture
 def client_with_auth(mock_current_user, mock_db):
     """Test client with mocked authentication."""
@@ -35,6 +38,8 @@ def client_with_auth(mock_current_user, mock_db):
 
     # Clear overrides after test
     app.dependency_overrides.clear()
+
+
 class TestMfaSetup:
     """Tests for POST /auth/mfa/setup endpoint."""
 
@@ -44,7 +49,7 @@ class TestMfaSetup:
             mock_setup.return_value = (
                 "JBSWY3DPEHPK3PXP",
                 "base64_qr_code_string",
-                ["code1", "code2", "code3", "code4", "code5", "code6", "code7", "code8", "code9", "code10"]
+                ["code1", "code2", "code3", "code4", "code5", "code6", "code7", "code8", "code9", "code10"],
             )
 
             response = client_with_auth.post("/api/v1/auth/mfa/setup")
@@ -69,9 +74,12 @@ class TestMfaSetup:
     def test_setup_mfa_unauthenticated(self):
         """Test MFA setup without authentication."""
         from fastapi.testclient import TestClient
+
         client = TestClient(app)
         response = client.post("/api/v1/auth/mfa/setup")
         assert response.status_code == 401
+
+
 class TestMfaVerify:
     """Tests for POST /auth/mfa/verify endpoint."""
 
@@ -131,6 +139,8 @@ class TestMfaVerify:
             response = client_with_auth.post("/api/v1/auth/mfa/verify", json={"code": "123456"})
 
             assert response.status_code == 401
+
+
 class TestMfaDisable:
     """Tests for POST /auth/mfa/disable endpoint."""
 

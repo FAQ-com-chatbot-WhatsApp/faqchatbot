@@ -1,4 +1,3 @@
-
 """Testes unitários para MFA (FASE 5)."""
 
 import json
@@ -20,8 +19,9 @@ def db_session_instance():
     """Cria DB SQLite em memória com tabelas mínimas."""
     engine = create_engine("sqlite:///:memory:")
     with engine.connect() as conn:
-        conn.execute(text(
-            """
+        conn.execute(
+            text(
+                """
             CREATE TABLE users (
                 id INTEGER PRIMARY KEY,
                 email VARCHAR(255) UNIQUE NOT NULL,
@@ -31,9 +31,11 @@ def db_session_instance():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             """
-        ))
-        conn.execute(text(
-            """
+            )
+        )
+        conn.execute(
+            text(
+                """
             CREATE TABLE credentials (
                 id INTEGER PRIMARY KEY,
                 user_id INTEGER UNIQUE NOT NULL,
@@ -52,23 +54,22 @@ def db_session_instance():
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
             )
             """
-        ))
+            )
+        )
         conn.commit()
     session_factory = sessionmaker(bind=engine)
     session = session_factory()
     yield session
     session.close()
+
+
 def test_setup_mfa_and_verify_totp(db_session):
     auth_service = AuthService(db_session)
     mfa_service = MfaService(db_session)
     cred_repo = CredentialRepository(db_session)
 
     # cria usuário
-    user = auth_service.signup(SignupRequest(
-        email="mfa@example.com",
-        password="SecurePass123!",
-        full_name="MFA User"
-    ))
+    user = auth_service.signup(SignupRequest(email="mfa@example.com", password="SecurePass123!", full_name="MFA User"))
 
     # habilita MFA
     secret, qr_b64, codes = mfa_service.setup_mfa(user.id)
@@ -91,16 +92,16 @@ def test_setup_mfa_and_verify_totp(db_session):
     # verifica TOTP inválido
     with pytest.raises(AuthException, match="Invalid MFA code"):
         mfa_service.verify_mfa(user.id, "000000")
+
+
 def test_backup_code_consumption(db_session):
     auth_service = AuthService(db_session)
     mfa_service = MfaService(db_session)
     cred_repo = CredentialRepository(db_session)
 
-    user = auth_service.signup(SignupRequest(
-        email="backup@example.com",
-        password="SecurePass123!",
-        full_name="Backup User"
-    ))
+    user = auth_service.signup(
+        SignupRequest(email="backup@example.com", password="SecurePass123!", full_name="Backup User")
+    )
 
     secret, qr_b64, codes = mfa_service.setup_mfa(user.id)
     first_code = codes[0]

@@ -4,9 +4,10 @@ Testes de integração para Sprint 12 - L2: Relatório de Conversão de Leads
 Testa os novos endpoints e métodos implementados.
 """
 
-import pytest
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock
+
+import pytest
 
 from robbot.adapters.repositories.analytics_repository import AnalyticsRepository
 
@@ -17,8 +18,7 @@ class TestConversionReportsL2:
     @pytest.fixture
     def mock_db_session(self):
         """Mock da sessão do banco"""
-        session = MagicMock()
-        return session
+        return MagicMock()
 
     @pytest.fixture
     def analytics_repo(self, mock_db_session):
@@ -35,7 +35,7 @@ class TestConversionReportsL2:
     def test_time_to_conversion_extended_structure(self, analytics_repo, date_range):
         """Testa se a query estendida tem p75 e p90"""
         start_date, end_date = date_range
-        
+
         # Mock do resultado vazio
         mock_result = MagicMock()
         mock_row = MagicMock()
@@ -57,7 +57,7 @@ class TestConversionReportsL2:
     def test_conversion_by_source_structure(self, analytics_repo, date_range):
         """Testa estrutura de conversão por origem"""
         start_date, end_date = date_range
-        
+
         # Mock com dados fictícios
         mock_result = MagicMock()
         mock_row1 = MagicMock()
@@ -65,13 +65,13 @@ class TestConversionReportsL2:
         mock_row1.total_leads = 120
         mock_row1.converted_leads = 45
         mock_row1.conversion_rate = 37.5
-        
+
         mock_row2 = MagicMock()
         mock_row2.source = "group"
         mock_row2.total_leads = 30
         mock_row2.converted_leads = 5
         mock_row2.conversion_rate = 16.67
-        
+
         mock_result.fetchall.return_value = [mock_row1, mock_row2]
         analytics_repo.db.execute = MagicMock(return_value=mock_result)
 
@@ -88,21 +88,21 @@ class TestConversionReportsL2:
     def test_lost_leads_analysis_structure(self, analytics_repo, date_range):
         """Testa estrutura de análise de leads perdidos"""
         start_date, end_date = date_range
-        
+
         # Mock resultado principal
         mock_result1 = MagicMock()
         mock_row1 = MagicMock()
         mock_row1.total_lost = 45
         mock_row1.avg_time_before_lost_hours = 36.5
         mock_result1.fetchone.return_value = mock_row1
-        
+
         # Mock resultado por maturity
         mock_result2 = MagicMock()
         mock_row2 = MagicMock()
         mock_row2.maturity_range = "0-19 (muito baixo)"
         mock_row2.count = 15
         mock_result2.fetchall.return_value = [mock_row2]
-        
+
         # Setup de múltiplas chamadas ao execute
         analytics_repo.db.execute = MagicMock(side_effect=[mock_result1, mock_result2])
 
@@ -118,7 +118,7 @@ class TestConversionReportsL2:
     def test_conversion_trend_structure(self, analytics_repo, date_range):
         """Testa estrutura de tendência temporal"""
         start_date, end_date = date_range
-        
+
         # Mock com dados fictícios
         mock_result = MagicMock()
         mock_row1 = MagicMock()
@@ -126,7 +126,7 @@ class TestConversionReportsL2:
         mock_row1.total_leads = 25
         mock_row1.converted_leads = 8
         mock_row1.conversion_rate = 32.0
-        
+
         mock_result.fetchall.return_value = [mock_row1]
         analytics_repo.db.execute = MagicMock(return_value=mock_result)
 
@@ -143,7 +143,7 @@ class TestConversionReportsL2:
     def test_conversion_trend_granularity(self, analytics_repo, date_range):
         """Testa diferentes granularidades de tendência"""
         start_date, end_date = date_range
-        
+
         mock_result = MagicMock()
         mock_result.fetchall.return_value = []
         analytics_repo.db.execute = MagicMock(return_value=mock_result)

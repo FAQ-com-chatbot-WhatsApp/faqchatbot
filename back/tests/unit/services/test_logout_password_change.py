@@ -1,4 +1,3 @@
-
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -27,6 +26,8 @@ def db_session_instance():
         yield session
     finally:
         session.close()
+
+
 def test_logout_revokes_tokens_and_session(db_session):
     svc = AuthService(db_session)
     payload = UserCreate(email="logout@example.com", password="StrongPass123!", full_name="Logout", role="user")
@@ -34,6 +35,7 @@ def test_logout_revokes_tokens_and_session(db_session):
 
     # Mark email as verified for login tests
     from robbot.adapters.repositories.credential_repository import CredentialRepository
+
     cred_repo = CredentialRepository(db_session)
     cred = cred_repo.get_by_user_id(user.id)
     cred.email_verified = True
@@ -62,6 +64,8 @@ def test_logout_revokes_tokens_and_session(db_session):
     sess = db_session.query(AuthSessionModel).filter(AuthSessionModel.id == sess.id).first()
     assert sess.is_revoked is True
     assert sess.revocation_reason == "logout"
+
+
 def test_change_password_updates_credential_and_revokes_sessions(db_session):
     svc = AuthService(db_session)
     payload = UserCreate(email="changepw@example.com", password="Initial123!", full_name="ChangePW", role="user")
@@ -69,9 +73,24 @@ def test_change_password_updates_credential_and_revokes_sessions(db_session):
 
     # Create two active sessions for the user
     from datetime import UTC, datetime, timedelta
+
     expires = datetime.now(UTC).replace(tzinfo=None) + timedelta(minutes=30)
-    s1 = AuthSessionModel(user_id=user.id, refresh_token_jti="cpw-jti-1", ip_address="127.0.0.1", user_agent="UA", device_name="PC", expires_at=expires)
-    s2 = AuthSessionModel(user_id=user.id, refresh_token_jti="cpw-jti-2", ip_address="127.0.0.1", user_agent="UA", device_name="PC", expires_at=expires)
+    s1 = AuthSessionModel(
+        user_id=user.id,
+        refresh_token_jti="cpw-jti-1",
+        ip_address="127.0.0.1",
+        user_agent="UA",
+        device_name="PC",
+        expires_at=expires,
+    )
+    s2 = AuthSessionModel(
+        user_id=user.id,
+        refresh_token_jti="cpw-jti-2",
+        ip_address="127.0.0.1",
+        user_agent="UA",
+        device_name="PC",
+        expires_at=expires,
+    )
     db_session.add_all([s1, s2])
     db_session.commit()
 

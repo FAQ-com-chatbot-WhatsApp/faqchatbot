@@ -1,4 +1,3 @@
-
 """Integration tests for complete MFA login flow.
 
 Tests the full authentication flow with MFA enabled:
@@ -30,6 +29,8 @@ def client():
         yield TestClient(application)
     finally:
         rate_patch.stop()
+
+
 @pytest.fixture
 def client_with_mfa_user(client: TestClient):
     """Create a test user with MFA enabled.
@@ -53,6 +54,8 @@ def client_with_mfa_user(client: TestClient):
 
     # Cleanup
     application.dependency_overrides.clear()
+
+
 class TestMfaLoginFlow:
     """Test complete MFA login flow."""
 
@@ -170,6 +173,7 @@ class TestMfaLoginFlow:
 
         # Mock MFA verification failure
         from robbot.core.custom_exceptions import AuthException
+
         mock_verify_mfa.side_effect = AuthException("Invalid MFA code")
 
         # Attempt MFA login with invalid code
@@ -195,6 +199,7 @@ class TestMfaLoginFlow:
 
         # Mock expired token error
         from robbot.core.custom_exceptions import AuthException
+
         mock_verify_mfa.side_effect = AuthException("Invalid or expired temporary token")
 
         # Attempt MFA login with expired token
@@ -239,6 +244,8 @@ class TestMfaLoginFlow:
         data = response.json()
         assert data["access_token"] == "final_access_token"
         assert data["refresh_token"] == "final_refresh_token"
+
+
 class TestMfaLoginValidation:
     """Test MFA login request validation."""
 

@@ -1,4 +1,3 @@
-
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -26,6 +25,8 @@ def db_session_instance():
         yield session
     finally:
         session.close()
+
+
 def test_reset_password_revokes_sessions(db_session):
     svc = AuthService(db_session)
     payload = UserCreate(email="reset@example.com", password="StrongPass123!", full_name="Reset", role="user")
@@ -33,8 +34,22 @@ def test_reset_password_revokes_sessions(db_session):
 
     # Create two active sessions for the user
     expires = datetime.now(UTC).replace(tzinfo=None) + timedelta(minutes=30)
-    s1 = AuthSessionModel(user_id=user.id, refresh_token_jti="jti1", ip_address="127.0.0.1", user_agent="UA", device_name="PC", expires_at=expires)
-    s2 = AuthSessionModel(user_id=user.id, refresh_token_jti="jti2", ip_address="127.0.0.1", user_agent="UA", device_name="PC", expires_at=expires)
+    s1 = AuthSessionModel(
+        user_id=user.id,
+        refresh_token_jti="jti1",
+        ip_address="127.0.0.1",
+        user_agent="UA",
+        device_name="PC",
+        expires_at=expires,
+    )
+    s2 = AuthSessionModel(
+        user_id=user.id,
+        refresh_token_jti="jti2",
+        ip_address="127.0.0.1",
+        user_agent="UA",
+        device_name="PC",
+        expires_at=expires,
+    )
     db_session.add_all([s1, s2])
     db_session.commit()
 

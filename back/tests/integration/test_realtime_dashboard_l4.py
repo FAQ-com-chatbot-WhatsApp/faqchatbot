@@ -4,17 +4,18 @@ Testes de integração para Dashboard de Métricas em Tempo Real (L4).
 Valida queries SQL, integração com QueueManager e WebSocket.
 """
 
-import pytest
 from datetime import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
+
+import pytest
+
 from robbot.adapters.repositories.analytics_repository import AnalyticsRepository
 
 
 @pytest.fixture
 def mock_db_session():
     """Mock da sessão do banco de dados."""
-    session = MagicMock()
-    return session
+    return MagicMock()
 
 
 @pytest.fixture
@@ -33,14 +34,14 @@ def test_active_conversations_query_structure(analytics_repo, mock_db_session):
             chat_id="5511999999999@c.us",
             status="ACTIVE_BOT",
             last_message_at=datetime(2026, 1, 8, 14, 35),
-            minutes_since_last_message=2.5
+            minutes_since_last_message=2.5,
         ),
         MagicMock(
             id="uuid-456",
             chat_id="5511888888888@c.us",
             status="PENDING_HANDOFF",
             last_message_at=datetime(2026, 1, 8, 14, 33),
-            minutes_since_last_message=4.2
+            minutes_since_last_message=4.2,
         ),
     ]
     mock_db_session.execute.return_value = mock_result
@@ -72,15 +73,12 @@ def test_performance_alerts_query_structure(analytics_repo, mock_db_session):
         high_latency_avg_ms=6500.0,
         failed_interactions=38,
         total_interactions=500,
-        error_rate=7.6
+        error_rate=7.6,
     )
     mock_db_session.execute.return_value = mock_result
 
     # Act
-    result = analytics_repo.get_performance_alerts(
-        latency_threshold_ms=5000,
-        error_rate_threshold=5.0
-    )
+    result = analytics_repo.get_performance_alerts(latency_threshold_ms=5000, error_rate_threshold=5.0)
 
     # Assert
     assert result["high_latency_count"] == 10
@@ -109,7 +107,7 @@ def test_realtime_summary_query_structure(analytics_repo, mock_db_session):
         total_messages=41,
         messages_per_minute=8.2,
         avg_latency=1500.0,
-        bot_resolution_rate=85.0
+        bot_resolution_rate=85.0,
     )
     mock_db_session.execute.return_value = mock_result
 
@@ -138,7 +136,7 @@ def test_performance_alerts_empty_data(analytics_repo, mock_db_session):
         high_latency_avg_ms=None,
         failed_interactions=None,
         total_interactions=0,
-        error_rate=None
+        error_rate=None,
     )
     mock_db_session.execute.return_value = mock_result
 
@@ -174,6 +172,7 @@ def test_realtime_summary_empty_data(analytics_repo, mock_db_session):
 # P3 #1: EDGE CASES (Testes adicionais para cobertura +10%)
 # =========================================================================
 
+
 def test_performance_alerts_overflow(analytics_repo, mock_db_session):
     """Testa que alertas lidam com valores extremos (overflow de latência)."""
     # Arrange
@@ -183,15 +182,12 @@ def test_performance_alerts_overflow(analytics_repo, mock_db_session):
         high_latency_avg_ms=999999.99,  # ~16 minutos (valor extremo)
         failed_interactions=50,
         total_interactions=100,
-        error_rate=50.0  # 50% de erro (crítico)
+        error_rate=50.0,  # 50% de erro (crítico)
     )
     mock_db_session.execute.return_value = mock_result
 
     # Act
-    result = analytics_repo.get_performance_alerts(
-        latency_threshold_ms=5000,
-        error_rate_threshold=5.0
-    )
+    result = analytics_repo.get_performance_alerts(latency_threshold_ms=5000, error_rate_threshold=5.0)
 
     # Assert
     assert result["high_latency_count"] == 999
@@ -199,7 +195,7 @@ def test_performance_alerts_overflow(analytics_repo, mock_db_session):
     assert result["error_rate"] == 50.0
     assert result["total_interactions_last_hour"] == 100
     assert result["failed_interactions"] == 50
-    
+
     # Valores extremos devem ser retornados sem falhas
     assert isinstance(result["high_latency_avg_ms"], float)
     assert result["error_rate"] >= 0.0 and result["error_rate"] <= 100.0
