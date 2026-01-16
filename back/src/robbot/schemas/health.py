@@ -11,6 +11,8 @@ class HealthComponent(BaseModel):
 
     ok: bool
     error: str | None = None
+
+
 class HealthOut(BaseModel):
     """Overall health-check response with per-component status."""
 
