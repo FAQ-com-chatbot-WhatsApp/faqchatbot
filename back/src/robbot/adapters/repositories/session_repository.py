@@ -36,11 +36,7 @@ class SessionRepository(BaseRepository[WhatsAppSession]):
         Returns:
             Active session or None
         """
-        stmt = (
-            select(WhatsAppSession)
-            .where(WhatsAppSession.is_active)
-            .order_by(WhatsAppSession.created_at.desc())
-        )
+        stmt = select(WhatsAppSession).where(WhatsAppSession.is_active).order_by(WhatsAppSession.created_at.desc())
         return self.db.scalars(stmt).first()
 
     def create(
