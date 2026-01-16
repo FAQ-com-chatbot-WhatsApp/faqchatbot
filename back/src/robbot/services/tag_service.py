@@ -8,6 +8,8 @@ from robbot.adapters.repositories.tag_repository import TagRepository
 from robbot.infra.db.models.tag_model import TagModel
 
 logger = logging.getLogger(__name__)
+
+
 class TagService:
     """
     Service for tag management.
@@ -42,7 +44,7 @@ class TagService:
             raise ValueError(f"Tag '{name}' already exists")
 
         # Validate color format (basic check)
-        if not color.startswith('#') or len(color) != 7:
+        if not color.startswith("#") or len(color) != 7:
             raise ValueError(f"Invalid color format: {color}. Expected #RRGGBB")
 
         # Create tag
