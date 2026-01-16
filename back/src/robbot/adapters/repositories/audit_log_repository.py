@@ -1,6 +1,7 @@
 """
 Audit Log Repository - database operations for audit logs.
 """
+
 from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.base_repository import BaseRepository
@@ -27,10 +28,7 @@ class AuditLogRepository(BaseRepository[AuditLogModel]):
         """Get audit logs by entity."""
         return (
             self.session.query(AuditLogModel)
-            .filter(
-                AuditLogModel.entity_type == entity_type,
-                AuditLogModel.entity_id == entity_id
-            )
+            .filter(AuditLogModel.entity_type == entity_type, AuditLogModel.entity_id == entity_id)
             .order_by(AuditLogModel.created_at.desc())
             .limit(limit)
             .all()
@@ -38,10 +36,4 @@ class AuditLogRepository(BaseRepository[AuditLogModel]):
 
     def get_recent(self, limit: int = 100) -> list[AuditLogModel]:
         """Get most recent audit logs."""
-        return (
-            self.session.query(AuditLogModel)
-            .order_by(AuditLogModel.created_at.desc())
-            .limit(limit)
-            .all()
-        )
-
+        return self.session.query(AuditLogModel).order_by(AuditLogModel.created_at.desc()).limit(limit).all()
