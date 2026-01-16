@@ -10,6 +10,8 @@ from robbot.core.custom_exceptions import NotFoundException
 from robbot.services.vision_service import get_vision_service
 
 logger = logging.getLogger(__name__)
+
+
 class DescriptionService:
     """
     Service to generate metadata for media messages using BLIP-2.
@@ -37,11 +39,7 @@ class DescriptionService:
         self.message_repo = MessageRepository(db)
         logger.info("[SUCCESS] DescriptionService initialized (BLIP-2 local, no cost)")
 
-    def generate_description(
-        self,
-        message_id: UUID,
-        use_vision: bool = True
-    ) -> dict[str, str | None]:
+    def generate_description(self, message_id: UUID, use_vision: bool = True) -> dict[str, str | None]:
         """
         Generate metadata for a message using BLIP-2 or basic metadata.
 
@@ -117,21 +115,13 @@ class DescriptionService:
 
             logger.info("[SUCCESS] BLIP-2 analyzed image: %s...", title[:30])
 
-            return {
-                "generated_title": title,
-                "generated_description": description,
-                "suggested_tags": tags
-            }
+            return {"generated_title": title, "generated_description": description, "suggested_tags": tags}
 
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("[ERROR] Error using BLIP-2: %s", e)
             # Fallback to basic metadata
             logger.warning("[WARNING] Using fallback to basic metadata")
-            return self.generate_file_metadata(
-                image_url.split("/")[-1],
-                caption,
-                "image"
-            )
+            return self.generate_file_metadata(image_url.split("/")[-1], caption, "image")
 
     def generate_file_metadata(self, filename: str, caption: str, file_type: str) -> dict[str, str | None]:
         """
@@ -151,21 +141,37 @@ class DescriptionService:
 
         # Extrair extensão
         _, ext = os.path.splitext(filename)
-        ext = ext.lower().replace('.', '')
+        ext = ext.lower().replace(".", "")
 
         # Mapear extensões para contexto
         extension_context = {
             # Imagens
-            'jpg': 'imagem', 'jpeg': 'imagem', 'png': 'imagem', 'gif': 'imagem', 'webp': 'imagem',
+            "jpg": "imagem",
+            "jpeg": "imagem",
+            "png": "imagem",
+            "gif": "imagem",
+            "webp": "imagem",
             # Vídeos
-            'mp4': 'vídeo', 'avi': 'vídeo', 'mov': 'vídeo', 'mkv': 'vídeo', 'webm': 'vídeo',
+            "mp4": "vídeo",
+            "avi": "vídeo",
+            "mov": "vídeo",
+            "mkv": "vídeo",
+            "webm": "vídeo",
             # Áudio
-            'mp3': 'áudio', 'ogg': 'áudio', 'wav': 'áudio', 'opus': 'áudio', 'oga': 'áudio',
+            "mp3": "áudio",
+            "ogg": "áudio",
+            "wav": "áudio",
+            "opus": "áudio",
+            "oga": "áudio",
             # Documentos
-            'pdf': 'documento PDF', 'doc': 'documento Word', 'docx': 'documento Word',
-            'xls': 'planilha Excel', 'xlsx': 'planilha Excel',
-            'ppt': 'apresentação', 'pptx': 'apresentação',
-            'txt': 'arquivo de texto',
+            "pdf": "documento PDF",
+            "doc": "documento Word",
+            "docx": "documento Word",
+            "xls": "planilha Excel",
+            "xlsx": "planilha Excel",
+            "ppt": "apresentação",
+            "pptx": "apresentação",
+            "txt": "arquivo de texto",
         }
 
         media_context = extension_context.get(ext, file_type)
@@ -175,7 +181,7 @@ class DescriptionService:
             title = caption[:50]
         else:
             # Limpar filename (remover extensão e underscores)
-            clean_name = os.path.splitext(filename)[0].replace('_', ' ').replace('-', ' ')
+            clean_name = os.path.splitext(filename)[0].replace("_", " ").replace("-", " ")
             title = clean_name[:50] if clean_name else f"{file_type.capitalize()}"
 
         # Gerar descrição
@@ -195,31 +201,27 @@ class DescriptionService:
         text_to_analyze = f"{filename} {caption}".lower()
 
         keyword_tags = {
-            'dieta': 'dieta',
-            'exercicio': 'exercício',
-            'peso': 'controle de peso',
-            'alimenta': 'alimentação',
-            'receita': 'receita',
-            'consulta': 'consulta',
-            'exame': 'exame',
-            'resultado': 'resultado',
-            'duvida': 'dúvida',
-            'pergunta': 'pergunta',
-            'tratamento': 'tratamento',
-            'medicamento': 'medicamento',
-            'prescrição': 'prescrição',
+            "dieta": "dieta",
+            "exercicio": "exercício",
+            "peso": "controle de peso",
+            "alimenta": "alimentação",
+            "receita": "receita",
+            "consulta": "consulta",
+            "exame": "exame",
+            "resultado": "resultado",
+            "duvida": "dúvida",
+            "pergunta": "pergunta",
+            "tratamento": "tratamento",
+            "medicamento": "medicamento",
+            "prescrição": "prescrição",
         }
 
         for keyword, tag in keyword_tags.items():
             if keyword in text_to_analyze:
                 base_tags.append(tag)
 
-        tags = ', '.join(base_tags[:8])  # Máximo 8 tags
+        tags = ", ".join(base_tags[:8])  # Máximo 8 tags
 
         logger.info("[SUCCESS] Basic metadata generated: title='%s...', %s tags", title[:30], len(base_tags))
 
-        return {
-            "generated_title": title,
-            "generated_description": description,
-            "suggested_tags": tags
-        }
+        return {"generated_title": title, "generated_description": description, "suggested_tags": tags}
