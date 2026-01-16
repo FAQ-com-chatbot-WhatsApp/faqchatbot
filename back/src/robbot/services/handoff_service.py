@@ -72,7 +72,7 @@ class HandoffService:
         self.conversation_repo.update(conversation)
         session.flush()
 
-        logger.info(f"[SUCCESS] Handoff triggered: conv={conversation_id}, reason={reason}, score={score}")
+        logger.info("[SUCCESS] Handoff triggered: conv=%s, reason=%s, score=%s", conversation_id, reason, score)
 
         # Gerar mensagem de transição natural baseada no contexto
         transition_message = self._generate_transition_message(reason, score)
@@ -121,7 +121,7 @@ class HandoffService:
         self.conversation_repo.update(conversation)
         session.flush()
 
-        logger.info(f"[SUCCESS] Conversation assigned: conv={conversation_id}, user={user_id}")
+        logger.info("[SUCCESS] Conversation assigned: conv=%s, user=%s", conversation_id, user_id)
 
         return conversation
 
@@ -177,7 +177,7 @@ class HandoffService:
         # Calcular métricas
         metrics = self._calculate_metrics(conversation)
 
-        logger.info(f"[SUCCESS] Conversation completed: conv={conversation_id}, metrics={metrics}")
+        logger.info("[SUCCESS] Conversation completed: conv=%s, metrics=%s", conversation_id, metrics)
 
         return {
             "status": "completed",
@@ -276,6 +276,6 @@ class HandoffService:
         self.conversation_repo.update(conversation)
         session.flush()
 
-        logger.info(f"[SUCCESS] Conversation returned to bot: conv={conversation_id}, by_user={user_id}")
+        logger.info("[SUCCESS] Conversation returned to bot: conv=%s, by_user=%s", conversation_id, user_id)
 
         return conversation
