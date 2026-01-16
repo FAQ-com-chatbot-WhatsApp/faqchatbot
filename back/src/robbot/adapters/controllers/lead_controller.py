@@ -1,6 +1,7 @@
 """
 Lead Controller - REST endpoints for lead management.
 """
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from sqlalchemy.orm import Session
@@ -13,8 +14,10 @@ from robbot.services.lead_service import LeadService
 router = APIRouter()
 # ===== SCHEMAS =====
 
+
 class LeadOut(BaseModel):
     """Response schema for lead."""
+
     id: str
     phone_number: str
     name: str | None
@@ -26,25 +29,43 @@ class LeadOut(BaseModel):
     updated_at: str
 
     model_config = ConfigDict(from_attributes=True)
+
+
 class LeadListOut(BaseModel):
     """Response schema for lead list."""
+
     leads: list[LeadOut]
     total: int
+
+
 class CreateLeadRequest(BaseModel):
     """Request schema for creating lead."""
+
     phone_number: str = Field(..., min_length=10, max_length=20)
     name: str | None = Field(None, max_length=255)
     email: EmailStr | None = None
+
+
 class UpdateMaturityRequest(BaseModel):
     """Request schema for updating maturity score."""
+
     score: int = Field(..., ge=0, le=100)
+
+
 class AssignRequest(BaseModel):
     """Request schema for assigning lead."""
+
     user_id: int
+
+
 class MarkLostRequest(BaseModel):
     """Request schema for marking lead as lost."""
+
     reason: str = Field(..., min_length=1, max_length=500)
+
+
 # ===== ENDPOINTS =====
+
 
 @router.get("/leads", response_model=LeadListOut, tags=["Leads"])
 def list_leads(
@@ -75,8 +96,8 @@ def list_leads(
     if status:
         try:
             status_enum = LeadStatus[status.upper()]
-        except KeyError:
-            raise HTTPException(status_code=400, detail=f"Invalid status: {status}")
+        except KeyError as exc:
+            raise HTTPException(status_code=400, detail=f"Invalid status: {status}") from exc
 
     # Get leads using service with all filters
     leads, total = service.list_leads(
@@ -105,10 +126,12 @@ def list_leads(
     ]
 
     return LeadListOut(leads=leads_out, total=total)
-@router.get("/leads/{lead_id}", response_model=LeadOut, tags=["Leads"])
+
+
+@router.get("/{lead_id}", response_model=LeadOut, tags=["Leads"])
 def get_lead(
     lead_id: str,
-    current_user: dict = Depends(get_current_user),
+    _current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -133,10 +156,12 @@ def get_lead(
         created_at=lead.created_at.isoformat(),
         updated_at=lead.updated_at.isoformat(),
     )
+
+
 @router.post("/leads", response_model=LeadOut, tags=["Leads"])
 def create_lead(
     request: CreateLeadRequest,
-    current_user: dict = Depends(get_current_user),
+    _current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -165,12 +190,14 @@ def create_lead(
             updated_at=lead.updated_at.isoformat(),
         )
     except Exception as e:  # noqa: BLE001 (blind exception)
-        raise HTTPException(status_code=500, detail=f"Failed to create lead: {str(e)}")
-@router.put("/leads/{lead_id}/maturity", tags=["Leads"])
+        raise HTTPException(status_code=500, detail=f"Failed to create lead: {str(e)}") from e
+
+
+@router.put("/{lead_id}/maturity", tags=["Leads"])
 def update_lead_maturity(
     lead_id: str,
     request: UpdateMaturityRequest,
-    current_user: dict = Depends(get_current_user),
+    _current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -189,14 +216,16 @@ def update_lead_maturity(
             "maturity_score": lead.maturity_score,
         }
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:  # noqa: BLE001 (blind exception)
-        raise HTTPException(status_code=500, detail=f"Failed to update maturity: {str(e)}")
-@router.post("/leads/{lead_id}/assign", tags=["Leads"])
+        raise HTTPException(status_code=500, detail=f"Failed to update maturity: {str(e)}") from e
+
+
+@router.post("/{lead_id}/assign", tags=["Leads"])
 def assign_lead(
     lead_id: str,
     request: AssignRequest,
-    current_user: dict = Depends(get_current_user),
+    _current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -215,13 +244,15 @@ def assign_lead(
             "assigned_to": lead.assigned_to,
         }
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:  # noqa: BLE001 (blind exception)
-        raise HTTPException(status_code=500, detail=f"Failed to assign lead: {str(e)}")
-@router.post("/leads/{lead_id}/auto-assign", tags=["Leads"])
+        raise HTTPException(status_code=500, detail=f"Failed to assign lead: {str(e)}") from e
+
+
+@router.post("/{lead_id}/auto-assign", tags=["Leads"])
 def auto_assign_lead(
     lead_id: str,
-    current_user: dict = Depends(get_current_user),
+    _current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -240,13 +271,15 @@ def auto_assign_lead(
             "assigned_to": lead.assigned_to,
         }
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:  # noqa: BLE001 (blind exception)
-        raise HTTPException(status_code=500, detail=f"Failed to auto-assign: {str(e)}")
-@router.post("/leads/{lead_id}/convert", tags=["Leads"])
+        raise HTTPException(status_code=500, detail=f"Failed to auto-assign: {str(e)}") from e
+
+
+@router.post("/{lead_id}/convert", tags=["Leads"])
 def convert_lead(
     lead_id: str,
-    current_user: dict = Depends(get_current_user),
+    _current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -266,14 +299,16 @@ def convert_lead(
             "maturity_score": lead.maturity_score,
         }
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:  # noqa: BLE001 (blind exception)
-        raise HTTPException(status_code=500, detail=f"Failed to convert lead: {str(e)}")
-@router.post("/leads/{lead_id}/mark-lost", tags=["Leads"])
+        raise HTTPException(status_code=500, detail=f"Failed to convert lead: {str(e)}") from e
+
+
+@router.post("/{lead_id}/mark-lost", tags=["Leads"])
 def mark_lead_lost(
     lead_id: str,
     request: MarkLostRequest,
-    current_user: dict = Depends(get_current_user),
+    _current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -294,13 +329,15 @@ def mark_lead_lost(
             "reason": request.reason,
         }
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:  # noqa: BLE001 (blind exception)
-        raise HTTPException(status_code=500, detail=f"Failed to mark lead as lost: {str(e)}")
-@router.delete("/leads/{lead_id}", status_code=204, tags=["Leads"])
+        raise HTTPException(status_code=500, detail=f"Failed to mark lead as lost: {str(e)}") from e
+
+
+@router.delete("/{lead_id}", status_code=204, tags=["Leads"])
 def delete_lead(
     lead_id: str,
-    current_user: dict = Depends(get_current_user),
+    _current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -318,14 +355,16 @@ def delete_lead(
 
         return  # 204 No Content
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:  # noqa: BLE001 (blind exception)
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to delete lead: {str(e)}")
-@router.post("/leads/{lead_id}/restore", tags=["Leads"])
+        raise HTTPException(status_code=500, detail=f"Failed to delete lead: {str(e)}") from e
+
+
+@router.post("/{lead_id}/restore", tags=["Leads"])
 def restore_lead(
     lead_id: str,
-    current_user: dict = Depends(get_current_user),
+    _current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -345,7 +384,7 @@ def restore_lead(
             "status": lead.status.value,
         }
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:  # noqa: BLE001 (blind exception)
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to restore lead: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to restore lead: {str(e)}") from e
