@@ -14,9 +14,9 @@ logger = logging.getLogger(__name__)
 
 class DescriptionService:
     """
-    Service to generate metadata for media messages using BLIP-2.
+    Generate metadata for media messages using BLIP-2.
 
-    LOCAL analysis with no API costs:
+    Local analysis with no API costs:
     - Images: BLIP-2 (Salesforce) - image captioning + VQA
     - Videos: Frame extraction + BLIP-2 analysis
     - Documents/Voice: Metadata based on filename/caption
@@ -59,7 +59,7 @@ class DescriptionService:
             raise NotFoundException(f"Message {message_id} not found")
 
         try:
-            # Extrair dados
+            # Extract data
             filename = ""
             caption = message.caption or ""
             media_url = ""
@@ -68,14 +68,14 @@ class DescriptionService:
                 filename = message.media[0].filename or ""
                 media_url = message.media[0].url or ""
 
-            # Se é imagem e vision está habilitado, usar BLIP-2
+            # If it's an image and vision is enabled, use BLIP-2
             if message.type == "image" and use_vision and media_url:
-                return self._analyze_image_with_blip(media_url, caption)
+                return self.analyze_image_with_blip(media_url, caption)
 
-            # Se é vídeo, analisar primeiro frame (simplificado: usar metadata)
-            # TODO: Implementar extração de frame + BLIP-2
+            # If it's a video, analyze first frame (simplified: use metadata)
+            # TODO: Implement frame extraction + BLIP-2
 
-            # Para outros tipos ou se vision desabilitado, usar metadata básico
+            # For other types or if vision is disabled, use basic metadata
             return self.generate_file_metadata(filename, caption, message.type)
 
         except Exception as e:  # noqa: BLE001 (blind exception)
@@ -87,25 +87,25 @@ class DescriptionService:
         """
         Analyze image using BLIP-2 (local, no cost).
 
-        PUBLIC METHOD - used by message_service.py
+        Public method — used by `message_service.py`.
 
         Args:
             image_url: Image URL
             caption: User-provided caption
 
         Returns:
-            Dict com title, description, tags
+            Dict with title, description, tags
         """
         try:
             vision = get_vision_service()
 
-            # Analisar imagem com contexto médico
+            # Analyze image with medical context
             result = vision.analyze_image_sync(image_url, context="medical")
 
-            # Usar caption do BLIP como título (ou caption do usuário se fornecido)
+            # Use BLIP caption as title (or user caption if provided)
             title = caption[:50] if caption else result["caption"][:50]
 
-            # Descrição detalhada do BLIP
+            # Detailed description from BLIP
             description = result["detailed_description"]
             if caption:
                 description = f"{caption}. Análise visual: {description}"
@@ -125,25 +125,25 @@ class DescriptionService:
 
     def generate_file_metadata(self, filename: str, caption: str, file_type: str) -> dict[str, str | None]:
         """
-        Gerar metadata básico SEM usar API (zero custo).
+        Generate basic metadata WITHOUT using external APIs (zero cost).
 
-        PUBLIC METHOD - usado por message_service.py
+        Public method — used by `message_service.py`.
 
-        Baseado em:
-        - Extensão do arquivo
-        - Nome do arquivo
-        - Caption fornecido pelo usuário
-        - Tipo de mídia
+        Based on:
+        - File extension
+        - File name
+        - User-provided caption
+        - Media type
 
-        Retorna metadata estruturado simples.
+        Returns a simple structured metadata dict.
         """
         import os
 
-        # Extrair extensão
+        # Extract extension
         _, ext = os.path.splitext(filename)
         ext = ext.lower().replace(".", "")
 
-        # Mapear extensões para contexto
+        # Map extensions to context
         extension_context = {
             # Imagens
             "jpg": "imagem",
@@ -176,15 +176,15 @@ class DescriptionService:
 
         media_context = extension_context.get(ext, file_type)
 
-        # Gerar título baseado em caption ou filename
+        # Generate title based on caption or filename
         if caption and len(caption) > 0:
             title = caption[:50]
         else:
-            # Limpar filename (remover extensão e underscores)
+            # Clean filename (remove extension and underscores)
             clean_name = os.path.splitext(filename)[0].replace("_", " ").replace("-", " ")
             title = clean_name[:50] if clean_name else f"{file_type.capitalize()}"
 
-        # Gerar descrição
+        # Generate description
         description_parts = []
         if caption:
             description_parts.append(f"Descrição: {caption}")
@@ -194,10 +194,10 @@ class DescriptionService:
 
         description = " | ".join(description_parts)
 
-        # Gerar tags baseadas em contexto médico (Dra. Andrea - emagrecimento)
+        # Generate tags based on medical context (weight loss focus)
         base_tags = [file_type, media_context]
 
-        # Tags contextuais baseadas em palavras-chave
+        # Contextual tags based on keywords
         text_to_analyze = f"{filename} {caption}".lower()
 
         keyword_tags = {
@@ -220,7 +220,7 @@ class DescriptionService:
             if keyword in text_to_analyze:
                 base_tags.append(tag)
 
-        tags = ", ".join(base_tags[:8])  # Máximo 8 tags
+        tags = ", ".join(base_tags[:8])  # Max 8 tags
 
         logger.info("[SUCCESS] Basic metadata generated: title='%s...', %s tags", title[:30], len(base_tags))
 
