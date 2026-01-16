@@ -2,6 +2,12 @@
 PHASE 3: Playbooks Tests
 
 Test Cases: UC-010 to UC-015
+
+Architecture:
+- Messages: Reusable content items (text, media, location)
+- Topics: Categories for playbooks
+- Playbooks: Sequences of messages for specific topics
+- Playbook Steps: Link messages to playbooks in order
 """
 import pytest
 import time
@@ -25,14 +31,12 @@ class TestPhase3Playbooks:
         data = response.json()
         
         assert data["name"] == topic_name
-        # playbook_count may not be in response
-        
-        # Store for next tests (still sequential within class)
+        # Store for next tests
         self.topic_id = data["id"]
     
     def test_uc011_create_playbook(self, api_client):
         """UC-011: Create Playbook 'Consulta Inicial'."""
-        # Need topic from previous test
+        # Ensure we have a topic
         if not hasattr(self, 'topic_id'):
             self.test_uc010_create_topic(api_client)
         
@@ -43,8 +47,7 @@ class TestPhase3Playbooks:
                 "name": playbook_name,
                 "description": "Fluxo de agendamento",
                 "topic_id": self.topic_id,
-                "is_active": True,
-                "tags": ["consulta", "agendamento"]
+                "active": True
             }
         )
         
@@ -58,53 +61,91 @@ class TestPhase3Playbooks:
         self.playbook_id = data["id"]
     
     def test_uc012_add_text_message(self, api_client):
-        """UC-012: Add Text Message to Playbook."""
+        """UC-012: Create text message and add to playbook.
+        
+        Architecture: First create reusable message, then link to playbook via step.
+        """
         # Ensure we have a playbook
         if not hasattr(self, 'playbook_id'):
             self.test_uc011_create_playbook(api_client)
         
+        # Step 1: Create reusable text message
         response = api_client.post(
-            f"/playbooks/{self.playbook_id}/steps",
+            "/messages",
             json={
-                "order": 1,
-                "message_type": "text",
-                "content": {
-                    "text": "Olá! Posso ajudar com agendamento?"
-                },
-                "delay_seconds": 0
+                "type": "text",
+                "title": "Greeting Message",
+                "description": "Initial greeting for consultation",
+                "text": "Olá! Posso ajudar com agendamento?"
             }
         )
         
-        assert response.status_code == 201, f"Got {response.status_code}: {response.text}"
-        data = response.json()
+        assert response.status_code == 201, f"Message creation failed {response.status_code}: {response.text}"
+        message_data = response.json()
+        text_message_id = message_data["id"]
+        print(f"Created message: {text_message_id}")
         
-        assert data["order"] == 1
-        assert data["message_type"] == "text"
+        # Step 2: Add message to playbook as a step
+        payload = {
+            "playbook_id": self.playbook_id,
+            "message_id": str(text_message_id),  # Ensure it's a string
+            "step_order": 1,
+            "context_hint": "Use this when patient asks about consultation"
+        }
+        print(f"Playbook step payload: {payload}")
+        
+        response = api_client.post("/playbook-steps", json=payload)
+        
+        assert response.status_code == 201, f"Step creation failed {response.status_code}: {response.text}"
+        step_data = response.json()
+        
+        assert step_data["playbook_id"] == self.playbook_id
+        assert step_data["message_id"] == str(text_message_id)
+        assert step_data["step_order"] == 1
     
     def test_uc013_add_image_message(self, api_client):
-        """UC-013: Add Image Message to Playbook."""
-        # Ensure we have a playbook and text message
+        """UC-013: Create image message and add to playbook."""
+        # Ensure we have a playbook and at least one message
         if not hasattr(self, 'playbook_id'):
             self.test_uc012_add_text_message(api_client)
         
+        # Step 1: Create image message
         response = api_client.post(
-            f"/playbooks/{self.playbook_id}/steps",
+            "/messages",
             json={
-                "order": 2,
-                "message_type": "image",
-                "content": {
-                    "media_url": "https://example.com/image.jpg",
-                    "caption": "Nossa consulta inclui..."
+                "type": "image",
+                "title": "Consultation Info",
+                "description": "Image explaining consultation process",
+                "file": {
+                    "url": "https://example.com/consultation.jpg",
+                    "mimetype": "image/jpeg",
+                    "filename": "consultation.jpg"
                 },
-                "delay_seconds": 3
+                "caption": "Nossa consulta inclui avaliação completa...",
+                "tags": "consultation,info"  # Comma-separated string
             }
         )
         
         assert response.status_code == 201, f"Got {response.status_code}: {response.text}"
-        data = response.json()
+        message_data = response.json()
+        image_message_id = message_data["id"]
         
-        assert data["order"] == 2
-        assert data["message_type"] == "image"
+        # Step 2: Add to playbook
+        response = api_client.post(
+            "/playbook-steps",
+            json={
+                "playbook_id": self.playbook_id,
+                "message_id": image_message_id,
+                "step_order": 2,
+                "context_hint": "Show this image when explaining consultation details"
+            }
+        )
+        
+        assert response.status_code == 201, f"Got {response.status_code}: {response.text}"
+        step_data = response.json()
+        
+        assert step_data["playbook_id"] == self.playbook_id
+        assert step_data["step_order"] == 2
     
     def test_uc014_search_playbooks(self, api_client):
         """UC-014: Search Playbooks by Semantic Query."""
@@ -114,18 +155,14 @@ class TestPhase3Playbooks:
         
         response = api_client.get(
             "/playbooks/search",
-            params={"query": "consulta agendamento", "limit": 5}
+            params={"query": "consulta agendamento", "top_k": 5}
         )
         
         assert response.status_code == 200, f"Got {response.status_code}: {response.text}"
         data = response.json()
         
-        assert isinstance(data, list)
-        
-        assert response.status_code == 200
-        data = response.json()
-        
-        assert isinstance(data, list)
+        assert "results" in data
+        assert isinstance(data["results"], list)
     
     def test_uc015_get_playbook_steps(self, api_client):
         """UC-015: Get Playbook Steps."""
@@ -133,10 +170,11 @@ class TestPhase3Playbooks:
         if not hasattr(self, 'playbook_id'):
             self.test_uc013_add_image_message(api_client)
         
-        response = api_client.get(f"/playbooks/{self.playbook_id}/steps")
+        response = api_client.get(f"/playbook-steps/playbook/{self.playbook_id}")
         
         assert response.status_code == 200, f"Got {response.status_code}: {response.text}"
         data = response.json()
         
-        assert isinstance(data, list)
-        assert len(data) >= 1  # At least the messages we added
+        assert "steps" in data
+        assert isinstance(data["steps"], list)
+        assert len(data["steps"]) >= 1  # At least the messages we added
