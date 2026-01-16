@@ -61,10 +61,7 @@ class MessageService:
             elif payload.type == "video":
                 transcription = self._transcribe_audio(payload.file.url)
                 metadata = self._generate_description(
-                    payload.file.url,
-                    payload.file.filename,
-                    payload.caption or "",
-                    "video"
+                    payload.file.url, payload.file.filename, payload.caption or "", "video"
                 )
                 title = metadata.get("generated_title")
                 description = metadata.get("generated_description")
@@ -73,10 +70,7 @@ class MessageService:
             # 3. IMAGE: Analisar com BLIP-2 (open source, local, sem custo)
             elif payload.type == "image":
                 metadata = self._generate_description(
-                    payload.file.url,
-                    payload.file.filename,
-                    payload.caption or "",
-                    "image"
+                    payload.file.url, payload.file.filename, payload.caption or "", "image"
                 )
                 title = metadata.get("generated_title")
                 description = metadata.get("generated_description")
@@ -84,11 +78,7 @@ class MessageService:
 
             # 4. DOCUMENT: Gerar metadata baseado em filename
             elif payload.type == "document":
-                metadata = self._generate_file_description(
-                    payload.file.filename,
-                    payload.caption or "",
-                    "document"
-                )
+                metadata = self._generate_file_description(payload.file.filename, payload.caption or "", "document")
                 title = metadata.get("generated_title")
                 description = metadata.get("generated_description")
                 tags = metadata.get("suggested_tags")
@@ -107,8 +97,7 @@ class MessageService:
             # Build response with file metadata
             media_obj = msg.media[0] if msg.media else None
             if not media_obj:
-                raise NotFoundException(
-                    "Media object not found after creation")
+                raise NotFoundException("Media object not found after creation")
 
             return MessageOutMedia(
                 id=msg.id,
@@ -131,8 +120,7 @@ class MessageService:
             )
             location_obj = msg.location
             if not location_obj:
-                raise NotFoundException(
-                    "Location object not found after creation")
+                raise NotFoundException("Location object not found after creation")
 
             return MessageOutLocation(
                 id=msg.id,
@@ -146,9 +134,7 @@ class MessageService:
 
         raise ValueError("Invalid message type")
 
-    def get_message(
-        self, message_id: UUID
-    ) -> MessageOutText | MessageOutMedia | MessageOutLocation:
+    def get_message(self, message_id: UUID) -> MessageOutText | MessageOutMedia | MessageOutLocation:
         """Retrieve message by ID."""
         msg = self.repo.get_by_id(message_id)
         if not msg:
@@ -206,11 +192,13 @@ class MessageService:
             transcription = self.transcription_service.transcribe_audio_sync(audio_url, language="pt")
             if transcription:
                 import logging
+
                 logger = logging.getLogger(__name__)
                 logger.info("[SUCCESS] Audio transcribed: %s...", transcription[:100])
             return transcription
         except Exception as e:  # noqa: BLE001 (blind exception)
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error("[ERROR] Failed to transcribe audio: %s", e)
             return None
@@ -238,6 +226,7 @@ class MessageService:
 
         except Exception as e:  # noqa: BLE001 (blind exception)
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error("[ERROR] Failed to generate description for %s: %s", media_type, e)
             return {}
@@ -258,6 +247,7 @@ class MessageService:
             return self.desc_service.generate_file_metadata(filename, caption, file_type)
         except Exception as e:  # noqa: BLE001 (blind exception)
             import logging
+
             logger = logging.getLogger(__name__)
             logger.error("[ERROR] Failed to generate metadata for %s: %s", file_type, e)
             return {}
@@ -330,9 +320,7 @@ class MessageService:
             if payload.file is not None:
                 if not payload.file.url:
                     raise ValueError("File URL is required for media update")
-                msg = self.repo.update_media_file(
-                    msg, payload.file.mimetype, payload.file.filename, payload.file.url
-                )
+                msg = self.repo.update_media_file(msg, payload.file.mimetype, payload.file.filename, payload.file.url)
 
             media_obj = msg.media[0] if msg.media else None
             if not media_obj:
@@ -352,9 +340,7 @@ class MessageService:
             )
 
         if isinstance(payload, MessageUpdateLocation) and msg.type == "location":
-            msg = self.repo.update_location(
-                msg, payload.latitude, payload.longitude, payload.title
-            )
+            msg = self.repo.update_location(msg, payload.latitude, payload.longitude, payload.title)
             location_obj = msg.location
             if not location_obj:
                 raise NotFoundException("Location data not found")
