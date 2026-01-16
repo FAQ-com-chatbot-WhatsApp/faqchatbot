@@ -59,9 +59,7 @@ class AnalyticsRepository:
         # Query base
         query = self.db.query(
             func.count(LeadModel.id).label("total_leads"),
-            func.count(
-                case((LeadModel.status == LeadStatus.CONVERTED, LeadModel.id))
-            ).label("converted_leads"),
+            func.count(case((LeadModel.status == LeadStatus.CONVERTED, LeadModel.id))).label("converted_leads"),
         ).filter(
             LeadModel.created_at >= start_date,
             LeadModel.created_at <= end_date,
@@ -69,9 +67,7 @@ class AnalyticsRepository:
         )
 
         if segment_by and segment_by == "assigned_to":
-            query = query.join(
-                UserModel, LeadModel.assigned_to_user_id == UserModel.id
-            )
+            query = query.join(UserModel, LeadModel.assigned_to_user_id == UserModel.id)
             query = query.add_columns(
                 UserModel.full_name.label("segment_name"),
                 UserModel.id.label("segment_id"),
@@ -177,14 +173,8 @@ class AnalyticsRepository:
                 "stage": "engaged",
                 "name": "Engajados (responderam)",
                 "count": row.total_engaged or 0,
-                "percentage": round(
-                    (row.total_engaged or 0) / total_created * 100, 2
-                )
-                if total_created > 0
-                else 0,
-                "drop_off": round(
-                    (total_created - (row.total_engaged or 0)) / total_created * 100, 2
-                )
+                "percentage": round((row.total_engaged or 0) / total_created * 100, 2) if total_created > 0 else 0,
+                "drop_off": round((total_created - (row.total_engaged or 0)) / total_created * 100, 2)
                 if total_created > 0
                 else 0,
             },
@@ -192,15 +182,9 @@ class AnalyticsRepository:
                 "stage": "qualified",
                 "name": "Qualificados (score >= 60)",
                 "count": row.total_qualified or 0,
-                "percentage": round(
-                    (row.total_qualified or 0) / total_created * 100, 2
-                )
-                if total_created > 0
-                else 0,
+                "percentage": round((row.total_qualified or 0) / total_created * 100, 2) if total_created > 0 else 0,
                 "drop_off": round(
-                    ((row.total_engaged or 0) - (row.total_qualified or 0))
-                    / (row.total_engaged or 0)
-                    * 100,
+                    ((row.total_engaged or 0) - (row.total_qualified or 0)) / (row.total_engaged or 0) * 100,
                     2,
                 )
                 if row.total_engaged
@@ -210,15 +194,9 @@ class AnalyticsRepository:
                 "stage": "handoff",
                 "name": "Transferidos para humano",
                 "count": row.total_handoff or 0,
-                "percentage": round(
-                    (row.total_handoff or 0) / total_created * 100, 2
-                )
-                if total_created > 0
-                else 0,
+                "percentage": round((row.total_handoff or 0) / total_created * 100, 2) if total_created > 0 else 0,
                 "drop_off": round(
-                    ((row.total_qualified or 0) - (row.total_handoff or 0))
-                    / (row.total_qualified or 0)
-                    * 100,
+                    ((row.total_qualified or 0) - (row.total_handoff or 0)) / (row.total_qualified or 0) * 100,
                     2,
                 )
                 if row.total_qualified
@@ -228,15 +206,9 @@ class AnalyticsRepository:
                 "stage": "converted",
                 "name": "Convertidos (agendaram)",
                 "count": row.total_converted or 0,
-                "percentage": round(
-                    (row.total_converted or 0) / total_created * 100, 2
-                )
-                if total_created > 0
-                else 0,
+                "percentage": round((row.total_converted or 0) / total_created * 100, 2) if total_created > 0 else 0,
                 "drop_off": round(
-                    ((row.total_handoff or 0) - (row.total_converted or 0))
-                    / (row.total_handoff or 0)
-                    * 100,
+                    ((row.total_handoff or 0) - (row.total_converted or 0)) / (row.total_handoff or 0) * 100,
                     2,
                 )
                 if row.total_handoff
@@ -502,9 +474,7 @@ class AnalyticsRepository:
             ORDER BY maturity_range
         """)
 
-        maturity_result = self.db.execute(
-            maturity_query, {"start_date": start_date, "end_date": end_date}
-        )
+        maturity_result = self.db.execute(maturity_query, {"start_date": start_date, "end_date": end_date})
         maturity_rows = maturity_result.fetchall()
 
         total_lost = row.total_lost
@@ -520,9 +490,7 @@ class AnalyticsRepository:
         return {
             "total_lost": total_lost,
             "lost_by_maturity_range": lost_by_maturity,
-            "avg_time_before_lost_hours": round(
-                float(row.avg_time_before_lost_hours or 0), 2
-            ),
+            "avg_time_before_lost_hours": round(float(row.avg_time_before_lost_hours or 0), 2),
         }
 
     def get_conversion_trend(
@@ -708,9 +676,7 @@ class AnalyticsRepository:
         """
         )
 
-        result = self.db.execute(
-            query, {"granularity": trunc, "start_date": start_date, "end_date": end_date}
-        )
+        result = self.db.execute(query, {"granularity": trunc, "start_date": start_date, "end_date": end_date})
         rows = result.fetchall()
 
         return [
@@ -743,22 +709,17 @@ class AnalyticsRepository:
                 "autonomy_rate": 60.0
             }
         """
-        query = (
-            self.db.query(
-                func.count(ConversationModel.id).label("total"),  # type: ignore[misc]
-                func.count(  # type: ignore[misc]
-                    case((ConversationModel.handoff_at.is_(None), ConversationModel.id))
-                ).label("bot_only"),
-                func.count(  # type: ignore[misc]
-                    case(
-                        (ConversationModel.handoff_at.isnot(None), ConversationModel.id)
-                    )
-                ).label("with_handoff"),
-            )
-            .filter(
-                ConversationModel.created_at >= start_date,
-                ConversationModel.created_at <= end_date,
-            )
+        query = self.db.query(
+            func.count(ConversationModel.id).label("total"),  # type: ignore[misc]
+            func.count(  # type: ignore[misc]
+                case((ConversationModel.handoff_at.is_(None), ConversationModel.id))
+            ).label("bot_only"),
+            func.count(  # type: ignore[misc]
+                case((ConversationModel.handoff_at.isnot(None), ConversationModel.id))
+            ).label("with_handoff"),
+        ).filter(
+            ConversationModel.created_at >= start_date,
+            ConversationModel.created_at <= end_date,
         )
 
         result = query.first()
@@ -836,9 +797,7 @@ class AnalyticsRepository:
 
         total_leads = row.total_leads or 0
         converted_leads = row.converted_leads or 0
-        conversion_rate = (
-            (converted_leads / total_leads * 100) if total_leads > 0 else 0.0
-        )
+        conversion_rate = (converted_leads / total_leads * 100) if total_leads > 0 else 0.0
 
         # Buscar tempo de resposta usando método interno
         response_time_stats = self.get_response_time_stats(start_date, end_date)
@@ -851,9 +810,7 @@ class AnalyticsRepository:
             "total_conversations": row.total_conversations or 0,
             "active_conversations": row.active_conversations or 0,
             "total_messages": row.total_messages or 0,
-            "avg_messages_per_conversation": round(
-                float(row.avg_messages_per_conversation or 0), 2
-            ),
+            "avg_messages_per_conversation": round(float(row.avg_messages_per_conversation or 0), 2),
         }
 
     # =========================================================================
@@ -1130,7 +1087,7 @@ class AnalyticsRepository:
         Palavras-chave mais frequentes nas mensagens INBOUND.
 
         Stop words carregadas de analytics_config.yaml (editável sem deploy).
-        
+
         P3 #2: Usa to_tsvector PostgreSQL Full-Text Search para acurácia +30%.
 
         Returns:
@@ -1205,7 +1162,7 @@ class AnalyticsRepository:
         Strategy:
         1. Regex (rápido, grátis) - default
         2. Gemini API (preciso +60%, pago) - ativa se use_gemini_fallback=True
-        
+
         Keywords carregadas de analytics_config.yaml (editável sem deploy).
 
         Args:
@@ -1223,8 +1180,8 @@ class AnalyticsRepository:
         from robbot.config.analytics_config_loader import get_analytics_config
 
         config = get_analytics_config()
-        positive_regex = config.build_sentiment_regex('positive')
-        negative_regex = config.build_sentiment_regex('negative')
+        positive_regex = config.build_sentiment_regex("positive")
+        negative_regex = config.build_sentiment_regex("negative")
 
         # Estratégia 1: Regex (sempre executada primeiro)
         query = text(f"""
@@ -1271,7 +1228,7 @@ class AnalyticsRepository:
         # Agregar resultados regex
         sentiment_counts = {"positive": 0, "negative": 0, "neutral": 0}
         neutral_messages = []
-        
+
         for row in rows:
             sentiment_counts[row.sentiment_regex] = row.sentiment_count
             if row.sentiment_regex == "neutral" and use_gemini_fallback:
@@ -1305,16 +1262,17 @@ class AnalyticsRepository:
     ) -> dict:
         """
         Refina sentimento de mensagens neutras usando Gemini API.
-        
+
         P3 #3: Batch processing + cache para reduzir custos.
         """
         import logging
+
         from robbot.adapters.external.gemini_client import GeminiClient
         from robbot.core.cache import get_cache
 
         logger = logging.getLogger(__name__)
         cache = get_cache()
-        
+
         # Config Gemini
         gemini_config = config.data.get("sentiment_analysis", {}).get("gemini_fallback", {})
         batch_size = gemini_config.get("batch_size", 50)
@@ -1328,13 +1286,13 @@ class AnalyticsRepository:
 
         # Process em batches
         for i in range(0, len(neutral_messages), batch_size):
-            batch = neutral_messages[i:i + batch_size]
-            
+            batch = neutral_messages[i : i + batch_size]
+
             for msg in batch:
                 # Check cache primeiro
                 cache_key = f"sentiment:gemini:{msg['id']}"
                 cached_sentiment = cache.get(cache_key)
-                
+
                 if cached_sentiment:
                     if cached_sentiment == "POSITIVE":
                         refined_positive += 1
@@ -1349,14 +1307,14 @@ class AnalyticsRepository:
                     prompt = prompt_template.replace("{message}", msg["body"])
                     response = gemini_client.generate_text(prompt)
                     gemini_sentiment = response.strip().upper()
-                    
+
                     # Normalizar resposta
                     if gemini_sentiment not in ["POSITIVE", "NEGATIVE", "NEUTRAL"]:
                         gemini_sentiment = "NEUTRAL"
-                    
+
                     # Cache resultado
                     cache.set(cache_key, gemini_sentiment, ttl=cache_ttl)
-                    
+
                     # Contar
                     if gemini_sentiment == "POSITIVE":
                         refined_positive += 1
@@ -1364,7 +1322,7 @@ class AnalyticsRepository:
                         refined_negative += 1
                     else:
                         refined_neutral += 1
-                        
+
                 except Exception as e:
                     logger.warning(f"Gemini sentiment analysis failed for message {msg['id']}: {e}")
                     refined_neutral += 1  # Fallback: mantém como neutral
