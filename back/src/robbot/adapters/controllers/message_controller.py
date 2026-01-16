@@ -21,6 +21,8 @@ from robbot.schemas.message import (
 from robbot.services.message_service import MessageService
 
 router = APIRouter()
+
+
 @router.post(
     "/",
     response_model=MessageOutText | MessageOutMedia | MessageOutLocation,
@@ -44,6 +46,8 @@ def create_message(
     """
     service = MessageService(db)
     return service.create_message(payload)
+
+
 @router.get(
     "/{message_id}",
     response_model=MessageOutText | MessageOutMedia | MessageOutLocation,
@@ -62,6 +66,8 @@ def get_message(
     """
     service = MessageService(db)
     return service.get_message(message_id)
+
+
 @router.get(
     "/",
     response_model=list[MessageOutText | MessageOutMedia | MessageOutLocation],
@@ -79,6 +85,8 @@ def list_messages(
     """
     service = MessageService(db)
     return service.list_messages()
+
+
 @router.patch(
     "/{message_id}",
     response_model=MessageOutText | MessageOutMedia | MessageOutLocation,
@@ -99,6 +107,8 @@ def update_message(
     """
     service = MessageService(db)
     return service.update_message(message_id, payload)
+
+
 @router.delete("/{message_id}", response_model=DeletedResponse)
 def delete_message(
     message_id: UUID,
@@ -114,6 +124,8 @@ def delete_message(
     """
     service = MessageService(db)
     return service.delete_message(message_id)
+
+
 @router.post("/{message_id}/generate-description")
 def generate_description(
     message_id: UUID,
