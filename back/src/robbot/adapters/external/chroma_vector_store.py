@@ -73,12 +73,12 @@ class ChromaVectorStore(VectorStore):
             await asyncio.gather(
                 *[
                     _add_one(doc, meta, doc_id)
-                    for doc, meta, doc_id in zip(documents, metadatas, ids)
+                    for doc, meta, doc_id in zip(documents, metadatas, ids, strict=False)
                 ]
             )
-            logger.debug(f"Added {len(documents)} documents to ChromaDB")
+            logger.debug("Added %d documents to ChromaDB", len(documents))
         except Exception as e:
-            logger.error(f"Error adding documents: {e}")
+            logger.error("Error adding documents: %s", e)
             raise
 
     async def query(
@@ -115,7 +115,7 @@ class ChromaVectorStore(VectorStore):
                 "ids": [r.get("id") for r in results],
             }
         except Exception as e:
-            logger.error(f"Error querying ChromaDB: {e}")
+            logger.error("Error querying ChromaDB: %s", e)
             raise
 
     async def delete_documents(self, ids: list[str]) -> None:
@@ -139,4 +139,4 @@ class ChromaVectorStore(VectorStore):
             # ChromaClient uses in-process client; nothing to close
             logger.info("ChromaVectorStore closed")
         except Exception as e:
-            logger.error(f"Error closing ChromaDB client: {e}")
+            logger.error("Error closing ChromaDB client: %s", e)
