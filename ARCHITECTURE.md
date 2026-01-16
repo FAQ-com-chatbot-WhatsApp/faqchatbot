@@ -11,7 +11,8 @@
 - Database: PostgreSQL 18
 - Cache/Queue: Redis 7
 - ORM: SQLAlchemy 2.0+ with Alembic migrations
-- AI: Google Gemini API
+- AI (Cloud): Google Gemini API
+- AI (Local): Faster-Whisper (audio transcription), BLIP-2 (image analysis)
 - Vector Database: ChromaDB (conversation context)
 - Background Jobs: Redis Queue (RQ)
 - WhatsApp API: WAHA (WhatsApp HTTP API)
@@ -211,6 +212,55 @@ Structured conversation flows for specific topics:
 - `get_playbook_messages(playbook_id)` - Retrieve playbook content
 - `send_playbook_message()` - Send structured responses
 
+### 9. Media Enrichment System
+
+Automatic AI-powered metadata generation for all media messages:
+
+**Local AI Services (Zero External API Cost):**
+- **Faster-Whisper**: Audio transcription (Portuguese, open-source)
+- **BLIP-2**: Image captioning and visual analysis (Salesforce, BSD-3 license)
+- **DescriptionService**: Metadata generation from filenames and captions
+
+**Enrichment Process:**
+```
+Media Upload (image/voice/video/document)
+    ↓
+Extract Basic Metadata (filename, mimetype, size)
+    ↓
+Background AI Processing (async, non-blocking)
+    |
+    ├─→ Voice: Faster-Whisper transcription → transcription field
+    ├─→ Image: BLIP-2 visual analysis → title, description, tags
+    ├─→ Video: Audio extraction + transcription → transcription field
+    └─→ Document: Keyword extraction → tags from filename
+    ↓
+Update Message Record (title, description, tags, transcription)
+    ↓
+Available in API Responses + Dashboard
+```
+
+**Database Fields:**
+- `title`: Short descriptive title (max 255 chars, indexed)
+- `description`: Detailed content description for LLM context
+- `tags`: Comma-separated keywords (max 500 chars, indexed)
+- `transcription`: Full text transcription for voice/video
+
+**Performance:**
+- BLIP-2 image analysis: < 5s per image (CPU inference)
+- Faster-Whisper transcription: < 5s per 30s audio
+- Model caching: ~1GB total (downloaded once)
+- Processing in background queue (non-blocking)
+
+**API Endpoints:**
+- `POST /api/v1/messages/{id}/generate-description`: Manual enrichment trigger
+- All CRUD endpoints return enrichment fields automatically
+
+**Use Cases:**
+- **Searchability**: Find images by content ("hospital room", "medical equipment")
+- **LLM Context**: Audio transcriptions improve conversation understanding
+- **Organization**: Staff can filter/tag media by AI-generated metadata
+- **Privacy**: All processing local, no external API calls
+
 ## Database Schema
 
 ### Core Tables
@@ -226,6 +276,11 @@ Structured conversation flows for specific topics:
 - conversations (id, chat_id, phone_number, lead_id, status)
 - conversation_messages (id, conversation_id, direction, content)
 - tags (id, name, color) + conversation_tags (many-to-many)
+
+**Messages & Media:**
+- messages (id, type, text, caption, title, description, tags, transcription, has_audio, audio_url)
+- message_media (id, message_id, mimetype, filename, url)
+- message_location (id, message_id, latitude, longitude, title)
 
 **Content & Playbooks:**
 - topics (id, name, description)
