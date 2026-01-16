@@ -38,7 +38,7 @@ class PlaybookStepOut(BaseModel):
 
     id: str
     playbook_id: str
-    message_id: str
+    message_id: UUID | str  # Can be UUID from DB or string from serialization
     step_order: int
     context_hint: str | None
     created_at: datetime
