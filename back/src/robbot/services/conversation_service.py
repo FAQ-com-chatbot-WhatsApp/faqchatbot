@@ -14,6 +14,8 @@ from robbot.domain.enums import ConversationStatus, LeadStatus
 from robbot.infra.db.models.conversation_model import ConversationModel
 
 logger = logging.getLogger(__name__)
+
+
 class ConversationService:
     """
     Service to manage conversations (business logic).
@@ -101,17 +103,12 @@ class ConversationService:
 
         # Validate status transition
         if not self._is_valid_transition(old_status, new_status):
-            raise BusinessRuleError(
-                f"Invalid status transition: {old_status} -> {new_status}"
-            )
+            raise BusinessRuleError(f"Invalid status transition: {old_status} -> {new_status}")
 
         # Update status
         conversation = repo.update_status(conversation_id, new_status)
 
-        logger.info(
-            f"[SUCCESS] Status updated (conv_id={conversation_id}, "
-            f"{old_status} → {new_status})"
-        )
+        logger.info(f"[SUCCESS] Status updated (conv_id={conversation_id}, {old_status} → {new_status})")
 
         return conversation
 
@@ -142,9 +139,7 @@ class ConversationService:
         conversation.closed_at = datetime.now(UTC)
         conversation = repo.update(conversation)
 
-        logger.info(
-            f"[SUCCESS] Conversation closed (id={conversation_id}, reason={reason})"
-        )
+        logger.info(f"[SUCCESS] Conversation closed (id={conversation_id}, reason={reason})")
 
         return conversation
 
@@ -202,9 +197,7 @@ class ConversationService:
         self.db.commit()
         self.db.refresh(conversation)
 
-        logger.info(
-            f"[SUCCESS] Conversation transferred (id={conversation_id}, user_id={user_id})"
-        )
+        logger.info(f"[SUCCESS] Conversation transferred (id={conversation_id}, user_id={user_id})")
 
         return conversation
 
