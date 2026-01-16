@@ -35,9 +35,7 @@ class AuthSessionModel(Base):
     id = Column(Integer, primary_key=True, index=True)
 
     # Foreign Key to User
-    user_id = Column(
-        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
-    )
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
 
     # Refresh Token (JWT ID)
     refresh_token_jti = Column(String(255), unique=True, nullable=False, index=True)
@@ -55,9 +53,7 @@ class AuthSessionModel(Base):
     # Revocation
     is_revoked = Column(Boolean, default=False, nullable=False, index=True)
     revoked_at = Column(DateTime(timezone=True), nullable=True)
-    revocation_reason = Column(
-        String(255), nullable=True
-    )  # e.g., "logout", "password_changed", "admin_action"
+    revocation_reason = Column(String(255), nullable=True)  # e.g., "logout", "password_changed", "admin_action"
 
     # Relationships
     user = relationship("UserModel", back_populates="auth_sessions")
