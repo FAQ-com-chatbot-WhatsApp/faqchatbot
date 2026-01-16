@@ -14,6 +14,8 @@ from PIL import Image
 from transformers import BlipForConditionalGeneration, BlipProcessor
 
 logger = logging.getLogger(__name__)
+
+
 class VisionService:
     """
     Serviço para análise de imagens usando BLIP-2 (local, sem custo).
@@ -50,10 +52,7 @@ class VisionService:
                 raise
 
     async def analyze_image(
-        self,
-        image_url: str,
-        context: str = "medical",
-        questions: list[str] | None = None
+        self, image_url: str, context: str = "medical", questions: list[str] | None = None
     ) -> dict[str, str]:
         """
         Analisar imagem e gerar descrição detalhada.
@@ -82,11 +81,7 @@ class VisionService:
             logger.info("[SUCCESS] Caption generated: %s", caption)
 
             # 3. Gerar descrição detalhada com perguntas contextuais
-            detailed_description = await self._generate_detailed_description(
-                image,
-                caption,
-                context
-            )
+            detailed_description = await self._generate_detailed_description(image, caption, context)
 
             # 4. Extrair tags da descrição
             tags = self._extract_tags(caption, detailed_description, context)
@@ -98,12 +93,7 @@ class VisionService:
                     answer = await self._answer_question(image, question)
                     answers[question] = answer
 
-            return {
-                "caption": caption,
-                "detailed_description": detailed_description,
-                "tags": tags,
-                "answers": answers
-            }
+            return {"caption": caption, "detailed_description": detailed_description, "tags": tags, "answers": answers}
 
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("[ERROR] Failed to analyze image: %s", e)
@@ -121,7 +111,7 @@ class VisionService:
                 tmp_path = tmp.name
 
             # Abrir com PIL
-            image = Image.open(tmp_path).convert('RGB')
+            image = Image.open(tmp_path).convert("RGB")
 
             # Limpar arquivo temporário
             os.unlink(tmp_path)
@@ -137,13 +127,7 @@ class VisionService:
         output = self.model.generate(**inputs, max_new_tokens=50)
         return self.processor.decode(output[0], skip_special_tokens=True)
 
-
-    async def _generate_detailed_description(
-        self,
-        image: Image.Image,
-        caption: str,
-        context: str
-    ) -> str:
+    async def _generate_detailed_description(self, image: Image.Image, caption: str, context: str) -> str:
         """
         Gerar descrição detalhada com perguntas contextuais.
 
@@ -156,13 +140,10 @@ class VisionService:
             questions = [
                 "What is the main subject of this image?",
                 "What details are visible?",
-                "What colors and objects are present?"
+                "What colors and objects are present?",
             ]
         else:
-            questions = [
-                "What is shown in this image?",
-                "What are the key details?"
-            ]
+            questions = ["What is shown in this image?", "What are the key details?"]
 
         descriptions = [caption]
 
@@ -184,7 +165,6 @@ class VisionService:
         # Remover o prompt da resposta
         return answer.replace(prompt, "").strip()
 
-
     def _extract_tags(self, caption: str, description: str, context: str) -> str:
         """Extrair tags relevantes da descrição."""
         text = f"{caption} {description}".lower()
@@ -194,23 +174,23 @@ class VisionService:
 
         # Palavras-chave contextuais para saúde/emagrecimento
         health_keywords = {
-            'food': 'alimentação',
-            'meal': 'refeição',
-            'plate': 'prato',
-            'salad': 'salada',
-            'fruit': 'fruta',
-            'vegetable': 'vegetal',
-            'exercise': 'exercício',
-            'workout': 'treino',
-            'gym': 'academia',
-            'running': 'corrida',
-            'walking': 'caminhada',
-            'person': 'pessoa',
-            'woman': 'mulher',
-            'man': 'homem',
-            'healthy': 'saudável',
-            'diet': 'dieta',
-            'nutrition': 'nutrição',
+            "food": "alimentação",
+            "meal": "refeição",
+            "plate": "prato",
+            "salad": "salada",
+            "fruit": "fruta",
+            "vegetable": "vegetal",
+            "exercise": "exercício",
+            "workout": "treino",
+            "gym": "academia",
+            "running": "corrida",
+            "walking": "caminhada",
+            "person": "pessoa",
+            "woman": "mulher",
+            "man": "homem",
+            "healthy": "saudável",
+            "diet": "dieta",
+            "nutrition": "nutrição",
         }
 
         for keyword, tag in health_keywords.items():
@@ -223,11 +203,7 @@ class VisionService:
 
         return ", ".join(tags[:10])  # Máximo 10 tags
 
-    def analyze_image_sync(
-        self,
-        image_url: str,
-        context: str = "medical"
-    ) -> dict[str, str]:
+    def analyze_image_sync(self, image_url: str, context: str = "medical") -> dict[str, str]:
         """
         Versão síncrona de analyze_image.
 
@@ -241,11 +217,13 @@ class VisionService:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
 
-        return loop.run_until_complete(
-            self.analyze_image(image_url, context)
-        )
+        return loop.run_until_complete(self.analyze_image(image_url, context))
+
+
 # Singleton para reutilizar modelo carregado
 _vision_service_instance: VisionService | None = None
+
+
 def get_vision_service() -> VisionService:
     """Obter instância singleton do VisionService."""
     global _vision_service_instance
