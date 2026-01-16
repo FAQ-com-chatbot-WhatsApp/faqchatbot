@@ -10,6 +10,8 @@ from rq import Queue, Worker
 from robbot.infra.redis.client import get_redis_client
 
 logger = logging.getLogger(__name__)
+
+
 class WorkerAnalyticsService:
     """Service for monitoring workers and implementing autoscaling."""
 
@@ -58,13 +60,15 @@ class WorkerAnalyticsService:
             else:
                 idle_count += 1
 
-            worker_list.append({
-                "name": worker.name,
-                "state": worker.state,
-                "queues": [q.name for q in worker.queues],
-                "current_job": worker.get_current_job_id(),
-                "is_busy": is_busy,
-            })
+            worker_list.append(
+                {
+                    "name": worker.name,
+                    "state": worker.state,
+                    "queues": [q.name for q in worker.queues],
+                    "current_job": worker.get_current_job_id(),
+                    "is_busy": is_busy,
+                }
+            )
 
         return {
             "total": len(workers),
@@ -79,10 +83,7 @@ class WorkerAnalyticsService:
         worker_stats = self.get_worker_stats()
 
         # Calculate total pending jobs (exclude failed queue)
-        total_pending = sum([
-            queue_stats[name]["pending"]
-            for name in ["messages", "ai", "escalation"]
-        ])
+        total_pending = sum([queue_stats[name]["pending"] for name in ["messages", "ai", "escalation"]])
 
         # Get historical stats
         processed = int(self.redis.get("rq:stat:processed") or 0)
