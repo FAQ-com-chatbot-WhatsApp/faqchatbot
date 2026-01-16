@@ -116,7 +116,7 @@ class PlaybookOrchestrationMixin:
 
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("[ERROR] Error in function calling loop: %s", e)
-            raise VectorDBError(f"Function calling failed: {e}", original_error=e)
+            raise VectorDBError(f"Function calling failed: {e}", original_error=e) from e
 
     def _build_playbook_aware_prompt(self, message_text: str, intent: str, context: str, conversation: Any) -> str:
         """
@@ -229,7 +229,7 @@ IMPORTANTE:
             logger.error("[ERROR] Error transcribing voice message: %s", e)
             return None
         except (OSError, ValueError, RuntimeError) as e:
-            logger.error(f"Unexpected error transcribing voice message: {e}", exc_info=True)
+            logger.error("Unexpected error transcribing voice message: %s", e, exc_info=True)
             return None
 
     async def _process_media_message(self, message_type: str, media_url: str | None, caption: str | None) -> str:
