@@ -1,4 +1,5 @@
 """Repository for playbook persistence and retrieval operations."""
+
 from sqlalchemy.orm import Session, joinedload
 
 from robbot.adapters.repositories.base_repository import BaseRepository
@@ -11,7 +12,9 @@ class PlaybookRepository(BaseRepository[PlaybookModel]):
     def __init__(self, db: Session):
         super().__init__(db, PlaybookModel)
 
-    def get_by_topic_id(self, topic_id: str, active_only: bool = False, include_steps: bool = False, limit: int = 100, offset: int = 0) -> list[PlaybookModel]:
+    def get_by_topic_id(
+        self, topic_id: str, active_only: bool = False, include_steps: bool = False, limit: int = 100, offset: int = 0
+    ) -> list[PlaybookModel]:
         """List playbooks by topic with pagination.
 
         Args:
@@ -31,7 +34,9 @@ class PlaybookRepository(BaseRepository[PlaybookModel]):
             query = query.options(joinedload(PlaybookModel.steps))
         return query.limit(limit).offset(offset).all()
 
-    def get_by_name(self, search_term: str, active_only: bool = False, limit: int = 100, offset: int = 0) -> list[PlaybookModel]:
+    def get_by_name(
+        self, search_term: str, active_only: bool = False, limit: int = 100, offset: int = 0
+    ) -> list[PlaybookModel]:
         """Search playbooks by name (case-insensitive partial match) with pagination.
 
         Args:
@@ -43,9 +48,7 @@ class PlaybookRepository(BaseRepository[PlaybookModel]):
         Returns:
             List of playbook model instances matching the search term
         """
-        query = self.db.query(PlaybookModel).filter(
-            PlaybookModel.name.ilike(f"%{search_term}%")
-        )
+        query = self.db.query(PlaybookModel).filter(PlaybookModel.name.ilike(f"%{search_term}%"))
         if active_only:
             query = query.filter(PlaybookModel.active)
         return query.limit(limit).offset(offset).all()
@@ -54,3 +57,14 @@ class PlaybookRepository(BaseRepository[PlaybookModel]):
         """List active playbooks with pagination."""
         query = self.db.query(PlaybookModel).filter(PlaybookModel.active)
         return query.offset(skip).limit(limit).all()
+
+    def list_by_topic(self, topic_id: str) -> list[PlaybookModel]:
+        """List all playbooks for a given topic.
+
+        Args:
+            topic_id: Topic ID to filter by
+
+        Returns:
+            List of playbook models
+        """
+        return self.get_by_topic_id(topic_id, active_only=False)
