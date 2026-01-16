@@ -4,16 +4,17 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import uuid4
 
+import bcrypt
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from passlib.context import CryptContext
 
 from robbot.config.settings import settings
 from robbot.core.custom_exceptions import AuthException
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security_scheme = HTTPBearer()
+
+
 def parse_device_name(user_agent: str | None) -> str:
     """
     Parse user agent string to extract a human-readable device name.
@@ -60,14 +61,38 @@ def parse_device_name(user_agent: str | None) -> str:
         os_name = "Linux"
 
     return f"{browser} on {os_name}"
+
+
 def get_password_hash(password: str) -> str:
-    """Return a bcrypt hash for the plain password."""
-    # Truncate to 72 bytes to avoid bcrypt limitation
-    password_bytes = password.encode('utf-8')[:72]
-    return pwd_context.hash(password_bytes.decode('utf-8'))
+    """Return a bcrypt hash for the plain password.
+    
+    Truncates password to 72 UTF-8 bytes to respect bcrypt limitation.
+    """
+    # Bcrypt has a hard limit of 72 bytes
+    password_bytes = password.encode("utf-8")
+    
+    # Truncate if necessary (preserving UTF-8 validity)
+    if len(password_bytes) > 72:
+        # Decode with error handling to avoid cutting in the middle of a character
+        password_bytes = password_bytes[:72]
+        password = password_bytes.decode("utf-8", errors="ignore")
+        password_bytes = password.encode("utf-8")
+    
+    # Generate salt and hash
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password_bytes, salt)
+    
+    # Return as string (bcrypt returns bytes)
+    return hashed.decode("utf-8")
+
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a plaintext password against the hashed value."""
-    return pwd_context.verify(plain_password, hashed_password)
+    password_bytes = plain_password.encode("utf-8")
+    hashed_bytes = hashed_password.encode("utf-8")
+    return bcrypt.checkpw(password_bytes, hashed_bytes)
+
+
 def create_token_for_subject(subject: str, minutes: int, token_type: str, jti: str | None = None) -> str:
     """
     Generic token generator used for refresh, access and other short-lived tokens.
@@ -82,15 +107,14 @@ def create_token_for_subject(subject: str, minutes: int, token_type: str, jti: s
     if token_type == "refresh":
         # incluir JTI para controle de sessão
         to_encode["jti"] = jti or uuid4().hex
-    return jwt.encode(to_encode, settings.SECRET_KEY,
-                       algorithm=settings.ALGORITHM)
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+
 def create_access_refresh_tokens(subject: str) -> dict[str, str]:
     """
     Create access and refresh tokens for subject.
     """
-    access_token = create_token_for_subject(
-        subject, minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES, token_type="access"
-    )
+    access_token = create_token_for_subject(subject, minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES, token_type="access")
     refresh_token = create_token_for_subject(
         subject,
         minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES,
@@ -98,24 +122,29 @@ def create_access_refresh_tokens(subject: str) -> dict[str, str]:
         jti=uuid4().hex,
     )
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
+
+
 def decode_token(token: str, verify_exp: bool = True) -> dict[str, Any]:
     """
     Decode and verify JWT token. Raises AuthException on failures.
     """
     options = {"verify_exp": verify_exp}
     try:
-        return jwt.decode(token, settings.SECRET_KEY, algorithms=[
-                             settings.ALGORITHM], options=options)
+        return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM], options=options)
     except jwt.ExpiredSignatureError:
         raise AuthException("Token expired")
     except jwt.InvalidTokenError:
         raise AuthException("Invalid token")
+
+
 def validate_password_policy(password: str) -> None:
     """
     Apply minimal password policy: length >= 8
     """
     if not password or len(password) < 8:
         raise AuthException("Password must be at least 8 characters")
+
+
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ) -> dict:
