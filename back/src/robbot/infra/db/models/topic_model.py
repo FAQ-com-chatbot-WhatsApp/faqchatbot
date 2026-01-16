@@ -24,9 +24,7 @@ class TopicModel(Base):
     description = Column(Text, nullable=True)
     category = Column(String(100), nullable=True, index=True)  # e.g., "Estética Facial", "Odontologia"
     active = Column(Boolean, default=True, nullable=False, index=True)
-    created_at = Column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -35,11 +33,7 @@ class TopicModel(Base):
     )
 
     # Relationships
-    playbooks = relationship(
-        "PlaybookModel",
-        back_populates="topic",
-        cascade="all, delete-orphan"
-    )
+    playbooks = relationship("PlaybookModel", back_populates="topic", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<Topic id={self.id} name={self.name}>"
