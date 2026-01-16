@@ -20,18 +20,11 @@ class PlaybookModel(Base):
     __tablename__ = "playbooks"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    topic_id = Column(
-        String(36),
-        ForeignKey('topics.id', ondelete='CASCADE'),
-        nullable=False,
-        index=True
-    )
+    topic_id = Column(String(36), ForeignKey("topics.id", ondelete="CASCADE"), nullable=False, index=True)
     name = Column(String(255), nullable=False, index=True)
     description = Column(Text, nullable=True)
     active = Column(Boolean, default=True, nullable=False, index=True)
-    created_at = Column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -45,13 +38,10 @@ class PlaybookModel(Base):
         "PlaybookStepModel",
         back_populates="playbook",
         cascade="all, delete-orphan",
-        order_by="PlaybookStepModel.step_order"
+        order_by="PlaybookStepModel.step_order",
     )
     embedding = relationship(
-        "PlaybookEmbeddingModel",
-        back_populates="playbook",
-        cascade="all, delete-orphan",
-        uselist=False
+        "PlaybookEmbeddingModel", back_populates="playbook", cascade="all, delete-orphan", uselist=False
     )
 
     def __repr__(self) -> str:
