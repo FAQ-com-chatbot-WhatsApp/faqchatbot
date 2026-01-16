@@ -100,7 +100,7 @@ class ResponseGenerator:
             raise
         except Exception as e:
             logger.error("[ERROR] Failed to generate response: %s", e)
-            raise LLMError(f"Response generation failed: {e}")
+            raise LLMError(f"Response generation failed: {e}") from e
 
     async def _try_playbook_response(
         self,
@@ -214,7 +214,7 @@ class ResponseGenerator:
 
         except Exception as e:
             logger.error("[ERROR] Failed to generate contextual response: %s", e)
-            raise LLMError(f"Gemini response generation failed: {e}")
+            raise LLMError(f"Gemini response generation failed: {e}") from e
 
     @staticmethod
     def _build_response_prompt(
