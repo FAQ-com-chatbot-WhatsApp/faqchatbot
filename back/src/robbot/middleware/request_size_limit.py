@@ -33,8 +33,9 @@ async def size_limit_middleware(request: Request, call_next):
 
     if content_length and int(content_length) > MAX_REQUEST_SIZE:
         logger.warning(
-            f"Request body too large: {content_length} bytes "
-            f"(limit: {MAX_REQUEST_SIZE})"
+            "Request body too large: %d bytes (limit: %d)",
+            content_length,
+            MAX_REQUEST_SIZE,
         )
         return JSONResponse(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
