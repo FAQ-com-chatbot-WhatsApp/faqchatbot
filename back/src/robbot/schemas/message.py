@@ -13,12 +13,16 @@ class MediaFile(BaseModel):
     mimetype: str
     filename: str
     url: str | None = None
+
+
 class Location(BaseModel):
     """Geographic location schema."""
 
     latitude: float
     longitude: float
     title: str | None = None
+
+
 # Create schemas
 class MessageCreateText(BaseModel):
     """Schema for creating text messages."""
@@ -28,6 +32,8 @@ class MessageCreateText(BaseModel):
     title: str | None = Field(None, max_length=255, description="Message title for organization")
     description: str | None = Field(None, description="Description for LLM context")
     tags: str | None = Field(None, max_length=500, description="Comma-separated tags")
+
+
 class MessageCreateMedia(BaseModel):
     """Schema for creating media messages (image, voice, video, document)."""
 
@@ -37,6 +43,8 @@ class MessageCreateMedia(BaseModel):
     title: str | None = Field(None, max_length=255, description="Message title for organization")
     description: str | None = Field(None, description="Description for LLM context")
     tags: str | None = Field(None, max_length=500, description="Comma-separated tags")
+
+
 class MessageCreateLocation(BaseModel):
     """Schema for creating location messages."""
 
@@ -46,6 +54,8 @@ class MessageCreateLocation(BaseModel):
     title: str | None = None
     description: str | None = Field(None, description="Description for LLM context")
     tags: str | None = Field(None, max_length=500, description="Comma-separated tags")
+
+
 # Update schemas
 class MessageUpdateText(BaseModel):
     """Schema for updating text messages."""
@@ -54,6 +64,8 @@ class MessageUpdateText(BaseModel):
     title: str | None = None
     description: str | None = None
     tags: str | None = None
+
+
 class MessageUpdateMedia(BaseModel):
     """Schema for updating media messages."""
 
@@ -62,6 +74,8 @@ class MessageUpdateMedia(BaseModel):
     title: str | None = None
     description: str | None = None
     tags: str | None = None
+
+
 class MessageUpdateLocation(BaseModel):
     """Schema for updating location messages."""
 
@@ -70,6 +84,8 @@ class MessageUpdateLocation(BaseModel):
     title: str | None = None
     description: str | None = None
     tags: str | None = None
+
+
 # Output schemas
 class MessageOutText(BaseModel):
     """Response schema for text messages."""
@@ -84,6 +100,8 @@ class MessageOutText(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
 class MessageOutMedia(BaseModel):
     """Response schema for media messages."""
 
@@ -98,6 +116,8 @@ class MessageOutMedia(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
 class MessageOutLocation(BaseModel):
     """Response schema for location messages."""
 
@@ -112,12 +132,16 @@ class MessageOutLocation(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
 # AI-assisted description generation
 class MessageDescriptionGenerate(BaseModel):
     """Request schema for AI-assisted description generation."""
 
     message_id: UUID = Field(..., description="Message ID to generate description for")
     use_gemini_vision: bool = Field(True, description="Use Gemini Vision for image/video analysis")
+
+
 class MessageDescriptionOut(BaseModel):
     """Response schema for generated description."""
 
@@ -125,6 +149,8 @@ class MessageDescriptionOut(BaseModel):
     generated_title: str | None
     generated_description: str
     suggested_tags: str | None
+
+
 class DeletedResponse(BaseModel):
     """Response schema for deletion confirmation."""
 
