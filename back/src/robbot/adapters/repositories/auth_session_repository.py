@@ -62,11 +62,7 @@ class AuthSessionRepository(BaseRepository[AuthSessionModel]):
         Returns:
             Session model if found, None otherwise
         """
-        return (
-            self.db.query(AuthSessionModel)
-            .filter(AuthSessionModel.refresh_token_jti == jti)
-            .first()
-        )
+        return self.db.query(AuthSessionModel).filter(AuthSessionModel.refresh_token_jti == jti).first()
 
     def get_active_by_user_id(self, user_id: int) -> list[AuthSessionModel]:
         """Get all active (non-revoked, non-expired) sessions for user.
@@ -135,9 +131,7 @@ class AuthSessionRepository(BaseRepository[AuthSessionModel]):
         self.db.refresh(session)
         return session
 
-    def revoke(
-        self, session: AuthSessionModel, reason: str | None = None
-    ) -> AuthSessionModel:
+    def revoke(self, session: AuthSessionModel, reason: str | None = None) -> AuthSessionModel:
         """Revoke a session.
 
         Args:
@@ -155,9 +149,7 @@ class AuthSessionRepository(BaseRepository[AuthSessionModel]):
         self.db.refresh(session)
         return session
 
-    def revoke_all_for_user(
-        self, user_id: int, reason: str | None = None
-    ) -> int:
+    def revoke_all_for_user(self, user_id: int, reason: str | None = None) -> int:
         """Revoke all active sessions for user.
 
         Args:
@@ -214,9 +206,7 @@ class AuthSessionRepository(BaseRepository[AuthSessionModel]):
         """
         return self.db.get(AuthSessionModel, session_id)
 
-    def revoke_by_id(
-        self, session_id: int, user_id: int, reason: str | None = None
-    ) -> bool:
+    def revoke_by_id(self, session_id: int, user_id: int, reason: str | None = None) -> bool:
         """Revoke session by ID (with user_id validation).
 
         Args:
@@ -236,3 +226,19 @@ class AuthSessionRepository(BaseRepository[AuthSessionModel]):
 
         self.revoke(session, reason)
         return True
+
+    def count_active_sessions(self) -> int:
+        """Count active (non-revoked, non-expired) authentication sessions.
+
+        Returns:
+            Number of active sessions
+        """
+        now = datetime.now(UTC)
+        return (
+            self.db.query(AuthSessionModel)
+            .filter(
+                AuthSessionModel.is_revoked.is_(False),
+                AuthSessionModel.expires_at > now,
+            )
+            .count()
+        )
