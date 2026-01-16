@@ -416,7 +416,7 @@ class ConversationOrchestrator:
             raise
         except Exception as e:  # noqa: BLE001
             logger.error("[ERROR] Failed to send via WAHA: %s", e)
-            raise WAHAError(f"Failed to send message: {e}", original_error=e)
+            raise WAHAError(f"Failed to send message: {e}", original_error=e) from e
 
     async def _register_interaction(self, session: Any, lead_id: str | None, interaction_type: str, notes: str) -> None:
         """
@@ -454,7 +454,7 @@ class ConversationOrchestrator:
             raise
         except Exception as e:  # noqa: BLE001
             logger.warning("[WARNING] Failed to register interaction: %s", e)
-            raise DatabaseError(f"Failed to register interaction: {e}")
+            raise DatabaseError(f"Failed to register interaction: {e}") from e
 
     async def _log_llm_interaction(
         self, session: Any, conversation_id: str, prompt: str, response: str, tokens: int, latency_ms: int
@@ -486,7 +486,7 @@ class ConversationOrchestrator:
             raise
         except Exception as e:  # noqa: BLE001
             logger.warning("[WARNING] Failed to log LLM interaction: %s", e)
-            raise DatabaseError(f"Failed to log LLM interaction: {e}")
+            raise DatabaseError(f"Failed to log LLM interaction: {e}") from e
 
     async def _generate_fallback_response(self, error: str) -> str:
         """
