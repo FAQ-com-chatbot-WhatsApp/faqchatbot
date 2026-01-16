@@ -2,7 +2,7 @@
 
 ## System Overview
 
-**Clinica Go** is an intelligent WhatsApp chatbot system designed for medical clinics to automate patient engagement, lead management, and conversion tracking. The system combines artificial intelligence (Google Gemini), conversation management, and analytics to provide a complete solution for automated customer service and lead nurturing.
+**Go Robot** is an intelligent WhatsApp chatbot system designed for medical clinics to automate patient engagement, lead management, and conversion tracking. The system combines artificial intelligence (Google Gemini), conversation management, and analytics to provide a complete solution for automated customer service and lead nurturing.
 
 ### Core Technology Stack
 

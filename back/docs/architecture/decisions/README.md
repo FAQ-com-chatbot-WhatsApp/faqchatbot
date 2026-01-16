@@ -12,13 +12,16 @@ ADRs documentam o **contexto**, **decisao**, **consequencias** e **alternativas*
 
 | ADR | Titulo | Data | Status |
 |-----|--------|------|--------|
-| [ADR-001](ADR-001-credential-separado-de-user.md) | Credential Separado de User | 03/01/2026 | Aceito |
-| [ADR-002](ADR-002-analytics-repository-consolidado.md) | Analytics Repository Consolidado | 03/01/2026 | Aceito |
-| [ADR-003](ADR-003-custom-exceptions-hierarquia.md) | Custom Exceptions com Hierarquia | 30/12/2025 | Aceito |
-| [ADR-004](ADR-004-clean-architecture-adaptado.md) | Clean Architecture Adaptado | 03/01/2026 | Aceito |
-| [ADR-005](ADR-005-analytics-repository-breakdown.md) | Analytics Repository Breakdown | 03/01/2026 | Revertido (ver ADR-007) |
-| [ADR-006](ADR-006-major-technical-refactoring-2026-01.md) | Major Technical Refactoring | 13/01/2026 | Aceito |
-| [ADR-007](ADR-007-analytics-repository-consolidation.md) | Analytics Repository Consolidation | 18/01/2026 | Aceito |
+| [ADR-001](ADR-001-credential-separated-from-user.md) | Credential Separado de User | 03/01/2026 | Aceito |
+| [ADR-002](ADR-002-dependency-injection-pattern.md) | Dependency Injection Pattern | 04/01/2026 | Aceito |
+| [ADR-003](ADR-003-analytics-repository-consolidated.md) | Analytics Repository Consolidado | 03/01/2026 | Aceito |
+| [ADR-004](ADR-004-repository-interface-pattern.md) | Repository Interface Pattern | 04/01/2026 | Aceito |
+| [ADR-005](ADR-005-custom-exceptions-hierarchy.md) | Custom Exceptions com Hierarquia | 30/12/2025 | Aceito |
+| [ADR-006](ADR-006-session-dependency-injection.md) | Session Dependency Injection | 04/01/2026 | Aceito |
+| [ADR-007](ADR-007-clean-architecture-adapted.md) | Clean Architecture Adaptado | 03/01/2026 | Aceito |
+| [ADR-008](ADR-008-service-decomposition-strategy.md) | Service Decomposition Strategy | 05/01/2026 | Aceito |
+| [ADR-009](ADR-009-major-technical-refactoring-2026-01.md) | Major Technical Refactoring | 13/01/2026 | Aceito |
+| [ADR-010](ADR-010-analytics-repository-consolidation.md) | Analytics Repository Consolidation | 18/01/2026 | Aceito |
 ---
 
 ## Template para Novos ADRs
@@ -85,11 +88,12 @@ Ao criar um novo ADR, use o seguinte template:
 
 ## Proximos ADRs Planejados
 
-- **ADR-005:** Estrategia de Cache (Redis)
-- **ADR-006:** Vector Database para RAG (ChromaDB)
-- **ADR-007:** Background Jobs com RQ vs Celery
-- **ADR-008:** Autenticacao MFA (TOTP)
-- **ADR-009:** Rate Limiting Strategy
+- **ADR-011:** Estrategia de Cache (Redis)
+- **ADR-012:** Vector Database para RAG (ChromaDB)
+- **ADR-013:** Background Jobs com RQ
+- **ADR-014:** Autenticacao MFA (TOTP)
+- **ADR-015:** Rate Limiting Strategy
+- **ADR-016:** WebSocket para Real-time Updates
 
 ---
 
