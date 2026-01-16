@@ -27,9 +27,7 @@ class ConversationModel(Base):
 
     __tablename__ = "conversations"
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=lambda: str(uuid4()), index=True
-    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()), index=True)
     chat_id: Mapped[str] = mapped_column(
         String(100),
         unique=True,
@@ -38,9 +36,7 @@ class ConversationModel(Base):
         comment="WhatsApp chat ID (e.g., '5511999999999@c.us')",
     )
     phone_number: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
-    name: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, comment="Contact name"
-    )
+    name: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="Contact name")
 
     status: Mapped[ConversationStatus] = mapped_column(
         SQLEnum(ConversationStatus),
@@ -68,9 +64,7 @@ class ConversationModel(Base):
         comment="Timestamp of last message",
     )
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, nullable=False
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
