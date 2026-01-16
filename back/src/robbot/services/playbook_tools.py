@@ -38,17 +38,19 @@ SEARCH_PLAYBOOKS_DECLARATION = {
         "properties": {
             "query": {
                 "type": "string",
-                "description": "Texto de busca em linguagem natural (palavras-chave ou pergunta completa)"
+                "description": "Texto de busca em linguagem natural (palavras-chave ou pergunta completa)",
             },
             "top_k": {
                 "type": "integer",
                 "description": "Número de playbooks a retornar (padrão: 3, máximo: 10)",
-                "default": 3
-            }
+                "default": 3,
+            },
         },
-        "required": ["query"]
-    }
+        "required": ["query"],
+    },
 }
+
+
 def search_playbooks_tool(db: Session, query: str, top_k: int = 3) -> list[dict[str, Any]]:
     """
     Execute semantic search for playbooks.
@@ -75,13 +77,15 @@ def search_playbooks_tool(db: Session, query: str, top_k: int = 3) -> list[dict[
                 "topic_name": r.topic_name,
                 "description": r.description,
                 "relevance_score": round(r.relevance_score, 3),
-                "step_count": r.step_count
+                "step_count": r.step_count,
             }
             for r in results
         ]
     except Exception as e:  # noqa: BLE001 (blind exception)
         logger.error("[ERROR] Error searching playbooks: %s", e)
         return []
+
+
 # ============================================================================
 # TOOL 2: Get Playbook Steps (with message details)
 # ============================================================================
@@ -97,14 +101,13 @@ GET_PLAYBOOK_STEPS_DECLARATION = {
     "parameters": {
         "type": "object",
         "properties": {
-            "playbook_id": {
-                "type": "string",
-                "description": "UUID do playbook (obtido de search_playbooks)"
-            }
+            "playbook_id": {"type": "string", "description": "UUID do playbook (obtido de search_playbooks)"}
         },
-        "required": ["playbook_id"]
-    }
+        "required": ["playbook_id"],
+    },
 }
+
+
 def get_playbook_steps_tool(db: Session, playbook_id: str) -> dict[str, Any]:
     """
     Retrieve all steps for a playbook with full message details.
@@ -122,14 +125,12 @@ def get_playbook_steps_tool(db: Session, playbook_id: str) -> dict[str, Any]:
 
         logger.info("[INFO] Retrieved playbook steps: playbook_id=%s, steps=%s", playbook_id, len(steps))
 
-        return {
-            "playbook_id": playbook_id,
-            "total_steps": len(steps),
-            "steps": steps
-        }
+        return {"playbook_id": playbook_id, "total_steps": len(steps), "steps": steps}
     except Exception as e:  # noqa: BLE001 (blind exception)
         logger.error("[ERROR] Error getting playbook steps: %s", e)
         return {"playbook_id": playbook_id, "total_steps": 0, "steps": [], "error": str(e)}
+
+
 # ============================================================================
 # TOOL 3: Send Playbook Message
 # ============================================================================
@@ -146,27 +147,20 @@ SEND_PLAYBOOK_MESSAGE_DECLARATION = {
     "parameters": {
         "type": "object",
         "properties": {
-            "message_id": {
-                "type": "string",
-                "description": "UUID da mensagem a enviar (obtido de get_playbook_steps)"
-            },
-            "conversation_id": {
-                "type": "string",
-                "description": "UUID da conversa atual"
-            },
+            "message_id": {"type": "string", "description": "UUID da mensagem a enviar (obtido de get_playbook_steps)"},
+            "conversation_id": {"type": "string", "description": "UUID da conversa atual"},
             "custom_intro": {
                 "type": "string",
-                "description": "Texto introdutório opcional para contextualizar a mensagem (recomendado)"
-            }
+                "description": "Texto introdutório opcional para contextualizar a mensagem (recomendado)",
+            },
         },
-        "required": ["message_id", "conversation_id"]
-    }
+        "required": ["message_id", "conversation_id"],
+    },
 }
+
+
 def send_playbook_message_tool(
-    db: Session,
-    message_id: str,
-    conversation_id: str,
-    custom_intro: str = None
+    db: Session, message_id: str, conversation_id: str, custom_intro: str = None
 ) -> dict[str, Any]:
     """
     Send a message from a playbook to the client.
@@ -217,12 +211,14 @@ def send_playbook_message_tool(
             "conversation_id": conversation_id,
             "message_type": message.type,
             "custom_intro": custom_intro,
-            "note": "Message queued for sending (implementation pending)"
+            "note": "Message queued for sending (implementation pending)",
         }
 
     except Exception as e:  # noqa: BLE001 (blind exception)
         logger.error("[ERROR] Error sending playbook message: %s", e)
         return {"success": False, "error": str(e)}
+
+
 # ============================================================================
 # TOOL 4: Send Clinic Location
 # ============================================================================
@@ -240,23 +236,19 @@ SEND_CLINIC_LOCATION_DECLARATION = {
     "parameters": {
         "type": "object",
         "properties": {
-            "chat_id": {
-                "type": "string",
-                "description": "ID do chat do WhatsApp (formato: 5551999999999@c.us)"
-            },
+            "chat_id": {"type": "string", "description": "ID do chat do WhatsApp (formato: 5551999999999@c.us)"},
             "custom_title": {
                 "type": "string",
                 "description": "Título customizado para o pin de localização (opcional, padrão: 'Clínica GO')",
-                "default": "Clínica GO"
-            }
+                "default": "Clínica GO",
+            },
         },
-        "required": ["chat_id"]
-    }
+        "required": ["chat_id"],
+    },
 }
-def send_clinic_location_tool(
-    chat_id: str,
-    custom_title: str = "Clínica GO"
-) -> dict[str, Any]:
+
+
+def send_clinic_location_tool(chat_id: str, custom_title: str = "Clínica GO") -> dict[str, Any]:
     """
     Enviar localização da Clínica GO via WhatsApp.
 
@@ -273,24 +265,20 @@ def send_clinic_location_tool(
 
         logger.info("[INFO] Tool: send_clinic_location para %s", chat_id)
 
-        result = send_clinic_location_via_waha_sync(
-            chat_id=chat_id,
-            custom_title=custom_title
-        )
+        result = send_clinic_location_via_waha_sync(chat_id=chat_id, custom_title=custom_title)
 
         return {
             "success": True,
             "message": "Localização da Clínica GO enviada com sucesso",
             "clinic_name": "Clínica GO",
             "address": "Av. São Miguel, 1000 - sala 102 - Centro, Dois Irmãos - RS",
-            "result": result
+            "result": result,
         }
     except Exception as e:  # noqa: BLE001 (blind exception)
         logger.error("[ERROR] Failed to send location: %s", e)
-        return {
-            "success": False,
-            "error": str(e)
-        }
+        return {"success": False, "error": str(e)}
+
+
 # ============================================================================
 # Tool Registry
 # ============================================================================
@@ -301,11 +289,9 @@ PLAYBOOK_TOOLS_DECLARATIONS = [
     SEND_PLAYBOOK_MESSAGE_DECLARATION,
     SEND_CLINIC_LOCATION_DECLARATION,
 ]
-def execute_playbook_tool(
-    db: Session,
-    tool_name: str,
-    tool_args: dict[str, Any]
-) -> Any:
+
+
+def execute_playbook_tool(db: Session, tool_name: str, tool_args: dict[str, Any]) -> Any:
     """
     Execute a playbook tool by name.
 
