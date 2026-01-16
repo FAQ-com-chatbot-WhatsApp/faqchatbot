@@ -41,48 +41,115 @@ from robbot.schemas.waha import (
 )
 from robbot.services.waha_service import WAHAService
 
-router = APIRouter(prefix="/waha")
+router = APIRouter()
+
+
 def _get_waha_service(db: Session = Depends(get_db)) -> WAHAService:
     """Dependency to create WAHAService."""
     return WAHAService(
         session_repo=SessionRepository(db),
         waha_client=get_waha_client(),
     )
+
+
+def _handle_waha_error(e: ExternalServiceError) -> HTTPException:
+    """Handle WAHA errors by mapping them to appropriate HTTP status codes.
+    
+    Args:
+        e: The external service error from WAHA
+        
+    Returns:
+        HTTPException with appropriate status code
+    """
+    # Map WAHA status codes to HTTP status codes
+    if e.status_code:
+        waha_code = e.status_code
+        if waha_code == 422:  # Unprocessable Entity (session exists, validation error, etc.)
+            return HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+        elif waha_code == 400:  # Bad Request
+            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        elif waha_code == 404:  # Not Found
+            return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    # Default to 502 for other external service errors
+    return HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"WAHA error: {e}")
+
+
 # ============================================================================
 # SESSION MANAGEMENT (ADMIN only)
 # ============================================================================
+@router.get(
+    "/sessions",
+    tags=["Sessions"],
+    dependencies=[Depends(get_current_user)],
+)
+async def list_sessions(service: WAHAService = Depends(_get_waha_service)):
+    """List all WAHA sessions (proxy to WAHA /api/sessions)."""
+    try:
+        return await service.list_sessions()
+    except ExternalServiceError as e:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.post(
     "/sessions",
     response_model=SessionOut,
     status_code=status.HTTP_201_CREATED,
     tags=["Sessions"],
-    dependencies=[Depends(get_current_user),
-                  Depends(require_role(Role.ADMIN))],
+    dependencies=[Depends(get_current_user), Depends(require_role(Role.ADMIN))],
 )
 async def create_session(
     data: SessionCreate,
     service: WAHAService = Depends(_get_waha_service),
+    db: Session = Depends(get_db),
 ):
     """Create new WhatsApp session.
 
     **Admin only** - Creates session in WAHA and saves to database.
+    
+    If session already exists in WAHA (status 409), still creates the DB record
+    to track it, then returns 201 (idempotent behavior).
     """
     try:
         return await service.create_session(data)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"WAHA error: {e}",
-        )
+        # Special handling for 409: session already exists in WAHA
+        # Create DB record to track it and return success
+        if hasattr(e, 'status_code') and e.status_code == 422:  # WAHA 422 = conflict/exists
+            # Check if we need to create DB record
+            session_repo = SessionRepository(db)
+            existing = session_repo.get_by_name(data.name)
+            if not existing:
+                # Extract webhook URL
+                webhook_url = data.webhook_url or None
+                if not webhook_url and data.config:
+                    try:
+                        webhooks = data.config.get("webhooks") or []
+                        if isinstance(webhooks, list) and webhooks:
+                            webhook_url = webhooks[0].get("url")
+                    except Exception:
+                        pass
+                from robbot.config.settings import settings
+                webhook_url = webhook_url or settings.WAHA_WEBHOOK_URL
+                
+                # Create DB record for existing WAHA session
+                existing = session_repo.create(
+                    name=data.name,
+                    webhook_url=webhook_url,
+                )
+            # Return 201 as if created (idempotent behavior)
+            return SessionOut.model_validate(existing)
+        
+        # For other WAHA errors, map status codes
+        raise _handle_waha_error(e) from e
+
+
 @router.post(
     "/sessions/{name}/start",
     response_model=SessionStatus,
     tags=["Sessions"],
-    dependencies=[Depends(get_current_user),
-                  Depends(require_role(Role.ADMIN))],
+    dependencies=[Depends(get_current_user), Depends(require_role(Role.ADMIN))],
 )
 async def start_session(
     name: str,
@@ -95,16 +162,15 @@ async def start_session(
     try:
         return await service.start_session(name)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise _handle_waha_error(e) from e
+
+
 @router.post(
     "/sessions/{name}/stop",
     tags=["Sessions"],
-    dependencies=[Depends(get_current_user),
-                  Depends(require_role(Role.ADMIN))],
+    dependencies=[Depends(get_current_user), Depends(require_role(Role.ADMIN))],
 )
 async def stop_session(
     name: str,
@@ -117,16 +183,15 @@ async def stop_session(
     try:
         return await service.stop_session(name)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise _handle_waha_error(e) from e
+
+
 @router.post(
     "/sessions/{name}/restart",
     tags=["Sessions"],
-    dependencies=[Depends(get_current_user),
-                  Depends(require_role(Role.ADMIN))],
+    dependencies=[Depends(get_current_user), Depends(require_role(Role.ADMIN))],
 )
 async def restart_session(
     name: str,
@@ -139,11 +204,11 @@ async def restart_session(
     try:
         return await service.restart_session(name)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise _handle_waha_error(e) from e
+
+
 @router.get(
     "/sessions/{name}/status",
     response_model=SessionStatus,
@@ -161,11 +226,30 @@ async def get_session_status(
     try:
         return await service.get_session_status(name)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
+@router.get(
+    "/sessions/{name}",
+    response_model=SessionStatus,
+    tags=["Sessions"],
+    dependencies=[Depends(get_current_user)],
+)
+async def get_session_status_alias(
+    name: str,
+    service: WAHAService = Depends(_get_waha_service),
+):
+    """Alias for getting session status to match WAHA path semantics."""
+    try:
+        return await service.get_session_status(name)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+    except ExternalServiceError as e:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.get(
     "/sessions/{name}/qr",
     tags=["Sessions"],
@@ -182,13 +266,13 @@ async def get_qr_code(
     try:
         return await service.get_qr_code(name)
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.post(
     "/sessions/{name}/logout",
     tags=["Sessions"],
-    dependencies=[Depends(get_current_user),
-                  Depends(require_role(Role.ADMIN))],
+    dependencies=[Depends(get_current_user), Depends(require_role(Role.ADMIN))],
 )
 async def logout_session(
     name: str,
@@ -201,11 +285,11 @@ async def logout_session(
     try:
         return await service.logout_session(name)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 # ============================================================================
 # MESSAGES
 # ============================================================================
@@ -226,11 +310,11 @@ async def send_text_message(
     try:
         return await service.send_text(data)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(e)) from e
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.post(
     "/messages/send-image",
     response_model=MessageSentResponse,
@@ -248,11 +332,11 @@ async def send_image_message(
     try:
         return await service.send_image(data)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(e)) from e
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.post(
     "/messages/send-file",
     response_model=MessageSentResponse,
@@ -270,11 +354,11 @@ async def send_file_message(
     try:
         return await service.send_file(data)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(e)) from e
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.post(
     "/messages/send-location",
     response_model=MessageSentResponse,
@@ -292,11 +376,11 @@ async def send_location_message(
     try:
         return await service.send_location(data)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(e)) from e
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.post(
     "/messages/send-voice",
     status_code=status.HTTP_201_CREATED,
@@ -313,10 +397,7 @@ async def send_voice_message(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         return await waha.send_voice(
             session=session.name,
@@ -325,8 +406,9 @@ async def send_voice_message(
             file_data=request.file_data,
         )
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.post(
     "/messages/send-video",
     status_code=status.HTTP_201_CREATED,
@@ -343,10 +425,7 @@ async def send_video_message(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         return await waha.send_video(
             session=session.name,
@@ -356,8 +435,9 @@ async def send_video_message(
             caption=request.caption,
         )
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.post(
     "/messages/send-seen",
     tags=["Messages"],
@@ -375,8 +455,9 @@ async def mark_message_seen(
     try:
         return await service.send_seen(chat_id, message_id)
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.post(
     "/messages/send-buttons",
     status_code=status.HTTP_201_CREATED,
@@ -393,10 +474,7 @@ async def send_buttons(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         return await waha.send_buttons(
             session=session.name,
@@ -406,8 +484,9 @@ async def send_buttons(
             footer=request.footer,
         )
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.post(
     "/messages/send-list",
     status_code=status.HTTP_201_CREATED,
@@ -424,10 +503,7 @@ async def send_list(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         return await waha.send_list(
             session=session.name,
@@ -439,8 +515,9 @@ async def send_list(
             footer=request.footer,
         )
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.post(
     "/messages/send-poll",
     status_code=status.HTTP_201_CREATED,
@@ -457,10 +534,7 @@ async def send_poll(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         return await waha.send_poll(
             session=session.name,
@@ -470,8 +544,9 @@ async def send_poll(
             title=request.title,
         )
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.post(
     "/messages/send-poll-vote",
     status_code=status.HTTP_201_CREATED,
@@ -488,10 +563,7 @@ async def send_poll_vote(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         return await waha.send_poll_vote(
             session=session.name,
@@ -500,8 +572,9 @@ async def send_poll_vote(
             option_index=request.option_index,
         )
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.post(
     "/messages/send-contact",
     status_code=status.HTTP_201_CREATED,
@@ -518,10 +591,7 @@ async def send_contact(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         return await waha.send_contact_vcard(
             session=session.name,
@@ -531,8 +601,9 @@ async def send_contact(
             organization=request.organization,
         )
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.post(
     "/messages/forward",
     status_code=status.HTTP_201_CREATED,
@@ -549,10 +620,7 @@ async def forward_message(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         return await waha.forward_message(
             session=session.name,
@@ -560,8 +628,9 @@ async def forward_message(
             message_id=request.message_id,
         )
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.put(
     "/chats/{chat_id}/messages/{message_id}",
     tags=["Messages"],
@@ -584,10 +653,7 @@ async def edit_message(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         # URL encode IDs (@ -> %40)
         encoded_chat_id = quote(chat_id, safe="")
@@ -600,8 +666,9 @@ async def edit_message(
             text=request.text,
         )
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.delete(
     "/chats/{chat_id}/messages/{message_id}",
     tags=["Messages"],
@@ -623,10 +690,7 @@ async def delete_message(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         # URL encode IDs (@ -> %40)
         encoded_chat_id = quote(chat_id, safe="")
@@ -638,8 +702,9 @@ async def delete_message(
             message_id=encoded_message_id,
         )
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.post(
     "/messages/send-link-preview",
     response_model=MessageSentResponse,
@@ -662,10 +727,7 @@ async def send_link_custom_preview(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         return await waha.send_link_custom_preview(
             session=session.name,
@@ -676,8 +738,9 @@ async def send_link_custom_preview(
             image_url=request.image_url,
         )
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.get(
     "/chats/{chat_id}/messages",
     response_model=GetMessagesResponse,
@@ -705,10 +768,7 @@ async def get_chat_messages(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         # Validate limit
         if limit > 500:
@@ -727,8 +787,9 @@ async def get_chat_messages(
             return GetMessagesResponse(messages=result)
         return result
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.post(
     "/events",
     response_model=MessageSentResponse,
@@ -772,10 +833,7 @@ async def send_event(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         return await waha.send_event(
             session=session.name,
@@ -789,8 +847,9 @@ async def send_event(
             reply_to=request.reply_to,
         )
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 # ============================================================================
 # CONTACTS
 # ============================================================================
@@ -809,18 +868,16 @@ async def check_number_exists(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         return await waha.check_number_exists(
             session=session.name,
             phone=phone,
         )
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.get(
     "/contact-about",
     tags=["Contacts"],
@@ -836,18 +893,16 @@ async def get_contact_about(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         return await waha.get_contact_about(
             session=session.name,
             contact_id=contact_id,
         )
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.get(
     "/contact-picture",
     tags=["Contacts"],
@@ -863,18 +918,16 @@ async def get_contact_picture(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         return await waha.get_contact_profile_picture(
             session=session.name,
             contact_id=contact_id,
         )
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.post(
     "/contact/block",
     status_code=status.HTTP_201_CREATED,
@@ -891,18 +944,16 @@ async def block_contact(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         return await waha.block_contact(
             session=session.name,
             contact_id=request.contact_id,
         )
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.post(
     "/contact/unblock",
     status_code=status.HTTP_201_CREATED,
@@ -919,18 +970,16 @@ async def unblock_contact(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         return await waha.unblock_contact(
             session=session.name,
             contact_id=request.contact_id,
         )
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 # ============================================================================
 # PRESENCE
 # ============================================================================
@@ -950,10 +999,7 @@ async def set_presence(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         return await waha.set_presence(
             session=session.name,
@@ -961,8 +1007,9 @@ async def set_presence(
             chat_id=request.chat_id,
         )
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.get(
     "/presence/all",
     tags=["Presence"],
@@ -977,15 +1024,13 @@ async def get_all_presence(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         return await waha.get_all_presence(session=session.name)
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.get(
     "/presence/{chat_id}",
     tags=["Presence"],
@@ -1001,18 +1046,16 @@ async def get_presence(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         return await waha.get_presence(
             session=session.name,
             chat_id=chat_id,
         )
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.post(
     "/presence/{chat_id}/subscribe",
     status_code=status.HTTP_201_CREATED,
@@ -1029,18 +1072,16 @@ async def subscribe_presence(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         return await waha.subscribe_presence(
             session=session.name,
             chat_id=chat_id,
         )
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 # ============================================================================
 # AUTHENTICATION
 # ============================================================================
@@ -1050,7 +1091,7 @@ async def subscribe_presence(
     dependencies=[Depends(get_current_user)],
 )
 async def get_qr_code_auth(
-    format: str = "image",
+    fmt: str = "image",
     waha: WAHAClient = Depends(get_waha_client),
     db: Session = Depends(get_db),
 ):
@@ -1059,18 +1100,16 @@ async def get_qr_code_auth(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         return await waha.get_qr_code_auth(
             session=session.name,
-            format=format,
+            format=fmt,
         )
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.post(
     "/auth/request-code",
     status_code=status.HTTP_201_CREATED,
@@ -1087,10 +1126,7 @@ async def request_auth_code(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         return await waha.request_auth_code(
             session=session.name,
@@ -1098,8 +1134,9 @@ async def request_auth_code(
             method=request.method,
         )
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 # ============================================================================
 # CALLS
 # ============================================================================
@@ -1119,18 +1156,16 @@ async def reject_call(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         return await waha.reject_call(
             session=session.name,
             call_id=request.call_id,
         )
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 # ============================================================================
 # MEDIA CONVERSION
 # ============================================================================
@@ -1149,10 +1184,7 @@ async def convert_voice(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         return await waha.convert_voice_to_opus(
             session=session.name,
@@ -1160,8 +1192,9 @@ async def convert_voice(
             file_data=request.file_data,
         )
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.post(
     "/media/convert-video",
     tags=["Media"],
@@ -1177,10 +1210,7 @@ async def convert_video(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         return await waha.convert_video_to_mp4(
             session=session.name,
@@ -1188,8 +1218,9 @@ async def convert_video(
             file_data=request.file_data,
         )
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 # ============================================================================
 # SERVER OBSERVABILITY
 # ============================================================================
@@ -1206,6 +1237,8 @@ async def health_check(
         return HealthCheckResponse(status="ok")
     except ExternalServiceError:
         return HealthCheckResponse(status="unhealthy")
+
+
 @router.get(
     "/server/ping",
     tags=["Observability"],
@@ -1217,8 +1250,9 @@ async def ping(
     try:
         return await waha.ping()
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.get(
     "/server/version",
     tags=["Observability"],
@@ -1230,8 +1264,9 @@ async def get_version(
     try:
         return await waha.get_server_version()
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.get(
     "/server/status",
     tags=["Observability"],
@@ -1243,8 +1278,9 @@ async def get_status(
     try:
         return await waha.get_server_status()
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
+
 @router.get(
     "/screenshot",
     tags=["Observability"],
@@ -1259,12 +1295,8 @@ async def screenshot(
         session_repo = SessionRepository(db)
         session = session_repo.get_active_session()
         if not session:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active session"
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
         return await waha.screenshot(session=session.name)
     except ExternalServiceError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
