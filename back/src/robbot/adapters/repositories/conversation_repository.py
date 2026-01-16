@@ -31,9 +31,7 @@ class ConversationRepository(BaseRepository[ConversationModel]):
         Returns:
             Conversation or None if not found
         """
-        stmt = select(ConversationModel).where(
-            ConversationModel.chat_id == chat_id
-        )
+        stmt = select(ConversationModel).where(ConversationModel.chat_id == chat_id)
         return self.db.scalars(stmt).first()
 
     def update_status(
@@ -156,10 +154,6 @@ class ConversationRepository(BaseRepository[ConversationModel]):
             stmt = stmt.where(ConversationModel.created_at <= filters["created_before"])
 
         # Order and paginate
-        stmt = (
-            stmt.order_by(ConversationModel.updated_at.desc())
-            .limit(limit)
-            .offset(offset)
-        )
+        stmt = stmt.order_by(ConversationModel.updated_at.desc()).limit(limit).offset(offset)
 
         return list(self.db.scalars(stmt).all())
