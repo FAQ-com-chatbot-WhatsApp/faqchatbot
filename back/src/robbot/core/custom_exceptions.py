@@ -28,10 +28,19 @@ class DatabaseError(RobbotError):
 class ExternalServiceError(RobbotError):
     """Erro em serviço externo (WAHA, Gemini, etc)."""
 
-    def __init__(self, service_name: str, message: str, original_error: Exception | None = None):
+    status_code: int | None
+
+    def __init__(
+        self,
+        service_name: str = "ExternalService",
+        message: str = "",
+        original_error: Exception | None = None,
+        status_code: int | None = None,
+    ):
         self.service_name = service_name
         self.original_error = original_error
-        super().__init__(f"{service_name}: {message}")
+        self.status_code = status_code
+        super().__init__(message)
 
 
 class QueueError(RobbotError):
@@ -49,8 +58,7 @@ class WAHAError(ExternalServiceError):
     """Erros específicos do WAHA."""
 
     def __init__(self, message: str, original_error: Exception | None = None, status_code: int | None = None):
-        super().__init__("WAHA", message, original_error)
-        self.status_code = status_code
+        super().__init__("WAHA", message, original_error, status_code=status_code)
 
 
 class VectorDBError(ExternalServiceError):
