@@ -1,6 +1,7 @@
 """FastAPI application factory e tratamento global de exceções.
 
-Inicializa rate limiter no startup e configura middleware CORS.
+Inicializa DI container e rate limiter no startup.
+Configura middleware CORS.
 """
 
 import logging
@@ -12,9 +13,9 @@ from fastapi.responses import JSONResponse
 
 from robbot.api.v1.dependencies import initialize_rate_limiter
 from robbot.api.v1.routers.api import api_router
+from robbot.config.container import initialize_container, shutdown_container
 from robbot.config.settings import get_settings
 from robbot.core.logging_setup import configure_logging
-from robbot.infra.db.session import get_sync_session
 
 
 def create_app() -> FastAPI:
@@ -29,6 +30,17 @@ def create_app() -> FastAPI:
     async def lifespan(app: FastAPI):
         """Initialize services on application startup/shutdown."""
         logger = logging.getLogger("robbot.startup")
+
+        # Initialize DI Container
+        logger.info("[INFO] Initializing DI Container...")
+        try:
+            await initialize_container(settings)
+            logger.info("[SUCCESS] DI Container initialized successfully")
+        except Exception as e:  # noqa: BLE001 (blind exception)
+            logger.error("[ERROR] Failed to initialize DI Container: %s", e)
+            raise
+
+        # Initialize rate limiter
         logger.info("[INFO] Initializing rate limiter...")
         try:
             initialize_rate_limiter()
@@ -36,8 +48,16 @@ def create_app() -> FastAPI:
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("[ERROR] Failed to initialize rate limiter: %s", e)
             # Don't fail app startup, rate limiter will fail gracefully
+
         yield
-        # (optional) shutdown hooks here
+
+        # Shutdown DI Container
+        logger.info("[INFO] Shutting down DI Container...")
+        try:
+            await shutdown_container()
+            logger.info("[SUCCESS] DI Container shut down successfully")
+        except Exception as e:  # noqa: BLE001 (blind exception)
+            logger.error("[ERROR] Failed to shutdown DI Container: %s", e)
 
     application = FastAPI(title="Robbot API", version="0.1.0", lifespan=lifespan)
 
@@ -52,6 +72,7 @@ def create_app() -> FastAPI:
     )
 
     application.include_router(api_router, prefix="/api/v1")
+
     @application.exception_handler(Exception)
     async def global_exception_handler(_request: Request, exc: Exception):
         """
@@ -61,9 +82,9 @@ def create_app() -> FastAPI:
         logger = logging.getLogger("robbot.global")
         logger.exception("[ERROR] Unhandled exception: %s", exc)
 
-        return JSONResponse(
-            status_code=500, content={"detail": "Internal server error"}
-        )
+        return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
     return application
+
+
 app = create_app()
