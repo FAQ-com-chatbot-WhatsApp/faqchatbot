@@ -18,17 +18,16 @@ Usage:
 import argparse
 import subprocess
 import sys
-from pathlib import Path
 
 
 def run_command(cmd: list[str], description: str) -> bool:
     """
     Run a shell command and report results.
-    
+
     Args:
         cmd: Command to run
         description: Description of what's running
-        
+
     Returns:
         True if successful, False otherwise
     """
