@@ -10,6 +10,8 @@ from robbot.adapters.repositories.audit_log_repository import AuditLogRepository
 from robbot.infra.db.models.audit_log_model import AuditLogModel
 
 logger = logging.getLogger(__name__)
+
+
 class AuditService:
     """
     Service for audit logging.
@@ -68,10 +70,7 @@ class AuditService:
         self.repo.create(audit_log)
         self.session.flush()
 
-        logger.info(
-            f"[SUCCESS] Audit log created (action={action}, entity={entity_type}:{entity_id}, "
-            f"user={user_id})"
-        )
+        logger.info(f"[SUCCESS] Audit log created (action={action}, entity={entity_type}:{entity_id}, user={user_id})")
 
         return audit_log
 
@@ -135,12 +134,7 @@ class AuditService:
         """Get audit logs for a specific user."""
         return self.repo.get_by_user(user_id, limit)
 
-    def get_entity_logs(
-        self,
-        entity_type: str,
-        entity_id: str,
-        limit: int = 100
-    ) -> list[AuditLogModel]:
+    def get_entity_logs(self, entity_type: str, entity_id: str, limit: int = 100) -> list[AuditLogModel]:
         """Get audit logs for a specific entity."""
         return self.repo.get_by_entity(entity_type, entity_id, limit)
 
