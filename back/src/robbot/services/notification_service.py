@@ -13,6 +13,8 @@ from robbot.core.custom_exceptions import NotFoundException
 from robbot.infra.db.models.notification_model import NotificationModel
 
 logger = logging.getLogger(__name__)
+
+
 class NotificationService:
     """
     Service for managing in-app notifications.
@@ -61,8 +63,7 @@ class NotificationService:
         )
 
         logger.info(
-            f"[SUCCESS] Notification created (id={notification.id}, "
-            f"user_id={user_id}, type={notification_type})"
+            f"[SUCCESS] Notification created (id={notification.id}, user_id={user_id}, type={notification_type})"
         )
 
         return notification
