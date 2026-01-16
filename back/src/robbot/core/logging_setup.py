@@ -14,14 +14,11 @@ Features:
 """
 
 import logging
-import re
 import os
+import re
 import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from typing import Optional
-
-from robbot.config.settings import settings
 
 
 class StructuredFormatter(logging.Formatter):
@@ -54,16 +51,16 @@ class ColoredStructuredFormatter(StructuredFormatter):
     COLORS = {
         "reset": "\x1b[0m",
         # levels
-        "DEBUG": "\x1b[34m",     # blue
-        "INFO": "\x1b[32m",      # green
-        "WARNING": "\x1b[33m",   # yellow
-        "ERROR": "\x1b[31m",     # red
+        "DEBUG": "\x1b[34m",  # blue
+        "INFO": "\x1b[32m",  # green
+        "WARNING": "\x1b[33m",  # yellow
+        "ERROR": "\x1b[31m",  # red
         "CRITICAL": "\x1b[91m",  # bright red
         # services
-        "api": "\x1b[36m",        # cyan
-        "worker": "\x1b[35m",     # magenta
-        "autoscaler": "\x1b[33m", # yellow
-        "default": "\x1b[37m",    # white
+        "api": "\x1b[36m",  # cyan
+        "worker": "\x1b[35m",  # magenta
+        "autoscaler": "\x1b[33m",  # yellow
+        "default": "\x1b[37m",  # white
     }
 
     def format(self, record: logging.LogRecord) -> str:
@@ -80,10 +77,7 @@ class ColoredStructuredFormatter(StructuredFormatter):
         lvl_color = self.COLORS.get(level, self.COLORS["default"])
         reset = self.COLORS["reset"]
 
-        return (
-            f"{svc_color}{service}{reset} | "
-            f"[{ts}] {lvl_color}{level}{reset} ({module_name}/{pid}): {message}"
-        )
+        return f"{svc_color}{service}{reset} | [{ts}] {lvl_color}{level}{reset} ({module_name}/{pid}): {message}"
 
 
 class MessagePrefixStripFilter(logging.Filter):
@@ -103,58 +97,56 @@ class MessagePrefixStripFilter(logging.Filter):
 def get_log_level() -> int:
     """
     Get log level based on environment.
-    
+
     Returns:
         logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
     """
     env = os.getenv("ENVIRONMENT", "development").lower()
     log_level_str = os.getenv("LOG_LEVEL", "").upper()
-    
+
     # Environment-based defaults
     if not log_level_str:
-        if env in ("production", "prod"):
-            log_level_str = "INFO"
-        elif env in ("staging", "test"):
+        if env in ("production", "prod") or env in ("staging", "test"):
             log_level_str = "INFO"
         else:  # development
             log_level_str = "DEBUG"
-    
+
     return getattr(logging, log_level_str, logging.INFO)
 
 
 def configure_logging(
-    log_file: Optional[str] = None,
+    log_file: str | None = None,
     max_bytes: int = 10 * 1024 * 1024,  # 10MB
     backup_count: int = 5,
     console_output: bool = True,
 ) -> None:
     """
     Configure structured logging for the application.
-    
+
     Args:
         log_file: Path to log file (default: logs/robbot.log)
         max_bytes: Max size per log file before rotation
         backup_count: Number of backup files to keep
         console_output: Enable console output (True for dev, False for prod)
-    
+
     Example:
         configure_logging()  # Uses defaults
         configure_logging(log_file="custom.log", backup_count=10)
     """
     level = get_log_level()
     root = logging.getLogger()
-    
+
     # Avoid duplicate handlers on reload
     if root.handlers:
         return
-    
+
     root.setLevel(level)
     # Console colorization controlled by env LOG_COLOR=true
     use_color = os.getenv("LOG_COLOR", "false").lower() == "true"
     base_formatter = StructuredFormatter()
     console_formatter = ColoredStructuredFormatter() if use_color else base_formatter
     msg_filter = MessagePrefixStripFilter()
-    
+
     # Console handler (stdout for container logs)
     if console_output:
         console = logging.StreamHandler(sys.stdout)
@@ -162,13 +154,13 @@ def configure_logging(
         console.setFormatter(console_formatter)
         console.addFilter(msg_filter)
         root.addHandler(console)
-    
+
     # File handler with rotation
     if log_file is None:
         log_dir = Path("logs")
         log_dir.mkdir(exist_ok=True)
         log_file = str(log_dir / "robbot.log")
-    
+
     file_handler = RotatingFileHandler(
         log_file,
         maxBytes=max_bytes,
@@ -179,7 +171,7 @@ def configure_logging(
     file_handler.setFormatter(base_formatter)
     file_handler.addFilter(msg_filter)
     root.addHandler(file_handler)
-    
+
     # Log initial configuration
     # Harmonize uvicorn loggers to use root handlers/format
     for name in ("uvicorn", "uvicorn.error", "uvicorn.access"):
