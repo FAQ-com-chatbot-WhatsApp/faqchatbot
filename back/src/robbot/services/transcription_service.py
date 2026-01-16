@@ -11,6 +11,8 @@ from robbot.core.custom_exceptions import LLMError
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
+
+
 class TranscriptionService:
     """
     Serviço de transcrição de áudio usando Faster-Whisper (inferência local).
@@ -37,15 +39,11 @@ class TranscriptionService:
                 self.model = WhisperModel(
                     self.model_size,
                     device="cpu",  # Use "cuda" if GPU available
-                    compute_type="int8"  # Optimized for CPU
+                    compute_type="int8",  # Optimized for CPU
                 )
                 logger.info("[SUCCESS] Faster-Whisper model loaded: %s", self.model_size)
             except ImportError as e:
-                raise LLMError(
-                    "Whisper",
-                    "faster-whisper not installed. Run: uv add faster-whisper",
-                    original_error=e
-                )
+                raise LLMError("Whisper", "faster-whisper not installed. Run: uv add faster-whisper", original_error=e)
             except Exception as e:  # noqa: BLE001 (blind exception)
                 raise LLMError("Whisper", f"Failed to load model: {e}", original_error=e)
 
@@ -90,7 +88,9 @@ class TranscriptionService:
                 # Concatenate all segments
                 transcript = " ".join([segment.text for segment in segments]).strip()
 
-                logger.info("[SUCCESS] Audio transcribed (length=%s chars, detected_lang=%s)", len(transcript), info.language)
+                logger.info(
+                    "[SUCCESS] Audio transcribed (length=%s chars, detected_lang=%s)", len(transcript), info.language
+                )
                 return transcript
 
             finally:
