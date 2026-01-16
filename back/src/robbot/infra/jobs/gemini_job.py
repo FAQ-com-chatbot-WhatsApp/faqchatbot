@@ -13,6 +13,8 @@ from robbot.infra.db.session import get_sync_session
 from robbot.infra.jobs.base_job import BaseJob, JobFailureError, JobRetryableError
 
 logger = logging.getLogger(__name__)
+
+
 class GeminiAIProcessingJob(BaseJob):
     """
     Job para processar mensagem com IA Gemini.
@@ -50,11 +52,13 @@ class GeminiAIProcessingJob(BaseJob):
         self.user_input = user_input
         self.phone = phone
 
-        self.metadata.update({
-            "conversation_id": conversation_id,
-            "message_id": message_id,
-            "phone": phone,
-        })
+        self.metadata.update(
+            {
+                "conversation_id": conversation_id,
+                "message_id": message_id,
+                "phone": phone,
+            }
+        )
 
     def execute(self) -> dict[str, Any]:
         """
@@ -84,6 +88,7 @@ class GeminiAIProcessingJob(BaseJob):
 
                 conv_msg_repo = ConversationMessageRepository(db)
                 from robbot.infra.db.models import MessageModel
+
                 response_record = MessageModel(
                     conversation_id=self.conversation_id,
                     direction="outbound",
@@ -203,6 +208,8 @@ class GeminiAIProcessingJob(BaseJob):
                 extra=self._log_context(),
             )
             response = response[:4096] + "..."
+
+
 class MessageAnalysisJob(BaseJob):
     """
     Job para analisar mensagem e determinar próximas ações.
