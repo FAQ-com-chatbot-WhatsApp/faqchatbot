@@ -15,6 +15,8 @@ from robbot.domain.enums import LeadStatus
 from robbot.infra.db.models.lead_model import LeadModel
 
 logger = logging.getLogger(__name__)
+
+
 class LeadService:
     """
     Service to manage leads (business logic).
@@ -96,10 +98,7 @@ class LeadService:
 
         updated = self.repo.update(lead)
 
-        logger.info(
-            "[SUCCESS] Score updated (lead_id=%s, %s -> %s)",
-            lead_id, old_score, new_score
-        )
+        logger.info("[SUCCESS] Score updated (lead_id=%s, %s -> %s)", lead_id, old_score, new_score)
 
         return updated
 
@@ -222,10 +221,7 @@ class LeadService:
         all_leads = self.repo.get_all()
 
         # Filter unassigned
-        unassigned = [
-            lead for lead in all_leads
-            if lead.assigned_to_user_id is None
-        ]
+        unassigned = [lead for lead in all_leads if lead.assigned_to_user_id is None]
 
         return unassigned[:limit]
 
@@ -269,7 +265,7 @@ class LeadService:
             filtered = [lead for lead in filtered if lead.maturity_score >= min_score]
 
         total = len(filtered)
-        paginated = filtered[offset:offset + limit]
+        paginated = filtered[offset : offset + limit]
 
         return paginated, total
 
@@ -304,17 +300,19 @@ class LeadService:
 
         # Balanceamento de carga: atribuir para secretária com menos leads ativos
         from collections import Counter
-        active_leads = [lead for lead in self.repo.get_all() if lead.assigned_to_user_id and lead.status in [LeadStatus.ENGAGED, LeadStatus.INTERESTED]]
+
+        active_leads = [
+            lead
+            for lead in self.repo.get_all()
+            if lead.assigned_to_user_id and lead.status in [LeadStatus.ENGAGED, LeadStatus.INTERESTED]
+        ]
         lead_counts = Counter(lead.assigned_to_user_id for lead in active_leads)
         selected_secretary = min(secretaries, key=lambda s: lead_counts.get(s.id, 0))
 
         lead.assigned_to_user_id = selected_secretary.id
         updated = self.repo.update(lead)
 
-        logger.info(
-            "[SUCCESS] Lead auto-assigned (lead_id=%s, user_id=%s)",
-            lead_id, selected_secretary.id
-        )
+        logger.info("[SUCCESS] Lead auto-assigned (lead_id=%s, user_id=%s)", lead_id, selected_secretary.id)
 
         return updated
 
