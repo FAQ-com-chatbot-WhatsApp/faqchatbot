@@ -112,6 +112,7 @@ class MessageOutMedia(BaseModel):
     title: str | None = None
     description: str | None = None
     tags: str | None = None
+    transcription: str | None = None
     created_at: datetime
     updated_at: datetime
 
