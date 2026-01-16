@@ -30,6 +30,8 @@ def get_sync_session() -> Generator[Session, None, None]:
         raise
     finally:
         session.close()
+
+
 def get_db() -> Generator[Session, None, None]:
     """
     Get database session for FastAPI dependency injection.
