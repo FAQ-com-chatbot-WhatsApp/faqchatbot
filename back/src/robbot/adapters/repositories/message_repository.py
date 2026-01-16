@@ -33,7 +33,7 @@ class MessageRepository:
         transcription: str | None = None,
         title: str | None = None,
         description: str | None = None,
-        tags: str | None = None
+        tags: str | None = None,
     ) -> MessageModel:
         """
         Criar mensagem de mídia com metadados do arquivo.
@@ -60,30 +60,24 @@ class MessageRepository:
             transcription=transcription,
             title=title,
             description=description,
-            tags=tags
+            tags=tags,
         )
         self.db.add(msg)
         self.db.flush()  # Get msg.id before creating media
 
-        media = MessageMediaModel(
-            message_id=msg.id, mimetype=mimetype, filename=filename, url=url
-        )
+        media = MessageMediaModel(message_id=msg.id, mimetype=mimetype, filename=filename, url=url)
         self.db.add(media)
         self.db.commit()
         self.db.refresh(msg)
         return msg
 
-    def create_location(
-        self, latitude: float, longitude: float, title: str | None
-    ) -> MessageModel:
+    def create_location(self, latitude: float, longitude: float, title: str | None) -> MessageModel:
         """Create a location message."""
         msg = MessageModel(type="location")
         self.db.add(msg)
         self.db.flush()
 
-        location = MessageLocationModel(
-            message_id=msg.id, latitude=latitude, longitude=longitude, title=title
-        )
+        location = MessageLocationModel(message_id=msg.id, latitude=latitude, longitude=longitude, title=title)
         self.db.add(location)
         self.db.commit()
         self.db.refresh(msg)
@@ -130,19 +124,13 @@ class MessageRepository:
         self.db.refresh(msg)
         return msg
 
-    def update_media_file(
-        self, msg: MessageModel, mimetype: str, filename: str, url: str
-    ) -> MessageModel:
+    def update_media_file(self, msg: MessageModel, mimetype: str, filename: str, url: str) -> MessageModel:
         """Replace media file metadata."""
         # Delete old media
-        self.db.query(MessageMediaModel).filter(
-            MessageMediaModel.message_id == msg.id
-        ).delete()
+        self.db.query(MessageMediaModel).filter(MessageMediaModel.message_id == msg.id).delete()
 
         # Create new media
-        media = MessageMediaModel(
-            message_id=msg.id, mimetype=mimetype, filename=filename, url=url
-        )
+        media = MessageMediaModel(message_id=msg.id, mimetype=mimetype, filename=filename, url=url)
         self.db.add(media)
         self.db.commit()
         self.db.refresh(msg)
