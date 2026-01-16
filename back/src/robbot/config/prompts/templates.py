@@ -8,6 +8,8 @@ implementando a metodologia de vendas consultivas de Neil Rackham.
 import logging
 
 logger = logging.getLogger(__name__)
+
+
 class PromptTemplates:
     """
     Templates de prompts com metodologia SPIN Selling integrada.
@@ -573,37 +575,27 @@ Gere resposta de fallback.
     # ========== MÉTODOS DE FORMATAÇÃO ==========
 
     @classmethod
-    def format_base_prompt(
-        cls,
-        context: str = "",
-        history: str = ""
-    ) -> str:
+    def format_base_prompt(cls, context: str = "", history: str = "") -> str:
         """Formatar prompt base com SPIN Selling."""
         return cls.BASE_SYSTEM_PROMPT.format(
             context=context or "[Primeira interação - Fase SITUATION]",
-            history=history or "[Nenhum histórico - Iniciar com perguntas de contexto]"
+            history=history or "[Nenhum histórico - Iniciar com perguntas de contexto]",
         )
 
     @classmethod
     def format_intent_prompt(cls, message: str, context: str = "") -> str:
         """Formatar prompt de detecção de intenção com SPIN."""
-        return cls. INTENT_DETECTION_PROMPT.format(
-            message=message,
-            context=context or "[Sem contexto anterior]"
-        )
+        return cls.INTENT_DETECTION_PROMPT.format(message=message, context=context or "[Sem contexto anterior]")
 
     @classmethod
     def format_maturity_prompt(
-        cls,
-        conversation_text: str,
-        interaction_history: str = "",
-        current_score: int = 0
+        cls, conversation_text: str, interaction_history: str = "", current_score: int = 0
     ) -> str:
         """Formatar prompt de scoring com progressão SPIN."""
         return cls.MATURITY_SCORING_PROMPT.format(
             conversation_text=conversation_text,
             interaction_history=interaction_history or "[Primeira conversa - Fase SITUATION]",
-            current_score=current_score
+            current_score=current_score,
         )
 
     @classmethod
@@ -615,7 +607,7 @@ Gere resposta de fallback.
         maturity_score: int = 0,
         lead_status: str = "NEW",
         last_interaction: str = "Agora",
-        spin_phase:  str = "SITUATION"
+        spin_phase: str = "SITUATION",
     ) -> str:
         """Formatar prompt de geração de resposta com SPIN."""
         return cls.RESPONSE_GENERATION_PROMPT.format(
@@ -625,45 +617,39 @@ Gere resposta de fallback.
             context=context or "[Sem contexto]",
             maturity_score=maturity_score,
             lead_status=lead_status,
-            last_interaction=last_interaction
+            last_interaction=last_interaction,
         )
 
     @classmethod
     def format_name_extraction_prompt(cls, message: str, context: str = "") -> str:
         """Formatar prompt de extração de nome."""
-        return cls.NAME_EXTRACTION_PROMPT.format(
-            message=message,
-            context=context or ""
-        )
+        return cls.NAME_EXTRACTION_PROMPT.format(message=message, context=context or "")
 
     @classmethod
     def format_name_request_prompt(cls, context: str, spin_phase: str, score: int) -> str:
         """Formatar prompt para solicitar nome naturalmente."""
-        return cls.NAME_REQUEST_PROMPT.format(
-            context=context,
-            spin_phase=spin_phase,
-            score=score
-        )
+        return cls.NAME_REQUEST_PROMPT.format(context=context, spin_phase=spin_phase, score=score)
 
     @classmethod
     def format_context_extraction_prompt(cls, message: str) -> str:
         """Formatar prompt de extração de contexto com insights SPIN."""
-        return cls. CONTEXT_EXTRACTION_PROMPT.format(message=message)
+        return cls.CONTEXT_EXTRACTION_PROMPT.format(message=message)
 
     @classmethod
     def format_fallback_prompt(cls, situation: str, error: str = "") -> str:
         """Formatar prompt de fallback mantendo SPIN."""
-        return cls. FALLBACK_PROMPT.format(
-            situation=situation,
-            error=error or "Não especificado"
-        )
+        return cls.FALLBACK_PROMPT.format(situation=situation, error=error or "Não especificado")
 
     @classmethod
     def get_version(cls) -> str:
         """Obter versão dos prompts."""
-        return cls. VERSION
+        return cls.VERSION
+
+
 # Singleton global
-_prompt_templates:  PromptTemplates | None = None
+_prompt_templates: PromptTemplates | None = None
+
+
 def get_prompt_templates() -> PromptTemplates:
     """
     Obter instância singleton de PromptTemplates.
