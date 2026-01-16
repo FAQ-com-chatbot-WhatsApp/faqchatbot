@@ -74,12 +74,7 @@ class WebhookLogRepository:
         Returns:
             List of unprocessed logs
         """
-        stmt = (
-            select(WebhookLog)
-            .where(not WebhookLog.processed)
-            .order_by(WebhookLog.created_at.asc())
-            .limit(limit)
-        )
+        stmt = select(WebhookLog).where(not WebhookLog.processed).order_by(WebhookLog.created_at.asc()).limit(limit)
 
         if event_type:
             stmt = stmt.where(WebhookLog.event_type == event_type)
@@ -96,11 +91,7 @@ class WebhookLogRepository:
             Number of deleted logs
         """
         cutoff_date = datetime.now(UTC) - timedelta(days=days)
-        stmt = (
-            select(WebhookLog)
-            .where(WebhookLog.processed)
-            .where(WebhookLog.created_at < cutoff_date)
-        )
+        stmt = select(WebhookLog).where(WebhookLog.processed).where(WebhookLog.created_at < cutoff_date)
         logs = list(self.db.scalars(stmt).all())
 
         for log in logs:
