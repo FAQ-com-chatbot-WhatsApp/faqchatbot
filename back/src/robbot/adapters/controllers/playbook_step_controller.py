@@ -32,15 +32,22 @@ def add_step(
 
     Requires authentication.
     """
-    service = PlaybookService(db)
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        service = PlaybookService(db)
 
-    created = service.add_step(
-        playbook_id=payload.playbook_id,
-        message_id=str(payload.message_id),
-        step_order=payload.step_order,
-        context_hint=payload.context_hint,
-    )
-    return PlaybookStepOut.model_validate(created)
+        created = service.add_step(
+            playbook_id=payload.playbook_id,
+            message_id=str(payload.message_id),
+            step_order=payload.step_order,
+            context_hint=payload.context_hint,
+        )
+        return PlaybookStepOut.model_validate(created)
+    except Exception as e:
+        logger.error("[ERROR] Failed to add step: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
 
 @router.get("/playbook/{playbook_id}", response_model=PlaybookStepList)
