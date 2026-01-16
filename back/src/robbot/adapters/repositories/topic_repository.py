@@ -1,4 +1,5 @@
 """Repository for topic persistence and retrieval operations."""
+
 from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.base_repository import BaseRepository
@@ -22,7 +23,9 @@ class TopicRepository(BaseRepository[TopicModel]):
             query = query.filter(TopicModel.active)
         return query.offset(skip).limit(limit).all()
 
-    def list_by_category(self, category: str, active_only: bool = False, limit: int = 100, offset: int = 0) -> list[TopicModel]:
+    def list_by_category(
+        self, category: str, active_only: bool = False, limit: int = 100, offset: int = 0
+    ) -> list[TopicModel]:
         """List topics by category with pagination.
 
         Args:
