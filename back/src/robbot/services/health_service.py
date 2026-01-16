@@ -3,9 +3,8 @@ from datetime import UTC, datetime
 from sqlalchemy.orm import Session
 
 from robbot.adapters.external.waha_client import get_waha_client
+from robbot.adapters.repositories.auth_session_repository import AuthSessionRepository
 from robbot.adapters.repositories.health_repository import HealthRepository
-from robbot.adapters.repositories.session_repository import SessionRepository
-from robbot.config.settings import settings
 from robbot.core.custom_exceptions import ExternalServiceError
 from robbot.schemas.health import HealthOut
 from robbot.services.queue_service import get_queue_service
@@ -69,10 +68,10 @@ class HealthService:
             queue_ok = False
             queue_error = str(exc)
 
-        # Count active sessions
+        # Count active authentication sessions
         try:
-            session_repo = SessionRepository(self.db)
-            active_sessions = session_repo.count_active_sessions()
+            auth_session_repo = AuthSessionRepository(self.db)
+            active_sessions = auth_session_repo.count_active_sessions()
         except Exception:
             active_sessions = 0
 
