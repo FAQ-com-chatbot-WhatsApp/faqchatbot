@@ -24,20 +24,16 @@ class ConversationTagModel(Base):
         String(36),
         ForeignKey("conversations.id", ondelete="CASCADE"),
         primary_key=True,
-        comment="UUID of the conversation"
+        comment="UUID of the conversation",
     )
     tag_id: Mapped[int] = mapped_column(
-        Integer,
-        ForeignKey("tags.id", ondelete="CASCADE"),
-        primary_key=True,
-        index=True,
-        comment="ID of the tag"
+        Integer, ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True, index=True, comment="ID of the tag"
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         default=lambda: datetime.now(UTC),
-        comment="When the tag was applied to the conversation"
+        comment="When the tag was applied to the conversation",
     )
 
     def __repr__(self) -> str:
