@@ -1,3 +1,5 @@
+
+# pylint: disable=no-member
 """drop_orphan_models_conversation_context_and_alert
 
 Revision ID: 6c8e40de2a6f
@@ -10,7 +12,7 @@ from collections.abc import Sequence
 
 import sqlalchemy as sa
 
-from alembic import op
+from alembic import op  # type: ignore
 
 # revision identifiers, used by Alembic.
 revision: str = "6c8e40de2a6f"
@@ -27,10 +29,10 @@ def upgrade() -> None:
     - alerts: Substituído por logging estruturado (core.logging_setup)
     """
     # Drop conversation_contexts table
-    op.drop_table("conversation_contexts")
+    op.execute("DROP TABLE IF EXISTS conversation_contexts")  # noqa: F405
 
     # Drop alerts table
-    op.drop_table("alerts")
+    op.execute("DROP TABLE IF EXISTS alerts")  # noqa: F405
 
 
 def downgrade() -> None:
