@@ -1,4 +1,5 @@
 """Repository for Lead entity."""
+
 from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.base_repository import BaseRepository
