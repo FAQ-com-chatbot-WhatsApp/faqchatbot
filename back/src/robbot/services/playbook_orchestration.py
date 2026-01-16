@@ -20,6 +20,8 @@ from robbot.services.playbook_tools import (
 from robbot.services.transcription_service import TranscriptionService
 
 logger = logging.getLogger(__name__)
+
+
 class PlaybookOrchestrationMixin:
     """
     Mixin to add playbook capabilities to ConversationOrchestrator.
@@ -40,13 +42,7 @@ class PlaybookOrchestrationMixin:
         return PLAYBOOK_TOOLS_DECLARATIONS
 
     async def _generate_response_with_tools(
-        self,
-        session: Any,
-        message_text: str,
-        intent: str,
-        context: str,
-        conversation: Any,
-        max_tool_calls: int = 5
+        self, session: Any, message_text: str, intent: str, context: str, conversation: Any, max_tool_calls: int = 5
     ) -> dict[str, Any]:
         """
         Generate response using Gemini with playbook tools enabled.
@@ -70,9 +66,7 @@ class PlaybookOrchestrationMixin:
         """
         try:
             # Build prompt with playbook instructions
-            prompt = self._build_playbook_aware_prompt(
-                message_text, intent, context, conversation
-            )
+            prompt = self._build_playbook_aware_prompt(message_text, intent, context, conversation)
 
             # Get tool declarations (currently passed to gemini_client at initialization)
             # Tools are registered in __init__ of ConversationOrchestrator
@@ -109,11 +103,7 @@ class PlaybookOrchestrationMixin:
                 tool_result = execute_playbook_tool(session, tool_name, tool_args)
 
                 # Add tool result to conversation history
-                messages.append({
-                    "role": "function",
-                    "name": tool_name,
-                    "content": json.dumps(tool_result)
-                })
+                messages.append({"role": "function", "name": tool_name, "content": json.dumps(tool_result)})
 
                 # Continue with updated context
                 prompt = self._append_tool_result_to_prompt(prompt, tool_name, tool_result)
@@ -128,13 +118,7 @@ class PlaybookOrchestrationMixin:
             logger.error("[ERROR] Error in function calling loop: %s", e)
             raise VectorDBError(f"Function calling failed: {e}", original_error=e)
 
-    def _build_playbook_aware_prompt(
-        self,
-        message_text: str,
-        intent: str,
-        context: str,
-        conversation: Any
-    ) -> str:
+    def _build_playbook_aware_prompt(self, message_text: str, intent: str, context: str, conversation: Any) -> str:
         """
         Build prompt with playbook usage instructions.
 
@@ -145,8 +129,8 @@ class PlaybookOrchestrationMixin:
             intent=intent,
             context=context,
             maturity_score=conversation.lead.maturity_score if conversation.lead else 0,
-            lead_status=conversation.lead.status.value if conversation.lead else 'NEW',
-            last_interaction="Agora"
+            lead_status=conversation.lead.status.value if conversation.lead else "NEW",
+            last_interaction="Agora",
         )
 
         playbook_instructions = """
@@ -203,10 +187,7 @@ IMPORTANTE:
         # This is compatible with google.generativeai response format
         try:
             if isinstance(response, dict) and "function_call" in response:
-                return {
-                    "name": response["function_call"]["name"],
-                    "args": response["function_call"]["args"]
-                }
+                return {"name": response["function_call"]["name"], "args": response["function_call"]["args"]}
 
             # Check for nested structure in candidates
             if "candidates" in response:
@@ -215,30 +196,19 @@ IMPORTANTE:
                     parts = candidates[0].get("content", {}).get("parts", [])
                     for part in parts:
                         if "function_call" in part:
-                            return {
-                                "name": part["function_call"]["name"],
-                                "args": part["function_call"]["args"]
-                            }
+                            return {"name": part["function_call"]["name"], "args": part["function_call"]["args"]}
         except (AttributeError, IndexError, KeyError, TypeError) as e:
             logger.debug("[DEBUG] No function call in response: %s", e)
 
         # No function call found - return None for regular text response
         return None
 
-    def _append_tool_result_to_prompt(
-        self,
-        prompt: str,
-        tool_name: str,
-        tool_result: Any
-    ) -> str:
+    def _append_tool_result_to_prompt(self, prompt: str, tool_name: str, tool_result: Any) -> str:
         """Append tool result to prompt for next iteration."""
         result_json = json.dumps(tool_result, ensure_ascii=False, indent=2)
         return f"{prompt}\n\n[RESULTADO DA FERRAMENTA {tool_name}]:\n{result_json}\n"
 
-    async def _transcribe_voice_message(
-        self,
-        audio_url: str
-    ) -> str | None:
+    async def _transcribe_voice_message(self, audio_url: str) -> str | None:
         """
         Transcribe voice message using Whisper API.
 
@@ -262,12 +232,7 @@ IMPORTANTE:
             logger.error(f"Unexpected error transcribing voice message: {e}", exc_info=True)
             return None
 
-    async def _process_media_message(
-        self,
-        message_type: str,
-        media_url: str | None,
-        caption: str | None
-    ) -> str:
+    async def _process_media_message(self, message_type: str, media_url: str | None, caption: str | None) -> str:
         """
         Process media message (image, video, audio, document).
 
@@ -306,4 +271,3 @@ IMPORTANTE:
 
         else:
             return f"[Mensagem de tipo {message_type}]"
-
