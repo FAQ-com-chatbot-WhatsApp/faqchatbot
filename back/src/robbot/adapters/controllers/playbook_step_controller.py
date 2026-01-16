@@ -1,4 +1,5 @@
 """PlaybookStep Controller - REST endpoints for managing playbook steps."""
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -15,6 +16,8 @@ from robbot.schemas.topic import DeletedResponse
 from robbot.services.playbook_service import PlaybookService
 
 router = APIRouter()
+
+
 @router.post("/", response_model=PlaybookStepOut, status_code=status.HTTP_201_CREATED)
 def add_step(
     payload: PlaybookStepCreate,
@@ -38,6 +41,8 @@ def add_step(
         context_hint=payload.context_hint,
     )
     return PlaybookStepOut.model_validate(created)
+
+
 @router.get("/playbook/{playbook_id}", response_model=PlaybookStepList)
 def list_playbook_steps(
     playbook_id: str,
@@ -52,10 +57,9 @@ def list_playbook_steps(
     service = PlaybookService(db)
     steps = service.get_playbook_steps(playbook_id)
 
-    return PlaybookStepList(
-        steps=[PlaybookStepOut.model_validate(s) for s in steps],
-        total=len(steps)
-    )
+    return PlaybookStepList(steps=[PlaybookStepOut.model_validate(s) for s in steps], total=len(steps))
+
+
 @router.get("/playbook/{playbook_id}/details")
 def list_playbook_steps_with_details(
     playbook_id: str,
@@ -75,11 +79,9 @@ def list_playbook_steps_with_details(
     service = PlaybookService(db)
     steps_with_details = service.get_playbook_steps_with_details(playbook_id)
 
-    return {
-        "playbook_id": playbook_id,
-        "steps": steps_with_details,
-        "total": len(steps_with_details)
-    }
+    return {"playbook_id": playbook_id, "steps": steps_with_details, "total": len(steps_with_details)}
+
+
 @router.post("/reorder")
 def reorder_steps(
     payload: PlaybookStepReorder,
@@ -118,6 +120,8 @@ def reorder_steps(
         raise HTTPException(status_code=500, detail="Failed to reorder steps")
 
     return {"message": "Steps reordered successfully", "playbook_id": playbook_id}
+
+
 @router.patch("/{step_id}", response_model=PlaybookStepOut)
 def update_step(
     step_id: str,
@@ -136,6 +140,8 @@ def update_step(
         raise HTTPException(status_code=404, detail=f"Step {step_id} not found")
 
     return PlaybookStepOut.model_validate(updated)
+
+
 @router.delete("/{step_id}", response_model=DeletedResponse)
 def delete_step(
     step_id: str,
