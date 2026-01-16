@@ -87,7 +87,7 @@ class WAHAService:
                 config=data.config or None,
             )
             logger.info("[INFO] WAHA session created: %s", waha_response)
-        except Exception as e:
+        except Exception:
             # Re-raise; let controller handle (may be conflict if session exists in WAHA)
             raise
 
@@ -222,7 +222,7 @@ class WAHAService:
         return await self.waha_client.get_qr_code(name)
 
     async def list_sessions(self) -> list[dict]:
-        """List all WAHA sessions (directly from WAHA). 
+        """List all WAHA sessions (directly from WAHA).
 
         Returns:
             List of session dicts as provided by WAHA
@@ -266,7 +266,7 @@ class WAHAService:
                 name=settings.WAHA_SESSION_NAME,
                 webhook_url=settings.WAHA_WEBHOOK_URL,
             )
-            logger.info(f"Created default session: {settings.WAHA_SESSION_NAME}")
+            logger.info("Created default session: %s", settings.WAHA_SESSION_NAME)
         return session
 
     # ========================================================================
@@ -286,7 +286,7 @@ class WAHAService:
         try:
             count = self.redis_client.get(key)
             if count and int(count) >= settings.WAHA_MESSAGES_PER_HOUR:
-                logger.warning(f"Rate limit exceeded for {chat_id}: {count}/{settings.WAHA_MESSAGES_PER_HOUR} msg/hour")
+                logger.warning("Rate limit exceeded for %s: %s/%s msg/hour", chat_id, count, settings.WAHA_MESSAGES_PER_HOUR)
                 return False
 
             pipe = self.redis_client.pipeline()
