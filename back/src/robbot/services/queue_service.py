@@ -334,7 +334,7 @@ class QueueService:
             raise
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("[ERROR] Failed to retry job %s: %s", job_id, e)
-            raise QueueError(f"Failed to retry job {job_id}: {e}")
+            raise QueueError(f"Failed to retry job {job_id}: {e}") from e
 
     def retry_all_failed(self) -> int:
         """
@@ -404,7 +404,7 @@ class QueueService:
             raise
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("[ERROR] Failed to cancel job %s: %s", job_id, e)
-            raise QueueError(f"Failed to cancel job {job_id}: {e}")
+            raise QueueError(f"Failed to cancel job {job_id}: {e}") from e
 
     # =====================================================================
     # HEALTH CHECK
