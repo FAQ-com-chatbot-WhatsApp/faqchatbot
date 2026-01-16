@@ -108,6 +108,10 @@ class MessageService:
                     url=media_obj.url,
                 ),
                 caption=msg.caption,
+                title=msg.title,
+                description=msg.description,
+                tags=msg.tags,
+                transcription=msg.transcription,
                 created_at=msg.created_at,
                 updated_at=msg.updated_at,
             )
@@ -157,6 +161,10 @@ class MessageService:
                     url=media_obj.url,
                 ),
                 caption=msg.caption,
+                title=msg.title,
+                description=msg.description,
+                tags=msg.tags,
+                transcription=msg.transcription,
                 created_at=msg.created_at,
                 updated_at=msg.updated_at,
             )
@@ -274,6 +282,10 @@ class MessageService:
                                 url=media_obj.url,
                             ),
                             caption=msg.caption,
+                            title=msg.title,
+                            description=msg.description,
+                            tags=msg.tags,
+                            transcription=msg.transcription,
                             created_at=msg.created_at,
                             updated_at=msg.updated_at,
                         )
@@ -335,6 +347,10 @@ class MessageService:
                     url=media_obj.url,
                 ),
                 caption=msg.caption,
+                title=msg.title,
+                description=msg.description,
+                tags=msg.tags,
+                transcription=msg.transcription,
                 created_at=msg.created_at,
                 updated_at=msg.updated_at,
             )
