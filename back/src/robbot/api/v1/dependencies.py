@@ -22,6 +22,8 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/token", auto_error=F
 
 # Flag to ensure rate limiter is initialized only once
 _rate_limiter_initialized = False
+
+
 def initialize_rate_limiter() -> None:
     """Initialize rate limiter with Redis client.
 
@@ -32,6 +34,8 @@ def initialize_rate_limiter() -> None:
         redis_client = get_redis_client()
         init_rate_limiter(redis_client)
         _rate_limiter_initialized = True
+
+
 def get_db() -> Generator[Session, None, None]:
     """Dependency that provides a SQLAlchemy session.
 
@@ -42,10 +46,9 @@ def get_db() -> Generator[Session, None, None]:
         SQLAlchemy Session with automatic transaction management
     """
     yield from session_get_db()
-def get_current_user(
-    request: Request,
-    db: Session = Depends(get_db)
-) -> UserModel:
+
+
+def get_current_user(request: Request, db: Session = Depends(get_db)) -> UserModel:
     """
     Validates token from HttpOnly cookie and returns current user from DB.
 
@@ -72,6 +75,7 @@ def get_current_user(
 
     # CRITICAL: Check if token was revoked (logout/password change)
     from robbot.adapters.repositories.token_repository import TokenRepository
+
     token_repo = TokenRepository(db)
     if token_repo.is_revoked(token):
         raise HTTPException(
@@ -92,10 +96,7 @@ def get_current_user(
     user = repo.get_by_id(int(user_id))
 
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     if not user.is_active:
         raise HTTPException(
@@ -105,6 +106,8 @@ def get_current_user(
         )
 
     return user
+
+
 def require_role(*allowed_roles: str) -> Callable:
     """
     Dependency factory that checks if current user has one of the allowed roles.
@@ -122,3 +125,52 @@ def require_role(*allowed_roles: str) -> Callable:
         return current_user
 
     return role_checker
+
+# ===== DI Container Dependencies =====
+
+def get_container_dep():
+    """Dependency to get DI container instance."""
+    from robbot.config.container import get_container
+    return get_container()
+
+
+# Backward-compatible wrappers expected by tests (legacy naming)
+def get_llm_provider(container = Depends(get_container_dep)):
+    return container.get_llm()
+
+
+def get_vector_store(container = Depends(get_container_dep)):
+    return container.get_vector_store()
+
+
+def get_waha_client(container = Depends(get_container_dep)):
+    return container.get_waha()
+
+
+def get_prompt_loader(container = Depends(get_container_dep)):
+    return container.get_prompt_loader()
+
+
+def get_redis_from_container(container = Depends(get_container_dep)):
+    """Dependency to get Redis client from DI container."""
+    return container.get_redis()
+
+
+def get_llm_from_container(container = Depends(get_container_dep)):
+    """Dependency to get LLM provider from DI container."""
+    return container.get_llm()  # type: LLMProvider
+
+
+def get_vector_store_from_container(container = Depends(get_container_dep)):
+    """Dependency to get vector store from DI container."""
+    return container.get_vector_store()  # type: VectorStore
+
+
+def get_waha_from_container(container = Depends(get_container_dep)):
+    """Dependency to get WAHA WhatsApp client from DI container."""
+    return container.get_waha()  # type: WAHAClientInterface
+
+
+def get_prompt_loader_from_container(container = Depends(get_container_dep)):
+    """Dependency to get prompt loader from DI container."""
+    return container.get_prompt_loader()  # type: PromptLoader
