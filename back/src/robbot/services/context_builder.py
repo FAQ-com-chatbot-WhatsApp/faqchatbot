@@ -5,13 +5,15 @@ Responsabilidades:
 - Recuperar histórico de conversas do ChromaDB
 - Salvar novas interações no ChromaDB
 - Formatar contexto para o LLM
+
+REFACTORED: Dependency injection of VectorStore interface (Issue #3: Missing Abstractions)
 """
 
 import logging
 from typing import Any
 
 from robbot.core.custom_exceptions import VectorDBError
-from robbot.infra.vectordb.chroma_client import get_chroma_client
+from robbot.core.interfaces import VectorStore
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +21,14 @@ logger = logging.getLogger(__name__)
 class ContextBuilder:
     """Gerencia contexto conversacional via ChromaDB"""
 
-    def __init__(self):
-        self.chroma_client = get_chroma_client()
+    def __init__(self, vector_store: VectorStore):
+        """
+        Initialize ContextBuilder with DI.
+
+        Args:
+            vector_store: Injected VectorStore implementation (ChromaDB, Pinecone, etc.)
+        """
+        self.vector_store = vector_store
 
     async def get_conversation_context(self, conversation_id: str, limit: int = 5) -> str:
         """
@@ -37,12 +45,12 @@ class ContextBuilder:
             VectorDBError: Se falhar ao acessar ChromaDB
         """
         try:
-            results = self.chroma_client.get_context(conversation_id, limit=limit)
+            results = await self.vector_store.search(conversation_id, limit=limit)
 
             if not results:
                 return ""
 
-            context_parts = [r["text"] for r in results]
+            context_parts = [r.get("text", "") for r in results]
             context_text = "\n---\n".join(context_parts)
 
             logger.info("[SUCCESS] Context retrieved (%s documents)", len(results))
@@ -55,12 +63,7 @@ class ContextBuilder:
             logger.warning("[WARNING] Failed to fetch context: %s", e)
             raise VectorDBError(f"Failed to get context: {e}")
 
-    async def save_to_chroma(
-        self,
-        conversation_id: str,
-        text: str,
-        metadata: dict[str, Any]
-    ) -> None:
+    async def save_to_chroma(self, conversation_id: str, text: str, metadata: dict[str, Any]) -> None:
         """
         Persistir par de mensagens (User/Bot) no ChromaDB para contexto futuro.
 
@@ -73,11 +76,7 @@ class ContextBuilder:
             VectorDBError: Se falhar ao salvar no ChromaDB
         """
         try:
-            self.chroma_client.add_conversation(
-                conversation_id=conversation_id,
-                text=text,
-                metadata=metadata
-            )
+            await self.vector_store.add(conversation_id, text, metadata)
             logger.info("[SUCCESS] Context saved to ChromaDB (conv_id=%s)", conversation_id)
 
         except VectorDBError:
