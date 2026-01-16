@@ -9,8 +9,12 @@ Melhorias críticas:
 - Validação de datas (start <= end)
 - Dependency injection para todos os services
 """
+# pylint: disable=unused-argument
+# Justification: FastAPI Depends() requires current_user parameter for authentication
+# even when not used in function body. This is the standard FastAPI security pattern.
 
 import asyncio
+import contextlib
 import json
 import time
 from collections import defaultdict
@@ -49,7 +53,7 @@ from robbot.services.analytics.metrics_service import MetricsService
 from robbot.services.export_service import ExportService
 
 settings = get_settings()
-router = APIRouter(prefix="/metrics", tags=["Metrics"])
+router = APIRouter()
 
 # WebSocket connection tracking (in-memory, consider Redis for multi-instance)
 _ws_connections: defaultdict[str, list[WebSocket]] = defaultdict(list)
@@ -67,14 +71,16 @@ def get_metrics_service(db_session: Session = Depends(get_db)) -> MetricsService
         redis_client=get_redis_client(),
         queue_manager=get_queue_manager(),  # Dependency Injection
     )
+
+
 def check_admin(current_user: UserModel = Depends(get_current_user)):
     """Apenas admin"""
     if current_user.role != Role.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Apenas admin")
     return current_user
-def parse_dates(
-    start_date: str | None, end_date: str | None, period: str
-) -> tuple[datetime, datetime]:
+
+
+def parse_dates(start_date: str | None, end_date: str | None, period: str) -> tuple[datetime, datetime]:
     """
     Parse e valida datas para queries.
 
@@ -99,7 +105,7 @@ def parse_dates(
         if start > end:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid date range: start_date ({start_date}) must be <= end_date ({end_date})"
+                detail=f"Invalid date range: start_date ({start_date}) must be <= end_date ({end_date})",
             )
 
         return start, end
@@ -127,10 +133,7 @@ async def verify_websocket_token(token: str) -> UserModel:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         user_id: str = payload.get("sub")
         if user_id is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token: missing user ID"
-            )
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token: missing user ID")
 
         # Buscar usuário no DB (requer session - será passada por contexto)
         # Para simplificar, apenas validamos o token aqui
@@ -139,9 +142,10 @@ async def verify_websocket_token(token: str) -> UserModel:
 
     except JWTError as e:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Could not validate credentials: {str(e)}"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Could not validate credentials: {str(e)}"
         )
+
+
 @router.get("/dashboard", response_model=DashboardSummaryResponse)
 def dashboard(
     start_date: str | None = None,
@@ -153,6 +157,8 @@ def dashboard(
     """KPIs: conversão, mensagens, tempo resposta. Cache 5min."""
     start, end = parse_dates(start_date, end_date, period)
     return svc.get_dashboard_summary(start, end)
+
+
 @router.get("/conversion-funnel", response_model=ConversionFunnelResponse)
 def funnel(
     start_date: str | None = None,
@@ -164,6 +170,8 @@ def funnel(
     """Funil 5 etapas + drop-off. Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
     return svc.get_conversion_funnel(start, end)
+
+
 @router.get("/bot-autonomy", response_model=BotAutonomyResponse)
 def bot_autonomy(
     start_date: str | None = None,
@@ -175,9 +183,12 @@ def bot_autonomy(
     """Taxa autonomia bot. Admin only. Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
     return svc.get_bot_autonomy_rate(start, end)
+
+
 # =============================================================================
 # PERFORMANCE REPORTS (Sprint 12 - L1)
 # =============================================================================
+
 
 @router.get("/performance/bot-response-time", response_model=BotResponseTimeResponse)
 def bot_response_time_report(
@@ -190,6 +201,8 @@ def bot_response_time_report(
     """Tempo de resposta do bot via LLM latency. Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
     return svc.get_bot_response_time(start, end)
+
+
 @router.get("/performance/handoff-rate", response_model=HandoffRateResponse)
 def handoff_rate_report(
     start_date: str | None = None,
@@ -201,6 +214,8 @@ def handoff_rate_report(
     """Taxa de resolução automática vs handoff. Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
     return svc.get_handoff_rate(start, end)
+
+
 @router.get("/performance/peak-hours", response_model=PeakHoursResponse)
 def peak_hours_report(
     start_date: str | None = None,
@@ -212,6 +227,8 @@ def peak_hours_report(
     """Horários de pico de atendimento. Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
     return svc.get_peak_hours(start, end)
+
+
 @router.get("/performance/conversations-by-status", response_model=ConversationsByStatusResponse)
 def conversations_by_status_report(
     start_date: str | None = None,
@@ -223,6 +240,8 @@ def conversations_by_status_report(
     """Distribuição de conversas por status. Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
     return svc.get_conversations_by_status(start, end)
+
+
 @router.get("/performance/report", response_model=PerformanceReportSchema)
 def performance_full_report(
     start_date: str | None = None,
@@ -234,6 +253,8 @@ def performance_full_report(
     """Relatório completo de performance (L1): bot response time, handoff rate, peak hours, status distribution. Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
     return svc.get_performance_report(start, end)
+
+
 @router.get("/performance/report/export/pdf")
 def performance_report_export_pdf(
     start_date: str | None = None,
@@ -255,8 +276,10 @@ def performance_report_export_pdf(
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
+
+
 @router.get("/performance/report/export/excel")
 def performance_report_export_excel(
     start_date: str | None = None,
@@ -278,11 +301,14 @@ def performance_report_export_excel(
     return Response(
         content=excel_bytes,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
+
+
 # =============================================================================
 # CONVERSION REPORTS EXTENDED (Sprint 12 - L2)
 # =============================================================================
+
 
 @router.get("/conversion/time-to-conversion-extended", response_model=TimeToConversionExtendedResponse)
 def time_to_conversion_extended_report(
@@ -295,6 +321,8 @@ def time_to_conversion_extended_report(
     """Tempo até conversão com p75, p90. Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
     return svc.get_time_to_conversion_extended(start, end)
+
+
 @router.get("/conversion/by-source", response_model=ConversionBySourceResponse)
 def conversion_by_source_report(
     start_date: str | None = None,
@@ -306,6 +334,8 @@ def conversion_by_source_report(
     """Taxa de conversão por origem (direct, group). Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
     return svc.get_conversion_by_source(start, end)
+
+
 @router.get("/conversion/lost-leads", response_model=LostLeadsAnalysisResponse)
 def lost_leads_analysis_report(
     start_date: str | None = None,
@@ -317,6 +347,8 @@ def lost_leads_analysis_report(
     """Análise de leads perdidos (status LOST). Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
     return svc.get_lost_leads_analysis(start, end)
+
+
 @router.get("/conversion/trend", response_model=ConversionTrendResponse)
 def conversion_trend_report(
     start_date: str | None = None,
@@ -329,6 +361,8 @@ def conversion_trend_report(
     """Tendência temporal de conversão (day/week/month). Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
     return svc.get_conversion_trend(start, end, granularity)
+
+
 @router.get("/conversion/report-extended", response_model=ConversionReportExtendedSchema)
 def conversion_report_extended(
     start_date: str | None = None,
@@ -345,6 +379,7 @@ def conversion_report_extended(
 # =====================================================================
 # L3: CONVERSATION ANALYSIS ENDPOINTS
 # =====================================================================
+
 
 @router.get("/conversation/activity-heatmap", response_model=dict)
 def conversation_activity_heatmap(
@@ -411,9 +446,11 @@ def conversation_analysis_report(
     start, end = parse_dates(start_date, end_date, period)
     return svc.get_conversation_analysis_report(start, end)
 
+
 # =====================================================================
 # L4: REAL-TIME DASHBOARD ENDPOINTS
 # =====================================================================
+
 
 @router.get("/realtime/dashboard", response_model=RealtimeDashboardSchema)
 def realtime_dashboard(
@@ -432,19 +469,19 @@ async def websocket_realtime_metrics(
 ):
     """
     WebSocket para streaming de métricas em tempo real COM AUTENTICAÇÃO.
-    
+
     SEGURANÇA:
     - Requer JWT token via query param: /ws/realtime?token=<your_jwt>
     - Rate limiting: máx 3 conexões por usuário
     - Idle timeout: desconecta após 30 minutos sem atividade
     - Valida token antes de accept()
-    
+
     Envia atualizações a cada 5 segundos com:
     - Conversas ativas
     - Sumário de métricas
     - Queue stats
     - Alertas de performance
-    
+
     Exemplo de uso (JavaScript):
     ```javascript
     const token = localStorage.getItem('access_token');
@@ -465,8 +502,7 @@ async def websocket_realtime_metrics(
     # 2. Rate limiting: máx N conexões por usuário
     if len(_ws_connections[user_id]) >= settings.WEBSOCKET_MAX_CONNECTIONS_PER_USER:
         await websocket.close(
-            code=1008,
-            reason=f"Too many connections (max {settings.WEBSOCKET_MAX_CONNECTIONS_PER_USER} per user)"
+            code=1008, reason=f"Too many connections (max {settings.WEBSOCKET_MAX_CONNECTIONS_PER_USER} per user)"
         )
         return
 
@@ -494,10 +530,7 @@ async def websocket_realtime_metrics(
 
             except Exception as e:
                 # Log error mas não fechar conexão (pode ser erro temporário)
-                await websocket.send_text(json.dumps({
-                    "error": str(e),
-                    "timestamp": datetime.now().isoformat()
-                }))
+                await websocket.send_text(json.dumps({"error": str(e), "timestamp": datetime.now().isoformat()}))
 
             # Aguardar 5 segundos antes de próximo update
             await asyncio.sleep(5)
@@ -506,10 +539,8 @@ async def websocket_realtime_metrics(
         pass
     except Exception as e:
         # Erro inesperado - fechar com código de erro
-        try:
+        with contextlib.suppress(BaseException):
             await websocket.close(code=1011, reason=str(e))
-        except BaseException:  # noqa: S110
-            pass  # Já desconectado
     finally:
         # Cleanup: remover da lista de conexões
         if websocket in _ws_connections[user_id]:
