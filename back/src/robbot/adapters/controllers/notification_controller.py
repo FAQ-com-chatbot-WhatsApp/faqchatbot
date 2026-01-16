@@ -12,8 +12,10 @@ from robbot.api.v1.dependencies import get_current_user, get_db
 from robbot.core.custom_exceptions import NotFoundException
 from robbot.services.notification_service import NotificationService
 
-router = APIRouter(prefix="/notifications", tags=["Notifications"])
+router = APIRouter()
+
 # ========== SCHEMAS ==========
+
 
 class NotificationOut(BaseModel):
     """Response de notificação."""
@@ -27,11 +29,17 @@ class NotificationOut(BaseModel):
     created_at: str
 
     model_config = ConfigDict(from_attributes=True)
+
+
 class MarkReadRequest(BaseModel):
     """Request para marcar como lida."""
+
     # Endpoint usa apenas o ID da URL - sem campos necessários
     model_config = {"extra": "forbid"}
+
+
 # ========== ENDPOINTS ==========
+
 
 @router.get(
     "",
@@ -88,6 +96,8 @@ async def list_notifications(
         )
         for n in notifications
     ]
+
+
 @router.get(
     "/unread-count",
     response_model=dict,
@@ -112,6 +122,8 @@ async def count_unread_notifications(
     count = service.count_unread(user_id=current_user.id)
 
     return {"count": count}
+
+
 @router.put(
     "/{notification_id}/read",
     response_model=NotificationOut,
@@ -143,6 +155,7 @@ async def mark_notification_as_read(
     try:
         # Buscar notificação usando o modelo importado
         from robbot.infra.db.models.notification_model import NotificationModel
+
         notification = db.query(NotificationModel).filter_by(id=notification_id).first()
 
         if not notification:
