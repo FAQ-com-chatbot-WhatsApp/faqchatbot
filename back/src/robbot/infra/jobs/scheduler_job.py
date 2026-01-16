@@ -9,6 +9,8 @@ from typing import Any
 from robbot.infra.jobs.base_job import BaseJob, JobRetryableError
 
 logger = logging.getLogger(__name__)
+
+
 class ScheduledJob(BaseJob):
     """
     Job base para execução agendada.
@@ -45,10 +47,12 @@ class ScheduledJob(BaseJob):
         if scheduled_for < datetime.now(UTC):
             raise ValueError(f"Agendamento no passado: {scheduled_for}")
 
-        self.metadata.update({
-            "scheduled_for": scheduled_for.isoformat(),
-            "task_type": task_type,
-        })
+        self.metadata.update(
+            {
+                "scheduled_for": scheduled_for.isoformat(),
+                "task_type": task_type,
+            }
+        )
 
     def execute(self) -> dict[str, Any]:
         """
@@ -94,6 +98,8 @@ class ScheduledJob(BaseJob):
         """Executar tarefa específica (override em subclasses)."""
         # TODO: Implementar por tipo
         return {"status": "executed", "task_type": self.task_type}
+
+
 class ReminderJob(ScheduledJob):
     """
     Job para lembrete de consulta.
@@ -145,6 +151,8 @@ class ReminderJob(ScheduledJob):
             "appointment_id": self.appointment_id,
             "phone": self.phone,
         }
+
+
 class CleanupJob(ScheduledJob):
     """
     Job para limpeza periódica de dados.
@@ -198,6 +206,7 @@ class CleanupJob(ScheduledJob):
         }
 
         # TODO: Implementar cleanup por tipo
+
 
 class SyncJob(ScheduledJob):
     """
