@@ -1,6 +1,7 @@
 """
 Conversation Tag Repository - manage conversation-tag associations.
 """
+
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, MetaData, String, Table, text
 from sqlalchemy.orm import Session
 
@@ -11,12 +12,14 @@ from robbot.infra.db.models.tag_model import TagModel
 metadata = MetaData()
 # SQLAlchemy association table
 conversation_tags_table = Table(
-    'conversation_tags',
+    "conversation_tags",
     metadata,
-    Column('conversation_id', String(36), ForeignKey('conversations.id', ondelete='CASCADE'), primary_key=True),
-    Column('tag_id', Integer, ForeignKey('tags.id', ondelete='CASCADE'), primary_key=True),
-    Column('created_at', DateTime(timezone=True), nullable=False, server_default=text('now()')),
+    Column("conversation_id", String(36), ForeignKey("conversations.id", ondelete="CASCADE"), primary_key=True),
+    Column("tag_id", Integer, ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True),
+    Column("created_at", DateTime(timezone=True), nullable=False, server_default=text("now()")),
 )
+
+
 class ConversationTagRepository:
     """Repository for conversation-tag associations.
 
@@ -34,8 +37,7 @@ class ConversationTagRepository:
         # Check if already exists
         existing = self.session.execute(
             self.table.select().where(
-                (self.table.c.conversation_id == conversation_id) &
-                (self.table.c.tag_id == tag_id)
+                (self.table.c.conversation_id == conversation_id) & (self.table.c.tag_id == tag_id)
             )
         ).fetchone()
 
@@ -43,20 +45,14 @@ class ConversationTagRepository:
             return  # Already associated
 
         # Insert
-        self.session.execute(
-            self.table.insert().values(
-                conversation_id=conversation_id,
-                tag_id=tag_id
-            )
-        )
+        self.session.execute(self.table.insert().values(conversation_id=conversation_id, tag_id=tag_id))
         self.session.flush()
 
     def remove_tag_from_conversation(self, conversation_id: str, tag_id: int) -> bool:
         """Remove a tag from a conversation. Returns True if deleted, False if not found."""
         result = self.session.execute(
             self.table.delete().where(
-                (self.table.c.conversation_id == conversation_id) &
-                (self.table.c.tag_id == tag_id)
+                (self.table.c.conversation_id == conversation_id) & (self.table.c.tag_id == tag_id)
             )
         )
         self.session.flush()
@@ -66,9 +62,7 @@ class ConversationTagRepository:
         """Get all tags for a conversation."""
         # Join with tags table
         result = self.session.execute(
-            self.table.select().where(
-                self.table.c.conversation_id == conversation_id
-            )
+            self.table.select().where(self.table.c.conversation_id == conversation_id)
         ).fetchall()
 
         if not result:
@@ -88,8 +82,6 @@ class ConversationTagRepository:
 
     def get_conversations_by_tag(self, tag_id: int) -> list[str]:
         """Get all conversation IDs that have this tag."""
-        result = self.session.execute(
-            self.table.select().where(self.table.c.tag_id == tag_id)
-        ).fetchall()
+        result = self.session.execute(self.table.select().where(self.table.c.tag_id == tag_id)).fetchall()
 
         return [row.conversation_id for row in result]
