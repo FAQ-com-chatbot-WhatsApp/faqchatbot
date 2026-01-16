@@ -3,6 +3,7 @@
 Implementa rate limiting para prevenir ataques de força bruta.
 """
 
+import os
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
@@ -43,6 +44,8 @@ from robbot.services.auth_services import AuthService
 
 router = APIRouter()
 settings = get_settings()
+
+
 @router.post("/signup", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 @RATE_LIMIT_REGISTER  # 3 per hour per IP
 async def signup(request: Request, payload: SignupRequest, db: Session = Depends(get_db)):
@@ -58,6 +61,53 @@ async def signup(request: Request, payload: SignupRequest, db: Session = Depends
     except Exception as exc:  # noqa: BLE001 (blind exception)
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return user
+
+
+@router.post("/test/create-verified-user", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+async def test_create_verified_user(payload: SignupRequest, db: Session = Depends(get_db)):
+    """⚠️ APENAS PARA TESTES: Cria usuário com email já verificado.
+
+    Este endpoint NÃO DEVE SER EXPOSTO EM PRODUÇÃO.
+    
+    Válido apenas quando ENV != 'production'.
+    Usado para testes de API que precisam fazer login sem verificação de email.
+    
+    Args:
+        payload: Dados de signup (email, password, full_name, role)
+        db: Database session
+
+    Returns:
+        UserOut com usuário criado e email_verified=True
+        
+    Raises:
+        HTTPException 403: Se chamado em ambiente de produção
+        HTTPException 400: Se usuário já existe
+    """
+    # Validar: apenas em ambiente de teste
+    env = os.getenv("ENV", "development")
+    if env == "production":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Test endpoint not available in production",
+        )
+    
+    service = AuthService(db)
+    try:
+        user = service.signup(payload)
+    except Exception as exc:  # noqa: BLE001 (blind exception)
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    
+    # Mark email as verified
+    from robbot.adapters.repositories.credential_repository import CredentialRepository
+    cred_repo = CredentialRepository(db)
+    cred = cred_repo.get_by_user_id(user.id)
+    if cred:
+        cred.email_verified = True
+        db.commit()
+    
+    return user
+
+
 @router.post("/token", response_model=dict)
 @RATE_LIMIT_LOGIN  # 5 per 15min per IP
 async def login_for_access_token(
@@ -128,13 +178,11 @@ async def login_for_access_token(
         "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         "mfa_required": False,
     }
+
+
 @router.post("/refresh", response_model=dict)
 @RATE_LIMIT_REFRESH  # 10 per 1min per user
-async def refresh_token(
-    request: Request,
-    response: Response,
-    db: Session = Depends(get_db)
-):
+async def refresh_token(request: Request, response: Response, db: Session = Depends(get_db)):
     """Renova access token usando refresh token do cookie HttpOnly.
 
     Rate limiting: 10 requisições por minuto por usuário.
@@ -177,7 +225,7 @@ async def refresh_token(
     )
 
     # Optional: Implement refresh token rotation for extra security
-    if hasattr(token_result, 'new_refresh_token') and token_result.new_refresh_token:
+    if hasattr(token_result, "new_refresh_token") and token_result.new_refresh_token:
         response.set_cookie(
             key="refresh_token",
             value=token_result.new_refresh_token,
@@ -193,13 +241,10 @@ async def refresh_token(
         "message": "Token refreshed successfully",
         "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     }
+
+
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-def logout(
-    request: Request,
-    response: Response,
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
-):
+def logout(request: Request, response: Response, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     """
     Logout: revoke tokens in DB and clear HttpOnly cookies.
     """
@@ -211,6 +256,7 @@ def logout(
 
     # Use service to revoke tokens and session, and log audit
     import contextlib
+
     with contextlib.suppress(Exception):
         # Proceed to clear cookies regardless
         service.logout(
@@ -224,6 +270,8 @@ def logout(
     response.delete_cookie("refresh_token", path="/api/v1/auth/refresh")
 
     return
+
+
 @router.post("/password-change", status_code=status.HTTP_200_OK)
 async def password_change(
     request: Request,
@@ -248,6 +296,8 @@ async def password_change(
             detail=str(exc),
         ) from exc
     return {"detail": "Password changed successfully"}
+
+
 @router.get("/me", response_model=AuthSessionResponse)
 def read_me(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     """Obtém informações da sessão de autenticação atual.
@@ -269,10 +319,7 @@ def read_me(current_user=Depends(get_current_user), db: Session = Depends(get_db
     # Get most recent active session
     sessions = session_repo.get_all_by_user_id(current_user.id)  # type: ignore[attr-defined]
     now_utc = datetime.now(UTC)
-    active_sessions = [
-        s for s in sessions
-        if not s.is_revoked and s.expires_at.replace(tzinfo=UTC) > now_utc
-    ]
+    active_sessions = [s for s in sessions if not s.is_revoked and s.expires_at.replace(tzinfo=UTC) > now_utc]
     session_id = active_sessions[0].id if active_sessions else None
     last_login_at = active_sessions[0].created_at if active_sessions else None
 
@@ -286,6 +333,8 @@ def read_me(current_user=Depends(get_current_user), db: Session = Depends(get_db
         session_id=session_id,
         last_login_at=last_login_at,
     )
+
+
 @router.post("/password-recovery", status_code=status.HTTP_202_ACCEPTED)
 @RATE_LIMIT_PASSWORD_RECOVERY  # 3 per hour per email
 async def password_recovery(request: Request, email: str, db: Session = Depends(get_db)):
@@ -297,6 +346,8 @@ async def password_recovery(request: Request, email: str, db: Session = Depends(
     service = AuthService(db)
     service.send_password_recovery(email)
     return {"detail": "If the email exists a recovery message was sent"}
+
+
 @router.post("/password-reset", status_code=status.HTTP_200_OK)
 @RATE_LIMIT_PASSWORD_RESET  # 5 per 15min per IP
 async def password_reset(request: Request, token: str, new_password: str, db: Session = Depends(get_db)):
@@ -314,6 +365,8 @@ async def password_reset(request: Request, token: str, new_password: str, db: Se
             detail=str(exc),
         ) from exc
     return {"detail": "Password updated"}
+
+
 # ============================================================================
 # SESSION MANAGEMENT
 # ============================================================================
@@ -339,6 +392,7 @@ def list_sessions(
     if refresh_token_value:
         try:
             from robbot.core import security
+
             payload = security.decode_token(refresh_token_value, verify_exp=False)
             current_jti = payload.get("jti")
         except Exception:
@@ -348,13 +402,12 @@ def list_sessions(
     session_outs = []
     for sess in sessions:
         session_out = SessionOut.model_validate(sess)
-        session_out.is_current = (sess.refresh_token_jti == current_jti)
+        session_out.is_current = sess.refresh_token_jti == current_jti
         session_outs.append(session_out)
 
-    return SessionListResponse(
-        sessions=session_outs,
-        total=len(session_outs)
-    )
+    return SessionListResponse(sessions=session_outs, total=len(session_outs))
+
+
 @router.post("/sessions/{session_id}/revoke", status_code=status.HTTP_204_NO_CONTENT)
 def revoke_session(
     session_id: int,
@@ -375,19 +428,14 @@ def revoke_session(
         404 se sessão não encontrada ou pertence a outro usuário
     """
     session_repo = AuthSessionRepository(db)
-    success = session_repo.revoke_by_id(
-        session_id=session_id,
-        user_id=current_user.id,
-        reason="manual_revocation"
-    )
+    success = session_repo.revoke_by_id(session_id=session_id, user_id=current_user.id, reason="manual_revocation")
 
     if not success:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Session not found or unauthorized"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found or unauthorized")
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 @router.post("/sessions/revoke-all", status_code=status.HTTP_200_OK)
 def revoke_all_sessions(
     request: Request,
@@ -407,6 +455,7 @@ def revoke_all_sessions(
     if refresh_token_value:
         try:
             from robbot.core import security
+
             payload = security.decode_token(refresh_token_value, verify_exp=False)
             current_jti = payload.get("jti")
         except Exception:
@@ -422,10 +471,9 @@ def revoke_all_sessions(
             session_repo.revoke(sess, reason="revoke_all_other_sessions")
             revoked_count += 1
 
-    return {
-        "detail": f"Revoked {revoked_count} session(s)",
-        "revoked_count": revoked_count
-    }
+    return {"detail": f"Revoked {revoked_count} session(s)", "revoked_count": revoked_count}
+
+
 # ============================================================================
 # EMAIL VERIFICATION ENDPOINTS
 # ============================================================================
@@ -448,20 +496,17 @@ async def verify_email(token: str, db: Session = Depends(get_db)):
     try:
         user_id = service.verify_email(token)
         return EmailVerificationResponse(
-            message="Email verified successfully. You can now login.",
-            email_verified=True,
-            user_id=user_id
+            message="Email verified successfully. You can now login.", email_verified=True, user_id=user_id
         )
     except AuthException as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
+
+
 @router.post("/email/resend", status_code=status.HTTP_200_OK)
-async def resend_verification_email(
-    payload: EmailResendRequest,
-    db: Session = Depends(get_db)
-):
+async def resend_verification_email(payload: EmailResendRequest, db: Session = Depends(get_db)):
     """Reenvia email de verificação para usuário.
 
     Rate limited para prevenir abuso (máx 1 email por 5 minutos).
@@ -481,16 +526,16 @@ async def resend_verification_email(
     try:
         service.resend_verification_email(payload.email)
 
-        return {
-            "detail": "Verification email sent. Please check your inbox.",
-            "email": payload.email
-        }
+        return {"detail": "Verification email sent. Please check your inbox.", "email": payload.email}
     except AuthException as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
+
+
 # ==================== MFA ENDPOINTS ====================
+
 
 @router.post("/mfa/setup", response_model=MfaSetupResponse)
 def setup_mfa(
@@ -512,16 +557,14 @@ def setup_mfa(
     service = MfaService(db)
     try:
         secret, qr_code_base64, backup_codes = service.setup_mfa(current_user.id)
-        return MfaSetupResponse(
-            secret=secret,
-            qr_code_base64=qr_code_base64,
-            backup_codes=backup_codes
-        )
+        return MfaSetupResponse(secret=secret, qr_code_base64=qr_code_base64, backup_codes=backup_codes)
     except AuthException as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
+
+
 @router.post("/mfa/verify", response_model=MfaVerifyResponse)
 def verify_mfa_code(
     payload: MfaVerifyRequest,
@@ -547,23 +590,19 @@ def verify_mfa_code(
     try:
         # Try TOTP first
         service.verify_mfa(current_user.id, payload.code)
-        return MfaVerifyResponse(
-            verified=True,
-            message="MFA code verified successfully"
-        )
+        return MfaVerifyResponse(verified=True, message="MFA code verified successfully")
     except AuthException:
         # Try backup code
         try:
             service.verify_backup_code(current_user.id, payload.code)
-            return MfaVerifyResponse(
-                verified=True,
-                message="Backup code verified successfully (code consumed)"
-            )
+            return MfaVerifyResponse(verified=True, message="Backup code verified successfully (code consumed)")
         except AuthException as exc:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=str(exc),
             ) from exc
+
+
 @router.post("/mfa/disable", response_model=MfaDisableResponse)
 def disable_mfa(
     payload: MfaDisableRequest,
@@ -590,14 +629,14 @@ def disable_mfa(
         # Verify code before disabling
         service.verify_mfa(current_user.id, payload.code)
         service.disable_mfa(current_user.id)
-        return MfaDisableResponse(
-            message="MFA disabled successfully"
-        )
+        return MfaDisableResponse(message="MFA disabled successfully")
     except AuthException as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(exc),
         ) from exc
+
+
 @router.post("/mfa/login", response_model=LoginResponse, status_code=status.HTTP_200_OK)
 def mfa_login(
     payload: MfaLoginRequest,
