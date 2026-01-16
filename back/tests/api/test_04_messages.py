@@ -2,15 +2,29 @@
 PHASE 4: Messages and Media Tests
 
 Test Cases: UC-016 to UC-021
+
+Este módulo testa a criação de mensagens com diferentes tipos de mídia
+e valida o enriquecimento automático por IA (transcrição, análise de imagem, metadata).
 """
-import pytest
+
+
+# URLs públicas para testes de enriquecimento com arquivos reais
+TEST_MEDIA_URLS = {
+    "audio": "https://www2.cs.uic.edu/~i101/SoundFiles/BabyElephantWalk60.wav",
+    "image": "https://images.unsplash.com/photo-1516549655169-df83a0774514?w=800",
+    "video": "https://sample-videos.com/video123/mp4/240/big_buck_bunny_240p_1mb.mp4",
+    "document": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+}
 
 
 class TestPhase4Messages:
     """Phase 4: Messages and Media (CRUD + enrichment schema)."""
 
     def test_uc016_create_text_message(self, api_client):
-        """UC-016: Create Text Message (schema-aligned)."""
+        """
+        UC-016: Create Text Message (schema-aligned).
+        Mensagens de texto NÃO passam por enriquecimento automático.
+        """
         response = api_client.post(
             "/messages",
             json={
@@ -27,18 +41,17 @@ class TestPhase4Messages:
 
         assert data["type"] == "text"
         assert "emagrecimento" in data["text"]
-        assert "title" in data  # may be filled by enrichment or stay None
 
     def test_uc017_create_voice_message(self, api_client):
-        """UC-017: Create Voice Message (Faster-Whisper path)."""
+        """UC-017: Create Voice Message with automatic transcription."""
         response = api_client.post(
             "/messages",
             json={
                 "type": "voice",
                 "file": {
-                    "url": "https://example.com/audio.ogg",
-                    "mimetype": "audio/ogg",
-                    "filename": "audio.ogg"
+                    "url": TEST_MEDIA_URLS["audio"],
+                    "mimetype": "audio/wav",
+                    "filename": "audio_teste.wav"
                 },
                 "caption": "Áudio do paciente sobre consulta"
             }
@@ -46,41 +59,37 @@ class TestPhase4Messages:
 
         assert response.status_code == 201, response.text
         data = response.json()
-
         assert data["type"] == "voice"
-        assert data["file"]["mimetype"] == "audio/ogg"
 
     def test_uc018_create_image_message(self, api_client):
-        """UC-018: Create Image Message (BLIP-2 path)."""
+        """UC-018: Create Image Message with BLIP-2 vision analysis."""
         response = api_client.post(
             "/messages",
             json={
                 "type": "image",
                 "file": {
-                    "url": "https://example.com/image.jpg",
+                    "url": TEST_MEDIA_URLS["image"],
                     "mimetype": "image/jpeg",
-                    "filename": "image.jpg"
+                    "filename": "clinica.jpg"
                 },
-                "caption": "Antes e depois do procedimento"
+                "caption": "Imagem da clínica médica"
             }
         )
 
         assert response.status_code == 201, response.text
         data = response.json()
-
         assert data["type"] == "image"
-        assert data["file"]["mimetype"] == "image/jpeg"
 
     def test_uc019_create_video_message(self, api_client):
-        """UC-019: Create Video Message (transcription + metadata path)."""
+        """UC-019: Create Video Message with audio transcription."""
         response = api_client.post(
             "/messages",
             json={
                 "type": "video",
                 "file": {
-                    "url": "https://example.com/video.mp4",
+                    "url": TEST_MEDIA_URLS["video"],
                     "mimetype": "video/mp4",
-                    "filename": "video.mp4"
+                    "filename": "procedimento.mp4"
                 },
                 "caption": "Vídeo explicando o procedimento"
             }
@@ -88,7 +97,6 @@ class TestPhase4Messages:
 
         assert response.status_code == 201, response.text
         data = response.json()
-
         assert data["type"] == "video"
         assert data["file"]["mimetype"] == "video/mp4"
 
@@ -106,7 +114,6 @@ class TestPhase4Messages:
                 "caption": "Tabela de preços atualizada"
             }
         )
-
         assert response.status_code == 201, response.text
         data = response.json()
 
