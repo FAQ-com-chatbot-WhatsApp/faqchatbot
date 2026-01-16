@@ -19,6 +19,8 @@ from robbot.infra.db.models.conversation_message_model import ConversationMessag
 from robbot.infra.db.session import SessionLocal
 
 logger = logging.getLogger(__name__)
+
+
 class ReEngagementJob:
     """
     Job para reativar conversas inativas.
@@ -73,9 +75,7 @@ class ReEngagementJob:
                 inactive_conversations = self._find_inactive_conversations(session)
                 stats["conversations_found"] = len(inactive_conversations)
 
-                logger.info(
-                    f"[SUCCESS] Encontradas {len(inactive_conversations)} conversas inativas"
-                )
+                logger.info(f"[SUCCESS] Encontradas {len(inactive_conversations)} conversas inativas")
 
                 # Processar cada conversa
                 for conversation in inactive_conversations:
@@ -83,16 +83,13 @@ class ReEngagementJob:
                         self._reengage_conversation(session, conversation)
                         stats["messages_sent"] += 1
                     except (WAHAError, DatabaseError) as e:
-                        logger.error(
-                            f"[ERROR] Erro ao reengajar conversa {conversation.id}: {e}"
-                        )
+                        logger.error(f"[ERROR] Erro ao reengajar conversa {conversation.id}: {e}")
                         stats["errors"] += 1
 
                 session.commit()
 
                 logger.info(
-                    f"[SUCCESS] Re-engagement concluído: {stats['messages_sent']} enviadas, "
-                    f"{stats['errors']} erros"
+                    f"[SUCCESS] Re-engagement concluído: {stats['messages_sent']} enviadas, {stats['errors']} erros"
                 )
 
         except JobError:
@@ -121,10 +118,12 @@ class ReEngagementJob:
         cutoff_time = datetime.now(UTC) - timedelta(hours=self.INACTIVE_THRESHOLD_HOURS)
 
         # Buscar conversas ACTIVE e não urgentes
-        active_conversations = conv_repo.find_by_criteria({
-            "status": ConversationStatus.ACTIVE,
-            "is_urgent": False,
-        })
+        active_conversations = conv_repo.find_by_criteria(
+            {
+                "status": ConversationStatus.ACTIVE,
+                "is_urgent": False,
+            }
+        )
 
         # Filtrar por última mensagem
         inactive_conversations = []
@@ -159,14 +158,8 @@ class ReEngagementJob:
 
         # Enviar via WAHA
         try:
-            self.waha_client.send_text_message(
-                session="default",
-                chat_id=conversation.chat_id,
-                text=message_text
-            )
-            logger.info(
-                f"[SUCCESS] Mensagem de re-engagement enviada (conv_id={conversation.id})"
-            )
+            self.waha_client.send_text_message(session="default", chat_id=conversation.chat_id, text=message_text)
+            logger.info(f"[SUCCESS] Mensagem de re-engagement enviada (conv_id={conversation.id})")
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("[ERROR] Failed to send via WAHA: %s", e)
             raise
@@ -184,16 +177,12 @@ class ReEngagementJob:
 
         # Atualizar status da conversa
         conv_repo = ConversationRepository(session)
-        conv_repo.update(
-            conversation_id=conversation.id,
-            data={"status": ConversationStatus.WAITING_SECRETARY}
-        )
+        conv_repo.update(conversation_id=conversation.id, data={"status": ConversationStatus.WAITING_SECRETARY})
         session.flush()
 
-        logger.info(
-            f"[SUCCESS] Conversa reengajada (id={conversation.id}, "
-            f"status={conversation.status.value})"
-        )
+        logger.info(f"[SUCCESS] Conversa reengajada (id={conversation.id}, status={conversation.status.value})")
+
+
 def run_reengagement_job():
     """
     Entry point para executar o job.
