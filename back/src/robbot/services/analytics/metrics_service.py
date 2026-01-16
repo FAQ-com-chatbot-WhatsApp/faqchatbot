@@ -124,7 +124,7 @@ class MetricsService:
             self.redis.setex(
                 cache_key,
                 ttl,
-                json.dumps(result, default=str)  # default=str para datetime
+                json.dumps(result, default=str),  # default=str para datetime
             )
             logger.debug("Cache SET: %s (TTL=%ss)", cache_key, ttl)
         except Exception as e:  # noqa: BLE001 (blind exception)
@@ -717,6 +717,7 @@ class MetricsService:
             settings.ANALYTICS_CACHE_TTL_REPORTS,
             _compute,
         )
+
     # =============================================================================
     # CONVERSION REPORTS EXTENDED (Sprint 12 - L2)
     # =============================================================================
@@ -1273,9 +1274,10 @@ class MetricsService:
                 "keyspace_hits": info.get("keyspace_hits", 0),
                 "keyspace_misses": info.get("keyspace_misses", 0),
                 "hit_rate": round(
-                    info.get("keyspace_hits", 0) /
-                    (info.get("keyspace_hits", 0) + info.get("keyspace_misses", 1)) * 100,
-                    2
+                    info.get("keyspace_hits", 0)
+                    / (info.get("keyspace_hits", 0) + info.get("keyspace_misses", 1))
+                    * 100,
+                    2,
                 ),
             }
         except Exception as e:  # noqa: BLE001 (blind exception)
