@@ -132,7 +132,7 @@ class MessageProcessor:
 
         except Exception as e:  # noqa: BLE001
             logger.error("[ERROR] Failed to save inbound message: %s", e)
-            raise DatabaseError(f"Failed to save inbound message: {e}")
+            raise DatabaseError(f"Failed to save inbound message: {e}") from e
 
     async def save_outbound_message(self, session: Any, conversation_id: str, text: str) -> ConversationMessageModel:
         """
@@ -162,4 +162,4 @@ class MessageProcessor:
 
         except Exception as e:  # noqa: BLE001
             logger.error("[ERROR] Failed to save outbound message: %s", e)
-            raise DatabaseError(f"Failed to save outbound message: {e}")
+            raise DatabaseError(f"Failed to save outbound message: {e}") from e
