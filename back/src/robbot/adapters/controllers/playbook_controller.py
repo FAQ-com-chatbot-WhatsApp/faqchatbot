@@ -10,6 +10,8 @@ from robbot.schemas.topic import DeletedResponse
 from robbot.services.playbook_service import PlaybookService
 
 router = APIRouter()
+
+
 @router.post("/", response_model=PlaybookOut, status_code=status.HTTP_201_CREATED)
 def create_playbook(
     payload: PlaybookCreate,
@@ -32,6 +34,8 @@ def create_playbook(
         active=payload.active,
     )
     return PlaybookOut.model_validate(created)
+
+
 @router.get("/search", response_model=PlaybookSearchResults)
 def search_playbooks(
     query: str = Query(..., min_length=1, description="Search query (natural language)"),
@@ -53,10 +57,9 @@ def search_playbooks(
     service = PlaybookService(db)
     results = service.search_playbooks(query, top_k=top_k, active_only=active_only)
 
-    return PlaybookSearchResults(
-        results=results,
-        total=len(results)
-    )
+    return PlaybookSearchResults(results=results, total=len(results))
+
+
 @router.get("/{playbook_id}", response_model=PlaybookOut)
 def get_playbook(
     playbook_id: str,
@@ -69,6 +72,8 @@ def get_playbook(
     if not playbook:
         raise HTTPException(status_code=404, detail=f"Playbook {playbook_id} not found")
     return PlaybookOut.model_validate(playbook)
+
+
 @router.get("/topic/{topic_id}", response_model=PlaybookList)
 def list_playbooks_by_topic(
     topic_id: str,
@@ -79,10 +84,9 @@ def list_playbooks_by_topic(
     """List all playbooks for a specific topic."""
     service = PlaybookService(db)
     playbooks = service.list_playbooks_by_topic(topic_id, active_only=active_only)
-    return PlaybookList(
-        playbooks=[PlaybookOut.model_validate(p) for p in playbooks],
-        total=len(playbooks)
-    )
+    return PlaybookList(playbooks=[PlaybookOut.model_validate(p) for p in playbooks], total=len(playbooks))
+
+
 @router.patch("/{playbook_id}", response_model=PlaybookOut)
 def update_playbook(
     playbook_id: str,
@@ -105,6 +109,8 @@ def update_playbook(
         raise HTTPException(status_code=404, detail=f"Playbook {playbook_id} not found")
 
     return PlaybookOut.model_validate(updated)
+
+
 @router.delete("/{playbook_id}", response_model=DeletedResponse)
 def delete_playbook(
     playbook_id: str,
