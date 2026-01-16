@@ -10,7 +10,9 @@ from robbot.schemas.user import MessageResponse, UserList, UserOut, UserUpdate
 from robbot.services.user_service import UserService
 
 router = APIRouter()
-@router.get("/users/me", response_model=UserOut)
+
+
+@router.get("/me", response_model=UserOut)
 def get_current_user_profile(
     current_user=Depends(get_current_user),
 ):
@@ -20,7 +22,9 @@ def get_current_user_profile(
     Para informações de sessão de autenticação, use GET /auth/me.
     """
     return current_user
-@router.patch("/users/me", response_model=UserOut)
+
+
+@router.patch("/me", response_model=UserOut)
 def update_current_user_profile(
     payload: UserUpdate,
     db: Session = Depends(get_db),
@@ -35,9 +39,10 @@ def update_current_user_profile(
     try:
         return service.update_user(current_user.id, payload)
     except NotFoundException as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
-@router.get("/users", response_model=UserList)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.get("/", response_model=UserList)
 def list_users(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
@@ -48,7 +53,9 @@ def list_users(
     service = UserService(db)
     users, total = service.list_users(skip=skip, limit=limit)
     return UserList(users=users, total=total, skip=skip, limit=limit)
-@router.get("/users/{user_id}", response_model=UserOut)
+
+
+@router.get("/{user_id}", response_model=UserOut)
 def get_user(
     user_id: int,
     db: Session = Depends(get_db),
@@ -59,9 +66,10 @@ def get_user(
     try:
         return service.get_user(user_id)
     except NotFoundException as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
-@router.patch("/users/{user_id}", response_model=UserOut)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.patch("/{user_id}", response_model=UserOut)
 def update_user(
     user_id: int,
     payload: UserUpdate,
@@ -73,9 +81,10 @@ def update_user(
     try:
         return service.update_user(user_id, payload)
     except NotFoundException as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
-@router.delete("/users/{user_id}", response_model=MessageResponse)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.delete("/{user_id}", response_model=MessageResponse)
 def deactivate_user(
     user_id: int,
     db: Session = Depends(get_db),
@@ -87,9 +96,10 @@ def deactivate_user(
         service.deactivate_user(user_id)
         return MessageResponse(detail=f"User {user_id} deactivated successfully")
     except NotFoundException as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
-@router.post("/users/{user_id}/block", response_model=UserOut)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.post("/{user_id}/block", response_model=UserOut)
 def block_user(
     user_id: int,
     payload: BlockUserRequest | None = None,
@@ -101,9 +111,10 @@ def block_user(
     try:
         return service.block_user(user_id, reason=(payload.reason if payload else None))
     except NotFoundException as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
-@router.post("/users/{user_id}/unblock", response_model=UserOut)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.post("/{user_id}/unblock", response_model=UserOut)
 def unblock_user(
     user_id: int,
     payload: UnblockUserRequest | None = None,
@@ -115,5 +126,4 @@ def unblock_user(
     try:
         return service.unblock_user(user_id, reason=(payload.reason if payload else None))
     except NotFoundException as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
