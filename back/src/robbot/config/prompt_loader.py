@@ -38,7 +38,7 @@ class PromptLoader:
             raise FileNotFoundError(f"Prompts file not found: {self.prompts_path}")
 
         self._prompts = self._load_prompts()
-        logger.info(f"Loaded {len(self._prompts)} prompt templates from {self.prompts_path}")
+        logger.info("Loaded %d prompt templates from %s", len(self._prompts), self.prompts_path)
 
     def _load_prompts(self) -> dict[str, Any]:
         """
@@ -52,7 +52,7 @@ class PromptLoader:
                 prompts = yaml.safe_load(f)
                 return prompts or {}
         except yaml.YAMLError as e:
-            logger.error(f"Failed to parse YAML: {e}")
+            logger.error("Failed to parse YAML: %s", e)
             raise
 
     def get_prompt(self, name: str) -> str:
@@ -128,7 +128,7 @@ class PromptLoader:
     def reload(self) -> None:
         """Reload prompts from YAML file (for development)."""
         self._prompts = self._load_prompts()
-        logger.info(f"Reloaded {len(self._prompts)} prompt templates")
+        logger.info("Reloaded %d prompt templates", len(self._prompts))
 
     @property
     def all_prompts(self) -> dict[str, Any]:
