@@ -10,7 +10,7 @@ Resolves Issue #5: No Abstraction Layer for Repository Pattern
 import logging
 from typing import Any, TypeVar
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from robbot.core.interfaces import IRepository
@@ -147,7 +147,4 @@ class BaseRepository(IRepository[ModelType]):
         Returns:
             Total number of objects
         """
-        stmt = select(func.count(self.model_class.id)).select_from(
-            self.model_class
-        )
-        return self.db.scalar(stmt) or 0
+        return self.db.query(self.model_class).count()
