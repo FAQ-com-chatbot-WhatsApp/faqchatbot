@@ -65,23 +65,23 @@ def parse_device_name(user_agent: str | None) -> str:
 
 def get_password_hash(password: str) -> str:
     """Return a bcrypt hash for the plain password.
-    
+
     Truncates password to 72 UTF-8 bytes to respect bcrypt limitation.
     """
     # Bcrypt has a hard limit of 72 bytes
     password_bytes = password.encode("utf-8")
-    
+
     # Truncate if necessary (preserving UTF-8 validity)
     if len(password_bytes) > 72:
         # Decode with error handling to avoid cutting in the middle of a character
         password_bytes = password_bytes[:72]
         password = password_bytes.decode("utf-8", errors="ignore")
         password_bytes = password.encode("utf-8")
-    
+
     # Generate salt and hash
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(password_bytes, salt)
-    
+
     # Return as string (bcrypt returns bytes)
     return hashed.decode("utf-8")
 
@@ -202,9 +202,9 @@ def get_current_user(
             detail=str(e),
             headers={"WWW-Authenticate": "Bearer"},
         )
-    except Exception:
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from e
