@@ -25,8 +25,6 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-from robbot.core.custom_exceptions import ExportError
-
 logger = logging.getLogger(__name__)
 
 
@@ -198,9 +196,7 @@ class ExportService:
         # Seção 4: Distribuição por Status
         status_distribution = report_data.get("status_distribution", [])
         if status_distribution:
-            elements.append(
-                Paragraph("4. Distribuição de Conversas por Status", heading_style)
-            )
+            elements.append(Paragraph("4. Distribuição de Conversas por Status", heading_style))
 
             status_data = [["Status", "Quantidade", "Percentual"]]
             for status in status_distribution:
@@ -212,9 +208,7 @@ class ExportService:
                     ]
                 )
 
-            status_table = Table(
-                status_data, colWidths=[2 * inch, 1.5 * inch, 1.5 * inch]
-            )
+            status_table = Table(status_data, colWidths=[2 * inch, 1.5 * inch, 1.5 * inch])
             status_table.setStyle(
                 TableStyle(
                     [
@@ -262,9 +256,7 @@ class ExportService:
         wb = Workbook()
 
         # Estilos
-        header_fill = PatternFill(
-            start_color="1a73e8", end_color="1a73e8", fill_type="solid"
-        )
+        header_fill = PatternFill(start_color="1a73e8", end_color="1a73e8", fill_type="solid")
         header_font = Font(bold=True, color="FFFFFF", size=12)
         data_fill = PatternFill(start_color="F5F5F5", end_color="F5F5F5", fill_type="solid")
 
@@ -357,9 +349,7 @@ class ExportService:
         for row_idx, hour_data in enumerate(peak_hours, start=4):
             ws_peak.cell(row=row_idx, column=1, value=f"{hour_data.get('hour')}:00")
             ws_peak.cell(row=row_idx, column=2, value=hour_data.get("message_count", 0))
-            ws_peak.cell(
-                row=row_idx, column=3, value=hour_data.get("conversation_count", 0)
-            )
+            ws_peak.cell(row=row_idx, column=3, value=hour_data.get("conversation_count", 0))
             ws_peak.cell(row=row_idx, column=1).fill = data_fill  # type: ignore[index]
             ws_peak.cell(row=row_idx, column=2).fill = data_fill  # type: ignore[index]
             ws_peak.cell(row=row_idx, column=3).fill = data_fill  # type: ignore[index]
