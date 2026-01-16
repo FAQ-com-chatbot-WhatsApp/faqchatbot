@@ -1,4 +1,3 @@
-
 from sqlalchemy import Column, DateTime, Integer, Text, func
 
 from robbot.infra.db.base import Base
