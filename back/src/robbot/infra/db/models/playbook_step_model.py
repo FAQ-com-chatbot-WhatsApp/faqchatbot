@@ -21,32 +21,23 @@ class PlaybookStepModel(Base):
     __tablename__ = "playbook_steps"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    playbook_id = Column(
-        String(36),
-        ForeignKey('playbooks.id', ondelete='CASCADE'),
-        nullable=False,
-        index=True
-    )
+    playbook_id = Column(String(36), ForeignKey("playbooks.id", ondelete="CASCADE"), nullable=False, index=True)
     message_id = Column(
         UUID(as_uuid=True),
-        ForeignKey('messages.id', ondelete='CASCADE'),
+        ForeignKey("messages.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
-        comment="Template message ID"
+        comment="Template message ID",
     )
     step_order = Column(Integer, nullable=False)  # 1, 2, 3...
     context_hint = Column(Text, nullable=True)  # When to use this step (for LLM)
-    created_at = Column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     # Relationships
     playbook = relationship("PlaybookModel", back_populates="steps")
     message = relationship("MessageModel")
 
-    __table_args__ = (
-        UniqueConstraint('playbook_id', 'step_order', name='uq_playbook_steps_playbook_order'),
-    )
+    __table_args__ = (UniqueConstraint("playbook_id", "step_order", name="uq_playbook_steps_playbook_order"),)
 
     def __repr__(self) -> str:
         return f"<PlaybookStep id={self.id} playbook_id={self.playbook_id} order={self.step_order}>"
