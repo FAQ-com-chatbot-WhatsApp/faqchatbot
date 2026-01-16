@@ -1,4 +1,5 @@
 """Audit Log ORM model."""
+
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import relationship
 
@@ -12,10 +13,10 @@ class AuditLogModel(Base):
     Tracks all important actions in the system with before/after state.
     """
 
-    __tablename__ = 'audit_logs'
+    __tablename__ = "audit_logs"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     action = Column(String(50), nullable=False)
     entity_type = Column(String(50), nullable=False, index=True)
     entity_id = Column(String(100), nullable=False, index=True)
