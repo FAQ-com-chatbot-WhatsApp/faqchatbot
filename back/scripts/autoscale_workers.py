@@ -24,7 +24,6 @@ import sys
 from robbot.core.logging_setup import configure_logging
 from robbot.services.worker_analytics_service import WorkerAnalyticsService
 
-
 logger = logging.getLogger("autoscaler")
 
 
@@ -75,7 +74,7 @@ def main():
         pending_jobs = analytics["summary"]["total_pending"]
 
         logger.info("Current workers: %s, Pending jobs: %s", current_workers, pending_jobs)
-        logger.info("Recommendation: %s - %s", analytics['autoscaling']['action'], reason)
+        logger.info("Recommendation: %s - %s", analytics["autoscaling"]["action"], reason)
 
         if should_scale:
             logger.info("Executing scaling: %s -> %s workers", current_workers, target)
