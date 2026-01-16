@@ -103,13 +103,7 @@ class IntentDetector:
             logger.warning("[WARNING] Failed to detect urgency, assuming not urgent")
             return False
 
-    async def try_extract_name(
-        self,
-        session: Any,
-        message: str,
-        context: str,
-        conversation: ConversationModel
-    ) -> None:
+    async def try_extract_name(self, session: Any, message: str, context: str, conversation: ConversationModel) -> None:
         """
         Tentar extrair nome do paciente da mensagem de forma inteligente.
         Atualiza o lead se encontrar nome com confiança >= 70%.
@@ -137,20 +131,12 @@ class IntentDetector:
                 lead_repo.update(conversation.lead)
                 session.flush()
 
-                logger.info(
-                    "[SUCCESS] Name extracted: %s (confidence=%s%%)",
-                    name,
-                    confidence
-                )
+                logger.info("[SUCCESS] Name extracted: %s (confidence=%s%%)", name, confidence)
 
         except (LLMError, json.JSONDecodeError, KeyError) as e:
             logger.warning("[WARNING] Failed to extract name: %s", e)
 
-    async def generate_name_request(
-        self,
-        context: str,
-        maturity_score: int
-    ) -> str | None:
+    async def generate_name_request(self, context: str, maturity_score: int) -> str | None:
         """
         Gerar solicitação natural do nome do paciente.
 
@@ -162,10 +148,7 @@ class IntentDetector:
             str | None: Solicitação de nome ou None se não deve solicitar
         """
         try:
-            prompt = self.prompt_templates.format_name_request_prompt(
-                context,
-                maturity_score
-            )
+            prompt = self.prompt_templates.format_name_request_prompt(context, maturity_score)
 
             response = self.gemini_client.generate_response(prompt)
 
@@ -185,11 +168,7 @@ class IntentDetector:
             return None
 
     async def update_maturity_score(
-        self,
-        session: Any,
-        conversation: ConversationModel,
-        message: str,
-        intent: str
+        self, session: Any, conversation: ConversationModel, message: str, intent: str
     ) -> int:
         """
         Atualizar score de maturidade do lead baseado na intenção.
@@ -243,7 +222,7 @@ class IntentDetector:
                 conversation.lead_id,
                 current_score,
                 new_score,
-                score_delta
+                score_delta,
             )
 
             return new_score
@@ -280,11 +259,7 @@ class IntentDetector:
         """
         # Critério 1: High score (lead ready)
         if score >= 85:
-            logger.info(
-                "[INFO] Escalation needed: high score (%s) - conv=%s",
-                score,
-                conversation.id
-            )
+            logger.info("[INFO] Escalation needed: high score (%s) - conv=%s", score, conversation.id)
             return True
 
         # Critério 2: Cliente pede falar com humano
@@ -299,18 +274,12 @@ class IntentDetector:
 
         message_lower = message.lower()
         if any(keyword in message_lower for keyword in human_keywords):
-            logger.info(
-                "[INFO] Escalation needed: client requested human - conv=%s",
-                conversation.id
-            )
+            logger.info("[INFO] Escalation needed: client requested human - conv=%s", conversation.id)
             return True
 
         # Critério 3: Bot confuso (intent OUTRO múltiplas vezes)
         # TODO: Implementar contador de OUTRO consecutivos
         if intent == "OUTRO":
-            logger.info(
-                "[WARNING] Intent OUTRO detected - may need escalation - conv=%s",
-                conversation.id
-            )
+            logger.info("[WARNING] Intent OUTRO detected - may need escalation - conv=%s", conversation.id)
 
         return False
