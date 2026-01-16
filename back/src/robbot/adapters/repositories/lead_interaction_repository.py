@@ -1,4 +1,5 @@
 """Repository for LeadInteraction entity."""
+
 from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.base_repository import BaseRepository
@@ -12,11 +13,7 @@ class LeadInteractionRepository(BaseRepository[LeadInteractionModel]):
         """Initialize repository with database session."""
         super().__init__(session, LeadInteractionModel)
 
-    def get_by_lead_id(
-        self,
-        lead_id: str,
-        limit: int = 50
-    ) -> list[LeadInteractionModel]:
+    def get_by_lead_id(self, lead_id: str, limit: int = 50) -> list[LeadInteractionModel]:
         """
         Get interactions by lead ID.
 
@@ -35,11 +32,7 @@ class LeadInteractionRepository(BaseRepository[LeadInteractionModel]):
             .all()
         )
 
-    def get_by_user_id(
-        self,
-        user_id: int,
-        limit: int = 50
-    ) -> list[LeadInteractionModel]:
+    def get_by_user_id(self, user_id: int, limit: int = 50) -> list[LeadInteractionModel]:
         """
         Get interactions by user ID.
 
