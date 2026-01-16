@@ -1,6 +1,7 @@
 """
 Tag Controller - REST endpoints for tag management.
 """
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
@@ -15,22 +16,33 @@ from robbot.services.tag_service import TagService
 router = APIRouter()
 # ===== SCHEMAS =====
 
+
 class TagOut(BaseModel):
     """Response schema for tag."""
+
     id: int
     name: str
     color: str
     created_at: str
 
     model_config = ConfigDict(from_attributes=True)
+
+
 class CreateTagRequest(BaseModel):
     """Request schema for creating tag."""
+
     name: str = Field(..., min_length=1, max_length=50)
     color: str = Field(..., pattern=r"^#[0-9A-Fa-f]{6}$")
+
+
 class AddTagRequest(BaseModel):
     """Request schema for adding tag to conversation."""
+
     tag_id: int
+
+
 # ===== ENDPOINTS =====
+
 
 @router.post("/tags", response_model=TagOut, tags=["Tags"])
 def create_tag(
@@ -66,6 +78,8 @@ def create_tag(
     except Exception as e:  # noqa: BLE001 (blind exception)
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to create tag: {str(e)}")
+
+
 @router.get("/tags", response_model=list[TagOut], tags=["Tags"])
 def list_tags(
     current_user: dict = Depends(get_current_user),
@@ -88,7 +102,9 @@ def list_tags(
         )
         for tag in tags
     ]
-@router.delete("/tags/{tag_id}", tags=["Tags"])
+
+
+@router.delete("/{tag_id}", tags=["Tags"])
 def delete_tag(
     tag_id: int,
     current_user: dict = Depends(get_current_user),
@@ -116,6 +132,8 @@ def delete_tag(
     except Exception as e:  # noqa: BLE001 (blind exception)
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to delete tag: {str(e)}")
+
+
 @router.post("/conversations/{conversation_id}/tags", tags=["Tags"])
 def add_tag_to_conversation(
     conversation_id: str,
@@ -155,6 +173,8 @@ def add_tag_to_conversation(
     except Exception as e:  # noqa: BLE001 (blind exception)
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to add tag: {str(e)}")
+
+
 @router.delete("/conversations/{conversation_id}/tags/{tag_id}", tags=["Tags"])
 def remove_tag_from_conversation(
     conversation_id: str,
@@ -190,6 +210,8 @@ def remove_tag_from_conversation(
     except Exception as e:  # noqa: BLE001 (blind exception)
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to remove tag: {str(e)}")
+
+
 @router.get("/conversations/{conversation_id}/tags", response_model=list[TagOut], tags=["Tags"])
 def get_conversation_tags(
     conversation_id: str,
