@@ -437,7 +437,7 @@ Verification token: {verification_token}
             payload = security.decode_token(temporary_token, verify_exp=True)
         except AuthException as e:
             logger.warning("MFA login failed: invalid temporary token - %s", e)
-            raise AuthException("Invalid or expired temporary token")
+            raise AuthException("Invalid or expired temporary token") from e
 
         if payload.get("type") != "mfa-pending":
             raise AuthException("Invalid token type for MFA verification")
