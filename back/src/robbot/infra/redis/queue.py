@@ -12,6 +12,8 @@ from robbot.core.custom_exceptions import QueueError
 from robbot.infra.redis.client import get_redis_client
 
 logger = logging.getLogger(__name__)
+
+
 class RQQueueManager:
     """
     Gerenciador centralizado de filas RQ.
@@ -47,9 +49,7 @@ class RQQueueManager:
                 default_timeout=settings.RQ_JOB_TIMEOUT_MESSAGE,
                 is_async=True,
             )
-            logger.info(
-                f"[SUCCESS] Queue 'messages' initialized (timeout={settings.RQ_JOB_TIMEOUT_MESSAGE}s)"
-            )
+            logger.info(f"[SUCCESS] Queue 'messages' initialized (timeout={settings.RQ_JOB_TIMEOUT_MESSAGE}s)")
         return self._queue_messages
 
     @property
@@ -62,9 +62,7 @@ class RQQueueManager:
                 default_timeout=settings.RQ_JOB_TIMEOUT_AI,
                 is_async=True,
             )
-            logger.info(
-                f"[SUCCESS] Queue 'ai' initialized (timeout={settings.RQ_JOB_TIMEOUT_AI}s)"
-            )
+            logger.info(f"[SUCCESS] Queue 'ai' initialized (timeout={settings.RQ_JOB_TIMEOUT_AI}s)")
         return self._queue_ai
 
     @property
@@ -77,9 +75,7 @@ class RQQueueManager:
                 default_timeout=settings.RQ_JOB_TIMEOUT_ESCALATION,
                 is_async=True,
             )
-            logger.info(
-                f"[SUCCESS] Queue 'escalation' initialized (timeout={settings.RQ_JOB_TIMEOUT_ESCALATION}s)"
-            )
+            logger.info(f"[SUCCESS] Queue 'escalation' initialized (timeout={settings.RQ_JOB_TIMEOUT_ESCALATION}s)")
         return self._queue_escalation
 
     @property
@@ -115,9 +111,7 @@ class RQQueueManager:
         }
 
         if queue_name not in queues:
-            raise ValueError(
-                f"Fila '{queue_name}' não existe. Opções: {list(queues.keys())}"
-            )
+            raise ValueError(f"Fila '{queue_name}' não existe. Opções: {list(queues.keys())}")
 
         return queues[queue_name]
 
@@ -146,6 +140,7 @@ class RQQueueManager:
 
                 # Get failed jobs using registry instead of failed_job_ids
                 from rq.registry import FailedJobRegistry
+
                 failed_registry = FailedJobRegistry(queue=queue, connection=self.redis_client)
 
                 stats[name] = {
@@ -183,8 +178,12 @@ class RQQueueManager:
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("[ERROR] Health check failed: %s", e)
             raise QueueError(f"Health check failed: {e}")
+
+
 # Singleton global
 _queue_manager: RQQueueManager | None = None
+
+
 def get_queue_manager(redis_client: Redis | None = None) -> RQQueueManager:
     """
     Obter instância singleton do gerenciador de filas.
@@ -202,6 +201,8 @@ def get_queue_manager(redis_client: Redis | None = None) -> RQQueueManager:
         logger.info("[INFO] RQQueueManager initialized as singleton")
 
     return _queue_manager
+
+
 def close_queue_manager() -> None:
     """Fechar gerenciador (limpar resources)."""
     global _queue_manager
