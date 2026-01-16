@@ -20,9 +20,7 @@ class NotificationModel(Base):
 
     __tablename__ = "notifications"
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=lambda: str(uuid4())
-    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     type: Mapped[str] = mapped_column(
         String(50), nullable=False, comment="Notification type: NEW_LEAD, NEW_MESSAGE, etc."
@@ -30,9 +28,7 @@ class NotificationModel(Base):
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     message: Mapped[str] = mapped_column(Text, nullable=False)
     read: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, nullable=False, index=True
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)
 
     def __repr__(self) -> str:
         return f"<NotificationModel(id='{self.id}', user_id={self.user_id}, read={self.read})>"
