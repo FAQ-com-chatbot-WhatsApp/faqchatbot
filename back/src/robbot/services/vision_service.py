@@ -1,8 +1,8 @@
 """
-VisionService para análise de imagens usando BLIP-2 (open source, local, SEM CUSTO).
+VisionService for image analysis using BLIP-2 (open source, local, zero cost).
 
-Alternativa local ao Gemini Vision.
-Usa Salesforce BLIP-2 para image captioning e visual question answering.
+Local alternative to Gemini Vision.
+Uses Salesforce BLIP-2 for image captioning and visual question answering.
 """
 
 import logging
@@ -18,29 +18,29 @@ logger = logging.getLogger(__name__)
 
 class VisionService:
     """
-    Serviço para análise de imagens usando BLIP-2 (local, sem custo).
+    Image analysis service using BLIP-2 (local, no external API cost).
 
-    Modelo: Salesforce/blip-image-captioning-base
+    Model: Salesforce/blip-image-captioning-base
     - Open source (BSD-3 License)
-    - Roda localmente (CPU ou GPU)
-    - ~990MB download inicial
-    - Zero custo de API
-    - Qualidade boa para captioning
+    - Runs locally (CPU or GPU)
+    - ~990MB initial download
+    - Zero API cost
+    - Good quality for captioning
 
-    Funcionalidades:
-    - Gerar descrição automática de imagens
+    Features:
+    - Generate automatic image descriptions
     - Visual Question Answering (VQA)
-    - Análise contextual para saúde/emagrecimento
+    - Contextual analysis for health/weight loss
     """
 
     def __init__(self):
-        """Inicializar modelo BLIP-2 (lazy loading)."""
+        """Initialize BLIP-2 model (lazy loading)."""
         self.processor = None
         self.model = None
         self.model_name = "Salesforce/blip-image-captioning-base"
 
     def _load_model(self):
-        """Carregar modelo BLIP-2 sob demanda."""
+        """Load BLIP-2 model on demand."""
         if self.model is None:
             logger.info("Loading BLIP-2 model: %s (~990MB)...", self.model_name)
             try:
@@ -55,38 +55,38 @@ class VisionService:
         self, image_url: str, context: str = "medical", questions: list[str] | None = None
     ) -> dict[str, str]:
         """
-        Analisar imagem e gerar descrição detalhada.
+        Analyze image and generate a detailed description.
 
         Args:
-            image_url: URL da imagem
-            context: Contexto da análise (medical, fitness, food, etc)
-            questions: Perguntas específicas para VQA
+            image_url: Image URL
+            context: Analysis context (medical, fitness, food, etc.)
+            questions: Specific questions for VQA
 
         Returns:
-            Dict com:
-            - caption: Descrição principal da imagem
-            - detailed_description: Análise detalhada
-            - tags: Tags relevantes
-            - answers: Respostas para perguntas (se fornecidas)
+            Dict with:
+            - caption: Main image description
+            - detailed_description: Detailed analysis
+            - tags: Relevant tags
+            - answers: Answers for questions (if provided)
         """
         self._load_model()
 
         try:
-            # 1. Baixar imagem
+            # 1. Download image
             logger.info("[INFO] Downloading image from: %s", image_url)
             image = await self._download_image(image_url)
 
-            # 2. Gerar caption básico
+            # 2. Generate basic caption
             caption = await self._generate_caption(image)
             logger.info("[SUCCESS] Caption generated: %s", caption)
 
-            # 3. Gerar descrição detalhada com perguntas contextuais
+            # 3. Generate detailed description with contextual questions
             detailed_description = await self._generate_detailed_description(image, caption, context)
 
-            # 4. Extrair tags da descrição
+            # 4. Extract tags from description
             tags = self._extract_tags(caption, detailed_description, context)
 
-            # 5. Responder perguntas customizadas (VQA)
+            # 5. Answer custom questions (VQA)
             answers = {}
             if questions:
                 for question in questions:
@@ -100,26 +100,26 @@ class VisionService:
             raise
 
     async def _download_image(self, url: str) -> Image.Image:
-        """Baixar imagem de URL."""
+        """Download image from URL."""
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.get(url)
             response.raise_for_status()
 
-            # Salvar temporariamente
+            # Save temporarily
             with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
                 tmp.write(response.content)
                 tmp_path = tmp.name
 
-            # Abrir com PIL
+            # Open with PIL
             image = Image.open(tmp_path).convert("RGB")
 
-            # Limpar arquivo temporário
+            # Clean up temporary file
             os.unlink(tmp_path)
 
             return image
 
     async def _generate_caption(self, image: Image.Image) -> str:
-        """Gerar caption básico da imagem."""
+        """Generate a basic caption for the image."""
         # Process image
         inputs = self.processor(image, return_tensors="pt")
 
@@ -129,9 +129,9 @@ class VisionService:
 
     async def _generate_detailed_description(self, image: Image.Image, caption: str, context: str) -> str:
         """
-        Gerar descrição detalhada com perguntas contextuais.
+        Generate a detailed description including contextual questions.
 
-        Para contexto médico/emagrecimento, faz perguntas como:
+        For medical/weight loss context, ask questions like:
         - "What type of food is shown?"
         - "Is this a healthy meal?"
         - "What activities are visible?"
@@ -154,25 +154,25 @@ class VisionService:
         return " ".join(descriptions)
 
     async def _answer_question(self, image: Image.Image, question: str) -> str:
-        """Responder pergunta sobre a imagem (VQA)."""
-        # BLIP suporta conditional generation com prompt
+        """Answer a question about the image (VQA)."""
+        # BLIP supports conditional generation with a prompt
         prompt = f"Question: {question} Answer:"
 
         inputs = self.processor(image, text=prompt, return_tensors="pt")
         output = self.model.generate(**inputs, max_new_tokens=30)
         answer = self.processor.decode(output[0], skip_special_tokens=True)
 
-        # Remover o prompt da resposta
+        # Remove prompt from the answer
         return answer.replace(prompt, "").strip()
 
     def _extract_tags(self, caption: str, description: str, context: str) -> str:
-        """Extrair tags relevantes da descrição."""
+        """Extract relevant tags from the description."""
         text = f"{caption} {description}".lower()
 
-        # Tags base
+        # Base tags
         tags = ["imagem", "análise visual"]
 
-        # Palavras-chave contextuais para saúde/emagrecimento
+        # Contextual keywords for health/weight loss
         health_keywords = {
             "food": "alimentação",
             "meal": "refeição",
@@ -197,17 +197,17 @@ class VisionService:
             if keyword in text:
                 tags.append(tag)
 
-        # Adicionar contexto
+        # Add context tag
         if context == "medical":
             tags.append("contexto médico")
 
-        return ", ".join(tags[:10])  # Máximo 10 tags
+        return ", ".join(tags[:10])  # Max 10 tags
 
     def analyze_image_sync(self, image_url: str, context: str = "medical") -> dict[str, str]:
         """
-        Versão síncrona de analyze_image.
+        Synchronous version of `analyze_image`.
 
-        Útil para jobs em background (RQ).
+        Useful for background jobs (RQ).
         """
         import asyncio
 
@@ -225,7 +225,7 @@ _vision_service_instance: VisionService | None = None
 
 
 def get_vision_service() -> VisionService:
-    """Obter instância singleton do VisionService."""
+    """Get singleton instance of `VisionService`."""
     global _vision_service_instance
 
     if _vision_service_instance is None:
