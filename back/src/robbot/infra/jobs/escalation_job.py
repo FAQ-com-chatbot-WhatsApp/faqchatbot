@@ -11,6 +11,8 @@ from robbot.infra.db.session import get_sync_session
 from robbot.infra.jobs.base_job import BaseJob, JobFailureError, JobRetryableError
 
 logger = logging.getLogger(__name__)
+
+
 class EscalationJob(BaseJob):
     """
     Job para transferir conversa para atendimento humano.
@@ -48,11 +50,13 @@ class EscalationJob(BaseJob):
         self.phone = phone
         self.user_name = user_name or "Usuário"
 
-        self.metadata.update({
-            "conversation_id": conversation_id,
-            "reason": reason,
-            "phone": phone,
-        })
+        self.metadata.update(
+            {
+                "conversation_id": conversation_id,
+                "reason": reason,
+                "phone": phone,
+            }
+        )
 
     def execute(self) -> dict[str, Any]:
         """
@@ -146,6 +150,8 @@ class EscalationJob(BaseJob):
         # - Enviar webhook para dashboard real-time
 
         return f"notif_{self.conversation_id}_{int(self.metadata.get('created_at', 0))}"
+
+
 class MultipleEscalationJob(BaseJob):
     """
     Job para escalar múltiplas conversas.
