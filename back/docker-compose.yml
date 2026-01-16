@@ -136,6 +136,9 @@ services:
       # Redis Config
       REDIS_URL: redis://redis:6379/0
 
+      # Gemini (disable in dev if google.genai missing)
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-skip}
+
       # SMTP (Maildev em desenvolvimento)
       SMTP_HOST: maildev
       SMTP_PORT: 1025
@@ -143,6 +146,9 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_TLS: ${SMTP_TLS:-false}
       SMTP_SENDER: ${SMTP_SENDER:-no-reply@example.local}
+
+      # WAHA (WhatsApp HTTP API) auth for server-to-server calls
+      WAHA_API_KEY: ${WAHA_API_KEY:-your-secret-api-key}
 
       # Recomendação profissional:
       # SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
