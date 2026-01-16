@@ -12,6 +12,8 @@ from robbot.domain.enums import ConversationStatus, LeadStatus
 from robbot.infra.db.models.conversation_model import ConversationModel
 
 logger = logging.getLogger(__name__)
+
+
 class HandoffService:
     """
     Service to manage bot→human handoff.
@@ -60,9 +62,7 @@ class HandoffService:
             ConversationStatus.COMPLETED,
             ConversationStatus.CLOSED,
         ]:
-            raise BusinessRuleError(
-                f"Cannot handoff conversation in status {conversation.status}"
-            )
+            raise BusinessRuleError(f"Cannot handoff conversation in status {conversation.status}")
 
         # Update status and reason
         conversation.status = ConversationStatus.PENDING_HANDOFF
@@ -72,9 +72,7 @@ class HandoffService:
         self.conversation_repo.update(conversation)
         session.flush()
 
-        logger.info(
-            f"[SUCCESS] Handoff triggered: conv={conversation_id}, reason={reason}, score={score}"
-        )
+        logger.info(f"[SUCCESS] Handoff triggered: conv={conversation_id}, reason={reason}, score={score}")
 
         # Gerar mensagem de transição natural baseada no contexto
         transition_message = self._generate_transition_message(reason, score)
@@ -112,9 +110,7 @@ class HandoffService:
             ConversationStatus.ACTIVE_BOT,
             ConversationStatus.ESCALATED,
         ]:
-            raise BusinessRuleError(
-                f"Cannot assign conversation in status {conversation.status}"
-            )
+            raise BusinessRuleError(f"Cannot assign conversation in status {conversation.status}")
 
         # Atribuir ao atendente
         conversation.status = ConversationStatus.ACTIVE_HUMAN
@@ -125,9 +121,7 @@ class HandoffService:
         self.conversation_repo.update(conversation)
         session.flush()
 
-        logger.info(
-            f"[SUCCESS] Conversation assigned: conv={conversation_id}, user={user_id}"
-        )
+        logger.info(f"[SUCCESS] Conversation assigned: conv={conversation_id}, user={user_id}")
 
         return conversation
 
@@ -183,9 +177,7 @@ class HandoffService:
         # Calcular métricas
         metrics = self._calculate_metrics(conversation)
 
-        logger.info(
-            f"[SUCCESS] Conversation completed: conv={conversation_id}, metrics={metrics}"
-        )
+        logger.info(f"[SUCCESS] Conversation completed: conv={conversation_id}, metrics={metrics}")
 
         return {
             "status": "completed",
@@ -193,9 +185,7 @@ class HandoffService:
             "metrics": metrics,
         }
 
-    def _generate_transition_message(
-        self, reason: str, score: int | None = None
-    ) -> str:
+    def _generate_transition_message(self, reason: str, score: int | None = None) -> str:
         """Gera mensagem de transição natural baseada no contexto."""
         messages = {
             "score_high": (
@@ -227,23 +217,17 @@ class HandoffService:
         # Tempo total de conversa
         if conversation.created_at and conversation.completed_at:
             total_time = conversation.completed_at - conversation.created_at
-            metrics["total_conversation_time_minutes"] = int(
-                total_time.total_seconds() / 60
-            )
+            metrics["total_conversation_time_minutes"] = int(total_time.total_seconds() / 60)
 
         # Tempo até handoff
         if conversation.created_at and conversation.assigned_at:
             handoff_time = conversation.assigned_at - conversation.created_at
-            metrics["time_to_handoff_minutes"] = int(
-                handoff_time.total_seconds() / 60
-            )
+            metrics["time_to_handoff_minutes"] = int(handoff_time.total_seconds() / 60)
 
         # Tempo de atendimento humano
         if conversation.assigned_at and conversation.completed_at:
             human_time = conversation.completed_at - conversation.assigned_at
-            metrics["human_interaction_time_minutes"] = int(
-                human_time.total_seconds() / 60
-            )
+            metrics["human_interaction_time_minutes"] = int(human_time.total_seconds() / 60)
 
         # Score final
         if conversation.lead and conversation.lead.maturity_score:
@@ -277,14 +261,10 @@ class HandoffService:
 
         # Validate state and assignment
         if conversation.status != ConversationStatus.ACTIVE_HUMAN:
-            raise BusinessRuleError(
-                "Can only return conversations in ACTIVE_HUMAN status"
-            )
+            raise BusinessRuleError("Can only return conversations in ACTIVE_HUMAN status")
 
         if conversation.assigned_to != user_id:
-            raise BusinessRuleError(
-                f"User {user_id} cannot return conversation assigned to {conversation.assigned_to}"
-            )
+            raise BusinessRuleError(f"User {user_id} cannot return conversation assigned to {conversation.assigned_to}")
 
         # Devolver ao bot
         conversation.status = ConversationStatus.ACTIVE_BOT
@@ -296,8 +276,6 @@ class HandoffService:
         self.conversation_repo.update(conversation)
         session.flush()
 
-        logger.info(
-            f"[SUCCESS] Conversation returned to bot: conv={conversation_id}, by_user={user_id}"
-        )
+        logger.info(f"[SUCCESS] Conversation returned to bot: conv={conversation_id}, by_user={user_id}")
 
         return conversation
