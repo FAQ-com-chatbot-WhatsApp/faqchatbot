@@ -40,11 +40,15 @@ class SignupRequest(BaseModel):
         if len(v) > 128:
             raise ValueError("Password must not exceed 128 characters")
         return v
+
+
 class LoginRequest(BaseModel):
     """Schema for login requests."""
 
     email: EmailStr
     password: str
+
+
 class LoginResponse(BaseModel):
     """Schema for successful login response.
 
@@ -58,10 +62,14 @@ class LoginResponse(BaseModel):
     expires_in: int = 900  # 15 minutes in seconds
     mfa_required: bool = False  # True if user has MFA enabled
     temporary: bool = False  # True if tokens are temporary (awaiting MFA)
+
+
 class LogoutRequest(BaseModel):
     """Schema for logout requests."""
 
     refresh_token: str
+
+
 # ============================================================================
 # TOKEN REFRESH
 # ============================================================================
@@ -69,6 +77,8 @@ class RefreshRequest(BaseModel):
     """Schema for token refresh requests."""
 
     refresh_token: str
+
+
 class RefreshResponse(BaseModel):
     """Schema for token refresh response.
 
@@ -79,6 +89,8 @@ class RefreshResponse(BaseModel):
     refresh_token: str  # New token due to rotation
     token_type: str = "bearer"
     expires_in: int = 900  # 15 minutes
+
+
 # ============================================================================
 # PASSWORD MANAGEMENT
 # ============================================================================
@@ -86,6 +98,8 @@ class ForgotPasswordRequest(BaseModel):
     """Schema for password recovery initiation."""
 
     email: EmailStr
+
+
 class ResetPasswordRequest(BaseModel):
     """Schema for password reset with token."""
 
@@ -101,6 +115,8 @@ class ResetPasswordRequest(BaseModel):
         if len(v) > 128:
             raise ValueError("Password must not exceed 128 characters")
         return v
+
+
 class ChangePasswordRequest(BaseModel):
     """Schema for authenticated password change."""
 
@@ -116,6 +132,8 @@ class ChangePasswordRequest(BaseModel):
         if len(v) > 128:
             raise ValueError("Password must not exceed 128 characters")
         return v
+
+
 # ============================================================================
 # EMAIL VERIFICATION
 # ============================================================================
@@ -123,10 +141,14 @@ class VerifyEmailRequest(BaseModel):
     """Schema for email verification."""
 
     token: str
+
+
 class ResendEmailRequest(BaseModel):
     """Schema for resending email verification."""
 
     email: EmailStr
+
+
 # ============================================================================
 # SESSION MANAGEMENT
 # ============================================================================
@@ -145,16 +167,22 @@ class SessionOut(BaseModel):
     is_revoked: bool = False
 
     model_config = ConfigDict(from_attributes=True)
+
+
 class SessionListResponse(BaseModel):
     """Schema for listing user sessions."""
 
     sessions: list[SessionOut]
     total: int
+
+
 class RevokeSessionRequest(BaseModel):
     """Schema for revoking a specific session."""
 
     session_id: int
     reason: str | None = "manual_revocation"
+
+
 # ============================================================================
 # AUTH SESSION INFO (GET /auth/me)
 # ============================================================================
@@ -175,6 +203,8 @@ class AuthSessionResponse(BaseModel):
     last_login_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
 # ============================================================================
 # ADMIN - USER BLOCKING
 # ============================================================================
@@ -182,10 +212,14 @@ class BlockUserRequest(BaseModel):
     """Schema for blocking a user (admin only)."""
 
     reason: str | None = None
+
+
 class UnblockUserRequest(BaseModel):
     """Schema for unblocking a user (admin only)."""
 
     reason: str | None = None
+
+
 # ============================================================================
 # MFA (Multi-Factor Authentication) - PHASE 5
 # ============================================================================
@@ -195,19 +229,27 @@ class MfaSetupResponse(BaseModel):
     secret: str
     qr_code: str  # Base64 encoded QR code image
     backup_codes: list[str]
+
+
 class MfaVerifyRequest(BaseModel):
     """Schema for MFA verification."""
 
     code: str = Field(..., min_length=6, max_length=6)
+
+
 class MfaDisableRequest(BaseModel):
     """Schema for disabling MFA."""
 
     password: str
     code: str = Field(..., min_length=6, max_length=6)
+
+
 class BackupCodesResponse(BaseModel):
     """Schema for backup codes generation."""
 
     codes: list[str]
+
+
 # ============================================================================
 # EMAIL VERIFICATION
 # ============================================================================
@@ -218,6 +260,8 @@ class EmailVerificationRequest(BaseModel):
     """
 
     token: str = Field(..., min_length=32, max_length=255)
+
+
 class EmailResendRequest(BaseModel):
     """Schema para reenvio de email de verificação.
 
@@ -225,6 +269,8 @@ class EmailResendRequest(BaseModel):
     """
 
     email: EmailStr
+
+
 class EmailVerificationResponse(BaseModel):
     """Schema de resposta após verificação bem-sucedida de email.
 
@@ -234,6 +280,8 @@ class EmailVerificationResponse(BaseModel):
     message: str
     email_verified: bool
     user_id: int
+
+
 # ============================================================================
 # SESSION MANAGEMENT
 # ============================================================================
@@ -254,11 +302,15 @@ class AuditLogEntry(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
 class AuditLogListResponse(BaseModel):
     """Schema for listing audit logs."""
 
     logs: list[AuditLogEntry]
     total: int
+
+
 # ============================================================================
 # MFA LOGIN
 # ============================================================================
@@ -270,6 +322,8 @@ class MfaLoginRequest(BaseModel):
 
     temporary_token: str = Field(..., description="Temporary access token from login response")
     code: str = Field(..., min_length=6, max_length=6, description="TOTP code or backup code")
+
+
 class MfaLoginResponse(BaseModel):
     """Schema for successful MFA login response.
 
