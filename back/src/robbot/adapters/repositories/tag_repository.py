@@ -1,6 +1,7 @@
 """
 Tag Repository - database operations for tags.
 """
+
 from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.base_repository import BaseRepository
