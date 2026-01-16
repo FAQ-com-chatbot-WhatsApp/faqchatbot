@@ -16,8 +16,10 @@ from robbot.infra.db.session import get_sync_session
 from robbot.infra.vectordb.chroma_client import get_chroma_client
 from robbot.services.conversation_orchestrator import get_conversation_orchestrator
 
-router = APIRouter(prefix="/ai", tags=["AI"])
+router = APIRouter()
+
 # ========== SCHEMAS ==========
+
 
 class ProcessMessageRequest(BaseModel):
     """Request para processar mensagem."""
@@ -26,6 +28,8 @@ class ProcessMessageRequest(BaseModel):
     phone_number: str = Field(..., description="Número do telefone")
     message_text: str = Field(..., description="Texto da mensagem")
     session_name: str = Field(default="default", description="Nome da sessão WAHA")
+
+
 class ProcessMessageResponse(BaseModel):
     """Response de processamento de mensagem."""
 
@@ -34,6 +38,8 @@ class ProcessMessageResponse(BaseModel):
     response_text: str
     intent: str
     maturity_score: int
+
+
 class AIStatsResponse(BaseModel):
     """Response de estatísticas de IA."""
 
@@ -42,7 +48,10 @@ class AIStatsResponse(BaseModel):
     total_tokens_used: int
     average_latency_ms: float
     chromadb_documents: int
+
+
 # ========== ENDPOINTS ==========
+
 
 @router.post(
     "/process-message",
@@ -90,9 +99,10 @@ async def process_message(request: ProcessMessageRequest) -> ProcessMessageRespo
 
     except Exception as e:  # noqa: BLE001 (blind exception)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to process message: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to process message: {str(e)}"
         ) from e
+
+
 @router.get(
     "/stats",
     response_model=AIStatsResponse,
@@ -133,10 +143,7 @@ async def get_ai_stats() -> AIStatsResponse:
 
             # Calcular tokens e latência
             total_tokens = sum(llm.tokens_used for llm in all_llm)
-            avg_latency = (
-                sum(llm.latency_ms for llm in all_llm) / len(all_llm)
-                if all_llm else 0
-            )
+            avg_latency = sum(llm.latency_ms for llm in all_llm) / len(all_llm) if all_llm else 0
 
             # ChromaDB
             chromadb_count = chroma.count()
@@ -151,6 +158,5 @@ async def get_ai_stats() -> AIStatsResponse:
 
     except Exception as e:  # noqa: BLE001 (blind exception)
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get AI stats: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to get AI stats: {str(e)}"
         ) from e
