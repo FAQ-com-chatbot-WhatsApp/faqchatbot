@@ -147,7 +147,7 @@ class MessagePipeline:
             raise
         except Exception as e:
             logger.error("[ERROR] Failed to process message: %s", e)
-            raise DatabaseError(f"Failed to store message: {e}")
+            raise DatabaseError(f"Failed to store message: {e}") from e
 
     async def save_response(
         self,
@@ -190,4 +190,4 @@ class MessagePipeline:
 
         except Exception as e:
             logger.error("[ERROR] Failed to save response: %s", e)
-            raise DatabaseError(f"Failed to save response: {e}")
+            raise DatabaseError(f"Failed to save response: {e}") from e
