@@ -19,6 +19,8 @@ from robbot.config.settings import settings
 from robbot.core.custom_exceptions import VectorDBError
 
 logger = logging.getLogger(__name__)
+
+
 class ChromaClient:
     """
     Client para ChromaDB com persistência local.
@@ -48,13 +50,14 @@ class ChromaClient:
 
             # Obter ou criar coleção
             self.collection = self.client.get_or_create_collection(
-                name=collection_name,
-                metadata={"description": "WhatsApp conversation contexts"}
+                name=collection_name, metadata={"description": "WhatsApp conversation contexts"}
             )
 
             logger.info(
                 "[SUCCESS] ChromaClient initialized (collection=%s, path=%s, count=%s)",
-                collection_name, settings.CHROMA_PERSIST_DIR, self.collection.count()
+                collection_name,
+                settings.CHROMA_PERSIST_DIR,
+                self.collection.count(),
             )
 
         except Exception as e:  # noqa: BLE001 (blind exception)
@@ -92,7 +95,7 @@ class ChromaClient:
             final_metadata = {
                 "conversation_id": conversation_id,
                 "timestamp": datetime.now(UTC).isoformat(),
-                **(metadata or {})
+                **(metadata or {}),
             }
 
             # Adicionar ao ChromaDB
@@ -105,7 +108,9 @@ class ChromaClient:
 
             logger.info(
                 "[SUCCESS] Conversation added to ChromaDB (id=%s, conv_id=%s, length=%s)",
-                doc_id, conversation_id, len(text)
+                doc_id,
+                conversation_id,
+                len(text),
             )
 
             return doc_id
@@ -113,8 +118,9 @@ class ChromaClient:
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(
                 "[ERROR] Failed to add conversation to ChromaDB: %s",
-                e, exc_info=True,
-                extra={"conversation_id": conversation_id}
+                e,
+                exc_info=True,
+                extra={"conversation_id": conversation_id},
             )
             raise VectorDBError(f"Failed to add conversation: {e}", original_error=e)
 
@@ -162,28 +168,28 @@ class ChromaClient:
             # Formatar resultados
             formatted_results = []
 
-            if results and results['documents']:
-                for i in range(len(results['ids'][0])):
-                    formatted_results.append({
-                        "id": results['ids'][0][i],
-                        "text": results['documents'][0][i],
-                        "metadata": results['metadatas'][0][i],
-                        "distance": results['distances'][0][i] if results.get('distances') else None,
-                    })
+            if results and results["documents"]:
+                for i in range(len(results["ids"][0])):
+                    formatted_results.append(
+                        {
+                            "id": results["ids"][0][i],
+                            "text": results["documents"][0][i],
+                            "metadata": results["metadatas"][0][i],
+                            "distance": results["distances"][0][i] if results.get("distances") else None,
+                        }
+                    )
 
             logger.info(
                 "[SUCCESS] ChromaDB search completed (query_length=%s, n_results=%s, conv_id=%s)",
-                len(query), len(formatted_results), conversation_id
+                len(query),
+                len(formatted_results),
+                conversation_id,
             )
 
             return formatted_results
 
         except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.error(
-                "[ERROR] Failed to search ChromaDB: %s",
-                e, exc_info=True,
-                extra={"query": query[:100]}
-            )
+            logger.error("[ERROR] Failed to search ChromaDB: %s", e, exc_info=True, extra={"query": query[:100]})
             raise VectorDBError(f"Search failed: {e}", original_error=e)
 
     def get_context(
@@ -221,17 +227,20 @@ class ChromaClient:
             # Formatar resultados
             formatted_results = []
 
-            if results and results['documents']:
-                for i in range(len(results['ids'])):
-                    formatted_results.append({
-                        "id": results['ids'][i],
-                        "text": results['documents'][i],
-                        "metadata": results['metadatas'][i],
-                    })
+            if results and results["documents"]:
+                for i in range(len(results["ids"])):
+                    formatted_results.append(
+                        {
+                            "id": results["ids"][i],
+                            "text": results["documents"][i],
+                            "metadata": results["metadatas"][i],
+                        }
+                    )
 
             logger.info(
                 "[SUCCESS] Context retrieved from ChromaDB (conv_id=%s, count=%s)",
-                conversation_id, len(formatted_results)
+                conversation_id,
+                len(formatted_results),
             )
 
             return formatted_results
@@ -239,8 +248,9 @@ class ChromaClient:
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(
                 "[ERROR] Failed to get context from ChromaDB: %s",
-                e, exc_info=True,
-                extra={"conversation_id": conversation_id}
+                e,
+                exc_info=True,
+                extra={"conversation_id": conversation_id},
             )
             raise VectorDBError(f"Failed to get context: {e}", original_error=e)
 
@@ -263,14 +273,14 @@ class ChromaClient:
                 where={"conversation_id": conversation_id},
             )
 
-            if not results or not results['ids']:
+            if not results or not results["ids"]:
                 logger.warning("[WARNING] No documents found for conv_id=%s", conversation_id)
                 return 0
 
             # Deletar documentos
-            self.collection.delete(ids=results['ids'])
+            self.collection.delete(ids=results["ids"])
 
-            count = len(results['ids'])
+            count = len(results["ids"])
             logger.info("[SUCCESS] Context deleted from ChromaDB (conv_id=%s, count=%s)", conversation_id, count)
 
             return count
@@ -278,8 +288,9 @@ class ChromaClient:
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(
                 "[ERROR] Failed to delete context from ChromaDB: %s",
-                e, exc_info=True,
-                extra={"conversation_id": conversation_id}
+                e,
+                exc_info=True,
+                extra={"conversation_id": conversation_id},
             )
             raise VectorDBError(f"Delete failed: {e}", original_error=e)
 
@@ -304,8 +315,7 @@ class ChromaClient:
 
             # Recriar coleção vazia
             self.collection = self.client.get_or_create_collection(
-                name=self.collection.name,
-                metadata={"description": "WhatsApp conversation contexts"}
+                name=self.collection.name, metadata={"description": "WhatsApp conversation contexts"}
             )
 
             logger.warning("[WARNING] ChromaDB collection reset: %s", self.collection.name)
@@ -313,8 +323,12 @@ class ChromaClient:
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(f"[ERROR] Failed to reset ChromaDB: {e}", exc_info=True)
             raise VectorDBError(f"Reset failed: {e}", original_error=e)
+
+
 # Singleton global
 _chroma_client: ChromaClient | None = None
+
+
 def get_chroma_client() -> ChromaClient:
     """
     Obter instância singleton do cliente ChromaDB.
@@ -329,6 +343,8 @@ def get_chroma_client() -> ChromaClient:
         logger.info("[INFO] ChromaClient initialized as singleton")
 
     return _chroma_client
+
+
 def close_chroma_client() -> None:
     """Fechar cliente (cleanup)."""
     global _chroma_client
