@@ -1,6 +1,7 @@
 """
 Audit Log Controller - REST endpoints for audit logs.
 """
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
@@ -13,8 +14,10 @@ from robbot.services.audit_service import AuditService
 router = APIRouter()
 # ===== SCHEMAS =====
 
+
 class AuditLogOut(BaseModel):
     """Response schema for audit log."""
+
     id: int
     user_id: int | None
     action: str
@@ -26,7 +29,10 @@ class AuditLogOut(BaseModel):
     created_at: str
 
     model_config = ConfigDict(from_attributes=True)
+
+
 # ===== ENDPOINTS =====
+
 
 @router.get("/audit-logs", response_model=list[AuditLogOut], tags=["Audit"])
 def list_audit_logs(
@@ -75,6 +81,8 @@ def list_audit_logs(
         )
         for log in logs
     ]
+
+
 @router.get("/audit-logs/entity/{entity_type}/{entity_id}", response_model=list[AuditLogOut], tags=["Audit"])
 def get_entity_audit_trail(
     entity_type: str,
