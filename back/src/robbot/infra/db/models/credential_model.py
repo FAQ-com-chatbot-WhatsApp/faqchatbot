@@ -3,6 +3,7 @@
 Separa credenciais de autenticação dos dados de perfil do usuário,
 seguindo o Princípio de Separação de Responsabilidades de Segurança.
 """
+
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -32,9 +33,7 @@ class CredentialModel(Base):
     id = Column(Integer, primary_key=True, index=True)
 
     # Foreign Key to User (1:1 relationship)
-    user_id = Column(
-        Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False, index=True
-    )
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False, index=True)
 
     # Password Authentication
     hashed_password = Column(String(255), nullable=False)
@@ -46,7 +45,7 @@ class CredentialModel(Base):
     email_verification_sent_at = Column(DateTime(timezone=True), nullable=True)
 
     # Password Reset
-    reset_token = Column(String(255), nullable=True, index=True)
+    reset_token = Column(String(255), nullable=True, unique=True, index=True)
     reset_token_expires_at = Column(DateTime(timezone=True), nullable=True)
     reset_token_used = Column(Boolean, default=False)
 
@@ -56,9 +55,16 @@ class CredentialModel(Base):
     backup_codes = Column(Text, nullable=True)  # JSON array of hashed backup codes
 
     # Timestamps
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    created_at = Column(
+      DateTime(timezone=True),
+      server_default=func.now(),  # pylint: disable=not-callable
+      nullable=False,
+    )
     updated_at = Column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+        DateTime(timezone=True),
+        server_default=func.now(),  # pylint: disable=not-callable
+        onupdate=func.now(),  # pylint: disable=not-callable
+        nullable=False,
     )
 
     # Relationships
