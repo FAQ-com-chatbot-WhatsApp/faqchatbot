@@ -9,7 +9,7 @@ import yaml
 class AnalyticsConfig:
     """
     Gerencia configurações de analytics (stop words, topics, sentiment).
-    
+
     Carrega de analytics_config.yaml e fornece acesso tipado.
     """
 
@@ -24,7 +24,7 @@ class AnalyticsConfig:
             # Default: mesmo diretório deste arquivo
             config_path = Path(__file__).parent / "analytics_config.yaml"
 
-        with open(config_path, "r", encoding="utf-8") as f:
+        with open(config_path, encoding="utf-8") as f:
             self._config: dict[str, Any] = yaml.safe_load(f)
 
     @property
