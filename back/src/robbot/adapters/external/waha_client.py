@@ -15,6 +15,8 @@ from robbot.config.settings import settings
 from robbot.core.custom_exceptions import WAHAError
 
 logger = logging.getLogger(__name__)
+
+
 class WAHAClient:
     """Async HTTP client for WAHA API with anti-ban features."""
 
@@ -106,7 +108,8 @@ class WAHAClient:
             )
             raise WAHAError(
                 f"WAHA API error: {e.response.status_code} - {error_detail}",
-                original_error=e
+                original_error=e,
+                status_code=e.response.status_code,
             )
 
         except httpx.TimeoutException as e:
@@ -116,10 +119,7 @@ class WAHAClient:
                 endpoint,
                 extra={"timeout": self.timeout},
             )
-            raise WAHAError(
-                f"WAHA timeout after {self.timeout}s",
-                original_error=e
-            )
+            raise WAHAError(f"WAHA timeout after {self.timeout}s", original_error=e)
 
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(
@@ -137,26 +137,34 @@ class WAHAClient:
         self,
         name: str,
         webhook_url: str | None = None,
-        **config: Any,
+        config: dict | None = None,
     ) -> dict[str, Any]:
         """Create new WhatsApp session.
 
         Args:
             name: Session name (e.g., 'default')
             webhook_url: Webhook URL for events
-            **config: Additional session config
+            config: Optional WAHA session config
 
         Returns:
             Session data dict
 
         Docs: POST /api/sessions
         """
-        payload = {"name": name, **config}
+        payload: dict[str, Any] = {"name": name}
+
+        if config:
+            payload["config"] = config
 
         if webhook_url:
-            payload["config"] = payload.get("config", {})
-            payload["config"]["webhooks"] = [
-                {"url": webhook_url, "events": ["message"]}]
+            cfg = payload.setdefault("config", {})
+            webhooks = cfg.setdefault("webhooks", [])
+            if webhooks:
+                webhooks[0]["url"] = webhook_url
+                if "events" not in webhooks[0]:
+                    webhooks[0]["events"] = ["message", "session.status"]
+            else:
+                webhooks.append({"url": webhook_url, "events": ["message", "session.status"]})
 
         logger.info("[INFO] Creating WAHA session: %s", name)
         return await self._request("POST", "/api/sessions", json=payload)
@@ -216,6 +224,21 @@ class WAHAClient:
         """
         return await self._request("GET", f"/api/sessions/{name}")
 
+    async def list_sessions(self) -> list[dict[str, Any]]:
+        """List all WAHA sessions.
+
+        Returns:
+            List of session dicts
+
+        Docs: GET /api/sessions
+        """
+        result = await self._request("GET", "/api/sessions")
+        # WAHA returns a JSON array; ensure list type
+        if isinstance(result, list):
+            return result
+        # Some versions may wrap; normalize to list
+        return result.get("sessions", []) if isinstance(result, dict) else []
+
     async def get_qr_code(self, name: str) -> dict[str, Any]:
         """Get QR code for session pairing.
 
@@ -260,8 +283,7 @@ class WAHAClient:
 
         Docs: POST /api/sendSeen
         """
-        payload = {"session": session,
-                   "chatId": chat_id, "messageId": message_id}
+        payload = {"session": session, "chatId": chat_id, "messageId": message_id}
         return await self._request("POST", "/api/sendSeen", json=payload)
 
     async def start_typing(self, session: str, chat_id: str) -> dict[str, Any]:
@@ -378,8 +400,7 @@ class WAHAClient:
         if apply_anti_ban:
             await self._apply_anti_ban_flow(session, chat_id, caption or "image")
 
-        payload = {"session": session,
-                   "chatId": chat_id, "file": {"url": file_url, "mimetype": mimetype}}
+        payload = {"session": session, "chatId": chat_id, "file": {"url": file_url, "mimetype": mimetype}}
         if filename:
             payload["file"]["filename"] = filename
         if caption:
@@ -412,8 +433,7 @@ class WAHAClient:
 
         Docs: POST /api/sendFile
         """
-        payload = {"session": session,
-                   "chatId": chat_id, "file": {"url": file_url}}
+        payload = {"session": session, "chatId": chat_id, "file": {"url": file_url}}
         if filename:
             payload["file"]["filename"] = filename
         if mimetype:
@@ -488,9 +508,7 @@ class WAHAClient:
             typing_delay = len(text) * 0.1
             total_delay = min(base_delay + typing_delay, 120)  # Max 2min
 
-            logger.debug(
-                f"Anti-ban delay: {total_delay:.1f}s for {len(text)} chars"
-            )
+            logger.debug(f"Anti-ban delay: {total_delay:.1f}s for {len(text)} chars")
             await asyncio.sleep(total_delay)
 
             # Stop typing before sending
@@ -582,8 +600,7 @@ class WAHAClient:
             "downloadMedia": download_media,
         }
 
-        logger.info(
-            f"Getting messages from {chat_id} (limit={limit}, offset={offset})")
+        logger.info(f"Getting messages from {chat_id} (limit={limit}, offset={offset})")
         return await self._request("GET", endpoint, params=params)
 
     async def send_link_custom_preview(
@@ -736,8 +753,7 @@ class WAHAClient:
 
         Docs: POST /api/sendVoice
         """
-        payload = {"session": session, "chatId": chat_id,
-                   "file": {"mimetype": mimetype}}
+        payload = {"session": session, "chatId": chat_id, "file": {"mimetype": mimetype}}
         if file_url:
             payload["file"]["url"] = file_url
         elif file_data:
@@ -778,8 +794,7 @@ class WAHAClient:
 
         Docs: POST /api/sendVideo
         """
-        payload = {"session": session, "chatId": chat_id,
-                   "file": {"mimetype": mimetype}}
+        payload = {"session": session, "chatId": chat_id, "file": {"mimetype": mimetype}}
         if file_url:
             payload["file"]["url"] = file_url
         elif file_data:
@@ -1295,9 +1310,7 @@ class WAHAClient:
         Docs: POST /api/{session}/presence/{chatId}/subscribe
         """
         logger.info("Subscribing to presence for %s", chat_id)
-        return await self._request(
-            "POST", f"/api/{session}/presence/{chat_id}/subscribe"
-        )
+        return await self._request("POST", f"/api/{session}/presence/{chat_id}/subscribe")
 
     # ========================================================================
     # AUTHENTICATION (QR Code & Code-based Auth)
@@ -1405,9 +1418,7 @@ class WAHAClient:
             payload["data"] = file_data
 
         logger.info("Converting voice to opus format")
-        return await self._request(
-            "POST", f"/api/{session}/media/convert/voice", json=payload
-        )
+        return await self._request("POST", f"/api/{session}/media/convert/voice", json=payload)
 
     async def convert_video_to_mp4(
         self,
@@ -1434,9 +1445,7 @@ class WAHAClient:
             payload["data"] = file_data
 
         logger.info("Converting video to mp4 format")
-        return await self._request(
-            "POST", f"/api/{session}/media/convert/video", json=payload
-        )
+        return await self._request("POST", f"/api/{session}/media/convert/video", json=payload)
 
     # ========================================================================
     # SERVER OBSERVABILITY
@@ -1510,11 +1519,15 @@ class WAHAClient:
         params = {"session": session}
         logger.info("Taking screenshot of session: %s", session)
         return await self._request("GET", "/api/screenshot", params=params)
+
+
 # ============================================================================
 # FACTORY FUNCTION (singleton pattern for global session)
 # ============================================================================
 
 _waha_client_instance: WAHAClient | None = None
+
+
 def get_waha_client() -> WAHAClient:
     """Get or create singleton WAHA client instance.
 
@@ -1525,6 +1538,8 @@ def get_waha_client() -> WAHAClient:
     if _waha_client_instance is None:
         _waha_client_instance = WAHAClient()
     return _waha_client_instance
+
+
 async def close_waha_client():
     """Close global WAHA client connection."""
     global _waha_client_instance
