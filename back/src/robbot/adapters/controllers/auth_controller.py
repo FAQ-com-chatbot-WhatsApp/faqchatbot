@@ -129,17 +129,42 @@ async def login_for_access_token(
     client_ip = request.client.host if request.client else "unknown"
 
     service = AuthService(db)
+    # Accept rememberMe from frontend (form or JSON)
+    remember_me = False
+    # Try to get from form_data (for OAuth2PasswordRequestForm)
+    if hasattr(form_data, 'remember_me'):
+        remember_me = bool(form_data.remember_me)
+    # Also check request body for JSON (for custom clients)
+    try:
+        body = await request.json()
+        if 'rememberMe' in body:
+            remember_me = bool(body['rememberMe'])
+    except Exception:
+        pass
     token_result = service.authenticate_user(
         form_data.username,
         form_data.password,
         user_agent=user_agent,
         ip_address=client_ip,
+        remember_me=remember_me,
     )
-    if not token_result:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect credentials",
-        )
+    if token_result is None:
+        # Checa se o usuário existe para mensagem mais clara
+        user_exists = False
+        try:
+            user_exists = AuthService(db).repo.get_by_email(form_data.username) is not None
+        except Exception:
+            pass
+        if not user_exists:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Usuário não encontrado. Cadastre-se para acessar.",
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Credenciais inválidas. Verifique seu e-mail e senha.",
+            )
 
     if token_result.mfa_required:
         return {
@@ -148,13 +173,15 @@ async def login_for_access_token(
             "message": "MFA verification required. Use POST /auth/mfa/login with your TOTP code.",
         }
 
+    # Set refresh token cookie duration based on rememberMe
+    refresh_max_age = (60 * 24 * 30 * 60) if remember_me else (settings.REFRESH_TOKEN_EXPIRE_MINUTES * 60)
     response.set_cookie(
         key="refresh_token",
         value=token_result.refresh_token,
         httponly=settings.COOKIE_HTTPONLY,
         secure=settings.COOKIE_SECURE,
         samesite=settings.COOKIE_SAMESITE,
-        max_age=settings.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
+        max_age=refresh_max_age,
         path="/api/v1/auth/refresh",  # Only sent to refresh endpoint
         domain=settings.COOKIE_DOMAIN,
     )
