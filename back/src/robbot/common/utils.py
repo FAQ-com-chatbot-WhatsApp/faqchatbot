@@ -45,7 +45,11 @@ def send_email(to: str, subject: str, body: str) -> None:
         logger.info("[INFO] SMTP not configured (SMTP_HOST missing); skipping email to %s", to)
         return
 
-    msg = MIMEText(body, _charset="utf-8")
+    # Detecta se o corpo parece HTML (simples heurística)
+    if "<html" in body.lower() or "<body" in body.lower() or "<table" in body.lower():
+        msg = MIMEText(body, "html", _charset="utf-8")
+    else:
+        msg = MIMEText(body, _charset="utf-8")
     msg["Subject"] = subject
     msg["From"] = sender
     msg["To"] = to
