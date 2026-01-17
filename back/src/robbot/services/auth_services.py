@@ -83,22 +83,36 @@ class AuthService:
 
         logger.info("[INFO] User registered: %s (verification token: %s...)", user.email, verification_token[:8])
 
-        # Send verification email
-        # Use API endpoint directly since frontend may not be running in dev
+        # Email de verificação estilizado (HTML) - GO Robot branding
         verification_link = f"http://localhost:3333/api/v1/auth/email/verify?token={verification_token}"
         email_body = f"""
-Welcome to Clinica Go!
-
-Please verify your email address by clicking the link below:
-
-{verification_link}
-
-This link will expire in {settings.EMAIL_VERIFICATION_TOKEN_EXPIRATION_HOURS} hours.
-
-If you didn't create this account, please ignore this email.
-
----
-Verification token: {verification_token}
+<html>
+    <body style="background: #FAFAFA; font-family: 'Geist', 'Lora', Arial, sans-serif; color: #1F2937; margin:0; padding:0;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background: #FAFAFA; padding: 32px 0;">
+            <tr>
+                <td align="center">
+                    <table width="420" cellpadding="0" cellspacing="0" style="background: #fff; border-radius: 18px; box-shadow: 0 4px 32px 0 #5473E81A; padding: 32px; border: 1px solid #E5E7EB;">
+                        <tr>
+                            <td align="center" style="padding-bottom: 16px;">
+                                <img src='https://go-robot.s3.amazonaws.com/logo.png' alt='GO Robot' width='64' height='64' style='border-radius:12px; margin-bottom:8px;'>
+                                <h2 style="margin: 0; color: #5473E8; font-family: 'Geist', Arial, sans-serif; font-size: 2rem;">Bem-vindo(a) ao GO Robot!</h2>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td align="center" style="padding-bottom: 12px;">
+                                <p style="font-size: 1.1rem; margin: 0 0 12px 0; color: #1F2937;">Sua jornada de automação inteligente começa aqui 🤖</p>
+                                <p style="font-size: 1rem; margin: 0 0 24px 0; color: #6B7280;">Clique no botão abaixo para validar seu e-mail e liberar seu acesso.</p>
+                                <a href="{verification_link}" style="display:inline-block; background: #5473E8; color: #fff; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 1.1rem; box-shadow: 0 2px 8px #5473E84D; transition: background 0.2s;">Validar meu e-mail</a>
+                                <p style="font-size: 0.95rem; color: #6B7280; margin: 24px 0 0 0;">Se não foi você que criou esta conta, apenas ignore este e-mail.</p>
+                                <p style="font-size: 0.85rem; color: #A0AEC0; margin: 16px 0 0 0;">Este link expira em {settings.EMAIL_VERIFICATION_TOKEN_EXPIRATION_HOURS} horas.</p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+</html>
 """
         try:
             send_email(
@@ -118,6 +132,7 @@ Verification token: {verification_token}
         password: str,
         user_agent: str | None = None,
         ip_address: str | None = None,
+        remember_me: bool = False,
     ) -> Token | None:
         """Valida credenciais e retorna tokens com dados do usuário.
 
@@ -195,7 +210,12 @@ Verification token: {verification_token}
             )
         except SQLAlchemyError:
             logger.warning("Audit log failed for login_success")
-        tokens = security.create_access_refresh_tokens(str(user.id))
+        # Set refresh token expiry based on remember_me
+        refresh_expiry = None
+        if remember_me:
+            # 30 days for rememberMe, else default (7 days)
+            refresh_expiry = 60 * 24 * 30  # 30 days in minutes
+        tokens = security.create_access_refresh_tokens(str(user.id), refresh_expiry)
         # Create session linked to refresh JTI
         payload = security.decode_token(tokens["refresh_token"], verify_exp=True)
         jti = payload.get("jti")
