@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import BackendStatus from "./BackendStatus"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -77,6 +78,10 @@ export default function StyleguidePage() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-12">
+      {/* Backend status */}
+      <div className="mb-4">
+        <BackendStatus />
+      </div>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
