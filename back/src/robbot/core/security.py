@@ -110,14 +110,16 @@ def create_token_for_subject(subject: str, minutes: int, token_type: str, jti: s
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
-def create_access_refresh_tokens(subject: str) -> dict[str, str]:
+def create_access_refresh_tokens(subject: str, refresh_expiry_minutes: int | None = None) -> dict[str, str]:
     """
     Create access and refresh tokens for subject.
+    Optionally override refresh token expiry.
     """
     access_token = create_token_for_subject(subject, minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES, token_type="access")
+    refresh_minutes = refresh_expiry_minutes if refresh_expiry_minutes is not None else settings.REFRESH_TOKEN_EXPIRE_MINUTES
     refresh_token = create_token_for_subject(
         subject,
-        minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES,
+        minutes=refresh_minutes,
         token_type="refresh",
         jti=uuid4().hex,
     )
