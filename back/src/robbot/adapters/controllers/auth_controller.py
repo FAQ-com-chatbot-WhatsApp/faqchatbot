@@ -496,32 +496,36 @@ def revoke_all_sessions(
 # ============================================================================
 # EMAIL VERIFICATION ENDPOINTS
 # ============================================================================
-@router.get("/email/verify", response_model=EmailVerificationResponse)
+
+from fastapi.responses import RedirectResponse, HTMLResponse
+
+@router.get("/email/verify")
 async def verify_email(token: str, db: Session = Depends(get_db)):
     """Verifica email do usuário usando token de verificação do link do email.
 
     Args:
         token: Token de verificação do parâmetro URL do email
 
-    Returns:
-        Mensagem de sucesso com user_id e status email_verified
-
-    Raises:
-        HTTPException: If token is invalid, expired, or already used
+    Redireciona para a página de login (/signin) após sucesso.
+    Em caso de erro, exibe mensagem amigável em português.
     """
     from robbot.services.email_verification_service import EmailVerificationService
 
     service = EmailVerificationService(db)
     try:
-        user_id = service.verify_email(token)
-        return EmailVerificationResponse(
-            message="Email verified successfully. You can now login.", email_verified=True, user_id=user_id
-        )
+        service.verify_email(token)
+        # Redireciona para a página de login do frontend
+        return RedirectResponse(url="/signin?verified=1", status_code=302)
     except AuthException as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        ) from exc
+        # Mensagem de erro amigável em português
+        html = f"""
+        <html><body style='font-family: Arial, sans-serif; background: #FAFAFA; color: #1F2937; text-align:center; padding:48px;'>
+        <h2 style='color:#E53E3E;'>Erro ao verificar e-mail</h2>
+        <p style='font-size:1.1rem; margin:24px auto; max-width:420px;'>{str(exc)}</p>
+        <a href='/signin' style='display:inline-block; margin-top:32px; background:#5473E8; color:#fff; text-decoration:none; font-weight:600; padding:12px 28px; border-radius:10px;'>Ir para login</a>
+        </body></html>
+        """
+        return HTMLResponse(content=html, status_code=400)
 
 
 @router.post("/email/resend", status_code=status.HTTP_200_OK)
