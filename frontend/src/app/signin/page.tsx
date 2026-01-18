@@ -4,22 +4,42 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { toast } from "sonner"
+// ...existing code...
 import { User, Lock, Moon, Sun } from "lucide-react"
 import Link from "next/link"
-import { useState, useEffect } from "react"
-import { fetchApi, normalizeApiError } from "@/lib/api"
+
+import { useState, useEffect, useRef } from "react"
+
+import { useFormFeedback } from "@/hooks/useFormFeedback"
+
+// You likely need to import useAuth as well
+import { useAuth } from "@/hooks/useAuth"
 
 export default function SignInPage() {
-  const [error, setError] = useState<string | null>(null)
   const [isDark, setIsDark] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const { loading, error, success, login, setError } = useAuth()
+  const emailRef = useRef<HTMLInputElement>(null)
+  const passwordRef = useRef<HTMLInputElement>(null)
+
+  // Padroniza feedback visual (toast e mensagem persistente)
+  useFormFeedback(error, success)
 
   useEffect(() => {
     setMounted(true)
     setIsDark(document.documentElement.classList.contains("dark"))
   }, [])
+
+  // Foco automático no campo com erro
+  useEffect(() => {
+    if (error) {
+      if (error.toLowerCase().includes("email") && emailRef.current) {
+        emailRef.current.focus()
+      } else if (passwordRef.current) {
+        passwordRef.current.focus()
+      }
+    }
+  }, [error])
 
   const toggleDarkMode = () => {
     setIsDark(!isDark)
@@ -29,55 +49,13 @@ export default function SignInPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    setLoading(true);
     const form = e.currentTarget;
     const email = (form.email as HTMLInputElement).value;
     const password = (form.password as HTMLInputElement).value;
     const rememberMe = (form.remember as HTMLInputElement).checked;
-    // Field label mapping for user-friendly error messages
-    const fieldLabels: Record<string, string> = {
-      username: 'E-mail',
-      email: 'E-mail',
-      password: 'Senha',
-    };
-    function mapLoginError(msg: string): string {
-      // Converts "username: Field required" to "E-mail: campo obrigatório."
-      return msg.split(' | ').map((part) => {
-        const match = part.match(/^(\w+): (.+)$/);
-        if (match) {
-          const field = fieldLabels[match[1]] || match[1];
-          if (match[2] === 'Field required') {
-            return `${field}: campo obrigatório.`;
-          }
-          return `${field}: ${match[2]}`;
-        }
-        return part;
-      }).join(' | ');
-    }
-    try {
-      // Monta form-urlencoded para OAuth2
-      const formData = new URLSearchParams();
-      formData.append("username", email);
-      formData.append("password", password);
-      formData.append("rememberMe", rememberMe ? "true" : "false");
-      await fetchApi("/api/v1/auth/token", {
-        method: "POST",
-        body: formData.toString(),
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      });
-      // Redirecionar ou atualizar estado de login aqui
-    } catch (err: any) {
-      let msg = "Erro ao autenticar. Tente novamente.";
-      if (err?.message) {
-        msg = mapLoginError(err.message);
-      }
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
+    await login(email, password, rememberMe);
+    // O feedback visual é tratado pelo hook useFormFeedback
+    // Redirecionar ou atualizar estado de login aqui se necessário
   }
 
   if (!mounted) {
@@ -99,36 +77,61 @@ export default function SignInPage() {
       </div>
       <Card className="w-full max-w-md shadow-lg border rounded-2xl bg-card">
         <CardHeader>
-          <h1 className="text-center text-3xl font-bold font-serif mb-2" data-testid="login-title">Login</h1>
+          <h1 className="text-center text-3xl font-bold font-serif mb-2" data-testid="login-title">Entrar</h1>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* O erro agora aparece como toast/snackbar, não como alert fixo */}
+          {/* Exemplo de feedback visual persistente para acessibilidade */}
+          {error && <div className="text-destructive text-sm" role="alert" aria-live="assertive" id="login-error">{error}</div>}
+          {success && <div className="text-success text-sm" role="status" aria-live="polite" id="login-success">{success}</div>}
           <form className="space-y-4" aria-label="login form" onSubmit={handleSubmit}>
             <div>
               <Label htmlFor="email" className="font-medium">Email</Label>
               <div className="relative">
-                <Input id="email" type="email" placeholder="your@email.com" className="pl-10" aria-label="Email" data-testid="login-username" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  className="pl-10"
+                  aria-label="Email"
+                  data-testid="login-username"
+                  ref={emailRef}
+                  aria-describedby={error && error.toLowerCase().includes('email') ? 'login-error' : undefined}
+                  aria-invalid={!!(error && error.toLowerCase().includes('email'))}
+                  autoComplete="email"
+                />
                 <User className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
               </div>
             </div>
             <div>
-              <Label htmlFor="password" className="font-medium">Password</Label>
+              <Label htmlFor="password" className="font-medium">Senha</Label>
               <div className="relative">
-                <Input id="password" type="password" placeholder="••••••••" className="pl-10" aria-label="Password" data-testid="login-password" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  className="pl-10"
+                  aria-label="Senha"
+                  data-testid="login-password"
+                  ref={passwordRef}
+                  aria-describedby={error && !error.toLowerCase().includes('email') ? 'login-error' : undefined}
+                  aria-invalid={!!(error && !error.toLowerCase().includes('email'))}
+                  autoComplete="current-password"
+                />
                 <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
               </div>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Checkbox id="remember" aria-label="Remember me" data-testid="login-remember" />
-                <Label htmlFor="remember" className="text-sm">Remember me</Label>
+                <Label htmlFor="remember" className="text-sm">Lembrar de mim</Label>
               </div>
-              <Link href="/forgot" className="text-sm text-primary hover:underline" aria-label="Forgot your password?" data-testid="login-forgot">Forgot your password?</Link>
+              <Link href="/forgot" className="text-sm text-primary hover:underline" aria-label="Esqueceu a senha?" data-testid="login-forgot">Esqueceu a senha?</Link>
             </div>
-            <Button className="w-full mt-2" type="submit" aria-label="Login" data-testid="login-submit" disabled={loading}>{loading ? "Enviando..." : "Login"}</Button>
+            <Button className="w-full mt-2" type="submit" aria-label="Entrar" data-testid="login-submit" disabled={loading}>{loading ? "Enviando..." : "Entrar"}</Button>
           </form>
           <div className="text-center text-sm mt-4">
-            New here? <Link href="/signup" className="text-primary font-medium hover:underline" aria-label="Sign Up" data-testid="login-signup">Sign Up</Link>
+            Novo por aqui? <Link href="/signup" className="text-primary font-medium hover:underline" aria-label="Criar conta" data-testid="login-signup">Criar conta</Link>
           </div>
         </CardContent>
       </Card>
