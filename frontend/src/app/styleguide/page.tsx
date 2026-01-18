@@ -90,7 +90,7 @@ export default function StyleguidePage() {
             Complete design system for Clínica Go
           </p>
         </div>
-        <Button onClick={toggleDarkMode} variant="outline">
+        <Button onClick={toggleDarkMode} variant="outline" data-testid="styleguide-theme-toggle">
           {isDark ? "☀️ Light Mode" : "🌙 Dark Mode"}
         </Button>
       </div>
