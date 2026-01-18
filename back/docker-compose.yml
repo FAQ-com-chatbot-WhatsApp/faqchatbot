@@ -54,13 +54,15 @@ services:
   # Interface do Banco (Adminer)
   # ---------------------------------------------------------------------------
   adminer:
-    image: adminer:4
+    image: adminer:latest
     container_name: adminer
     restart: unless-stopped
     ports:
       - "127.0.0.1:8080:8080"
     depends_on:
       - db
+    volumes:
+      - ./adminer-dark.css:/var/www/html/adminer.css:ro
 
   # ---------------------------------------------------------------------------
   # WhatsApp API (Waha)
