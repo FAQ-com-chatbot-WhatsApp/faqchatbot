@@ -9,6 +9,7 @@ import { User, Lock, Moon, Sun } from "lucide-react"
 import Link from "next/link"
 
 import { useState, useEffect, useRef } from "react"
+import { useSearchParams } from "next/navigation"
 
 import { useFormFeedback } from "@/hooks/useFormFeedback"
 
@@ -21,6 +22,7 @@ export default function SignInPage() {
   const { loading, error, success, login, setError } = useAuth()
   const emailRef = useRef<HTMLInputElement>(null)
   const passwordRef = useRef<HTMLInputElement>(null)
+  const searchParams = useSearchParams()
 
   // Padroniza feedback visual (toast e mensagem persistente)
   useFormFeedback(error, success)
@@ -28,7 +30,14 @@ export default function SignInPage() {
   useEffect(() => {
     setMounted(true)
     setIsDark(document.documentElement.classList.contains("dark"))
-  }, [])
+
+    // Verificar se o email foi verificado com sucesso
+    if (searchParams.get('verified') === '1') {
+      // Limpar qualquer erro anterior e definir mensagem de sucesso
+      setError(null)
+      // Nota: O success será tratado pelo toast, mas podemos mostrar na UI também
+    }
+  }, [searchParams, setError])
 
   // Foco automático no campo com erro
   useEffect(() => {
@@ -78,6 +87,11 @@ export default function SignInPage() {
       <Card className="w-full max-w-md shadow-lg border rounded-2xl bg-card">
         <CardHeader>
           <h1 className="text-center text-3xl font-bold font-serif mb-2" data-testid="login-title">Entrar</h1>
+          {searchParams.get('verified') === '1' && (
+            <div className="text-center text-green-600 text-sm bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800" role="status" aria-live="polite">
+              ✅ Email verificado com sucesso! Agora você pode fazer login.
+            </div>
+          )}
         </CardHeader>
         <CardContent className="space-y-6">
           {/* O erro agora aparece como toast/snackbar, não como alert fixo */}
