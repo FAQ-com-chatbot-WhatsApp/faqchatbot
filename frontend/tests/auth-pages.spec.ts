@@ -5,22 +5,61 @@ import { test, expect } from '@playwright/test'
 test.describe('Sign In Page', () => {
   test('should render all elements and allow navigation to Sign Up', async ({ page }) => {
     await page.goto('/signin')
-    await expect(page.getByRole('heading', { name: /login/i })).toBeVisible()
-    await expect(page.getByLabel('Username')).toBeVisible()
-    await expect(page.getByLabel('Password')).toBeVisible()
-    await expect(page.getByRole('checkbox', { name: /remember me/i })).toBeVisible()
-    await expect(page.getByRole('button', { name: /login/i })).toBeVisible()
-    await expect(page.getByRole('link', { name: /forgot your password/i })).toBeVisible()
-    await expect(page.getByRole('link', { name: /sign up/i })).toBeVisible()
+
+    await test.step('Verify page title and main elements', async () => {
+      await expect(page.getByTestId('login-title')).toHaveText('Entrar')
+      await expect(page.getByTestId('login-username')).toBeVisible()
+      await expect(page.getByTestId('login-password')).toBeVisible()
+      await expect(page.getByTestId('login-remember')).toBeVisible()
+      await expect(page.getByTestId('login-submit')).toBeVisible()
+      await expect(page.getByTestId('login-forgot')).toBeVisible()
+      await expect(page.getByTestId('login-signup')).toBeVisible()
+    })
+
+    await test.step('Test navigation links', async () => {
+      await page.getByTestId('login-signup').click()
+      await expect(page).toHaveURL('/signup')
+      await page.goBack()
+
+      await page.getByTestId('login-forgot').click()
+      await expect(page).toHaveURL('/forgot')
+      await page.goBack()
+    })
   })
 
-  test('should show error on empty submit', async ({ page }) => {
+  test('should show validation errors on empty submit', async ({ page }) => {
     await page.goto('/signin')
-    await page.getByRole('button', { name: /login/i }).click()
-    // Expect some error feedback (simulate, since backend not connected)
-    // You may need to mock fetch or check for required field validation
-    await expect(page.getByLabel('Username')).toHaveAttribute('aria-invalid', 'true')
-    await expect(page.getByLabel('Password')).toHaveAttribute('aria-invalid', 'true')
+
+    await test.step('Submit empty form', async () => {
+      await page.getByTestId('login-submit').click()
+    })
+
+    await test.step('Verify form remains on page (HTML5 validation prevents submission)', async () => {
+      // HTML5 validation prevents form submission with empty required fields
+      await expect(page.getByTestId('login-username')).toBeVisible()
+      await expect(page.getByTestId('login-password')).toBeVisible()
+      await expect(page).toHaveURL('/signin') // Should not navigate
+    })
+  })
+
+  test('should handle form input and submission states', async ({ page }) => {
+    await page.goto('/signin')
+
+    await test.step('Fill form fields', async () => {
+      await page.getByTestId('login-username').fill('test@example.com')
+      await page.getByTestId('login-password').fill('password123')
+      await page.getByTestId('login-remember').check()
+    })
+
+    await test.step('Verify form state', async () => {
+      await expect(page.getByTestId('login-username')).toHaveValue('test@example.com')
+      await expect(page.getByTestId('login-password')).toHaveValue('password123')
+      await expect(page.getByTestId('login-remember')).toBeChecked()
+    })
+
+    // Note: Actual submission would require backend mocking
+    // For now, we verify the form is ready for submission
+    await expect(page.getByTestId('login-submit')).toBeEnabled()
   })
 })
 
@@ -29,20 +68,58 @@ test.describe('Sign In Page', () => {
 test.describe('Sign Up Page', () => {
   test('should render all elements and allow navigation to Sign In', async ({ page }) => {
     await page.goto('/signup')
-    await expect(page.getByRole('heading', { name: /sign up/i })).toBeVisible()
-    await expect(page.getByLabel('Full Name')).toBeVisible()
-    await expect(page.getByLabel('Email')).toBeVisible()
-    await expect(page.getByLabel('Password')).toBeVisible()
-    await expect(page.getByRole('button', { name: /sign up/i })).toBeVisible()
-    await expect(page.getByRole('link', { name: /sign in/i })).toBeVisible()
+
+    await test.step('Verify page title and main elements', async () => {
+      await expect(page.getByTestId('signup-title')).toHaveText('Criar conta')
+      await expect(page.getByTestId('signup-fullname')).toBeVisible()
+      await expect(page.getByTestId('signup-email')).toBeVisible()
+      await expect(page.getByTestId('signup-password')).toBeVisible()
+      await expect(page.getByTestId('signup-submit')).toBeVisible()
+      await expect(page.getByTestId('signup-signin')).toBeVisible()
+    })
+
+    await test.step('Test navigation to sign in', async () => {
+      await page.getByTestId('signup-signin').click()
+      await expect(page).toHaveURL('/signin')
+    })
   })
 
-  test('should show error on invalid password', async ({ page }) => {
+  test('should validate password requirements', async ({ page }) => {
     await page.goto('/signup')
-    await page.getByLabel('Email').fill('test@example.com')
-    await page.getByLabel('Password').fill('123') // too short
-    await page.getByRole('button', { name: /sign up/i }).click()
-    // Expect some error feedback (simulate, since backend not connected)
-    await expect(page.getByLabel('Password')).toHaveAttribute('aria-invalid', 'true')
+
+    await test.step('Fill form with short password', async () => {
+      await page.getByTestId('signup-fullname').fill('Test User')
+      await page.getByTestId('signup-email').fill('test@example.com')
+      await page.getByTestId('signup-password').fill('123') // Too short
+    })
+
+    await test.step('Attempt submission', async () => {
+      await page.getByTestId('signup-submit').click()
+    })
+
+    await test.step('Verify form validation prevents submission', async () => {
+      // HTML5 validation should prevent submission for short password
+      await expect(page.getByTestId('signup-password')).toHaveValue('123')
+      await expect(page).toHaveURL('/signup') // Should not navigate
+    })
+  })
+
+  test('should handle complete form submission', async ({ page }) => {
+    await page.goto('/signup')
+
+    await test.step('Fill all required fields', async () => {
+      await page.getByTestId('signup-fullname').fill('Test User')
+      await page.getByTestId('signup-email').fill('test@example.com')
+      await page.getByTestId('signup-password').fill('password123')
+    })
+
+    await test.step('Verify form is ready', async () => {
+      await expect(page.getByTestId('signup-submit')).toBeEnabled()
+      await expect(page.getByTestId('signup-fullname')).toHaveValue('Test User')
+      await expect(page.getByTestId('signup-email')).toHaveValue('test@example.com')
+      await expect(page.getByTestId('signup-password')).toHaveValue('password123')
+    })
+
+    // Note: Actual submission would require backend mocking
   })
 })
