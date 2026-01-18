@@ -34,12 +34,12 @@ export default function ForgotPasswordPage() {
     <div className="flex min-h-screen items-center justify-center bg-background">
       <Card className="w-full max-w-md shadow-lg border rounded-2xl bg-card">
         <CardHeader>
-          <h1 className="text-center text-2xl font-bold font-serif mb-2">Recuperar senha</h1>
+          <h1 className="text-center text-2xl font-bold font-serif mb-2" data-testid="forgot-title">Recuperar senha</h1>
         </CardHeader>
         <CardContent className="space-y-6">
-          {error && <div className="text-destructive text-sm" role="alert" aria-live="assertive">{error}</div>}
-          {success && <div className="text-success text-sm" role="status" aria-live="polite">{success}</div>}
-          <form className="space-y-4" onSubmit={handleSubmit} aria-label="formulário de recuperação de senha">
+          {error && <div className="text-destructive text-sm" role="alert" aria-live="assertive" data-testid="forgot-error">{error}</div>}
+          {success && <div className="text-success text-sm" role="status" aria-live="polite" data-testid="forgot-success">{success}</div>}
+          <form className="space-y-4" onSubmit={handleSubmit} aria-label="formulário de recuperação de senha" data-testid="forgot-form">
             <div>
               <Label htmlFor="email" className="font-medium">Email</Label>
               <Input
@@ -53,9 +53,10 @@ export default function ForgotPasswordPage() {
                 aria-label="Email"
                 aria-describedby={error ? "forgot-error" : undefined}
                 aria-invalid={!!error}
+                data-testid="forgot-email"
               />
             </div>
-            <Button className="w-full mt-2" type="submit" disabled={loading || !email} aria-label="Enviar recuperação">
+            <Button className="w-full mt-2" type="submit" disabled={loading || !email} aria-label="Enviar recuperação" data-testid="forgot-submit">
               {loading ? "Enviando..." : "Enviar link de recuperação"}
             </Button>
           </form>
