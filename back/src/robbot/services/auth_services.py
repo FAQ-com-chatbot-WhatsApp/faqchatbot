@@ -94,7 +94,7 @@ class AuthService:
                     <table width="420" cellpadding="0" cellspacing="0" style="background: #fff; border-radius: 18px; box-shadow: 0 4px 32px 0 #5473E81A; padding: 32px; border: 1px solid #E5E7EB;">
                         <tr>
                             <td align="center" style="padding-bottom: 16px;">
-                                <img src='http://localhost:3000/assets/go_robot.png' alt='GO Robot' width='96' height='96' style='border-radius:18px; margin-bottom:16px;'>
+                                <img src='http://localhost:3000/assets/go_robot.png' alt='GO Robot' width='140' height='140' style='border-radius:24px; margin-bottom:20px; box-shadow:0 2px 12px #5473E84D; display:block;'>
                                 <h2 style="margin: 0; color: #5473E8; font-family: 'Geist', Arial, sans-serif; font-size: 2rem;">Bem-vindo(a) ao GO Robot!</h2>
                             </td>
                         </tr>
