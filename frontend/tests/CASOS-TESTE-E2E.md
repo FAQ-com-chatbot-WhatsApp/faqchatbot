@@ -53,18 +53,18 @@ Este documento descreve os casos de teste end-to-end (e2e) implementados para a 
 - ✅ Campos permanecem visíveis
 - ✅ URL permanece `/signin`
 
-#### **Teste: Estados de formulário e submissão**
-**Objetivo:** Verificar preenchimento e estados dos campos.
+#### **Teste: Confirmação de verificação de email**
+**Objetivo:** Verificar que a página de login mostra confirmação quando o email é verificado com sucesso.
 
 **Passos:**
-1. Navegar para `/signin`
-2. Preencher campos: username, password
-3. Marcar checkbox "remember me"
+1. Navegar para `/signin?verified=1`
+2. Verificar presença da mensagem de sucesso
 
 **Validações:**
-- ✅ Valores corretos nos campos
-- ✅ Checkbox marcado
-- ✅ Botão "Entrar" habilitado
+- ✅ Mensagem "✅ Email verificado com sucesso! Agora você pode fazer login." é exibida
+- ✅ Elemento tem atributo `role="status"` para acessibilidade
+- ✅ Formulário de login permanece funcional
+- ✅ Todos os elementos da página continuam presentes
 
 ### 1.2 Sign Up Page
 
@@ -258,19 +258,19 @@ Este documento descreve os casos de teste end-to-end (e2e) implementados para a 
 ## 5. Métricas de Cobertura
 
 ### Estatísticas dos Testes
-- **Total de testes:** 17
-- **Tempo médio de execução:** ~17 segundos
+- **Total de testes:** 18
+- **Tempo médio de execução:** ~13 segundos
 - **Arquivos testados:** 5 páginas principais
-- **Cenários cobertos:** Sucesso, erro, validação, navegação
+- **Cenários cobertos:** Sucesso, erro, validação, navegação, confirmação de email, confirmação de email
 
 ### Funcionalidades Testadas
-- ✅ Autenticação (login/signup)
-- ✅ Recuperação de senha
-- ✅ Validação de formulários
-- ✅ Navegação entre páginas
-- ✅ Estados visuais (loading, error, success)
+- ✅ Autenticação completa (login/signup)
+- ✅ Recuperação de senha end-to-end
+- ✅ Sistema de design e temas
+- ✅ Validações de formulário
+- ✅ Navegação e estados visuais
+- ✅ Confirmação de verificação de email
 - ✅ Responsividade e acessibilidade
-- ✅ Sistema de design (cores, temas)
 
 ---
 
