@@ -57,7 +57,7 @@ test.describe('Styleguide - Design Tokens', () => {
   test('dark mode toggle updates html class', async ({ page }) => {
     await test.step('Toggle and assert html.dark class presence changes', async () => {
       const hasDarkBefore = await page.evaluate(() => document.documentElement.classList.contains('dark'));
-      await page.getByRole('button', { name: /dark|light/i }).click();
+      await page.getByTestId('styleguide-theme-toggle').click();
       const hasDarkAfter = await page.evaluate(() => document.documentElement.classList.contains('dark'));
       expect(hasDarkAfter).toBe(!hasDarkBefore);
     });
