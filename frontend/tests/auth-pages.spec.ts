@@ -42,24 +42,20 @@ test.describe('Sign In Page', () => {
     })
   })
 
-  test('should handle form input and submission states', async ({ page }) => {
-    await page.goto('/signin')
+  test('should show email verification success message when verified=1 parameter is present', async ({ page }) => {
+    await page.goto('/signin?verified=1')
 
-    await test.step('Fill form fields', async () => {
-      await page.getByTestId('login-username').fill('test@example.com')
-      await page.getByTestId('login-password').fill('password123')
-      await page.getByTestId('login-remember').check()
+    await test.step('Verify success message is displayed', async () => {
+      await expect(page.getByText('✅ Email verificado com sucesso! Agora você pode fazer login.')).toBeVisible()
+      await expect(page.getByRole('status')).toHaveText('✅ Email verificado com sucesso! Agora você pode fazer login.')
     })
 
-    await test.step('Verify form state', async () => {
-      await expect(page.getByTestId('login-username')).toHaveValue('test@example.com')
-      await expect(page.getByTestId('login-password')).toHaveValue('password123')
-      await expect(page.getByTestId('login-remember')).toBeChecked()
+    await test.step('Verify page title and form elements still present', async () => {
+      await expect(page.getByTestId('login-title')).toHaveText('Entrar')
+      await expect(page.getByTestId('login-username')).toBeVisible()
+      await expect(page.getByTestId('login-password')).toBeVisible()
+      await expect(page.getByTestId('login-submit')).toBeVisible()
     })
-
-    // Note: Actual submission would require backend mocking
-    // For now, we verify the form is ready for submission
-    await expect(page.getByTestId('login-submit')).toBeEnabled()
   })
 })
 
