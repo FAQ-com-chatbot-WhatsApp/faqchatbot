@@ -68,7 +68,7 @@ export function ResetPasswordForm() {
   }
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit} aria-label="formulário de redefinição de senha" noValidate>
+    <form className="space-y-4" onSubmit={handleSubmit} aria-label="formulário de redefinição de senha" noValidate data-testid="reset-form">
       <div>
         <Label htmlFor="new-password" className="font-medium">Nova senha</Label>
         <Input
@@ -84,6 +84,7 @@ export function ResetPasswordForm() {
           aria-invalid={!!error && !newPassword}
           aria-describedby={!!error && !newPassword ? "reset-error" : undefined}
           ref={newPasswordRef}
+          data-testid="reset-new-password"
         />
       </div>
       <div>
@@ -101,13 +102,14 @@ export function ResetPasswordForm() {
           aria-invalid={!!error && (!confirmPassword || newPassword !== confirmPassword)}
           aria-describedby={!!error && (!confirmPassword || newPassword !== confirmPassword) ? "reset-error" : undefined}
           ref={confirmPasswordRef}
+          data-testid="reset-confirm-password"
         />
       </div>
-      <Button className="w-full mt-2" type="submit" disabled={loading || !newPassword || !confirmPassword} aria-label="Redefinir senha">
+      <Button className="w-full mt-2" type="submit" disabled={loading || !newPassword || !confirmPassword} aria-label="Redefinir senha" data-testid="reset-submit">
         {loading ? <span className="inline-flex items-center"><span className="loader mr-2" aria-hidden="true"></span>Enviando...</span> : "Redefinir senha"}
       </Button>
-      {error && <div id="reset-error" className="text-destructive text-sm" role="alert" aria-live="assertive">{error}</div>}
-      {success && <div className="text-success text-sm" role="status" aria-live="polite">{success}</div>}
+      {error && <div id="reset-error" className="text-destructive text-sm" role="alert" aria-live="assertive" data-testid="reset-error">{error}</div>}
+      {success && <div className="text-success text-sm" role="status" aria-live="polite" data-testid="reset-success">{success}</div>}
       <span className="sr-only" aria-live="polite">{error ? `Erro: ${error}` : success ? `Sucesso: ${success}` : null}</span>
     </form>
   );
