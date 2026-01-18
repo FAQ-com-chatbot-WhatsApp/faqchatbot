@@ -133,10 +133,10 @@ def decode_token(token: str, verify_exp: bool = True) -> dict[str, Any]:
     options = {"verify_exp": verify_exp}
     try:
         return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM], options=options)
-    except jwt.ExpiredSignatureError:
-        raise AuthException("Token expired")
-    except jwt.InvalidTokenError:
-        raise AuthException("Invalid token")
+    except jwt.ExpiredSignatureError as exc:
+        raise AuthException("Token expired") from exc
+    except jwt.InvalidTokenError as exc:
+        raise AuthException("Invalid token") from exc
 
 
 def validate_password_policy(password: str) -> None:
@@ -203,7 +203,7 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e),
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from e
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
