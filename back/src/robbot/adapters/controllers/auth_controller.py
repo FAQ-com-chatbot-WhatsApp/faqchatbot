@@ -3,10 +3,11 @@
 Implementa rate limiting para prevenir ataques de força bruta.
 """
 
+import contextlib
 import os
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -48,7 +49,7 @@ settings = get_settings()
 
 @router.post("/signup", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 @RATE_LIMIT_REGISTER  # 3 per hour per IP
-async def signup(request: Request, payload: SignupRequest, db: Session = Depends(get_db)):
+async def signup(_request: Request, payload: SignupRequest, db: Session = Depends(get_db)):
     """Registra um novo usuário.
 
     Controller apenas mapeia request -> service -> response.
@@ -135,12 +136,10 @@ async def login_for_access_token(
     if hasattr(form_data, 'remember_me'):
         remember_me = bool(form_data.remember_me)
     # Also check request body for JSON (for custom clients)
-    try:
+    with contextlib.suppress(Exception):
         body = await request.json()
         if 'rememberMe' in body:
             remember_me = bool(body['rememberMe'])
-    except Exception:
-        pass
     token_result = service.authenticate_user(
         form_data.username,
         form_data.password,
@@ -151,10 +150,8 @@ async def login_for_access_token(
     if token_result is None:
         # Checa se o usuário existe para mensagem mais clara
         user_exists = False
-        try:
+        with contextlib.suppress(Exception):
             user_exists = AuthService(db).repo.get_by_email(form_data.username) is not None
-        except Exception:
-            pass
         if not user_exists:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -301,7 +298,7 @@ def logout(request: Request, response: Response, db: Session = Depends(get_db), 
 
 @router.post("/password-change", status_code=status.HTTP_200_OK)
 async def password_change(
-    request: Request,
+    _request: Request,
     payload: ChangePasswordRequest,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
@@ -332,7 +329,6 @@ def read_me(current_user=Depends(get_current_user), db: Session = Depends(get_db
     Retorna AuthSessionResponse (dados relacionados à autenticação).
     Para dados de perfil do usuário, use GET /users/me.
     """
-    from robbot.adapters.repositories.auth_session_repository import AuthSessionRepository
     from robbot.adapters.repositories.credential_repository import CredentialRepository
 
     credential_repo = CredentialRepository(db)
@@ -364,7 +360,7 @@ def read_me(current_user=Depends(get_current_user), db: Session = Depends(get_db
 
 @router.post("/password-recovery", status_code=status.HTTP_202_ACCEPTED)
 @RATE_LIMIT_PASSWORD_RECOVERY  # 3 per hour per email
-async def password_recovery(request: Request, email: str, db: Session = Depends(get_db)):
+async def password_recovery(_request: Request, email: str = Form(...), db: Session = Depends(get_db)):
     """
     Initiates password recovery flow (sends email with token).
 
@@ -377,7 +373,7 @@ async def password_recovery(request: Request, email: str, db: Session = Depends(
 
 @router.post("/password-reset", status_code=status.HTTP_200_OK)
 @RATE_LIMIT_PASSWORD_RESET  # 5 per 15min per IP
-async def password_reset(request: Request, token: str, new_password: str, db: Session = Depends(get_db)):
+async def password_reset(_request: Request, token: str, new_password: str, db: Session = Depends(get_db)):
     """
     Resets password using recovery token.
 
@@ -417,13 +413,11 @@ def list_sessions(
     current_jti = None
     refresh_token_value = request.cookies.get("refresh_token")
     if refresh_token_value:
-        try:
+        with contextlib.suppress(Exception):
             from robbot.core import security
 
             payload = security.decode_token(refresh_token_value, verify_exp=False)
             current_jti = payload.get("jti")
-        except Exception:
-            pass
 
     # Convert to response models
     session_outs = []
@@ -480,13 +474,11 @@ def revoke_all_sessions(
     current_jti = None
     refresh_token_value = request.cookies.get("refresh_token")
     if refresh_token_value:
-        try:
+        with contextlib.suppress(Exception):
             from robbot.core import security
 
             payload = security.decode_token(refresh_token_value, verify_exp=False)
             current_jti = payload.get("jti")
-        except Exception:
-            pass
 
     # Get all active sessions
     all_sessions = session_repo.get_all_by_user_id(current_user.id)
