@@ -513,9 +513,18 @@ async def verify_email(token: str, db: Session = Depends(get_db)):
 
     service = EmailVerificationService(db)
     try:
-        service.verify_email(token)
-        # Redireciona para a página de login do frontend
-        return RedirectResponse(url="/signin?verified=1", status_code=302)
+        user_id = service.verify_email(token)
+        # Gerar access_token JWT para o usuário autenticado
+        from robbot.services.auth_services import AuthService
+        auth_service = AuthService(db)
+        user = auth_service.repo.get_by_id(user_id)
+        from robbot.core import security
+        access_token = security.create_token_for_subject(str(user.id), minutes=15, token_type="access")
+        # Redirecionar para o frontend com o token na URL
+        return RedirectResponse(
+            url=f"http://localhost:3000/signin?verified=1&token={access_token}",
+            status_code=302
+        )
     except AuthException as exc:
         # Mensagem de erro amigável em português
         html = f"""
