@@ -68,7 +68,7 @@ def send_email(to: str, subject: str, body: str) -> None:
                 server.login(user, password)
             server.sendmail(sender, [to], msg.as_string())
         logger.info("[SUCCESS] Email sent to %s: %s", to, subject)
-    except Exception as exc:  # noqa: BLE001 (blind exception)
+    except Exception as exc:  # noqa: BLE001 (blind exception)  # pylint: disable=broad-exception-caught
         logger.exception("[ERROR] Failed to send email to %s: %s", to, exc)
 
 
