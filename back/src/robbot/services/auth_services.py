@@ -94,7 +94,7 @@ class AuthService:
                     <table width="420" cellpadding="0" cellspacing="0" style="background: #fff; border-radius: 18px; box-shadow: 0 4px 32px 0 #5473E81A; padding: 32px; border: 1px solid #E5E7EB;">
                         <tr>
                             <td align="center" style="padding-bottom: 16px;">
-                                <img src='https://go-robot.s3.amazonaws.com/logo.png' alt='GO Robot' width='64' height='64' style='border-radius:12px; margin-bottom:8px;'>
+                                <img src='http://localhost:3000/assets/go_robot.png' alt='GO Robot' width='96' height='96' style='border-radius:18px; margin-bottom:16px;'>
                                 <h2 style="margin: 0; color: #5473E8; font-family: 'Geist', Arial, sans-serif; font-size: 2rem;">Bem-vindo(a) ao GO Robot!</h2>
                             </td>
                         </tr>
@@ -121,7 +121,7 @@ class AuthService:
                 body=email_body
             )
             logger.info("[INFO] Verification email sent to %s", user.email)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.error("[ERROR] Failed to send verification email to %s: %s", user.email, e)
 
         return UserOut.model_validate(user)
@@ -353,13 +353,48 @@ class AuthService:
 
     def send_password_recovery(self, email: str) -> None:
         """
-        Generates a short-lived token and sends to email. Token is a JWT with type 'pw-reset'.
+        Generates a short-lived password reset token and sends a beautiful, UX-first email in Portuguese with a button and clear instructions.
         """
         user = self.repo.get_by_email(email)
         if not user:
             return
         token = security.create_token_for_subject(str(user.id), minutes=15, token_type="pw-reset")
-        send_email(to=email, subject="Password recovery", body=f"Use this token to reset: {token}")
+        # Password reset link for Go Robot frontend
+        frontend_url = "http://localhost:3000/reset?token=" + token
+        email_body = f"""
+<html>
+    <body style=\"background: #FAFAFA; font-family: 'Geist', 'Lora', Arial, sans-serif; color: #1F2937; margin:0; padding:0;\">
+        <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"background: #FAFAFA; padding: 32px 0;\">
+            <tr>
+                <td align=\"center\">
+                    <table width=\"420\" cellpadding=\"0\" cellspacing=\"0\" style=\"background: #fff; border-radius: 18px; box-shadow: 0 4px 32px 0 #5473E81A; padding: 32px; border: 1px solid #E5E7EB;\">
+                        <tr>
+                            <td align=\"center\" style=\"padding-bottom: 16px;\">
+                                <img src='http://localhost:3000/assets/go_robot.png' alt='GO Robot' width='64' height='64' style='border-radius:12px; margin-bottom:8px;'>
+                                <h2 style=\"margin: 0; color: #5473E8; font-family: 'Geist', Arial, sans-serif; font-size: 2rem;\">Recuperação de senha</h2>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td align=\"center\" style=\"padding-bottom: 12px;\">
+                                <p style=\"font-size: 1.1rem; margin: 0 0 12px 0; color: #1F2937;\">Olá! Recebemos uma solicitação para redefinir a senha da sua conta.</p>
+                                <p style=\"font-size: 1rem; margin: 0 0 24px 0; color: #6B7280;\">Para criar uma nova senha, clique no botão abaixo:</p>
+                                <a href=\"{frontend_url}\" style=\"display:inline-block; background: #5473E8; color: #fff; text-decoration: none; font-weight: 600; padding: 14px 32px; border-radius: 12px; font-size: 1.1rem; box-shadow: 0 2px 8px #5473E84D; transition: background 0.2s;\">Redefinir senha</a>
+                                <p style=\"font-size: 0.95rem; color: #6B7280; margin: 24px 0 0 0;\">Se você não solicitou essa alteração, pode ignorar este e-mail com segurança.</p>
+                                <p style=\"font-size: 0.85rem; color: #A0AEC0; margin: 16px 0 0 0;\">Este link expira em 15 minutos por segurança.</p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+</html>
+"""
+        send_email(
+            to=email,
+            subject="Recuperação de senha - GO Robot",
+            body=email_body
+        )
 
     def reset_password(self, token: str, new_password: str) -> None:
         """Redefine senha se token válido e senha atende política.
