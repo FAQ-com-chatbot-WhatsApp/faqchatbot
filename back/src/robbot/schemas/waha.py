@@ -115,7 +115,7 @@ class WebhookPayload(BaseModel):
 
     event: str = Field(..., description="Event type: message, message.ack, etc.")
     session: str = Field(..., description="Session name")
-    payload: dict[str, Any] = Field(..., description="Event payload")
+    payload: dict[str, Any] = Field(default_factory=dict, description="Event payload")
 
 
 class WebhookLogOut(BaseModel):
