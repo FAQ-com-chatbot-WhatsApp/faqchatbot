@@ -50,9 +50,10 @@ class ConversationService:
         """
         from robbot.adapters.repositories.conversation_repository import ConversationRepository
 
+
         repo = ConversationRepository(self.db)
 
-        # Tentar buscar existente
+        # Try to fetch existing
         conversation = repo.get_by_chat_id(chat_id)
 
         if conversation:
@@ -218,6 +219,7 @@ class ConversationService:
 
     def list_conversations(
         self,
+        phone_number: str | None = None,
         status: ConversationStatus | None = None,
         is_urgent: bool | None = None,
         assigned_to_user_id: int | None = None,
@@ -228,6 +230,7 @@ class ConversationService:
         List conversations with filters.
 
         Args:
+            phone_number: Filter by phone number
             status: Filter by conversation status
             is_urgent: Filter by urgency flag
             assigned_to_user_id: Filter by assigned user
@@ -242,6 +245,8 @@ class ConversationService:
         repo = ConversationRepository(self.db)
 
         filters = {}
+        if phone_number is not None:
+            filters["phone_number"] = phone_number
         if status is not None:
             filters["status"] = status
         if is_urgent is not None:
@@ -275,16 +280,16 @@ class ConversationService:
         new_status: ConversationStatus,
     ) -> bool:
         """
-        Validar se transição de status é permitida.
+        Validate if status transition is allowed.
 
         Args:
-            old_status: Status atual
-            new_status: Status desejado
+            old_status: Current status
+            new_status: Desired status
 
         Returns:
-            True se transição válida
+            True if transition is valid
         """
-        # Mapa de transições válidas
+        # Map of valid transitions
         valid_transitions = {
             ConversationStatus.ACTIVE: [
                 ConversationStatus.WAITING_SECRETARY,
@@ -301,7 +306,7 @@ class ConversationService:
                 ConversationStatus.CLOSED,
             ],
             ConversationStatus.CLOSED: [
-                # Uma vez fechada, pode reabrir
+                # Once closed, can be reopened
                 ConversationStatus.ACTIVE,
             ],
         }
