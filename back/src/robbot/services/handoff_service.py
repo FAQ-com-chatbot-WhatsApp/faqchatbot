@@ -74,7 +74,7 @@ class HandoffService:
 
         logger.info("[SUCCESS] Handoff triggered: conv=%s, reason=%s, score=%s", conversation_id, reason, score)
 
-        # Gerar mensagem de transição natural baseada no contexto
+        # Generate natural transition message based on context
         transition_message = self._generate_transition_message(reason, score)
 
         return {
@@ -112,7 +112,7 @@ class HandoffService:
         ]:
             raise BusinessRuleError(f"Cannot assign conversation in status {conversation.status}")
 
-        # Atribuir ao atendente
+        # Assign to attendant
         conversation.status = ConversationStatus.ACTIVE_HUMAN
         conversation.assigned_to = user_id
         conversation.assigned_at = datetime.now(UTC)
@@ -174,7 +174,7 @@ class HandoffService:
         self.conversation_repo.update(conversation)
         session.flush()
 
-        # Calcular métricas
+        # Calculate metrics
         metrics = self._calculate_metrics(conversation)
 
         logger.info("[SUCCESS] Conversation completed: conv=%s, metrics=%s", conversation_id, metrics)
@@ -186,7 +186,7 @@ class HandoffService:
         }
 
     def _generate_transition_message(self, reason: str, score: int | None = None) -> str:
-        """Gera mensagem de transição natural baseada no contexto."""
+        """Generates natural transition message based on context."""
         messages = {
             "score_high": (
                 f"Vejo que você está bem interessado (score: {score})! 🎯\n\n"
@@ -211,29 +211,29 @@ class HandoffService:
         )
 
     def _calculate_metrics(self, conversation: ConversationModel) -> dict:
-        """Calcula métricas de conversão."""
+        """Calculates conversion metrics."""
         metrics = {}
 
-        # Tempo total de conversa
+        # Total conversation time
         if conversation.created_at and conversation.completed_at:
             total_time = conversation.completed_at - conversation.created_at
             metrics["total_conversation_time_minutes"] = int(total_time.total_seconds() / 60)
 
-        # Tempo até handoff
+        # Time to handoff
         if conversation.created_at and conversation.assigned_at:
             handoff_time = conversation.assigned_at - conversation.created_at
             metrics["time_to_handoff_minutes"] = int(handoff_time.total_seconds() / 60)
 
-        # Tempo de atendimento humano
+        # Human interaction time
         if conversation.assigned_at and conversation.completed_at:
             human_time = conversation.completed_at - conversation.assigned_at
             metrics["human_interaction_time_minutes"] = int(human_time.total_seconds() / 60)
 
-        # Score final
+        # Final score
         if conversation.lead and conversation.lead.maturity_score:
             metrics["final_score"] = conversation.lead.maturity_score
 
-        # Motivo de escalação
+        # Escalation reason
         if conversation.escalation_reason:
             metrics["escalation_reason"] = conversation.escalation_reason
 
@@ -246,14 +246,14 @@ class HandoffService:
         user_id: str,
     ) -> ConversationModel:
         """
-        Devolve conversa ao bot (caso humano decida).
+        Returns conversation to bot (if human decides).
 
         Args:
-            conversation_id: ID da conversa
-            user_id: UUID do atendente que está devolvendo
+            conversation_id: Conversation ID
+            user_id: UUID of attendant returning the chat
 
         Returns:
-            Conversation atualizada
+            Updated conversation
         """
         conversation = self.conversation_repo.get_by_id(conversation_id)
         if not conversation:
@@ -266,7 +266,7 @@ class HandoffService:
         if conversation.assigned_to != user_id:
             raise BusinessRuleError(f"User {user_id} cannot return conversation assigned to {conversation.assigned_to}")
 
-        # Devolver ao bot
+        # Return to bot
         conversation.status = ConversationStatus.ACTIVE_BOT
         conversation.assigned_to = None
         conversation.assigned_at = None
