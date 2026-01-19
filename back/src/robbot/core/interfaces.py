@@ -26,23 +26,19 @@ class LLMProvider(ABC):
     async def generate_response(
         self,
         prompt: str,
-        system: str = "",
-        temperature: float = 0.7,
-        max_tokens: int = 500,
-        tools: list[dict] | None = None,
+        context: str | None = None,
+        max_retries: int = 3,
     ) -> dict[str, Any]:
         """
         Generate a response from the LLM.
 
         Args:
             prompt: User message/prompt
-            system: System instructions
-            temperature: Sampling temperature (0-1)
-            max_tokens: Maximum tokens in response
-            tools: Gemini function definitions
+            context: Additional context
+            max_retries: Max retry attempts
 
         Returns:
-            Dict with keys: text, finish_reason, usage
+            Dict with keys: response, tokens_used, latency_ms, model, finish_reason
         """
 
     @abstractmethod
@@ -89,6 +85,14 @@ class VectorStore(ABC):
             metadatas: Metadata for each document
             ids: Custom document IDs
         """
+
+    @abstractmethod
+    async def add(self, conversation_id: str, text: str, metadata: dict[str, Any] | None = None) -> str:
+        """Add a single document with automatic embedding."""
+
+    @abstractmethod
+    async def search(self, conversation_id: str, limit: int = 5) -> list[dict[str, Any]]:
+        """Search context for a specific conversation."""
 
     @abstractmethod
     async def query(
