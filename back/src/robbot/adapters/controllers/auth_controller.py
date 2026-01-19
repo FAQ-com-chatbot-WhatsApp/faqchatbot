@@ -8,6 +8,7 @@ import os
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, status
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -26,7 +27,6 @@ from robbot.schemas.auth import (
     AuthSessionResponse,
     ChangePasswordRequest,
     EmailResendRequest,
-    EmailVerificationResponse,
     LoginResponse,
     MfaLoginRequest,
     SessionListResponse,
@@ -497,7 +497,8 @@ def revoke_all_sessions(
 # EMAIL VERIFICATION ENDPOINTS
 # ============================================================================
 
-from fastapi.responses import RedirectResponse, HTMLResponse
+
+
 
 @router.get("/email/verify")
 async def verify_email(token: str, db: Session = Depends(get_db)):
