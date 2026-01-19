@@ -56,11 +56,12 @@ class MessageProcessingJob(BaseJob):
 
     def _validate_message_data(self) -> None:
         """Validar formato básico da mensagem."""
-        required_fields = ["phone", "text"]
-
-        for field in required_fields:
-            if field not in self.message_data or not self.message_data[field]:
-                raise ValueError(f"Campo obrigatório ausente: {field}")
+        # WAHA usa 'from' para chat_id e 'body' para texto
+        # Algumas mensagens (mídia) podem não ter 'body', mas 'from' é obrigatório
+        if "from" not in self.message_data or not self.message_data["from"]:
+            # Fallback para 'phone' se não for WAHA puro
+            if "phone" not in self.message_data or not self.message_data["phone"]:
+                raise ValueError("Campo obrigatório ausente: from/phone")
 
     def execute(self) -> dict[str, Any]:
         """
@@ -93,9 +94,8 @@ class MessageProcessingJob(BaseJob):
 
         Detecta automaticamente áudio e transcreve antes de processar.
         """
-        from robbot.services.conversation_orchestrator import get_conversation_orchestrator
-
         try:
+            from robbot.services.conversation_orchestrator import get_conversation_orchestrator
             orchestrator = get_conversation_orchestrator()
 
             # Extrair dados da mensagem
