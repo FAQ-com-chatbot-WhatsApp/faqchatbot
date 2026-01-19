@@ -63,22 +63,9 @@ package-dir = {"" = "src"}
 where = ["src"]
 
 [tool.pyright]
-typeCheckingMode = "off"
-reportRedeclaration = "none"
-reportUnusedVariable = "none"
-reportUnusedImport = "none"
-reportGeneralTypeIssues = "none"
-reportOptionalMemberAccess = "none"
-reportOptionalSubscript = "none"
-reportPrivateImportUsage = "none"
-reportUndefinedVariable = "none"
-reportMissingImports = "none"
-reportUnusedFunction = "none"
-reportUnusedClass = "none"
-reportIncompatibleMethodOverride = "none"
-reportIncompatibleVariableOverride = "none"
-reportArgumentType = "none"
-reportAttributeAccessIssue = "none"
+typeCheckingMode = "basic"
+reportUnusedImport = "warning"
+reportUnusedVariable = "warning"
 exclude = ["**/tests/**", "**/alembic/**", "**/__pycache__/**", "**/node_modules/**", "**/.*/**"]
 
 [tool.pylance]
