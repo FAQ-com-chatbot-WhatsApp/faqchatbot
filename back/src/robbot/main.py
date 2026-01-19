@@ -1,7 +1,7 @@
-"""FastAPI application factory e tratamento global de exceções.
+"""FastAPI application factory and global exception handling.
 
-Inicializa DI container e rate limiter no startup.
-Configura middleware CORS.
+Initializes DI container and rate limiter on startup.
+Configures CORS middleware.
 """
 
 import logging
@@ -36,7 +36,7 @@ def create_app() -> FastAPI:
         try:
             await initialize_container(settings)
             logger.info("[SUCCESS] DI Container initialized successfully")
-        except Exception as e:  # noqa: BLE001 (blind exception)
+        except Exception as e:
             logger.error("[ERROR] Failed to initialize DI Container: %s", e)
             raise
 
@@ -45,7 +45,7 @@ def create_app() -> FastAPI:
         try:
             initialize_rate_limiter()
             logger.info("[SUCCESS] Rate limiter initialized successfully")
-        except Exception as e:  # noqa: BLE001 (blind exception)
+        except Exception as e:
             logger.error("[ERROR] Failed to initialize rate limiter: %s", e)
             # Don't fail app startup, rate limiter will fail gracefully
 
@@ -56,7 +56,7 @@ def create_app() -> FastAPI:
         try:
             await shutdown_container()
             logger.info("[SUCCESS] DI Container shut down successfully")
-        except Exception as e:  # noqa: BLE001 (blind exception)
+        except Exception as e:
             logger.error("[ERROR] Failed to shutdown DI Container: %s", e)
 
     application = FastAPI(title="Robbot API", version="0.1.0", lifespan=lifespan)
@@ -76,13 +76,21 @@ def create_app() -> FastAPI:
     @application.exception_handler(Exception)
     async def global_exception_handler(_request: Request, exc: Exception):
         """
-        Handler global que registra exceções não tratadas.
-        Evita expor detalhes internos na resposta HTTP.
+        Global handler that logs unhandled exceptions.
+        Exposes internal details in the response for debugging during development/testing.
         """
+        import traceback
         logger = logging.getLogger("robbot.global")
         logger.exception("[ERROR] Unhandled exception: %s", exc)
 
-        return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+        tb = traceback.format_exc()
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": str(exc),
+                "traceback": tb.splitlines()
+            }
+        )
 
     return application
 
