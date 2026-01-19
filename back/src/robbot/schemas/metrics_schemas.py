@@ -157,7 +157,7 @@ class TimeToConversionResponse(BaseModel):
     time_stats: TimeToConversionStatsSchema
 
 
-# =============================================================================# CONVERSION REPORTS EXTENDED SCHEMAS (Sprint 12 - L2)
+# =============================================================================# CONVERSION REPORTS EXTENDED SCHEMAS ( - L2)
 # =============================================================================
 
 
@@ -232,7 +232,7 @@ class ConversionTrendResponse(BaseModel):
 
 
 class ConversionReportExtendedSchema(BaseModel):
-    """Relatório COMPLETO de conversão (Sprint 12 - L2)"""
+    """Relatório COMPLETO de conversão ( - L2)"""
 
     period: PeriodSchema
     time_to_conversion: TimeToConversionExtendedStatsSchema
@@ -368,7 +368,7 @@ class DemandForecastResponse(BaseModel):
 
 
 # =============================================================================
-# PERFORMANCE REPORTS SCHEMAS (Sprint 12 - L1)
+# PERFORMANCE REPORTS SCHEMAS ( - L1)
 # =============================================================================
 
 
