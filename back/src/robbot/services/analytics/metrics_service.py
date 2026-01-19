@@ -4,7 +4,7 @@ Metrics Service
 Service de alto nível para cálculo e cache de métricas.
 Implementa caching inteligente no Redis com TTL configurável via settings.
 
-Refatorado Sprint 12.1:
+Refatorado .1:
 - TTL baseado em settings (não hardcoded)
 - Validação de params em cache_key
 - Cache em métodos agregadores
@@ -492,7 +492,7 @@ class MetricsService:
             "autonomy": result,
         }
 
-    # =============================================================================    # PERFORMANCE REPORTS (Sprint 12 - L1)
+    # =============================================================================    # PERFORMANCE REPORTS ( - L1)
     # =============================================================================
 
     def get_bot_response_time(
@@ -719,7 +719,7 @@ class MetricsService:
         )
 
     # =============================================================================
-    # CONVERSION REPORTS EXTENDED (Sprint 12 - L2)
+    # CONVERSION REPORTS EXTENDED ( - L2)
     # =============================================================================
 
     def get_time_to_conversion_extended(
@@ -913,7 +913,7 @@ class MetricsService:
         end_date: datetime,
     ) -> dict[str, Any]:
         """
-        Relatório COMPLETO de conversão (Sprint 12 - L2).
+        Relatório COMPLETO de conversão ( - L2).
 
         Combina todas as métricas de conversão estendidas.
 
@@ -1137,7 +1137,7 @@ class MetricsService:
         end_date: datetime,
     ) -> dict[str, Any]:
         """
-        Relatório COMPLETO de análise de conversas (Sprint 12 - L3).
+        Relatório COMPLETO de análise de conversas ( - L3).
 
         Combina todas as métricas de análise textual.
 
