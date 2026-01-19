@@ -31,7 +31,7 @@ class ConversationMessageRepository(BaseRepository[ConversationMessageModel]):
         return (
             self.session.query(ConversationMessageModel)
             .filter_by(conversation_id=conversation_id)
-            .order_by(ConversationMessageModel.timestamp.desc())
+            .order_by(ConversationMessageModel.created_at.desc())
             .limit(limit)
             .all()
         )
