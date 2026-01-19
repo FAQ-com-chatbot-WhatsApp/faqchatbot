@@ -276,7 +276,7 @@ class AnalyticsRepository:
         end_date: datetime,
     ) -> dict[str, float]:
         """
-        Estatísticas ESTENDIDAS de tempo até conversão (Sprint 12 - L2).
+        Estatísticas ESTENDIDAS de tempo até conversão ( - L2).
 
         Adiciona p75 e p90 às métricas existentes.
 
@@ -338,7 +338,7 @@ class AnalyticsRepository:
         end_date: datetime,
     ) -> list[dict[str, Any]]:
         """
-        Taxa de conversão por origem/canal (Sprint 12 - L2).
+        Taxa de conversão por origem/canal ( - L2).
 
         Usa conversation.chat_id para identificar origem (WhatsApp groups vs direct).
 
@@ -402,7 +402,7 @@ class AnalyticsRepository:
         end_date: datetime,
     ) -> dict[str, Any]:
         """
-        Análise de leads perdidos (Sprint 12 - L2).
+        Análise de leads perdidos ( - L2).
 
         Retorna leads com status LOST + última interação + motivo inferido.
 
@@ -500,7 +500,7 @@ class AnalyticsRepository:
         granularity: str = "day",  # day, week, month
     ) -> list[dict[str, Any]]:
         """
-        Tendência temporal de conversão (Sprint 12 - L2).
+        Tendência temporal de conversão ( - L2).
 
         Agrega conversões por período (dia/semana/mês).
 
@@ -814,7 +814,7 @@ class AnalyticsRepository:
         }
 
     # =========================================================================
-    # SEÇÃO 5: PERFORMANCE REPORTS (Sprint 12 - L1)
+    # SEÇÃO 5: PERFORMANCE REPORTS ( - L1)
     # =========================================================================
 
     def get_bot_llm_latency_stats(
