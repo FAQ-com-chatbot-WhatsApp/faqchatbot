@@ -1,5 +1,5 @@
 """
-Export Service - Sprint 12 L1 (Refatorado Sprint 12.1)
+Export Service -  L1 (Refatorado .1)
 
 Serviço para exportação de relatórios em PDF e Excel.
 Error handling adicionado para debugging.
