@@ -1,11 +1,11 @@
-"""Serviço de autenticação implementando registro, login, refresh e revogação de tokens.
+"""Authentication service implementing registration, login, refresh, and token revocation.
 
-Responsabilidades:
-- Gerenciar ciclo de vida de usuários (signup)
-- Autenticar credenciais e emitir tokens JWT
-- Renovar tokens (refresh)
-- Gerenciar sessões de usuário
-- Integração com MFA e verificação de email
+Responsibilities:
+- Manage user lifecycle (signup)
+- Authenticate credentials and issue JWT tokens
+- Renew tokens (refresh)
+- Manage user sessions
+- Integration with MFA and email verification
 """
 
 import logging
@@ -33,10 +33,10 @@ logger = logging.getLogger(__name__)
 
 
 class AuthService:
-    """Camada de serviço que implementa regras de negócio de autenticação.
+    """Service layer implementing authentication business rules.
 
-    Gerencia autenticação de usuários, emissão de tokens, sessões,
-    e integração com MFA e verificação de email.
+    Manages user authentication, token issuance, sessions,
+    and integration with MFA and email verification.
     """
 
     def __init__(self, db: Session):
@@ -49,20 +49,20 @@ class AuthService:
         self.mfa_service = MfaService(db)
 
     def signup(self, payload: SignupRequest) -> UserOut:
-        """Registra um novo usuário com validação de senha e persistência.
+        """Registers a new user with password validation and persistence.
 
         Args:
-            payload: Dados de registro incluindo email, senha e nome completo
+            payload: Registration data including email, password, and full name
 
         Returns:
-            Dados do usuário criado (sem senha)
+            Created user data (without password)
 
         Raises:
-            AuthException: Se usuário já existe ou senha é inválida
+            AuthException: If user already exists or password is invalid
 
         Note:
-            Cria usuário com email_verified=false. Verificação de email
-            é necessária antes do login.
+            Creates user with email_verified=false. Email verification
+            is required before login.
         """
         existing = self.repo.get_by_email(payload.email)
         if existing:
@@ -83,7 +83,8 @@ class AuthService:
 
         logger.info("[INFO] User registered: %s (verification token: %s...)", user.email, verification_token[:8])
 
-        # Email de verificação estilizado (HTML) - GO Robot branding
+        # Stylized verification email (HTML) - GO Robot branding
+        # Note: Keeping email body in Portuguese as it is user-facing
         verification_link = f"http://localhost:3333/api/v1/auth/email/verify?token={verification_token}"
         email_body = f"""
 <html>
@@ -134,22 +135,22 @@ class AuthService:
         ip_address: str | None = None,
         remember_me: bool = False,
     ) -> Token | None:
-        """Valida credenciais e retorna tokens com dados do usuário.
+        """Validates credentials and returns tokens with user data.
 
-        Bloqueia login se email não verificado.
-        Se MFA habilitado, retorna tokens temporários com mfa_required=True.
-        Se MFA desabilitado, retorna tokens finais com mfa_required=False.
+        Blocks login if email is not verified.
+        If MFA is enabled, returns temporary tokens with mfa_required=True.
+        If MFA is disabled, returns final tokens with mfa_required=False.
 
         Args:
-            email: Email do usuário
-            password: Senha do usuário
-            user_agent: User-agent do dispositivo (opcional)
-            ip_address: Endereço IP do cliente (opcional)
+            email: User email
+            password: User password
+            user_agent: Device user-agent (optional)
+            ip_address: Client IP address (optional)
 
         Returns:
-            Token com mfa_required=True se MFA habilitado (tokens temporários)
-            Token com mfa_required=False se MFA desabilitado (tokens finais)
-            None se credenciais inválidas ou usuário inativo
+            Token with mfa_required=True if MFA enabled (temporary tokens)
+            Token with mfa_required=False if MFA disabled (final tokens)
+            None if credentials invalid or user inactive
         """
         user = self.repo.get_by_email(email)
         if not user:
@@ -162,7 +163,7 @@ class AuthService:
         if not self.email_verification_svc.is_email_verified(user.id):
             logger.warning("[WARNING] Login failed: email not verified for user %s", email)
             raise AuthException("Email not verified. Please check your email for verification link.")
-        # Verificar senha via CredentialService
+        # Verify password via CredentialService
         if not self.credential_svc.verify_password(user.id, password):
             logger.warning("[WARNING] Login failed: invalid password for user %s", email)
             try:
@@ -238,20 +239,20 @@ class AuthService:
         user_agent: str | None = None,
         ip_address: str | None = None,
     ) -> Token:
-        """Rotação de refresh token: valida, revoga o token usado e retorna novo par.
+        """Refresh token rotation: validates, revokes the used token and returns a new pair.
 
         Args:
-            refresh_token: Token de refresh a ser renovado
-            user_agent: User-agent do dispositivo (opcional)
-            ip_address: Endereço IP do cliente (opcional)
+            refresh_token: Refresh token to be renewed
+            user_agent: Device user-agent (optional)
+            ip_address: Client IP address (optional)
 
         Returns:
-            Novo par de tokens (access + refresh)
+            New token pair (access + refresh)
 
         Raises:
-            AuthException: Se token inválido, revogado ou expirado
+            AuthException: If token invalid, revoked, or expired
         """
-        # Bloquear reuso de refresh (rotation)
+        # Prevent refresh token reuse (rotation)
         if self.token_repo.is_revoked(refresh_token):
             raise AuthException("Token revoked")
         payload = security.decode_token(refresh_token, verify_exp=True)
@@ -287,7 +288,7 @@ class AuthService:
             ip_address=ip_address,
             device_name=device_name,
         )
-        # Revogar o refresh token utilizado
+        # Revoke the used refresh token
         self.token_repo.revoke(refresh_token)
         tokens = security.create_access_refresh_tokens(subject)
         try:
@@ -397,14 +398,14 @@ class AuthService:
         )
 
     def reset_password(self, token: str, new_password: str) -> None:
-        """Redefine senha se token válido e senha atende política.
+        """Resets password if token is valid and password meets policy.
 
         Args:
-            token: Token de redefinição de senha
-            new_password: Nova senha do usuário
+            token: Password reset token
+            new_password: New user password
 
         Raises:
-            AuthException: Se token inválido ou senha não atende política
+            AuthException: If token invalid or password doesn't meet policy
         """
         payload = security.decode_token(token, verify_exp=True)
         if payload.get("type") != "pw-reset":
@@ -419,7 +420,7 @@ class AuthService:
         security.validate_password_policy(new_password)
         # Update via service
         self.credential_svc.set_password(user.id, new_password)
-        # Revogar todas as sessões ativas após troca de senha
+        # Revoke all active sessions after password change
         self.session_repo.revoke_all_for_user(user.id, reason="password_reset")
         try:
             self.audit_svc.log_action(
@@ -473,13 +474,13 @@ class AuthService:
         user_agent: str | None = None,
         ip_address: str | None = None,
     ) -> Token:
-        """Completa login após verificação MFA.
+        """Completes login after MFA verification.
 
         Args:
-            temporary_token: Token temporário do login inicial
-            code: Código TOTP ou código de backup
-            user_agent: User-agent para rastreamento de sessão (opcional)
-            ip_address: Endereço IP para rastreamento de sessão (opcional)
+            temporary_token: Temporary token from initial login
+            code: TOTP code or backup code
+            user_agent: User-agent for session tracking (optional)
+            ip_address: IP address for session tracking (optional)
 
         Returns:
             Token with final access and refresh tokens
