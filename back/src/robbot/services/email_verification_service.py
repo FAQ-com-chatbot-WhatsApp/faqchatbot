@@ -1,10 +1,10 @@
-"""Serviço para verificação de endereços de email.
+"""Email verification service.
 
-Gerencia o fluxo de verificação de email:
-- Gerar tokens de verificação
-- Enviar emails de verificação
-- Validar tokens recebidos
-- Marcar emails como verificados
+Manages the email verification flow:
+- Generate verification tokens
+- Send verification emails
+- Validate received tokens
+- Mark emails as verified
 """
 
 import secrets
@@ -19,9 +19,9 @@ from robbot.core.custom_exceptions import AuthException
 
 
 class EmailVerificationService:
-    """Serviço de verificação de email.
+    """Email verification service.
 
-    Implementa fluxo de verificação de email para garantir endereços válidos.
+    Implements email verification flow to ensure valid addresses.
     """
 
     def __init__(self, db: Session):
