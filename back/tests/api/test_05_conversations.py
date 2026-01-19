@@ -46,10 +46,11 @@ class TestPhase5Conversations:
         assert response.status_code == 200
         data = response.json()
 
-        assert isinstance(data, list)
-        assert len(data) > 0
+        assert isinstance(data, dict)
+        assert "conversations" in data
+        assert len(data["conversations"]) > 0
 
-        conv = data[0]
+        conv = data["conversations"][0]
         assert conv["phone_number"] == self.test_phone
         assert conv["status"] == "active"
 
@@ -76,8 +77,11 @@ class TestPhase5Conversations:
         assert response.status_code == 200
         data = response.json()
 
-        assert isinstance(data, list)
-        lead = data[0]
+        assert isinstance(data, dict)
+        assert "leads" in data
+        assert len(data["leads"]) > 0
+        
+        lead = data["leads"][0]
         assert lead["id"] == self.lead_id
         assert lead["phone_number"] == self.test_phone
 

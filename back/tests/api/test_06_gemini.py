@@ -37,8 +37,8 @@ class TestPhase6Gemini:
 
         response = api_client.get("/conversations", params={"phone_number": self.test_phone})
         data = response.json()
-        if data:
-            TestPhase6Gemini.conversation_id = data[0]["id"]
+        if data and "conversations" in data and data["conversations"]:
+            TestPhase6Gemini.conversation_id = data["conversations"][0]["id"]
 
     def test_uc026_problem_phase(self, api_base_url):
         """UC-026: Simulate Continued Conversation (PROBLEM phase)."""
