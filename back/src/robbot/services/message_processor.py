@@ -104,15 +104,14 @@ class MessageProcessor:
             logger.error("[ERROR] Error transcribing audio: %s", e)
             return "[Áudio recebido - erro na transcrição]"
 
-    async def save_inbound_message(self, session: Any, conversation_id: str, text: str) -> ConversationMessageModel:
+    async def save_inbound_message(
+        self, session: Any, conversation_id: str, text: str, from_phone: str, to_phone: str = "BOT"
+    ) -> ConversationMessageModel:
         """
         Persistir mensagem recebida do cliente no banco.
 
         Returns:
             ConversationMessageModel: Mensagem salva com timestamp UTC
-
-        Raises:
-            DatabaseError: Se falhar ao salvar mensagem
         """
         try:
             repo = ConversationMessageRepository(session)
@@ -120,8 +119,9 @@ class MessageProcessor:
             message = ConversationMessageModel(
                 conversation_id=conversation_id,
                 direction=MessageDirection.INBOUND,
-                content=text,
-                timestamp=datetime.now(UTC),
+                from_phone=from_phone,
+                to_phone=to_phone,
+                body=text,
             )
             repo.create(message)
             session.flush()
@@ -134,15 +134,14 @@ class MessageProcessor:
             logger.error("[ERROR] Failed to save inbound message: %s", e)
             raise DatabaseError(f"Failed to save inbound message: {e}") from e
 
-    async def save_outbound_message(self, session: Any, conversation_id: str, text: str) -> ConversationMessageModel:
+    async def save_outbound_message(
+        self, session: Any, conversation_id: str, text: str, to_phone: str, from_phone: str = "BOT"
+    ) -> ConversationMessageModel:
         """
         Persistir mensagem enviada pelo bot no banco.
 
         Returns:
             ConversationMessageModel: Mensagem salva com timestamp UTC
-
-        Raises:
-            DatabaseError: Se falhar ao salvar mensagem
         """
         try:
             repo = ConversationMessageRepository(session)
@@ -150,8 +149,9 @@ class MessageProcessor:
             message = ConversationMessageModel(
                 conversation_id=conversation_id,
                 direction=MessageDirection.OUTBOUND,
-                content=text,
-                timestamp=datetime.now(UTC),
+                from_phone=from_phone,
+                to_phone=to_phone,
+                body=text,
             )
             repo.create(message)
             session.flush()
