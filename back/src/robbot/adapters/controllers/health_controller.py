@@ -8,7 +8,14 @@ from robbot.services.health_service import HealthService
 router = APIRouter()
 
 
-@router.get("/", response_model=HealthOut)
+@router.get("/debug/messages")
+def debug_messages(db: Session = Depends(get_db)):
+    from robbot.infra.db.models.conversation_message_model import ConversationMessageModel
+    msgs = db.query(ConversationMessageModel).all()
+    return [{"id": m.id, "body": m.body, "created_at": str(m.created_at)} for m in msgs]
+
+
+@router.get("", response_model=HealthOut)
 async def health_check(response: Response, db: Session = Depends(get_db)):
     """
     Endpoint de health check da API.
