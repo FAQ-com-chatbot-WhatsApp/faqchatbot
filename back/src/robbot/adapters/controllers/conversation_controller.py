@@ -23,6 +23,20 @@ router = APIRouter()
 
 
 # ===== SCHEMAS =====
+class ConversationMessageOut(BaseModel):
+    """Response schema for conversation message."""
+
+    id: str
+    direction: str
+    from_phone: str
+    to_phone: str
+    body: str
+    media_url: str | None
+    created_at: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class ConversationOut(BaseModel):
     """Response schema for conversation."""
 
@@ -72,8 +86,9 @@ class UpdateNotesRequest(BaseModel):
 
 
 # ===== ENDPOINTS =====
-@router.get("/conversations", response_model=ConversationListOut, tags=["Conversations"])
+@router.get("", response_model=ConversationListOut, tags=["Conversations"])
 def list_conversations(
+    phone_number: str | None = Query(None, description="Filter by phone number"),
     status: str | None = Query(None, description="Filter by status"),
     urgent_only: bool = Query(False, description="Show only urgent conversations"),
     assigned_to_me: bool = Query(False, description="Show only assigned to current user"),
@@ -88,6 +103,7 @@ def list_conversations(
     Requires JWT authentication.
 
     Filters:
+    - phone_number: Filter by phone number
     - status: ACTIVE, WAITING_SECRETARY, TRANSFERRED, CLOSED
     - urgent_only: Show only is_urgent=true
     - assigned_to_me: Show only assigned to current user
@@ -104,6 +120,7 @@ def list_conversations(
 
     # Get conversations using service
     conversations, total = service.list_conversations(
+        phone_number=phone_number,
         status=status_enum,
         is_urgent=True if urgent_only else None,
         assigned_to_user_id=current_user["user_id"] if assigned_to_me else None,
@@ -131,8 +148,171 @@ def list_conversations(
     return ConversationListOut(conversations=conversations_out, total=total)
 
 
+@router.get("/export", tags=["Conversations"])
+def export_conversations(
+    export_format: str = Query("csv", description="Export format (csv only)"),
+    start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),
+    status: str | None = Query(None, description="Filter by status"),
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Export conversations to CSV.
+
+    Requires JWT authentication.
+
+    Filters:
+    - start_date: Start date (YYYY-MM-DD)
+    - end_date: End date (YYYY-MM-DD)
+    - status: Conversation status
+
+    Non-admin users can only export their own assigned conversations.
+    """
+    if export_format != "csv":
+        raise HTTPException(status_code=400, detail="Only CSV format is supported")
+
+    service = ConversationService(db)
+
+    # Build filters
+    filters = {}
+    if status:
+        try:
+            filters["status"] = ConversationStatus[status.upper()]
+        except KeyError:
+            raise HTTPException(status_code=400, detail=f"Invalid status: {status}")
+
+    # Non-admin users can only export their own conversations
+    if current_user.role != Role.ADMIN:
+        filters["assigned_to_user_id"] = current_user.id
+
+    # Get conversations
+    conversations = service.find_by_criteria(filters)
+
+    # Filter by date range
+    if start_date:
+        try:
+            start_dt = datetime.fromisoformat(start_date)
+            conversations = [c for c in conversations if c.created_at >= start_dt]
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid start_date format")
+
+    if end_date:
+        try:
+            end_dt = datetime.fromisoformat(end_date)
+            conversations = [c for c in conversations if c.created_at <= end_dt]
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid end_date format")
+
+    # Generate CSV
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Header
+    writer.writerow(
+        [
+            "ID",
+            "Chat ID",
+            "Phone Number",
+            "Status",
+            "Lead Status",
+            "Is Urgent",
+            "Assigned To",
+            "Created At",
+            "Updated At",
+        ]
+    )
+
+    # Rows
+    for conv in conversations:
+        writer.writerow(
+            [
+                conv.id,
+                conv.chat_id,
+                conv.phone_number,
+                conv.status.value,
+                conv.lead.status.value if conv.lead else "NEW",
+                conv.is_urgent,
+                conv.assigned_to_user_id or "",
+                conv.created_at.isoformat(),
+                conv.updated_at.isoformat(),
+            ]
+        )
+
+    # Stream response
+    output.seek(0)
+
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f"attachment; filename=conversations_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        },
+    )
+
+
+@router.get("/search", response_model=ConversationListOut, tags=["Conversations"])
+def search_conversations(
+    q: str = Query(..., min_length=3, description="Search query (min 3 chars)"),
+    limit: int = Query(50, ge=1, le=100),
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Full-text search in conversation messages.
+
+    Requires JWT authentication.
+
+    Searches in message content using PostgreSQL full-text search.
+    Non-admin users can only search their own assigned conversations.
+    """
+    ConversationMessageRepository(db)
+    service = ConversationService(db)
+
+    # Search messages with full-text query using the model directly
+
+    result = (
+        db.query(ConversationMessageModel)
+        .filter(ConversationMessageModel.body.ilike(f"%{q}%"))
+        .limit(limit * 5)
+        .all()
+    )  # Get more messages to find unique conversations
+
+    # Get unique conversation IDs
+    conversation_ids = list({msg.conversation_id for msg in result})[:limit]
+
+    # Get conversations
+    conversations = []
+    for conv_id in conversation_ids:
+        conv = service.get_by_id(conv_id)
+        if conv:
+            # Filter by user if not admin
+            if current_user.role != Role.ADMIN and conv.assigned_to_user_id != current_user.id:
+                continue
+            conversations.append(conv)
+
+    # Convert to response
+    conversations_out = [
+        ConversationOut(
+            id=c.id,
+            chat_id=c.chat_id,
+            phone_number=c.phone_number,
+            status=c.status.value,
+            lead_status=c.lead.status.value if c.lead else "NEW",
+            is_urgent=c.is_urgent,
+            lead_id=c.lead_id,
+            assigned_to_user_id=c.assigned_to_user_id,
+            created_at=c.created_at.isoformat(),
+            updated_at=c.updated_at.isoformat(),
+        )
+        for c in conversations
+    ]
+
+    return ConversationListOut(conversations=conversations_out, total=len(conversations_out))
+
+
 @router.get(
-    "/conversations/{conversation_id}",
+    "/{conversation_id}",
     response_model=ConversationOut,
     tags=["Conversations"],
 )
@@ -164,6 +344,39 @@ def get_conversation(
         created_at=conversation.created_at.isoformat(),
         updated_at=conversation.updated_at.isoformat(),
     )
+
+
+@router.get(
+    "/{conversation_id}/messages",
+    response_model=list[ConversationMessageOut],
+    tags=["Conversations"],
+)
+def get_conversation_messages(
+    conversation_id: str,
+    limit: int = Query(50, ge=1, le=100),
+    _current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Get messages for a specific conversation.
+
+    Requires JWT authentication.
+    """
+    repo = ConversationMessageRepository(db)
+    messages = repo.get_by_conversation(conversation_id, limit=limit)
+
+    return [
+        ConversationMessageOut(
+            id=m.id,
+            direction=m.direction.value,
+            from_phone=m.from_phone,
+            to_phone=m.to_phone,
+            body=m.body,
+            media_url=m.media_url,
+            created_at=m.created_at.isoformat(),
+        )
+        for m in messages
+    ]
 
 
 @router.put("/{conversation_id}/status", tags=["Conversations"])
@@ -292,164 +505,3 @@ def update_conversation_notes(
         raise HTTPException(status_code=500, detail=f"Failed to update notes: {e!s}") from e
 
 
-@router.get("/export", tags=["Conversations"])
-def export_conversations(
-    export_format: str = Query("csv", description="Export format (csv only)"),
-    start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),
-    end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),
-    status: str | None = Query(None, description="Filter by status"),
-    current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """
-    Export conversations to CSV.
-
-    Requires JWT authentication.
-
-    Filters:
-    - start_date: Start date (YYYY-MM-DD)
-    - end_date: End date (YYYY-MM-DD)
-    - status: Conversation status
-
-    Non-admin users can only export their own assigned conversations.
-    """
-    if export_format != "csv":
-        raise HTTPException(status_code=400, detail="Only CSV format is supported")
-
-    service = ConversationService(db)
-
-    # Build filters
-    filters = {}
-    if status:
-        try:
-            filters["status"] = ConversationStatus[status.upper()]
-        except KeyError:
-            raise HTTPException(status_code=400, detail=f"Invalid status: {status}")
-
-    # Non-admin users can only export their own conversations
-    if current_user.role != Role.ADMIN:
-        filters["assigned_to_user_id"] = current_user.id
-
-    # Get conversations
-    conversations = service.find_by_criteria(filters)
-
-    # Filter by date range
-    if start_date:
-        try:
-            start_dt = datetime.fromisoformat(start_date)
-            conversations = [c for c in conversations if c.created_at >= start_dt]
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid start_date format")
-
-    if end_date:
-        try:
-            end_dt = datetime.fromisoformat(end_date)
-            conversations = [c for c in conversations if c.created_at <= end_dt]
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid end_date format")
-
-    # Generate CSV
-    output = io.StringIO()
-    writer = csv.writer(output)
-
-    # Header
-    writer.writerow(
-        [
-            "ID",
-            "Chat ID",
-            "Phone Number",
-            "Status",
-            "Lead Status",
-            "Is Urgent",
-            "Assigned To",
-            "Created At",
-            "Updated At",
-        ]
-    )
-
-    # Rows
-    for conv in conversations:
-        writer.writerow(
-            [
-                conv.id,
-                conv.chat_id,
-                conv.phone_number,
-                conv.status.value,
-                conv.lead.status.value if conv.lead else "NEW",
-                conv.is_urgent,
-                conv.assigned_to_user_id or "",
-                conv.created_at.isoformat(),
-                conv.updated_at.isoformat(),
-            ]
-        )
-
-    # Stream response
-    output.seek(0)
-
-    return StreamingResponse(
-        iter([output.getvalue()]),
-        media_type="text/csv",
-        headers={
-            "Content-Disposition": f"attachment; filename=conversations_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-        },
-    )
-
-
-@router.get("/conversations/search", response_model=ConversationListOut, tags=["Conversations"])
-def search_conversations(
-    q: str = Query(..., min_length=3, description="Search query (min 3 chars)"),
-    limit: int = Query(50, ge=1, le=100),
-    current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """
-    Full-text search in conversation messages.
-
-    Requires JWT authentication.
-
-    Searches in message content using PostgreSQL full-text search.
-    Non-admin users can only search their own assigned conversations.
-    """
-    ConversationMessageRepository(db)
-    service = ConversationService(db)
-
-    # Search messages with full-text query using the model directly
-
-    result = (
-        db.query(ConversationMessageModel)
-        .filter(ConversationMessageModel.content.ilike(f"%{q}%"))
-        .limit(limit * 5)
-        .all()
-    )  # Get more messages to find unique conversations
-
-    # Get unique conversation IDs
-    conversation_ids = list({msg.conversation_id for msg in result})[:limit]
-
-    # Get conversations
-    conversations = []
-    for conv_id in conversation_ids:
-        conv = service.get_by_id(conv_id)
-        if conv:
-            # Filter by user if not admin
-            if current_user.role != Role.ADMIN and conv.assigned_to_user_id != current_user.id:
-                continue
-            conversations.append(conv)
-
-    # Convert to response
-    conversations_out = [
-        ConversationOut(
-            id=c.id,
-            chat_id=c.chat_id,
-            phone_number=c.phone_number,
-            status=c.status.value,
-            lead_status=c.lead.status.value if c.lead else "NEW",
-            is_urgent=c.is_urgent,
-            lead_id=c.lead_id,
-            assigned_to_user_id=c.assigned_to_user_id,
-            created_at=c.created_at.isoformat(),
-            updated_at=c.updated_at.isoformat(),
-        )
-        for c in conversations
-    ]
-
-    return ConversationListOut(conversations=conversations_out, total=len(conversations_out))
