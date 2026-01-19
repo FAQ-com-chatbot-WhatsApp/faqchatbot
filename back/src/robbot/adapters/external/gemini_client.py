@@ -36,12 +36,7 @@ class GeminiClient:
         try:
             self._tools = tools or []
 
-            try:
-                genai.configure(api_key=settings.GOOGLE_API_KEY)
-            except AttributeError as e:
-                raise LLMError("Gemini", "google.genai.configure not available") from e
-
-            self.client = genai.Client()
+            self.client = genai.Client(api_key=settings.GOOGLE_API_KEY)
 
             self._generation_config = {
                 "temperature": settings.GEMINI_TEMPERATURE,
@@ -99,19 +94,20 @@ class GeminiClient:
 
                 start_time = time.time()
 
-                # Chamar Gemini API
-                request_payload: dict[str, Any] = {
-                    "model": settings.GEMINI_MODEL,
-                    "contents": full_prompt,
+                # Montar config no formato do google-genai SDK v1+
+                config = {
+                    **(self._generation_config or {}),
                 }
-
+                
                 if self._tools:
-                    request_payload["tools"] = self._tools
+                    # O SDK espera [ {'function_declarations': [...] } ]
+                    config["tools"] = [{"function_declarations": self._tools}]
 
-                if self._generation_config:
-                    request_payload["generation_config"] = self._generation_config
-
-                response = self.client.models.generate_content(**request_payload)
+                response = self.client.models.generate_content(
+                    model=settings.GEMINI_MODEL,
+                    contents=full_prompt,
+                    config=config
+                )
 
                 latency_ms = int((time.time() - start_time) * 1000)
 
