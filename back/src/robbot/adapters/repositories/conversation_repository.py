@@ -142,6 +142,9 @@ class ConversationRepository(BaseRepository[ConversationModel]):
         if "status" in filters and filters["status"]:
             stmt = stmt.where(ConversationModel.status == filters["status"])
 
+        if "phone_number" in filters and filters["phone_number"]:
+            stmt = stmt.where(ConversationModel.phone_number == filters["phone_number"])
+
         if "assigned_to_user_id" in filters and filters["assigned_to_user_id"]:
             # Join with Lead to filter by assigned_to_user_id
             stmt = stmt.join(LeadModel, ConversationModel.id == LeadModel.conversation_id)
