@@ -1,0 +1,146 @@
+INFO:robbot.infra.jobs.message_job:Processando mensagem inbound para None
+Iniciando Job de depura├º├úo...
+INFO:robbot.adapters.external.gemini_client:[SUCCESS] GeminiClient initialized (model=gemini-1.5-flash, temp=0.7, tools=4)
+INFO:robbot.adapters.external.gemini_client:GeminiClient initialized as singleton
+INFO:robbot.config.prompts.templates:PromptTemplates initialized with SPIN Selling version=2.0.0-SPIN
+INFO:robbot.services.transcription_service:[SUCCESS] TranscriptionService initialized (model=base, local inference)
+INFO:robbot.infra.vectordb.chroma_client:[SUCCESS] ChromaClient initialized (collection=conversations, path=./data/chroma, count=0)
+INFO:robbot.adapters.external.chroma_vector_store:Initialized ChromaVectorStore with collection: conversations
+INFO:robbot.services.conversation_orchestrator:[SUCCESS] ConversationOrchestrator initialized
+INFO:robbot.services.conversation_orchestrator:[INFO] ConversationOrchestrator initialized as singleton
+INFO:robbot.services.conversation_orchestrator:Processing inbound message: chat_id=5511999887766@c.us, phone=5511999887766, length=18, has_audio=False, has_video=False
+INFO:robbot.services.conversation_orchestrator:[SUCCESS] New conversation and lead created (conv_id=289486ef-b83d-4033-ab55-f230d463d4c2, lead_id=b892295c-09fe-4950-94ee-28c72a272a7d)
+INFO:robbot.services.message_processor:[SUCCESS] Inbound message saved (id=a7f0119e-cbad-4b16-8d67-6aa0ae2eab13)
+INFO:robbot.infra.vectordb.chroma_client:[SUCCESS] Context retrieved from ChromaDB (conv_id=289486ef-b83d-4033-ab55-f230d463d4c2, count=0)
+WARNING:robbot.services.intent_detector:[WARNING] Failed to detect intent: 'PromptTemplates' object has no attribute 'format_intent_detection_prompt'
+ERROR:robbot.services.conversation_orchestrator:[ERROR] Failed to process message: 
+Traceback (most recent call last):
+  File "/app/src/robbot/services/intent_detector.py", line 47, in detect_intent
+    prompt = self.prompt_templates.format_intent_detection_prompt(message, context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'PromptTemplates' object has no attribute 'format_intent_detection_prompt'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/src/robbot/services/conversation_orchestrator.py", line 154, in process_inbound_message
+    intent = await intent_detector.detect_intent(message_text, context_text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/src/robbot/services/intent_detector.py", line 73, in detect_intent
+    raise LLMError(f"Failed to detect intent: {e}") from e
+robbot.core.custom_exceptions.LLMError
+INFO:robbot.adapters.external.gemini_client:[INFO] Generating Gemini response (attempt 1/1)
+ERROR:robbot.adapters.external.gemini_client:[ERROR] Unexpected error calling Gemini: Models.generate_content() got an unexpected keyword argument 'tools'
+Traceback (most recent call last):
+  File "/app/src/robbot/services/intent_detector.py", line 47, in detect_intent
+    prompt = self.prompt_templates.format_intent_detection_prompt(message, context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'PromptTemplates' object has no attribute 'format_intent_detection_prompt'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/src/robbot/services/conversation_orchestrator.py", line 154, in process_inbound_message
+    intent = await intent_detector.detect_intent(message_text, context_text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/src/robbot/services/intent_detector.py", line 73, in detect_intent
+    raise LLMError(f"Failed to detect intent: {e}") from e
+robbot.core.custom_exceptions.LLMError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/app/src/robbot/adapters/external/gemini_client.py", line 109, in generate_response
+    response = self.client.models.generate_content(**request_payload)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: Models.generate_content() got an unexpected keyword argument 'tools'
+INFO:httpx:HTTP Request: POST http://waha:3000/api/startTyping "HTTP/1.1 500 Internal Server Error"
+ERROR:robbot.adapters.external.waha_client:WAHA HTTP error 500: {"statusCode":500,"timestamp":"2026-01-18T23:39:05.836Z","exception":{"message":"No LID for user\nnew Error (<anonymous>:6:31)","name":"Error","stack":"Error: No LID for user\nnew Error (<anonymous>:6:31)\n    at #evaluate (/app/node_modules/puppeteer-core/lib/cjs/puppeteer/cdp/ExecutionContext.js:391:56)\n    at async ExecutionContext.evaluate (/app/node_modules/puppeteer-core/lib/cjs/puppeteer/cdp/ExecutionContext.js:277:16)\n    at async IsolatedWorld.evaluate (/app/node_modules/puppeteer-core/lib/cjs/puppeteer/cdp/IsolatedWorld.js:100:16)\n    at async CdpFrame.evaluate (/app/node_modules/puppeteer-core/lib/cjs/puppeteer/api/Frame.js:362:20)\n    at async CdpPage.evaluate (/app/node_modules/puppeteer-core/lib/cjs/puppeteer/api/Page.js:818:20)\n    at async WPage.evaluate (/app/dist/core/engines/webjs/WPage.js:13:20)\n    at async WebjsClientCore.getChatById (/app/node_modules/whatsapp-web.js/src/Client.js:1204:22)\n    at async WhatsappSessionWebJSCore.startTyping (/app/dist/core/engines/webjs/session.webjs.core.js:510:22)\n    at async descriptor.value (/app/dist/core/abc/activity.js:9:20)\n    at async ChattingController.startTyping (/app/dist/api/chatting.controller.js:101:9)\n    at i (https://static.whatsapp.net/rsrc.php/v4/y-/r/HA6KjfwtAw6.js:106:348)\n    at l (https://static.whatsapp.net/rsrc.php/v4/y-/r/HA6KjfwtAw6.js:106:124)\n    at <anonymous> (https://static.whatsapp.net/rsrc.php/v4ivYF4/yl/l/pt_BR-j/bdAG79wqmOK.js:1519:1492)\n    at _ (https://static.whatsapp.net/rsrc.php/v4it7w4/yz/l/pt_BR-j/4kRXFLzCC7cegi93ZTFJaBXGqCAxXEK4Njl2Hr0S3DY8zETN0LiyaZmCjs0eCB3ZCFuXt3L5RG2C8bN4_ZtVog8M7f6QCytmUS-OqiYxRdugo1z9dJ76NYA9GCGXjFLcWMbxX5iWX_mw6Law-hGt_BmMvG53TId03O_kCxn5C89ycVEjXAtBrSbUmAKUESWmgCryZxneEggSeBseMsbp5PfGBXUz.js:684:905)\n    at s (https://static.whatsapp.net/rsrc.php/v4/y-/r/HA6KjfwtAw6.js:76:179)\n    at Error (:5:30)"},"request":{"path":"/api/startTyping","method":"POST","body":{"session":"default","chatId":"5511999887766@c.us"},"query":{}},"version":{"version":"2026.1.2","engine":"WEBJS","tier":"CORE","browser":"/usr/bin/google-chrome-stable","platform":"linux/x64"}}
+WARNING:robbot.adapters.external.waha_client:[WARNING] Anti-ban flow error (non-critical): WAHA API error: 500 - {"statusCode":500,"timestamp":"2026-01-18T23:39:05.836Z","exception":{"message":"No LID for user\nnew Error (<anonymous>:6:31)","name":"Error","stack":"Error: No LID for user\nnew Error (<anonymous>:6:31)\n    at #evaluate (/app/node_modules/puppeteer-core/lib/cjs/puppeteer/cdp/ExecutionContext.js:391:56)\n    at async ExecutionContext.evaluate (/app/node_modules/puppeteer-core/lib/cjs/puppeteer/cdp/ExecutionContext.js:277:16)\n    at async IsolatedWorld.evaluate (/app/node_modules/puppeteer-core/lib/cjs/puppeteer/cdp/IsolatedWorld.js:100:16)\n    at async CdpFrame.evaluate (/app/node_modules/puppeteer-core/lib/cjs/puppeteer/api/Frame.js:362:20)\n    at async CdpPage.evaluate (/app/node_modules/puppeteer-core/lib/cjs/puppeteer/api/Page.js:818:20)\n    at async WPage.evaluate (/app/dist/core/engines/webjs/WPage.js:13:20)\n    at async WebjsClientCore.getChatById (/app/node_modules/whatsapp-web.js/src/Client.js:1204:22)\n    at async WhatsappSessionWebJSCore.startTyping (/app/dist/core/engines/webjs/session.webjs.core.js:510:22)\n    at async descriptor.value (/app/dist/core/abc/activity.js:9:20)\n    at async ChattingController.startTyping (/app/dist/api/chatting.controller.js:101:9)\n    at i (https://static.whatsapp.net/rsrc.php/v4/y-/r/HA6KjfwtAw6.js:106:348)\n    at l (https://static.whatsapp.net/rsrc.php/v4/y-/r/HA6KjfwtAw6.js:106:124)\n    at <anonymous> (https://static.whatsapp.net/rsrc.php/v4ivYF4/yl/l/pt_BR-j/bdAG79wqmOK.js:1519:1492)\n    at _ (https://static.whatsapp.net/rsrc.php/v4it7w4/yz/l/pt_BR-j/4kRXFLzCC7cegi93ZTFJaBXGqCAxXEK4Njl2Hr0S3DY8zETN0LiyaZmCjs0eCB3ZCFuXt3L5RG2C8bN4_ZtVog8M7f6QCytmUS-OqiYxRdugo1z9dJ76NYA9GCGXjFLcWMbxX5iWX_mw6Law-hGt_BmMvG53TId03O_kCxn5C89ycVEjXAtBrSbUmAKUESWmgCryZxneEggSeBseMsbp5PfGBXUz.js:684:905)\n    at s (https://static.whatsapp.net/rsrc.php/v4/y-/r/HA6KjfwtAw6.js:76:179)\n    at Error (:5:30)"},"request":{"path":"/api/startTyping","method":"POST","body":{"session":"default","chatId":"5511999887766@c.us"},"query":{}},"version":{"version":"2026.1.2","engine":"WEBJS","tier":"CORE","browser":"/usr/bin/google-chrome-stable","platform":"linux/x64"}}
+INFO:robbot.adapters.external.waha_client:[INFO] Sending text to 5511999887766@c.us: Desculpe, estou com dificuldades t├®cnicas no momen...
+INFO:httpx:HTTP Request: POST http://waha:3000/api/sendText "HTTP/1.1 500 Internal Server Error"
+ERROR:robbot.adapters.external.waha_client:WAHA HTTP error 500: {"statusCode":500,"timestamp":"2026-01-18T23:39:06.087Z","exception":{"message":"No LID for user\nnew Error (<anonymous>:6:31)","name":"Error","stack":"Error: No LID for user\nnew Error (<anonymous>:6:31)\n    at #evaluate (/app/node_modules/puppeteer-core/lib/cjs/puppeteer/cdp/ExecutionContext.js:391:56)\n    at async ExecutionContext.evaluate (/app/node_modules/puppeteer-core/lib/cjs/puppeteer/cdp/ExecutionContext.js:277:16)\n    at async IsolatedWorld.evaluate (/app/node_modules/puppeteer-core/lib/cjs/puppeteer/cdp/IsolatedWorld.js:100:16)\n    at async CdpFrame.evaluate (/app/node_modules/puppeteer-core/lib/cjs/puppeteer/api/Frame.js:362:20)\n    at async CdpPage.evaluate (/app/node_modules/puppeteer-core/lib/cjs/puppeteer/api/Page.js:818:20)\n    at async WPage.evaluate (/app/dist/core/engines/webjs/WPage.js:13:20)\n    at async WebjsClientCore.sendMessage (/app/node_modules/whatsapp-web.js/src/Client.js:1100:25)\n    at async descriptor.value (/app/dist/core/abc/activity.js:9:20)\n    at i (https://static.whatsapp.net/rsrc.php/v4/y-/r/HA6KjfwtAw6.js:106:348)\n    at l (https://static.whatsapp.net/rsrc.php/v4/y-/r/HA6KjfwtAw6.js:106:124)\n    at <anonymous> (https://static.whatsapp.net/rsrc.php/v4ivYF4/yl/l/pt_BR-j/bdAG79wqmOK.js:1519:1492)\n    at _ (https://static.whatsapp.net/rsrc.php/v4it7w4/yz/l/pt_BR-j/4kRXFLzCC7cegi93ZTFJaBXGqCAxXEK4Njl2Hr0S3DY8zETN0LiyaZmCjs0eCB3ZCFuXt3L5RG2C8bN4_ZtVog8M7f6QCytmUS-OqiYxRdugo1z9dJ76NYA9GCGXjFLcWMbxX5iWX_mw6Law-hGt_BmMvG53TId03O_kCxn5C89ycVEjXAtBrSbUmAKUESWmgCryZxneEggSeBseMsbp5PfGBXUz.js:684:905)\n    at s (https://static.whatsapp.net/rsrc.php/v4/y-/r/HA6KjfwtAw6.js:76:179)\n    at Error (:5:30)"},"request":{"path":"/api/sendText","method":"POST","body":{"session":"default","chatId":"5511999887766@c.us","text":"Desculpe, estou com dificuldades t├®cnicas no momento. Um atendente humano entrar├í em contato em breve."},"query":{}},"version":{"version":"2026.1.2","engine":"WEBJS","tier":"CORE","browser":"/usr/bin/google-chrome-stable","platform":"linux/x64"}}
+ERROR:robbot.services.conversation_orchestrator:[ERROR] Fallback failed: WAHA API error: 500 - {"statusCode":500,"timestamp":"2026-01-18T23:39:06.087Z","exception":{"message":"No LID for user\nnew Error (<anonymous>:6:31)","name":"Error","stack":"Error: No LID for user\nnew Error (<anonymous>:6:31)\n    at #evaluate (/app/node_modules/puppeteer-core/lib/cjs/puppeteer/cdp/ExecutionContext.js:391:56)\n    at async ExecutionContext.evaluate (/app/node_modules/puppeteer-core/lib/cjs/puppeteer/cdp/ExecutionContext.js:277:16)\n    at async IsolatedWorld.evaluate (/app/node_modules/puppeteer-core/lib/cjs/puppeteer/cdp/IsolatedWorld.js:100:16)\n    at async CdpFrame.evaluate (/app/node_modules/puppeteer-core/lib/cjs/puppeteer/api/Frame.js:362:20)\n    at async CdpPage.evaluate (/app/node_modules/puppeteer-core/lib/cjs/puppeteer/api/Page.js:818:20)\n    at async WPage.evaluate (/app/dist/core/engines/webjs/WPage.js:13:20)\n    at async WebjsClientCore.sendMessage (/app/node_modules/whatsapp-web.js/src/Client.js:1100:25)\n    at async descriptor.value (/app/dist/core/abc/activity.js:9:20)\n    at i (https://static.whatsapp.net/rsrc.php/v4/y-/r/HA6KjfwtAw6.js:106:348)\n    at l (https://static.whatsapp.net/rsrc.php/v4/y-/r/HA6KjfwtAw6.js:106:124)\n    at <anonymous> (https://static.whatsapp.net/rsrc.php/v4ivYF4/yl/l/pt_BR-j/bdAG79wqmOK.js:1519:1492)\n    at _ (https://static.whatsapp.net/rsrc.php/v4it7w4/yz/l/pt_BR-j/4kRXFLzCC7cegi93ZTFJaBXGqCAxXEK4Njl2Hr0S3DY8zETN0LiyaZmCjs0eCB3ZCFuXt3L5RG2C8bN4_ZtVog8M7f6QCytmUS-OqiYxRdugo1z9dJ76NYA9GCGXjFLcWMbxX5iWX_mw6Law-hGt_BmMvG53TId03O_kCxn5C89ycVEjXAtBrSbUmAKUESWmgCryZxneEggSeBseMsbp5PfGBXUz.js:684:905)\n    at s (https://static.whatsapp.net/rsrc.php/v4/y-/r/HA6KjfwtAw6.js:76:179)\n    at Error (:5:30)"},"request":{"path":"/api/sendText","method":"POST","body":{"session":"default","chatId":"5511999887766@c.us","text":"Desculpe, estou com dificuldades t├®cnicas no momento. Um atendente humano entrar├í em contato em breve."},"query":{}},"version":{"version":"2026.1.2","engine":"WEBJS","tier":"CORE","browser":"/usr/bin/google-chrome-stable","platform":"linux/x64"}}
+Erro capturado: Failed to process message: Failed to process message: 
+ERROR:robbot.infra.jobs.message_job:[ERROR] Erro ao processar com orchestrator: Failed to process message: 
+Traceback (most recent call last):
+  File "/app/src/robbot/services/intent_detector.py", line 47, in detect_intent
+    prompt = self.prompt_templates.format_intent_detection_prompt(message, context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'PromptTemplates' object has no attribute 'format_intent_detection_prompt'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/src/robbot/services/conversation_orchestrator.py", line 154, in process_inbound_message
+    intent = await intent_detector.detect_intent(message_text, context_text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/src/robbot/services/intent_detector.py", line 73, in detect_intent
+    raise LLMError(f"Failed to detect intent: {e}") from e
+robbot.core.custom_exceptions.LLMError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/src/robbot/infra/jobs/message_job.py", line 152, in _process_inbound_message
+    result = asyncio.run(
+             ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/asyncio/runners.py", line 190, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/asyncio/base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/app/src/robbot/services/conversation_orchestrator.py", line 257, in process_inbound_message
+    raise BusinessRuleError(f"Failed to process message: {e}") from e
+robbot.core.custom_exceptions.BusinessRuleError: Failed to process message: 
+Traceback (most recent call last):
+  File "/app/src/robbot/services/intent_detector.py", line 47, in detect_intent
+    prompt = self.prompt_templates.format_intent_detection_prompt(message, context)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'PromptTemplates' object has no attribute 'format_intent_detection_prompt'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/src/robbot/services/conversation_orchestrator.py", line 154, in process_inbound_message
+    intent = await intent_detector.detect_intent(message_text, context_text)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/src/robbot/services/intent_detector.py", line 73, in detect_intent
+    raise LLMError(f"Failed to detect intent: {e}") from e
+robbot.core.custom_exceptions.LLMError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/src/robbot/infra/jobs/message_job.py", line 152, in _process_inbound_message
+    result = asyncio.run(
+             ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/asyncio/runners.py", line 190, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/asyncio/base_events.py", line 654, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/app/src/robbot/services/conversation_orchestrator.py", line 257, in process_inbound_message
+    raise BusinessRuleError(f"Failed to process message: {e}") from e
+robbot.core.custom_exceptions.BusinessRuleError: Failed to process message: 
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/debug_job.py", line 26, in run_debug
+    result = job.execute()
+             ^^^^^^^^^^^^^
+  File "/app/src/robbot/infra/jobs/message_job.py", line 86, in execute
+    return self._process_inbound_message()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/src/robbot/infra/jobs/message_job.py", line 186, in _process_inbound_message
+    raise JobRetryableError(f"Failed to process message: {e}") from e
+robbot.infra.jobs.base_job.JobRetryableError: Failed to process message: Failed to process message: 

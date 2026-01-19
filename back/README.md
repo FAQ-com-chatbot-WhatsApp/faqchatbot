@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🤖 FAQ Chatbot WhatsApp - Backend
+# 🤖 GO ROBOT - Backend
 
 **Sistema backend para chatbot WhatsApp com FastAPI, PostgreSQL, Redis e serviços auxiliares**
 
