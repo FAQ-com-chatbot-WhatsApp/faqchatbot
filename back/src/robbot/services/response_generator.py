@@ -1,8 +1,6 @@
 """
 ResponseGenerator - Generates AI responses using LLM and playbook system.
 
-Extracted from ConversationOrchestrator (Issue #7: God Object Decomposition)
-
 Responsibilities:
 - Generate contextual responses using Gemini API
 - Apply SPIN selling methodology
@@ -25,8 +23,6 @@ logger = logging.getLogger(__name__)
 class ResponseGenerator:
     """
     Generate AI responses based on conversation context and intent.
-
-    Replaces ConversationOrchestrator response generation logic.
     """
 
     def __init__(
