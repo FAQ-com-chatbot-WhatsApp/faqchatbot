@@ -1,5 +1,5 @@
 """
-Dashboard Controller - Refatorado Sprint 12.1
+Dashboard Controller - Refatorado .1
 
 Endpoints de analytics com autenticação, cache configurável e validação.
 
@@ -186,7 +186,7 @@ def bot_autonomy(
 
 
 # =============================================================================
-# PERFORMANCE REPORTS (Sprint 12 - L1)
+# PERFORMANCE REPORTS ( - L1)
 # =============================================================================
 
 
@@ -306,7 +306,7 @@ def performance_report_export_excel(
 
 
 # =============================================================================
-# CONVERSION REPORTS EXTENDED (Sprint 12 - L2)
+# CONVERSION REPORTS EXTENDED ( - L2)
 # =============================================================================
 
 
