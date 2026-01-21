@@ -33,6 +33,7 @@ def add_step(
     Requires authentication.
     """
     import logging
+
     logger = logging.getLogger(__name__)
 
     try:
