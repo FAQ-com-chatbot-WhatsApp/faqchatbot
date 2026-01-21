@@ -10,9 +10,9 @@ from rq.registry import FailedJobRegistry
 
 from robbot.config.settings import settings
 from robbot.core.custom_exceptions import QueueError
-from robbot.infra.jobs.escalation_job import EscalationJob
-from robbot.infra.jobs.gemini_job import GeminiAIProcessingJob
-from robbot.infra.jobs.message_job import MessageProcessingJob
+from robbot.infra.jobs.escalation_job import EscalationJob, process_escalation_job
+from robbot.infra.jobs.gemini_job import GeminiAIProcessingJob, process_gemini_job
+from robbot.infra.jobs.message_job import MessageProcessingJob, process_message_job
 from robbot.infra.jobs.scheduler_job import ScheduledJob
 from robbot.infra.redis.queue import get_queue_manager
 
@@ -64,18 +64,32 @@ class QueueService:
             attempt=0,
         )
 
-        self.queue_manager.queue_messages.enqueue(
-            job.run,
+        enqueued_job = self.queue_manager.queue_messages.enqueue(
+            process_message_job,
+            message_data=message_data,
+            message_direction=message_direction,
+            conversation_id=conversation_id,
+            user_id=None,  # or pass if needed
             job_id=job.job_id,
+            timeout=600,  # 10 minutes explicit timeout
             result_ttl=settings.RQ_DEFAULT_RESULT_TTL,
             failure_ttl=settings.RQ_DEFAULT_FAILURE_TTL,
         )
 
+        # Force timeout in Redis
+        try:
+            enqueued_job.timeout = 600  # 10 minutes
+            enqueued_job.save()
+            logger.debug(f"Job {job.job_id} timeout set to 600s in Redis")
+        except Exception as e:
+            logger.warning(f"Failed to set job timeout in Redis: {e}")
+
         logger.info(
-            f"📨 Mensagem enfileirada (fila: messages) -> {job.job_id}",
+            f"Mensagem enfileirada (fila: messages, timeout: {settings.RQ_JOB_TIMEOUT_MESSAGE}s) -> {job.job_id}",
             extra={
                 "job_id": job.job_id,
                 "queue": "messages",
+                "timeout": settings.RQ_JOB_TIMEOUT_MESSAGE,
                 "phone": message_data.get("phone"),
             },
         )
@@ -110,7 +124,11 @@ class QueueService:
         )
 
         self.queue_manager.queue_ai.enqueue(
-            job.run,
+            process_gemini_job,
+            conversation_id=conversation_id,
+            message_id=message_id,
+            user_input=user_input,
+            phone=phone,
             job_id=job.job_id,
             result_ttl=settings.RQ_DEFAULT_RESULT_TTL,
             failure_ttl=settings.RQ_DEFAULT_FAILURE_TTL,
@@ -156,7 +174,11 @@ class QueueService:
         )
 
         self.queue_manager.queue_escalation.enqueue(
-            job.run,
+            process_escalation_job,
+            conversation_id=conversation_id,
+            reason=reason,
+            phone=phone,
+            user_name=user_name,
             job_id=job.job_id,
             result_ttl=settings.RQ_DEFAULT_RESULT_TTL,
             failure_ttl=settings.RQ_DEFAULT_FAILURE_TTL,
@@ -345,8 +367,9 @@ class QueueService:
         """
         retried = 0
         queue = self.queue_manager.queue_failed
+        failed_registry = FailedJobRegistry(queue=queue, connection=queue.connection)
 
-        for job_id in list(queue.failed_job_ids):
+        for job_id in list(failed_registry.get_job_ids()):
             if self.retry_job(job_id):
                 retried += 1
 
@@ -363,10 +386,12 @@ class QueueService:
             Número de jobs removidos
         """
         queue = self.queue_manager.queue_failed
-        count = len(queue.failed_job_ids)
+        failed_registry = FailedJobRegistry(queue=queue, connection=queue.connection)
+        job_ids = list(failed_registry.get_job_ids())
+        count = len(job_ids)
 
         # Remover todos os jobs falhados
-        for job_id in list(queue.failed_job_ids):
+        for job_id in job_ids:
             try:
                 job = Job.fetch(job_id, connection=queue.connection)
                 job.delete()
