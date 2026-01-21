@@ -86,15 +86,43 @@ class BaseJob(ABC):
         """
         raise NotImplementedError("Subclasses devem implementar execute()")
 
-    def run(self) -> Any:
+    def run(self, **kwargs) -> Any:
         """
         Executar job com tratamento de erros e logging.
 
         Esta é a função que RQ vai chamar diretamente.
+        Usando **kwargs para prevenir TypeError se RQ passar argumentos inesperados como 'timeout'.
 
         Returns:
             Resultado do execute() ou None se falhar
         """
+        # Set job timeout to 5 minutes if running in RQ context
+        try:
+            from rq import get_current_job
+
+            current_job = get_current_job()
+            if current_job:
+                # Set timeout
+                if hasattr(current_job, "timeout"):
+                    current_job.timeout = 300  # 5 minutes
+                    current_job.save()
+                    logger.debug(f"[JOB:{self.job_id}] Set job timeout to 300 seconds")
+
+                # Disable death penalty for this job
+                if hasattr(current_job, "_death_penalty"):
+                    # Try to disable death penalty
+                    try:
+                        if current_job._death_penalty:
+                            current_job._death_penalty._timeout = 300
+                            logger.debug(f"[JOB:{self.job_id}] Set death penalty timeout to 300 seconds")
+                        current_job._death_penalty = None
+                        logger.debug(f"[JOB:{self.job_id}] Disabled death penalty")
+                    except Exception as e:
+                        logger.warning(f"[JOB:{self.job_id}] Could not disable death penalty: {e}")
+        except ImportError:
+            # RQ not available, skip timeout setting
+            pass
+
         self.started_at = datetime.now(UTC)
 
         try:
