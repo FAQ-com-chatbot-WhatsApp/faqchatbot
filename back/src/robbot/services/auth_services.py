@@ -116,11 +116,7 @@ class AuthService:
 </html>
 """
         try:
-            send_email(
-                to=user.email,
-                subject="Verify your email address - Clinica Go",
-                body=email_body
-            )
+            send_email(to=user.email, subject="Verify your email address - Clinica Go", body=email_body)
             logger.info("[INFO] Verification email sent to %s", user.email)
         except Exception as e:  # pylint: disable=broad-exception-caught
             logger.error("[ERROR] Failed to send verification email to %s: %s", user.email, e)
@@ -391,11 +387,7 @@ class AuthService:
     </body>
 </html>
 """
-        send_email(
-            to=email,
-            subject="Recuperação de senha - GO Robot",
-            body=email_body
-        )
+        send_email(to=email, subject="Recuperação de senha - GO Robot", body=email_body)
 
     def reset_password(self, token: str, new_password: str) -> None:
         """Resets password if token is valid and password meets policy.
