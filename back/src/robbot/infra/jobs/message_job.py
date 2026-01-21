@@ -2,6 +2,7 @@
 Job para processar mensagens recebidas/enviadas via WAHA.
 """
 
+import asyncio
 import logging
 from typing import Any
 
@@ -12,6 +13,27 @@ from robbot.infra.db.session import get_sync_session
 from robbot.infra.jobs.base_job import BaseJob, JobRetryableError
 
 logger = logging.getLogger(__name__)
+
+
+def process_message_job(
+    message_data: dict[str, Any],
+    message_direction: str = "inbound",
+    conversation_id: str | None = None,
+    user_id: str | None = None,
+    **kwargs,
+) -> dict[str, Any]:
+    """
+    Module-level function for RQ to import and execute message processing jobs.
+    This is the most reliable entry point to avoid 'ValueError: Invalid attribute name'.
+    """
+    job = MessageProcessingJob(
+        message_data=message_data,
+        message_direction=message_direction,
+        conversation_id=conversation_id,
+        user_id=user_id,
+        **kwargs,
+    )
+    return job.run()
 
 
 class MessageProcessingJob(BaseJob):
@@ -29,22 +51,24 @@ class MessageProcessingJob(BaseJob):
     def __init__(
         self,
         message_data: dict[str, Any],
-        message_direction: str = "inbound",  # "inbound" ou "outbound"
+        message_direction: str = "inbound",
         conversation_id: str | None = None,
         user_id: str | None = None,
         **kwargs,
     ):
         """
         Inicializar job de mensagem.
-
-        Args:
-            message_data: Payload da mensagem (conteúdo, tipo, timestamp, etc)
-            message_direction: "inbound" ou "outbound"
-            conversation_id: ID da conversa
-            user_id: ID do usuário proprietário
-            **kwargs: Argumentos herdados de BaseJob
         """
-        super().__init__(**kwargs)
+        # Filter out RQ-specific kwargs that BaseJob doesn't accept
+        base_job_kwargs = {}
+        if "job_id" in kwargs:
+            base_job_kwargs["job_id"] = kwargs["job_id"]
+        if "attempt" in kwargs:
+            base_job_kwargs["attempt"] = kwargs["attempt"]
+        if "metadata" in kwargs:
+            base_job_kwargs["metadata"] = kwargs["metadata"]
+
+        super().__init__(**base_job_kwargs)
 
         self.message_data = message_data
         self.message_direction = message_direction
@@ -54,48 +78,53 @@ class MessageProcessingJob(BaseJob):
         # Validação inicial
         self._validate_message_data()
 
+    @staticmethod
+    def run_job(
+        message_data: dict[str, Any],
+        message_direction: str = "inbound",
+        conversation_id: str | None = None,
+        user_id: str | None = None,
+        **kwargs,
+    ) -> dict[str, Any]:
+        """Run job for RQ (fallback static method)."""
+        return process_message_job(
+            message_data=message_data,
+            message_direction=message_direction,
+            conversation_id=conversation_id,
+            user_id=user_id,
+            **kwargs,
+        )
+
     def _validate_message_data(self) -> None:
         """Validar formato básico da mensagem."""
-        # WAHA usa 'from' para chat_id e 'body' para texto
-        # Algumas mensagens (mídia) podem não ter 'body', mas 'from' é obrigatório
-        if "from" not in self.message_data or not self.message_data["from"]:
-            # Fallback para 'phone' se não for WAHA puro
-            if "phone" not in self.message_data or not self.message_data["phone"]:
-                raise ValueError("Campo obrigatório ausente: from/phone")
+        if ("from" not in self.message_data or not self.message_data["from"]) and (
+            "phone" not in self.message_data or not self.message_data["phone"]
+        ):
+            raise ValueError("Campo obrigatório ausente: from/phone")
 
     def execute(self) -> dict[str, Any]:
         """
         Executar processamento da mensagem.
-
-        Returns:
-            Dict com ID da mensagem e resultado do processamento
-
-        Raises:
-            JobRetryableError: Se BD indisponível (aguardará retry)
-            ValueError: Se payload inválido (falha imediata)
         """
         logger.info(
             "Processando mensagem %s para %s",
             self.message_direction,
-            self.message_data.get("phone"),
+            self.message_data.get("phone") or self.message_data.get("from"),
             extra=self._log_context(),
         )
 
-        # Se for mensagem inbound, processar com orchestrator
         if self.message_direction == "inbound":
             return self._process_inbound_message()
         else:
-            # Mensagens outbound apenas persistir (já foram enviadas)
             return self._persist_outbound_message()
 
     def _process_inbound_message(self) -> dict[str, Any]:
         """
         Processar mensagem inbound com ConversationOrchestrator.
-
-        Detecta automaticamente áudio e transcreve antes de processar.
         """
         try:
             from robbot.services.conversation_orchestrator import get_conversation_orchestrator
+
             orchestrator = get_conversation_orchestrator()
 
             # Extrair dados da mensagem
@@ -103,52 +132,26 @@ class MessageProcessingJob(BaseJob):
             phone = chat_id.split("@")[0] if "@" in chat_id else chat_id
             text = self.message_data.get("body", "")
 
-            # Detectar se é mensagem de áudio ou vídeo
+            # Detectar mídia
             has_audio = False
             audio_url = None
             has_video = False
             video_url = None
-            message_type = self.message_data.get("type", "")
+            message_type = self.message_data.get("type", "text")
+
+            media_payload = self.message_data.get("media", {}) or self.message_data.get("_data", {})
+            potential_url = media_payload.get("url")
 
             if message_type in ["voice", "ptt", "audio"]:
                 has_audio = True
-                # WAHA fornece URL do áudio no campo media ou _data
-                audio_url = self.message_data.get("media", {}).get("url") or self.message_data.get("_data", {}).get(
-                    "url"
-                )
-
-                if not audio_url:
-                    logger.warning("[WARNING] Mensagem de áudio sem URL (type=%s)", message_type)
-                else:
-                    logger.info("[INFO] Audio detected: %s", audio_url)
-
+                audio_url = potential_url
             elif message_type == "video":
                 has_video = True
-                has_audio = True  # Vídeo também tem áudio para transcrever
-                video_url = self.message_data.get("media", {}).get("url") or self.message_data.get("_data", {}).get(
-                    "url"
-                )
-                audio_url = video_url  # Mesmo URL (extrairemos áudio)
+                has_audio = True
+                video_url = potential_url
+                audio_url = potential_url
 
-                if not video_url:
-                    logger.warning("[WARNING] Mensagem de vídeo sem URL")
-                else:
-                    logger.info("[INFO] Video detected: %s", video_url)
-
-            # Processar com orchestrator (fluxo completo)
-            # Isso vai:
-            # 1. Criar/buscar conversa
-            # 2. Transcrever áudio/vídeo (se houver)
-            # 3. Gerar descrição visual de vídeo (se houver)
-            # 4. Salvar mensagem
-            # 5. Buscar contexto ChromaDB
-            # 6. Detectar intenção
-            # 7. Gerar resposta
-            # 8. Atualizar score
-            # 9. Enviar via WAHA
-            # 10. Salvar resposta
-            import asyncio
-
+            # Processar com orchestrator
             result = asyncio.run(
                 orchestrator.process_inbound_message(
                     chat_id=chat_id,
@@ -163,101 +166,54 @@ class MessageProcessingJob(BaseJob):
             )
 
             logger.info(
-                "[SUCCESS] Mensagem processada com orchestrator (conv_id=%s)",
-                result["conversation_id"],
+                "[SUCCESS] Mensagem processada (conv_id=%s)",
+                result.get("conversation_id"),
                 extra=self._log_context(),
             )
 
             return {
                 "status": "processed",
-                "conversation_id": result["conversation_id"],
-                "response_sent": result["response_sent"],
-                "intent": result["intent"],
-                "maturity_score": result["maturity_score"],
+                "conversation_id": result.get("conversation_id"),
+                "response_sent": result.get("response_sent"),
+                "intent": result.get("intent"),
+                "maturity_score": result.get("maturity_score"),
             }
 
-        except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.error(
-                "[ERROR] Erro ao processar com orchestrator: %s",
-                e,
-                extra=self._log_context(),
-                exc_info=True,
-            )
+        except Exception as e:
+            logger.error("[ERROR] Erro no Orchestrator: %s", e, exc_info=True)
             raise JobRetryableError(f"Failed to process message: {e}") from e
 
     def _persist_outbound_message(self) -> dict[str, Any]:
-        """Persistir mensagem outbound (apenas registro)."""
+        """Persistir mensagem outbound."""
         try:
             with get_sync_session() as db:
                 conv_msg_repo = ConversationMessageRepository(db)
-
                 from robbot.infra.db.models import MessageModel
 
                 message_record = MessageModel(
                     conversation_id=self.conversation_id,
                     direction=self.message_direction,
-                    content=self.message_data.get("text"),
+                    content=self.message_data.get("text") or self.message_data.get("body"),
                     message_type=self.message_data.get("type", "text"),
                     waha_message_id=self.message_data.get("id"),
                     phone=self.message_data.get("phone"),
                     timestamp=self.message_data.get("timestamp"),
                     metadata=self.message_data,
                 )
-                conv_msg_repo.create(message_record)  # type: ignore[attr-defined]
+                conv_msg_repo.create(message_record)
 
-                logger.info(
-                    "[SUCCESS] Mensagem outbound persistida: %s",
-                    message_record.id,
-                    extra=self._log_context(),
-                )
-
-            # Se for mensagem recebida, enfileirar para IA processar
-            if self.message_direction == "inbound":
-                needs_ai_processing = True
-                logger.debug(
-                    "Mensagem enfileirada para processamento de IA",
-                    extra=self._log_context(),
-                )
-            else:
-                needs_ai_processing = False
-
-            return {
-                "status": "success",
-                "message_id": message_record.id,
-                "conversation_id": self.conversation_id,
-                "needs_ai_processing": needs_ai_processing,
-                "phone": self.message_data.get("phone"),
-            }
-
-        except ValueError as e:
-            logger.error(
-                "Erro de validação: %s",
-                e,
-                extra=self._log_context(),
-            )
-            raise
-        except Exception as e:  # noqa: BLE001 (blind exception)
-            logger.error(
-                "Erro ao processar mensagem: %s: %s",
-                type(e).__name__,
-                e,
-                extra=self._log_context(),
-            )
-
-            # Se for erro de conexão com BD, retry
-            if "database" in str(e).lower() or "connection" in str(e).lower():
-                raise JobRetryableError(f"Erro de BD: {e}") from e
-            raise JobRetryableError(f"Erro inesperado: {e}") from e
+                return {
+                    "status": "success",
+                    "message_id": message_record.id,
+                    "conversation_id": self.conversation_id,
+                }
+        except Exception as e:
+            raise JobRetryableError(f"Erro ao persistir outbound: {e}") from e
 
 
 class MessageBatchProcessingJob(BaseJob):
     """
-    Job para processar lote de mensagens (útil para sincronização).
-
-    Responsabilidades:
-    - Processar múltiplas mensagens em sequência
-    - Aplicar throttling para anti-ban
-    - Reportar progresso
+    Job para processar lote de mensagens.
     """
 
     def __init__(
@@ -266,36 +222,15 @@ class MessageBatchProcessingJob(BaseJob):
         conversation_id: str | None = None,
         **kwargs,
     ):
-        """
-        Inicializar job de lote.
-
-        Args:
-            messages: Lista de payloads de mensagem
-            conversation_id: ID da conversa
-            **kwargs: Argumentos herdados
-        """
         super().__init__(**kwargs)
-
         self.messages = messages
         self.conversation_id = conversation_id
 
     def execute(self) -> dict[str, Any]:
-        """
-        Executar processamento em lote.
-
-        Returns:
-            Dict com resultado: processadas, falhadas, total
-        """
         processed = 0
         failed = 0
 
-        logger.info(
-            "Iniciando processamento em lote de %s mensagens",
-            len(self.messages),
-            extra=self._log_context(),
-        )
-
-        for idx, msg_data in enumerate(self.messages):
+        for _idx, msg_data in enumerate(self.messages):
             try:
                 job = MessageProcessingJob(
                     message_data=msg_data,
@@ -304,22 +239,8 @@ class MessageBatchProcessingJob(BaseJob):
                 )
                 job.run()
                 processed += 1
-
-            except (ValueError, JobRetryableError) as e:
-                logger.warning(
-                    "Falha ao processar mensagem %s: %s",
-                    idx + 1,
-                    e,
-                    extra=self._log_context(),
-                )
+            except Exception:
                 failed += 1
-
-        logger.info(
-            "Lote processado: %s OK, %s falhadas",
-            processed,
-            failed,
-            extra=self._log_context(),
-        )
 
         return {
             "status": "completed",
