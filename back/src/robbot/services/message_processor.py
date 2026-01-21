@@ -10,7 +10,6 @@ REFACTORED: Dependency injection of TranscriptionService (Issue #4: Session Mana
 """
 
 import logging
-from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy.orm import Session
