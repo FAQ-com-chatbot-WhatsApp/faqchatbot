@@ -64,6 +64,7 @@ class InteractionType(str, Enum):
 
 class IntentType(str, Enum):
     """Intent classification for conversation messages."""
+
     INTERESSE_TRATAMENTO = "INTERESSE_TRATAMENTO"
     DUVIDA_PROCEDIMENTO = "DUVIDA_PROCEDIMENTO"
     PRECO_VALOR = "PRECO_VALOR"
@@ -79,6 +80,7 @@ class IntentType(str, Enum):
 
 class MessageType(str, Enum):
     """Message type enum."""
+
     TEXT = "text"
     MEDIA = "media"
     INTERACTIVE = "interactive"
