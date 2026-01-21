@@ -11,6 +11,7 @@ Seções:
 4. Dashboard Analytics (sumários agregados)
 """
 
+import logging
 from datetime import datetime
 from typing import Any
 from uuid import UUID
@@ -18,10 +19,21 @@ from uuid import UUID
 from sqlalchemy import case, func, text
 from sqlalchemy.orm import Session
 
+from robbot.config.analytics_config_loader import get_analytics_config
 from robbot.domain.enums import LeadStatus
 from robbot.infra.db.models.conversation_model import ConversationModel
 from robbot.infra.db.models.lead_model import LeadModel
 from robbot.infra.db.models.user_model import UserModel
+
+# try:
+#     from robbot.adapters.external.gemini_client import GeminiClient
+#     from robbot.core.cache import get_cache
+# except ImportError:
+#     GeminiClient = None
+#     get_cache = None
+
+# DEBUG: Check what func.count actually is
+print("DEBUG func.count:", func.count, type(func.count))
 
 
 class AnalyticsRepository:
@@ -59,7 +71,9 @@ class AnalyticsRepository:
         # Query base
         query = self.db.query(
             func.count(LeadModel.id).label("total_leads"),
-            func.count(case((LeadModel.status == LeadStatus.CONVERTED, LeadModel.id))).label("converted_leads"),
+            func.count(case((LeadModel.status == LeadStatus.SCHEDULED, LeadModel.id), else_=None)).label(
+                "converted_leads"
+            ),
         ).filter(
             LeadModel.created_at >= start_date,
             LeadModel.created_at <= end_date,
@@ -78,10 +92,9 @@ class AnalyticsRepository:
 
         if not segment_by:
             row = result[0] if result else (0, 0)
-            total = row.total_leads or 0
-            converted = row.converted_leads or 0
+            total = getattr(row, "total_leads", 0) or 0
+            converted = getattr(row, "converted_leads", 0) or 0
             rate = (converted / total * 100) if total > 0 else 0.0
-
             return {
                 "total_leads": total,
                 "converted_leads": converted,
@@ -90,20 +103,18 @@ class AnalyticsRepository:
         else:
             segments = []
             for row in result:
-                total = row.total_leads or 0
-                converted = row.converted_leads or 0
+                total = getattr(row, "total_leads", 0) or 0
+                converted = getattr(row, "converted_leads", 0) or 0
                 rate = (converted / total * 100) if total > 0 else 0.0
-
                 segments.append(
                     {
-                        "segment_name": row.segment_name,
-                        "segment_id": str(row.segment_id),
+                        "segment_name": getattr(row, "segment_name", None),
+                        "segment_id": str(getattr(row, "segment_id", "")),
                         "total_leads": total,
                         "converted_leads": converted,
                         "conversion_rate": round(rate, 2),
                     }
                 )
-
             return {"segments": segments}
 
     def get_conversion_funnel(
@@ -143,7 +154,7 @@ class AnalyticsRepository:
                     COUNT(DISTINCT CASE WHEN c.handoff_at IS NOT NULL THEN l.id END) as total_handoff,
                     COUNT(DISTINCT CASE WHEN l.status = 'CONVERTED' THEN l.id END) as total_converted
                 FROM leads l
-                LEFT JOIN conversations c ON l.id = c.lead_id
+                LEFT JOIN conversations c ON c.id = l.conversation_id
                 LEFT JOIN conversation_messages cm ON c.id = cm.conversation_id
                     AND cm.direction = 'INCOMING'
                 WHERE l.created_at >= :start_date
@@ -710,13 +721,13 @@ class AnalyticsRepository:
             }
         """
         query = self.db.query(
-            func.count(ConversationModel.id).label("total"),  # type: ignore[misc]
-            func.count(  # type: ignore[misc]
-                case((ConversationModel.handoff_at.is_(None), ConversationModel.id))
-            ).label("bot_only"),
-            func.count(  # type: ignore[misc]
-                case((ConversationModel.handoff_at.isnot(None), ConversationModel.id))
-            ).label("with_handoff"),
+            func.count(ConversationModel.id).label("total"),
+            func.count(case((ConversationModel.handoff_at.is_(None), ConversationModel.id), else_=None)).label(
+                "bot_only"
+            ),
+            func.count(case((ConversationModel.handoff_at.isnot(None), ConversationModel.id), else_=None)).label(
+                "with_handoff"
+            ),
         ).filter(
             ConversationModel.created_at >= start_date,
             ConversationModel.created_at <= end_date,
@@ -777,7 +788,7 @@ class AnalyticsRepository:
                 COUNT(m.id) as total_messages,
                 AVG(msg_count.message_count) as avg_messages_per_conversation
             FROM leads l
-            LEFT JOIN conversations c ON l.id = c.lead_id
+            LEFT JOIN conversations c ON c.id = l.conversation_id
             LEFT JOIN conversation_messages m ON c.id = m.conversation_id
             LEFT JOIN (
                 SELECT conversation_id, COUNT(*) as message_count
@@ -800,7 +811,7 @@ class AnalyticsRepository:
         conversion_rate = (converted_leads / total_leads * 100) if total_leads > 0 else 0.0
 
         # Buscar tempo de resposta usando método interno
-        response_time_stats = self.get_response_time_stats(start_date, end_date)
+        response_time_stats = self.get_human_response_time_stats(start_date, end_date)
 
         return {
             "total_leads": total_leads,
@@ -1097,8 +1108,6 @@ class AnalyticsRepository:
                 ...
             ]
         """
-        from robbot.config.analytics_config_loader import get_analytics_config
-
         config = get_analytics_config()
         stop_words_list = config.stop_words
 
@@ -1177,8 +1186,6 @@ class AnalyticsRepository:
                 "gemini_used": false  # indica se Gemini foi usado
             }
         """
-        from robbot.config.analytics_config_loader import get_analytics_config
-
         config = get_analytics_config()
         positive_regex = config.build_sentiment_regex("positive")
         negative_regex = config.build_sentiment_regex("negative")
@@ -1265,13 +1272,8 @@ class AnalyticsRepository:
 
         P3 #3: Batch processing + cache para reduzir custos.
         """
-        import logging
-
-        from robbot.adapters.external.gemini_client import GeminiClient
-        from robbot.core.cache import get_cache
-
         logger = logging.getLogger(__name__)
-        cache = get_cache()
+        cache = get_cache() if get_cache else None
 
         # Config Gemini
         gemini_config = config.data.get("sentiment_analysis", {}).get("gemini_fallback", {})
@@ -1324,7 +1326,7 @@ class AnalyticsRepository:
                         refined_neutral += 1
 
                 except Exception as e:
-                    logger.warning(f"Gemini sentiment analysis failed for message {msg['id']}: {e}")
+                    logger.warning("Gemini sentiment analysis failed for message %s: %s", msg.get("id"), e)
                     refined_neutral += 1  # Fallback: mantém como neutral
 
         # Atualizar contadores
@@ -1333,9 +1335,11 @@ class AnalyticsRepository:
         sentiment_counts["neutral"] = refined_neutral  # Só os que Gemini confirmou como neutral
 
         logger.info(
-            f"Gemini sentiment refinement: {len(neutral_messages)} messages processed, "
-            f"+{refined_positive} positive, +{refined_negative} negative, "
-            f"{refined_neutral} remain neutral"
+            "Gemini sentiment refinement: %d messages processed, +%d positive, +%d negative, %d remain neutral",
+            len(neutral_messages),
+            refined_positive,
+            refined_negative,
+            refined_neutral,
         )
 
         return sentiment_counts
