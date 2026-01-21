@@ -126,51 +126,54 @@ def require_role(*allowed_roles: str) -> Callable:
 
     return role_checker
 
+
 # ===== DI Container Dependencies =====
+
 
 def get_container_dep():
     """Dependency to get DI container instance."""
     from robbot.config.container import get_container
+
     return get_container()
 
 
 # Backward-compatible wrappers expected by tests (legacy naming)
-def get_llm_provider(container = Depends(get_container_dep)):
+def get_llm_provider(container=Depends(get_container_dep)):
     return container.get_llm()
 
 
-def get_vector_store(container = Depends(get_container_dep)):
+def get_vector_store(container=Depends(get_container_dep)):
     return container.get_vector_store()
 
 
-def get_waha_client(container = Depends(get_container_dep)):
+def get_waha_client(container=Depends(get_container_dep)):
     return container.get_waha()
 
 
-def get_prompt_loader(container = Depends(get_container_dep)):
+def get_prompt_loader(container=Depends(get_container_dep)):
     return container.get_prompt_loader()
 
 
-def get_redis_from_container(container = Depends(get_container_dep)):
+def get_redis_from_container(container=Depends(get_container_dep)):
     """Dependency to get Redis client from DI container."""
     return container.get_redis()
 
 
-def get_llm_from_container(container = Depends(get_container_dep)):
+def get_llm_from_container(container=Depends(get_container_dep)):
     """Dependency to get LLM provider from DI container."""
     return container.get_llm()  # type: LLMProvider
 
 
-def get_vector_store_from_container(container = Depends(get_container_dep)):
+def get_vector_store_from_container(container=Depends(get_container_dep)):
     """Dependency to get vector store from DI container."""
     return container.get_vector_store()  # type: VectorStore
 
 
-def get_waha_from_container(container = Depends(get_container_dep)):
+def get_waha_from_container(container=Depends(get_container_dep)):
     """Dependency to get WAHA WhatsApp client from DI container."""
     return container.get_waha()  # type: WAHAClientInterface
 
 
-def get_prompt_loader_from_container(container = Depends(get_container_dep)):
+def get_prompt_loader_from_container(container=Depends(get_container_dep)):
     """Dependency to get prompt loader from DI container."""
     return container.get_prompt_loader()  # type: PromptLoader
