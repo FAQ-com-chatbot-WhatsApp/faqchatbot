@@ -163,8 +163,8 @@ class HandoffService:
         conversation.updated_at = datetime.now(UTC)
 
         # Update lead to converted
-        if conversation.lead_id:
-            lead = self.lead_repo.get_by_id(conversation.lead_id)
+        if conversation.lead:
+            lead = self.lead_repo.get_by_id(conversation.lead.id)
             if lead:
                 lead.status = LeadStatus.SCHEDULED
                 lead.maturity_score = 100
