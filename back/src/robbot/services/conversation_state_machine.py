@@ -81,9 +81,7 @@ class ConversationStateMachine:
         try:
             lead = conversation.lead
             if not lead:
-                raise NotFoundException(
-                    f"Lead not found for conversation {conversation.id}"
-                )
+                raise NotFoundException(f"Lead not found for conversation {conversation.id}")
 
             # Calculate score increment based on intent
             score_increment = self._get_intent_score(detected_intent)
@@ -197,9 +195,7 @@ class ConversationStateMachine:
             BusinessRuleError: If conversation already closed
         """
         if conversation.status == ConversationStatus.CLOSED:
-            raise BusinessRuleError(
-                f"Conversation {conversation.id} is already closed"
-            )
+            raise BusinessRuleError(f"Conversation {conversation.id} is already closed")
 
         # Update status
         conversation.status = ConversationStatus.CLOSED
