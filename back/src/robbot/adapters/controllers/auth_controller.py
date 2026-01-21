@@ -100,6 +100,7 @@ async def test_create_verified_user(payload: SignupRequest, db: Session = Depend
 
     # Mark email as verified
     from robbot.adapters.repositories.credential_repository import CredentialRepository
+
     cred_repo = CredentialRepository(db)
     cred = cred_repo.get_by_user_id(user.id)
     if cred:
@@ -133,13 +134,13 @@ async def login_for_access_token(
     # Accept rememberMe from frontend (form or JSON)
     remember_me = False
     # Try to get from form_data (for OAuth2PasswordRequestForm)
-    if hasattr(form_data, 'remember_me'):
+    if hasattr(form_data, "remember_me"):
         remember_me = bool(form_data.remember_me)
     # Also check request body for JSON (for custom clients)
     with contextlib.suppress(Exception):
         body = await request.json()
-        if 'rememberMe' in body:
-            remember_me = bool(body['rememberMe'])
+        if "rememberMe" in body:
+            remember_me = bool(body["rememberMe"])
     token_result = service.authenticate_user(
         form_data.username,
         form_data.password,
@@ -498,8 +499,6 @@ def revoke_all_sessions(
 # ============================================================================
 
 
-
-
 @router.get("/email/verify")
 async def verify_email(token: str, db: Session = Depends(get_db)):
     """Verifica email do usuário usando token de verificação do link do email.
@@ -517,15 +516,14 @@ async def verify_email(token: str, db: Session = Depends(get_db)):
         user_id = service.verify_email(token)
         # Gerar access_token JWT para o usuário autenticado
         from robbot.services.auth_services import AuthService
+
         auth_service = AuthService(db)
         user = auth_service.repo.get_by_id(user_id)
         from robbot.core import security
+
         access_token = security.create_token_for_subject(str(user.id), minutes=15, token_type="access")
         # Redirecionar para o frontend com o token na URL
-        return RedirectResponse(
-            url=f"http://localhost:3000/signin?verified=1&token={access_token}",
-            status_code=302
-        )
+        return RedirectResponse(url=f"http://localhost:3000/signin?verified=1&token={access_token}", status_code=302)
     except AuthException as exc:
         # Mensagem de erro amigável em português
         html = f"""
