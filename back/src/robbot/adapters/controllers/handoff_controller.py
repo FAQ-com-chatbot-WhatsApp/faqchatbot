@@ -272,7 +272,6 @@ async def get_pending_handoffs(
     **Permissões:** Admin ou Agent
     """
     try:
-
         conv_repo = ConversationRepository(db)
         msg_repo = ConversationMessageRepository(db)
 
