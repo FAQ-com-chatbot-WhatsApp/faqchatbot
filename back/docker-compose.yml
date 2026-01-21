@@ -203,6 +203,8 @@ services:
       SERVICE_NAME: "worker"
       LOG_COLOR: "true"
       AUTO_MIGRATE: "false"
+      RQ_JOB_TIMEOUT_MESSAGE: 600
+      TESTING: "1"
       SMTP_HOST: maildev
       SMTP_PORT: 1025
       SMTP_USERNAME: ${SMTP_USERNAME:-}
@@ -219,8 +221,8 @@ services:
     # DESENVOLVIMENTO: Volume bind permite hot-reload
     # COMENTADO: ao escalar com docker-compose --scale, volumes podem não funcionar em replicas
     # Descomente apenas para desenvolvimento sem autoscaler
-    # volumes:
-    #   - ./src:/app/src  # Apenas código fonte, não sobrescreve dependências
+    volumes:
+      - ./src:/app/src  # Apenas código fonte, não sobrescreve dependências
 
     depends_on:
       db:
