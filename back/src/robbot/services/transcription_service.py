@@ -47,7 +47,9 @@ class TranscriptionService:
                 )
                 logger.info("[SUCCESS] Faster-Whisper model loaded: %s", self.model_size)
             except ImportError as e:
-                raise LLMError("Whisper", "faster-whisper not installed. Run: uv add faster-whisper", original_error=e) from e
+                raise LLMError(
+                    "Whisper", "faster-whisper not installed. Run: uv add faster-whisper", original_error=e
+                ) from e
             except Exception as e:  # noqa: BLE001 (blind exception)
                 raise LLMError("Whisper", f"Failed to load model: {e}", original_error=e) from e
 
@@ -77,6 +79,7 @@ class TranscriptionService:
 
             # Choose file suffix based on URL (wav/mp3/ogg/etc.)
             from urllib.parse import urlparse
+
             parsed = urlparse(audio_url)
             suffix = Path(parsed.path).suffix.lower() or ".ogg"
 
@@ -167,7 +170,9 @@ class TranscriptionService:
                 transcript = " ".join([segment.text for segment in segments]).strip()
 
                 logger.info(
-                    "[SUCCESS] SYNC audio transcribed (length=%s chars, detected_lang=%s)", len(transcript), info.language
+                    "[SUCCESS] SYNC audio transcribed (length=%s chars, detected_lang=%s)",
+                    len(transcript),
+                    info.language,
                 )
                 return transcript
 
