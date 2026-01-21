@@ -50,7 +50,6 @@ class ConversationService:
         """
         from robbot.adapters.repositories.conversation_repository import ConversationRepository
 
-
         repo = ConversationRepository(self.db)
 
         # Try to fetch existing
