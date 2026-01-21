@@ -70,7 +70,9 @@ class AuditService:
         self.repo.create(audit_log)
         self.session.flush()
 
-        logger.info("[SUCCESS] Audit log created (action=%s, entity=%s:%s, user=%s)", action, entity_type, entity_id, user_id)
+        logger.info(
+            "[SUCCESS] Audit log created (action=%s, entity=%s:%s, user=%s)", action, entity_type, entity_id, user_id
+        )
 
         return audit_log
 
