@@ -71,6 +71,8 @@ async def receive_waha_webhook(
                 message_direction="inbound",
             )
 
+            print(f"DEBUG: Job enqueued with ID: {job_id}")  # Debug print
+
             logger.info(
                 "[SUCCESS] Mensagem enfileirada para processamento: %s",
                 job_id,
