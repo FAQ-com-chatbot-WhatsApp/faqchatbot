@@ -47,7 +47,9 @@ class LeadModel(Base):
 
     name: Mapped[str] = mapped_column(String(255), nullable=False, comment="Lead name")
 
-    phone_number: Mapped[str] = mapped_column(String(20), nullable=False, index=True, comment="Contact phone number")
+    phone_number: Mapped[str] = mapped_column(
+        String(64), nullable=False, index=True, comment="Contact phone number or chat JID (up to 64 chars)"
+    )
 
     email: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="Email if provided")
 
