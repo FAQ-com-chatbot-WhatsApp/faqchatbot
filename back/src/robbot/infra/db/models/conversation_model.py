@@ -35,7 +35,9 @@ class ConversationModel(Base):
         index=True,
         comment="WhatsApp chat ID (e.g., '5511999999999@c.us')",
     )
-    phone_number: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    phone_number: Mapped[str] = mapped_column(
+        String(64), nullable=False, index=True, comment="Contact phone number or chat JID (up to 64 chars)"
+    )
     name: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="Contact name")
 
     status: Mapped[ConversationStatus] = mapped_column(
