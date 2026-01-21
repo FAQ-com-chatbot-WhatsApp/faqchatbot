@@ -66,8 +66,10 @@ class WAHAIntegration(WAHAClientInterface):
         try:
             # WAHAClient may not have send_message in some environments; add stub if missing
             if not hasattr(self._client, "send_message"):
+
                 async def _stub_send_message(chat_id, message, reply_to=None):
                     return {"id": "stub", "status": "ok"}
+
                 self._client.send_message = _stub_send_message
             response = await self._client.send_message(
                 chat_id=chat_id,
@@ -102,8 +104,10 @@ class WAHAIntegration(WAHAClientInterface):
         try:
             # WAHAClient may not have send_media in some environments; add stub if missing
             if not hasattr(self._client, "send_media"):
+
                 async def _stub_send_media(chat_id, media_url, media_type, caption=None):
                     return {"id": "stub", "status": "ok"}
+
                 self._client.send_media = _stub_send_media
             response = await self._client.send_media(
                 chat_id=chat_id,
