@@ -24,3 +24,18 @@ class LeadRepository(BaseRepository[LeadModel]):
             LeadModel or None
         """
         return self.session.query(LeadModel).filter_by(phone_number=phone_number).first()
+
+    def get_all(self, phone_number: str | None = None) -> list[LeadModel]:
+        """
+        Get all leads, optionally filtered by phone_number.
+
+        Args:
+            phone_number: Phone number to filter by
+
+        Returns:
+            List of LeadModel
+        """
+        query = self.session.query(LeadModel)
+        if phone_number:
+            query = query.filter(LeadModel.phone_number == phone_number)
+        return query.all()
