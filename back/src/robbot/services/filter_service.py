@@ -63,17 +63,13 @@ class FilterService:
 
         # Text search filters (case-insensitive)
         if filters.name:
-            query = query.filter(
-                LeadModel.name.ilike(f"%{filters.name}%")
-            )
+            query = query.filter(LeadModel.name.ilike(f"%{filters.name}%"))
 
         if filters.phone:
             query = query.filter(LeadModel.phone_number == filters.phone)
 
         if filters.email:
-            query = query.filter(
-                LeadModel.email.ilike(f"%{filters.email}%")
-            )
+            query = query.filter(LeadModel.email.ilike(f"%{filters.email}%"))
 
         # Date range filters
         if filters.created_after:
@@ -120,7 +116,7 @@ class FilterService:
 
         # Lead ID filter
         if filters.lead_id:
-            query = query.filter(ConversationModel.lead_id == filters.lead_id)
+            query = query.filter(ConversationModel.lead.has(LeadModel.id == filters.lead_id))
 
         # Phone filter
         if filters.phone:
@@ -131,14 +127,10 @@ class FilterService:
             # Count unread messages per conversation
             if filters.has_unread:
                 # Conversations with at least one unread message
-                query = query.filter(
-                    ConversationModel.unread_count > 0
-                )
+                query = query.filter(ConversationModel.unread_count > 0)
             else:
                 # Conversations with no unread messages
-                query = query.filter(
-                    ConversationModel.unread_count == 0
-                )
+                query = query.filter(ConversationModel.unread_count == 0)
 
         # Date range filters
         if filters.started_after:
@@ -185,15 +177,11 @@ class FilterService:
 
         # Conversation ID filter
         if filters.conversation_id:
-            query = query.filter(
-                LeadInteractionModel.conversation_id == filters.conversation_id
-            )
+            query = query.filter(LeadInteractionModel.conversation_id == filters.conversation_id)
 
         # Interaction type filter
         if filters.interaction_type:
-            query = query.filter(
-                LeadInteractionModel.interaction_type == filters.interaction_type
-            )
+            query = query.filter(LeadInteractionModel.interaction_type == filters.interaction_type)
 
         # Date range filters
         if filters.date_after:
