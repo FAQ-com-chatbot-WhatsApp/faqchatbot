@@ -11,6 +11,7 @@ router = APIRouter()
 @router.get("/debug/messages")
 def debug_messages(db: Session = Depends(get_db)):
     from robbot.infra.db.models.conversation_message_model import ConversationMessageModel
+
     msgs = db.query(ConversationMessageModel).all()
     return [{"id": m.id, "body": m.body, "created_at": str(m.created_at)} for m in msgs]
 
