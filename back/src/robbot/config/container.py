@@ -7,7 +7,6 @@ No more singletons scattered across modules.
 Resolves Issue #1: Rampant Singleton Anti-Pattern
 """
 
-
 import redis
 
 from robbot.adapters.external.chroma_vector_store import ChromaVectorStore
@@ -56,7 +55,7 @@ class DIContainer:
         self._redis = get_redis_client()
 
         # Initialize service implementations (via interfaces)
-        # In dev/test we may skip LLM if google.genai is unavailable
+        # In dev/test we may skip LLM if API key is unavailable
         if not self.settings.GOOGLE_API_KEY or self.settings.GOOGLE_API_KEY.lower() == "skip":
             self._llm = None
         else:
@@ -77,9 +76,7 @@ class DIContainer:
         )
 
         # Initialize configuration loaders
-        self._prompt_loader = PromptLoader(
-            prompts_path=self.settings.PROMPTS_PATH
-        )
+        self._prompt_loader = PromptLoader(prompts_path=self.settings.PROMPTS_PATH)
 
     async def shutdown(self) -> None:
         """
