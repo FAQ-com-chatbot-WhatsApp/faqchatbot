@@ -31,7 +31,23 @@ class ConversationRepository(BaseRepository[ConversationModel]):
         Returns:
             Conversation or None if not found
         """
-        stmt = select(ConversationModel).where(ConversationModel.chat_id == chat_id)
+        stmt = (
+            select(ConversationModel)
+            .options(joinedload(ConversationModel.lead))
+            .where(ConversationModel.chat_id == chat_id)
+        )
+        return self.db.scalars(stmt).first()
+
+    def get_by_id(self, id: str) -> ConversationModel | None:
+        """Get conversation by ID with lead loaded.
+
+        Args:
+            id: Conversation ID
+
+        Returns:
+            Conversation or None if not found
+        """
+        stmt = select(ConversationModel).options(joinedload(ConversationModel.lead)).where(ConversationModel.id == id)
         return self.db.scalars(stmt).first()
 
     def update_status(
