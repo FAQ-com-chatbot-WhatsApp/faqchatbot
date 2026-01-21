@@ -14,8 +14,10 @@ from pydantic import BaseModel, Field, field_validator
 
 # ===== Enum Definitions =====
 
+
 class LeadStatus(str, Enum):
     """Lead status enum."""
+
     NEW = "NEW"
     ENGAGED = "ENGAGED"
     INTERESTED = "INTERESTED"
@@ -27,6 +29,7 @@ class LeadStatus(str, Enum):
 
 class ConversationStatus(str, Enum):
     """Conversation status enum."""
+
     ACTIVE = "ACTIVE"
     CLOSED = "CLOSED"
     ARCHIVED = "ARCHIVED"
@@ -34,6 +37,7 @@ class ConversationStatus(str, Enum):
 
 class LeadSource(str, Enum):
     """Lead source channel enum."""
+
     INSTAGRAM = "INSTAGRAM"
     FACEBOOK = "FACEBOOK"
     GOOGLE_ADS = "GOOGLE_ADS"
@@ -44,11 +48,13 @@ class LeadSource(str, Enum):
 
 class SortOrder(str, Enum):
     """Sort direction enum."""
+
     ASC = "asc"
     DESC = "desc"
 
 
 # ===== Filter DTOs =====
+
 
 class LeadFilterDTO(BaseModel):
     """
@@ -78,8 +84,7 @@ class LeadFilterDTO(BaseModel):
 
     # Sorting
     sort_by: str = Field(
-        default="created_at",
-        description="Field to sort by (created_at, updated_at, maturity_score, name)"
+        default="created_at", description="Field to sort by (created_at, updated_at, maturity_score, name)"
     )
     sort_order: SortOrder = Field(default=SortOrder.DESC, description="Sort direction")
 
@@ -102,6 +107,7 @@ class LeadFilterDTO(BaseModel):
 
     class Config:
         """Pydantic config."""
+
         json_schema_extra = {
             "example": {
                 "skip": 0,
@@ -140,10 +146,7 @@ class ConversationFilterDTO(BaseModel):
     updated_after: datetime | None = Field(default=None, description="Updated after this date")
 
     # Sorting
-    sort_by: str = Field(
-        default="updated_at",
-        description="Field to sort by (created_at, updated_at, message_count)"
-    )
+    sort_by: str = Field(default="updated_at", description="Field to sort by (created_at, updated_at, message_count)")
     sort_order: SortOrder = Field(default=SortOrder.DESC, description="Sort direction")
 
     @field_validator("sort_by")
@@ -157,6 +160,7 @@ class ConversationFilterDTO(BaseModel):
 
     class Config:
         """Pydantic config."""
+
         json_schema_extra = {
             "example": {
                 "skip": 0,
