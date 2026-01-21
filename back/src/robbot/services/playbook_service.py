@@ -28,15 +28,32 @@ settings = get_settings()
 
 
 class PlaybookService:
-    """
-    Service layer for playbook operations with RAG semantic search.
+    def create_topic(
+        self, name: str, description: str | None = None, category: str | None = None, active: bool = True
+    ) -> TopicModel:
+        """
+        Create a new topic.
 
-    Responsibilities:
-    - CRUD operations for topics, playbooks, steps
-    - Semantic search using ChromaDB embeddings
-    - Automatic indexing when playbooks are created/updated
-    - Retrieve playbook steps with message details for LLM
-    """
+        Args:
+            name: Topic name (must be unique)
+            description: Optional description
+            category: Optional category for grouping
+            active: Whether topic is active (default True)
+
+        Returns:
+            Created topic entity
+        """
+        topic = TopicModel(
+            name=name,
+            description=description,
+            category=category,
+            active=active,
+        )
+        return self.topic_repo.create(topic)
+
+    def get_topic(self, topic_id: str) -> TopicModel | None:
+        """Get topic by ID."""
+        return self.topic_repo.get_by_id(topic_id)
 
     def __init__(self, db: Session):
         self.db = db
@@ -64,33 +81,6 @@ class PlaybookService:
             raise
 
     # ===== TOPIC OPERATIONS =====
-
-    def create_topic(
-        self, name: str, description: str | None = None, category: str | None = None, active: bool = True
-    ) -> TopicModel:
-        """
-        Create a new topic.
-
-        Args:
-            name: Topic name (must be unique)
-            description: Optional description
-            category: Optional category for grouping
-            active: Whether topic is active (default True)
-
-        Returns:
-            Created topic entity
-        """
-        topic = TopicModel(
-            name=name,
-            description=description,
-            category=category,
-            active=active,
-        )
-        return self.topic_repo.create(topic)
-
-    def get_topic(self, topic_id: str) -> TopicModel | None:
-        """Get topic by ID."""
-        return self.topic_repo.get_by_id(topic_id)
 
     def list_topics(self, active_only: bool = False, skip: int = 0, limit: int = 100) -> list[TopicModel]:
         """List all topics."""
