@@ -13,6 +13,16 @@ from robbot.infra.jobs.base_job import BaseJob, JobFailureError, JobRetryableErr
 logger = logging.getLogger(__name__)
 
 
+def process_escalation_job(conversation_id: str, reason: str, phone: str, user_name: str | None) -> dict[str, Any]:
+    """
+    Module-level function for RQ to import and execute escalation jobs.
+
+    This function creates an EscalationJob instance and runs it.
+    """
+    job = EscalationJob(conversation_id, reason, phone, user_name)
+    return job.run()
+
+
 class EscalationJob(BaseJob):
     """
     Job para transferir conversa para atendimento humano.
@@ -43,7 +53,16 @@ class EscalationJob(BaseJob):
             user_name: Nome do usuário (se disponível)
             **kwargs: Argumentos herdados
         """
-        super().__init__(**kwargs)
+        # Filter out RQ-specific kwargs that BaseJob doesn't accept
+        base_job_kwargs = {}
+        if "job_id" in kwargs:
+            base_job_kwargs["job_id"] = kwargs["job_id"]
+        if "attempt" in kwargs:
+            base_job_kwargs["attempt"] = kwargs["attempt"]
+        if "metadata" in kwargs:
+            base_job_kwargs["metadata"] = kwargs["metadata"]
+
+        super().__init__(**base_job_kwargs)
 
         self.conversation_id = conversation_id
         self.reason = reason
