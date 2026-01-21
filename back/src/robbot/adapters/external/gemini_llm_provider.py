@@ -27,7 +27,7 @@ class GeminiLLMProvider(LLMProvider):
     def __init__(
         self,
         api_key: str,
-        model: str = "gemini-1.5-flash",
+        model: str = "gemini-2.0-flash",
         temperature: float = 0.7,
         max_tokens: int = 500,
         tools: list[dict] | None = None,
@@ -48,8 +48,8 @@ class GeminiLLMProvider(LLMProvider):
         self.max_tokens = max_tokens
         self.tools = tools
 
-        # Initialize underlying Gemini client
-        self._client = GeminiClient(tools=tools)
+        # Initialize underlying Gemini client (tools not supported in GeminiClient)
+        self._client = GeminiClient()
 
         logger.info("Initialized GeminiLLMProvider with model: %s", model)
 
@@ -87,7 +87,6 @@ class GeminiLLMProvider(LLMProvider):
                 system,
             )
 
-
         except Exception as e:
             logger.error("Error generating response: %s", e)
             raise
@@ -105,8 +104,10 @@ class GeminiLLMProvider(LLMProvider):
         try:
             # GeminiClient may not have embed_text in some environments; add stub if missing
             if not hasattr(self._client, "embed_text"):
+
                 def _stub_embed_text(text):
                     return [0.0] * 768
+
                 self._client.embed_text = _stub_embed_text
             return await asyncio.to_thread(self._client.embed_text, text)
         except Exception as e:
