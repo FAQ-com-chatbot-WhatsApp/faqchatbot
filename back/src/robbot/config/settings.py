@@ -51,7 +51,7 @@ class Settings(BaseSettings):
 
     # Gemini AI
     GOOGLE_API_KEY: str  # required field
-    GEMINI_MODEL: str = Field(default="gemini-1.5-flash")
+    GEMINI_MODEL: str = Field(default="gemini-2.0-flash-exp")
     GEMINI_MAX_TOKENS: int = Field(default=2048)
     GEMINI_TEMPERATURE: float = Field(default=0.7)
 
@@ -85,7 +85,7 @@ class Settings(BaseSettings):
     # Redis Queue (RQ) - Processamento assíncrono
     RQ_DEFAULT_RESULT_TTL: int = Field(default=500, description="TTL padrão para resultados de jobs (segundos)")
     RQ_DEFAULT_FAILURE_TTL: int = Field(default=86400, description="TTL para jobs falhados (86400 = 24h)")
-    RQ_JOB_TIMEOUT_MESSAGE: int = Field(default=10, description="Timeout para jobs de mensagens (segundos)")
+    RQ_JOB_TIMEOUT_MESSAGE: int = Field(default=300, description="Timeout para jobs de mensagens (segundos)")
     RQ_JOB_TIMEOUT_AI: int = Field(default=60, description="Timeout para jobs de IA (segundos)")
     RQ_JOB_TIMEOUT_ESCALATION: int = Field(default=30, description="Timeout para jobs de escalação (segundos)")
     RQ_MAX_RETRIES: int = Field(default=3, description="Número máximo de tentativas por job")
