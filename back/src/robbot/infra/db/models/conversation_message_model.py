@@ -37,9 +37,13 @@ class ConversationMessageModel(Base):
         SQLEnum(MessageDirection), nullable=False, index=True, comment="INBOUND or OUTBOUND"
     )
 
-    from_phone: Mapped[str] = mapped_column(String(20), nullable=False, comment="Sender phone number")
+    from_phone: Mapped[str] = mapped_column(
+        String(64), nullable=False, comment="Sender phone number or chat JID (up to 64 chars)"
+    )
 
-    to_phone: Mapped[str] = mapped_column(String(20), nullable=False, comment="Recipient phone number")
+    to_phone: Mapped[str] = mapped_column(
+        String(64), nullable=False, comment="Recipient phone number or chat JID (up to 64 chars)"
+    )
 
     body: Mapped[str] = mapped_column(Text, nullable=False, comment="Message text content")
 
