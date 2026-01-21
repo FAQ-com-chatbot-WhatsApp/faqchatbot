@@ -58,9 +58,9 @@ class TestPhase14Handoff:
 
         target_id = conversations[0]["id"]
 
-        response = api_client.post(f"/conversations/{target_id}/resolve",
-                                   json={"outcome": "scheduled"},
-                                   headers=auth_headers)
+        response = api_client.post(
+            f"/conversations/{target_id}/resolve", json={"outcome": "scheduled"}, headers=auth_headers
+        )
         assert response.status_code == 200
         assert response.json()["status"] in ["COMPLETED", "RESOLVED"]
 
@@ -71,13 +71,13 @@ class TestPhase14Handoff:
         conversations = bot_active.get("items", bot_active) if isinstance(bot_active, dict) else bot_active
 
         if not conversations:
-             pytest.skip("No active bot conversations")
+            pytest.skip("No active bot conversations")
 
         target_id = conversations[0]["id"]
 
-        response = api_client.post(f"/handoff/{target_id}/trigger",
-                                   json={"reason": "manual_request"},
-                                   headers=auth_headers)
+        response = api_client.post(
+            f"/handoff/{target_id}/trigger", json={"reason": "manual_request"}, headers=auth_headers
+        )
 
         assert response.status_code == 200
         assert response.json()["status"] == "PENDING_HANDOFF"

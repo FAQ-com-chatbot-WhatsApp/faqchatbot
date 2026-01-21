@@ -10,6 +10,7 @@ Covers:
 - Campaign Performance Reports
 - Conversion Analytics
 """
+
 import pytest
 
 
@@ -18,7 +19,7 @@ class TestPhase13Reports:
 
     def test_uc060_generate_daily_report_pdf(self, api_client, auth_headers):
         """UC-060: Generate Daily Report (PDF).
-        
+
         Expected: Binary response with application/pdf content type.
         """
         response = api_client.get("/dashboard/reports/daily?format=pdf", headers=auth_headers)
@@ -34,23 +35,25 @@ class TestPhase13Reports:
 
     def test_uc061_export_leads_excel(self, api_client, auth_headers):
         """UC-061: Export Leads to Excel.
-        
+
         Expected: Binary response with proper headers.
         """
         response = api_client.get("/leads/export?format=xlsx", headers=auth_headers)
 
         if response.status_code == 404:
-             pytest.skip("Export endpoint not implemented")
+            pytest.skip("Export endpoint not implemented")
 
         assert response.status_code == 200
-        assert "spreadsheet" in response.headers.get("Content-Type", "") or "excel" in response.headers.get("Content-Type", "")
+        assert "spreadsheet" in response.headers.get("Content-Type", "") or "excel" in response.headers.get(
+            "Content-Type", ""
+        )
 
     def test_uc062_campaign_performance(self, api_client, auth_headers):
         """UC-062: Campaign Performance Analytics."""
         response = api_client.get("/dashboard/metrics/campaigns", headers=auth_headers)
 
         if response.status_code == 404:
-             pytest.skip("Campaign metrics not implemented")
+            pytest.skip("Campaign metrics not implemented")
 
         assert response.status_code == 200
         data = response.json()
@@ -63,7 +66,7 @@ class TestPhase13Reports:
         response = api_client.get("/dashboard/metrics/funnel", headers=auth_headers)
 
         if response.status_code == 404:
-             pytest.skip("Funnel metrics not implemented")
+            pytest.skip("Funnel metrics not implemented")
 
         assert response.status_code == 200
         data = response.json()

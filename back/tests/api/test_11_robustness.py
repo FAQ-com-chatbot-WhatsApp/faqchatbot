@@ -10,6 +10,7 @@ Covers:
 - Media error handling
 - Long context performance
 """
+
 import time
 
 import pytest
@@ -18,20 +19,20 @@ import requests
 
 class TestPhase11Robustness:
     """Phase 11: Robustness and Edge Cases.
-    
+
     Tests system behavior under stress, errors, and edge cases.
     """
 
     def test_uc041_fallback_response_gemini_error(self, api_client, monkeypatch):
         """UC-041: Test Fallback Response (Simulate Gemini Error).
-        
+
         Since we cannot easily kill the internet or block Gemini in Docker from here,
         we rely on the fact that if Google API Key is invalid, it triggers fallback.
-        
-        However, for a real integration test without mocking internal code, 
-        we might interpret this as sending a malformed request that confuses the LLM 
+
+        However, for a real integration test without mocking internal code,
+        we might interpret this as sending a malformed request that confuses the LLM
         or triggers a predefined failure mode.
-        
+
         If we cannot simulate a network error easily in E2E, we skip or mock if possible.
         For now, we check the HEALTH of the AI service.
         """
@@ -45,9 +46,9 @@ class TestPhase11Robustness:
 
     def test_uc042_rate_limiting(self, api_base_url):
         """UC-042: Test Rate Limiting Protection.
-        
+
         Scenario: Send 10+ requests in < 1 minute to rate-limited endpoint.
-        NOTE: Rate limits might be lower/higher. 
+        NOTE: Rate limits might be lower/higher.
         Assuming login endpoint has strict limits (e.g., 5/minute).
         """
         # Use a fresh user for this test to avoid blocking other tests
@@ -58,10 +59,9 @@ class TestPhase11Robustness:
         limit = 10  # Try enough to hit limit
         blocked = False
 
-        for i in range(limit):
-            response = requests.post(f"{api_base_url}/auth/token",
-                data={"username": test_email, "password": "WrongPassword123"},
-                timeout=5
+        for _i in range(limit):
+            response = requests.post(
+                f"{api_base_url}/auth/token", data={"username": test_email, "password": "WrongPassword123"}, timeout=5
             )
 
             if response.status_code == 429:
@@ -81,7 +81,7 @@ class TestPhase11Robustness:
 
     def test_uc043_webhook_invalid_media(self, auth_headers, api_client):
         """UC-043: Test Webhook with Invalid Media.
-        
+
         Scenario: Send audio message with broken URL.
         Expected: System should fail processing but not crash (fallback message).
         """
@@ -90,9 +90,9 @@ class TestPhase11Robustness:
             "file": {
                 "mimetype": "audio/ogg",
                 "filename": "broken_audio.ogg",
-                "url": "http://localhost:9999/non_existent_file.ogg"
+                "url": "http://localhost:9999/non_existent_file.ogg",
             },
-            "caption": None
+            "caption": None,
         }
 
         # Direct POST to /messages not /webhooks/waha to simulate authenticated input
@@ -112,7 +112,7 @@ class TestPhase11Robustness:
 
     def test_uc044_long_context_performance(self, auth_headers, api_client):
         """UC-044: Test Long Context Performance.
-        
+
         Scenario: Simulate valid conversation flow.
         """
         start_time = time.time()

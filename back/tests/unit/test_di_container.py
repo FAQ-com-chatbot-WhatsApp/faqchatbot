@@ -110,9 +110,7 @@ class TestDIContainerSingletonsEliminated:
     """Test that singletons have been properly eliminated."""
 
     @pytest.mark.asyncio
-    async def test_no_get_conversation_orchestrator_singleton(
-        self, container: DIContainer
-    ):
+    async def test_no_get_conversation_orchestrator_singleton(self, container: DIContainer):
         """Test that get_conversation_orchestrator() singleton is gone."""
         # This should not exist anymore - orchestrator should come from container
         assert not hasattr(container, "get_conversation_orchestrator")
@@ -174,9 +172,7 @@ class TestDIContainerErrorHandling:
             await container.initialize()
 
     @pytest.mark.asyncio
-    async def test_container_dependency_not_available_before_init(
-        self, settings: Settings
-    ):
+    async def test_container_dependency_not_available_before_init(self, settings: Settings):
         """Test that dependencies raise error before initialization."""
         container = DIContainer(settings)
         # Before initialization, should not be available

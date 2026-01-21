@@ -54,9 +54,7 @@ class TestLeadServiceCreation:
         assert service.db is not None
 
     @patch("robbot.services.lead_service.LeadRepository")
-    def test_create_from_conversation(
-        self, mock_repo_class, lead_service: LeadService, mock_lead_model: LeadModel
-    ):
+    def test_create_from_conversation(self, mock_repo_class, lead_service: LeadService, mock_lead_model: LeadModel):
         """Test creating lead from conversation."""
         mock_repo = MagicMock()
         mock_repo.get_by_phone.return_value = None
@@ -99,9 +97,7 @@ class TestLeadServiceMaturityUpdate:
     """Test lead maturity score updates."""
 
     @patch("robbot.services.lead_service.LeadRepository")
-    def test_update_maturity_valid_score(
-        self, mock_repo_class, lead_service: LeadService, mock_lead_model: LeadModel
-    ):
+    def test_update_maturity_valid_score(self, mock_repo_class, lead_service: LeadService, mock_lead_model: LeadModel):
         """Test updating lead maturity with valid score."""
         mock_repo = MagicMock()
         mock_repo.get_by_id.return_value = mock_lead_model
@@ -118,9 +114,7 @@ class TestLeadServiceMaturityUpdate:
         mock_repo.update.assert_called_once()
 
     @patch("robbot.services.lead_service.LeadRepository")
-    def test_update_maturity_invalid_score_too_high(
-        self, mock_repo_class, lead_service: LeadService
-    ):
+    def test_update_maturity_invalid_score_too_high(self, mock_repo_class, lead_service: LeadService):
         """Test that invalid score (>100) raises error."""
         mock_repo = MagicMock()
         mock_repo_class.return_value = mock_repo
@@ -130,9 +124,7 @@ class TestLeadServiceMaturityUpdate:
             lead_service.update_maturity(lead_id="lead-123", new_score=150)
 
     @patch("robbot.services.lead_service.LeadRepository")
-    def test_update_maturity_invalid_score_negative(
-        self, mock_repo_class, lead_service: LeadService
-    ):
+    def test_update_maturity_invalid_score_negative(self, mock_repo_class, lead_service: LeadService):
         """Test that invalid score (<0) raises error."""
         mock_repo = MagicMock()
         mock_repo_class.return_value = mock_repo
@@ -142,9 +134,7 @@ class TestLeadServiceMaturityUpdate:
             lead_service.update_maturity(lead_id="lead-123", new_score=-10)
 
     @patch("robbot.services.lead_service.LeadRepository")
-    def test_update_maturity_lead_not_found(
-        self, mock_repo_class, lead_service: LeadService
-    ):
+    def test_update_maturity_lead_not_found(self, mock_repo_class, lead_service: LeadService):
         """Test that updating non-existent lead raises error."""
         mock_repo = MagicMock()
         mock_repo.get_by_id.return_value = None
@@ -188,9 +178,7 @@ class TestLeadServiceIntegration:
     """Integration-like tests with mocked database."""
 
     @patch("robbot.services.lead_service.LeadRepository")
-    def test_lead_lifecycle(
-        self, mock_repo_class, lead_service: LeadService, mock_lead_model: LeadModel
-    ):
+    def test_lead_lifecycle(self, mock_repo_class, lead_service: LeadService, mock_lead_model: LeadModel):
         """Test complete lead lifecycle: create -> update maturity -> transition status."""
         mock_repo = MagicMock()
 
@@ -229,9 +217,7 @@ class TestLeadServiceErrorHandling:
             LeadService(db=None)  # type: ignore
 
     @patch("robbot.services.lead_service.LeadRepository")
-    def test_service_handles_database_errors(
-        self, mock_repo_class, lead_service: LeadService
-    ):
+    def test_service_handles_database_errors(self, mock_repo_class, lead_service: LeadService):
         """Test that service handles database errors gracefully."""
         mock_repo = MagicMock()
         mock_repo.get_by_phone.side_effect = Exception("Database connection error")

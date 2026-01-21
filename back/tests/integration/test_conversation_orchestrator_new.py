@@ -54,9 +54,7 @@ def mock_conversation(mock_lead: LeadModel) -> ConversationModel:
 @pytest.fixture
 def message_pipeline(mock_session: Session) -> MessagePipeline:
     """Create MessagePipeline with mocks."""
-    with patch(
-        "robbot.services.message_pipeline.MessageProcessor"
-    ) as mock_processor:
+    with patch("robbot.services.message_pipeline.MessageProcessor") as mock_processor:
         processor = MagicMock()
         mock_processor.return_value = processor
         return MessagePipeline(db=mock_session, message_processor=processor)
@@ -71,12 +69,10 @@ def state_machine(mock_session: Session) -> ConversationStateMachine:
 @pytest.fixture
 def response_generator() -> ResponseGenerator:
     """Create ResponseGenerator with mocks."""
-    with patch(
-        "robbot.services.response_generator.LLMProvider"
-    ), patch(
-        "robbot.services.response_generator.PromptLoader"
-    ), patch(
-        "robbot.services.response_generator.PlaybookService"
+    with (
+        patch("robbot.services.response_generator.LLMProvider"),
+        patch("robbot.services.response_generator.PromptLoader"),
+        patch("robbot.services.response_generator.PlaybookService"),
     ):
         mock_llm = MagicMock(spec=LLMProvider)
         mock_loader = MagicMock()
@@ -99,9 +95,7 @@ class TestMessagePipelineIntegration:
         mock_conversation: ConversationModel,
     ):
         """Test that message pipeline validates and stores messages."""
-        with patch(
-            "robbot.services.message_pipeline.ConversationMessageRepository"
-        ) as mock_repo_class:
+        with patch("robbot.services.message_pipeline.ConversationMessageRepository") as mock_repo_class:
             mock_repo = MagicMock()
             mock_repo.create.return_value = MagicMock(id="msg-123")
             mock_repo_class.return_value = mock_repo
@@ -137,17 +131,13 @@ class TestMessagePipelineIntegration:
         mock_conversation: ConversationModel,
     ):
         """Test that message pipeline processes media messages."""
-        with patch(
-            "robbot.services.message_pipeline.ConversationMessageRepository"
-        ) as mock_repo_class:
+        with patch("robbot.services.message_pipeline.ConversationMessageRepository") as mock_repo_class:
             mock_repo = MagicMock()
             mock_repo.create.return_value = MagicMock(id="msg-123")
             mock_repo_class.return_value = mock_repo
 
             # Mock media processor
-            message_pipeline.message_processor.process_media_message = AsyncMock(
-                return_value="Transcrição do áudio..."
-            )
+            message_pipeline.message_processor.process_media_message = AsyncMock(return_value="Transcrição do áudio...")
 
             # Process audio message
             result = await message_pipeline.process_message(
@@ -172,9 +162,7 @@ class TestConversationStateMachineIntegration:
         mock_conversation: ConversationModel,
     ):
         """Test that state machine updates lead maturity and status."""
-        with patch(
-            "robbot.services.conversation_state_machine.LeadRepository"
-        ) as mock_repo_class:
+        with patch("robbot.services.conversation_state_machine.LeadRepository") as mock_repo_class:
             mock_repo = MagicMock()
             mock_repo.update.return_value = mock_conversation.lead
             mock_repo_class.return_value = mock_repo
@@ -310,17 +298,14 @@ class TestFullConversationFlow:
     ):
         """Test complete flow: message -> state -> response."""
         # Setup mocks
-        with patch(
-            "robbot.services.message_pipeline.ConversationMessageRepository"
-        ) as mock_msg_repo, patch(
-            "robbot.services.conversation_state_machine.LeadRepository"
-        ) as mock_lead_repo:
+        with (
+            patch("robbot.services.message_pipeline.ConversationMessageRepository") as mock_msg_repo,
+            patch("robbot.services.conversation_state_machine.LeadRepository") as mock_lead_repo,
+        ):
             mock_msg_repo.return_value.create.return_value = MagicMock(id="msg-1")
             mock_lead_repo.return_value.update.return_value = mock_conversation.lead
 
-            response_generator.llm.generate_response = AsyncMock(
-                return_value={"text": "Excelente pergunta!"}
-            )
+            response_generator.llm.generate_response = AsyncMock(return_value={"text": "Excelente pergunta!"})
 
             # Step 1: Process incoming message
             message = await message_pipeline.process_message(

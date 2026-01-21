@@ -6,6 +6,7 @@ Based on: back/docs/academic/casos-teste-validacao.md
 
 Each test is now isolated and independent. No shared state.
 """
+
 import re
 
 import requests
@@ -34,12 +35,11 @@ class TestPhase1Auth:
         # Clear Maildev inbox to avoid stale tokens
         requests.delete("http://localhost:1080/email/all", timeout=30)
 
-        response = requests.post(f"{api_base_url}/auth/signup",
-            json={
-                "email": "admin@clinicago.com.br",
-                "password": "Admin@2025!Secure",
-                "role": "admin"
-            }, timeout=30)
+        response = requests.post(
+            f"{api_base_url}/auth/signup",
+            json={"email": "admin@clinicago.com.br", "password": "Admin@2025!Secure", "role": "admin"},
+            timeout=30,
+        )
 
         # 201 if created, 400 if already exists
         assert response.status_code in [201, 400]
@@ -60,12 +60,11 @@ class TestPhase1Auth:
         test_email = "test_uc003_user@clinicago.com.br"
         test_password = "TestUC003@2025"
 
-        signup_response = requests.post(f"{api_base_url}/auth/signup",
-            json={
-                "email": test_email,
-                "password": test_password,
-                "role": "admin"
-            }, timeout=30)
+        signup_response = requests.post(
+            f"{api_base_url}/auth/signup",
+            json={"email": test_email, "password": test_password, "role": "admin"},
+            timeout=30,
+        )
         assert signup_response.status_code in [201, 400]
 
         # Get verification token from email
@@ -74,8 +73,7 @@ class TestPhase1Auth:
 
         if token:
             # Verify the email
-            verify_response = requests.get(f"{api_base_url}/auth/email/verify",
-                params={"token": token}, timeout=30)
+            verify_response = requests.get(f"{api_base_url}/auth/email/verify", params={"token": token}, timeout=30)
             print(f"[DEBUG] Verify endpoint response: {verify_response.status_code}")
             if verify_response.status_code != 200:
                 print(f"[DEBUG] Response body: {verify_response.text}")
@@ -83,13 +81,7 @@ class TestPhase1Auth:
 
         # Now attempt login with a session to capture cookies
         session = requests.Session()
-        response = session.post(
-            f"{api_base_url}/auth/token",
-            data={
-                "username": test_email,
-                "password": test_password
-            }
-        )
+        response = session.post(f"{api_base_url}/auth/token", data={"username": test_email, "password": test_password})
 
         assert response.status_code == 200
         data = response.json()
@@ -111,20 +103,26 @@ class TestPhase1Auth:
         requests.delete("http://localhost:1080/email/all", timeout=30)
 
         # Signup
-        requests.post(f"{api_base_url}/auth/signup",
-            json={"email": test_email, "password": test_password, "role": "admin"}, timeout=30)
+        requests.post(
+            f"{api_base_url}/auth/signup",
+            json={"email": test_email, "password": test_password, "role": "admin"},
+            timeout=30,
+        )
 
         # Verify email
         token = self._get_verification_token_from_maildev_for(test_email)
         if token:
             requests.get(f"{api_base_url}/auth/email/verify", params={"token": token}, timeout=30)
+        else:
+            # Fallback: verify in DB
+            self._fallback_verify_db(test_email)
 
         # Login
         session = requests.Session()
-        session.post(
-            f"{api_base_url}/auth/token",
-            data={"username": test_email, "password": test_password}
+        login_response = session.post(
+            f"{api_base_url}/auth/token", data={"username": test_email, "password": test_password}
         )
+        assert login_response.status_code == 200, f"Login failed: {login_response.status_code} - {login_response.text}"
 
         # Test /auth/me endpoint
         response = session.get(f"{api_base_url}/auth/me")
@@ -146,8 +144,11 @@ class TestPhase1Auth:
         requests.delete("http://localhost:1080/email/all", timeout=30)
 
         # Signup admin
-        requests.post(f"{api_base_url}/auth/signup",
-            json={"email": admin_email, "password": admin_password, "role": "admin"}, timeout=30)
+        requests.post(
+            f"{api_base_url}/auth/signup",
+            json={"email": admin_email, "password": admin_password, "role": "admin"},
+            timeout=30,
+        )
 
         # Verify admin email
         token = self._get_verification_token_from_maildev_for(admin_email)
@@ -156,20 +157,13 @@ class TestPhase1Auth:
 
         # Login admin
         session = requests.Session()
-        session.post(
-            f"{api_base_url}/auth/token",
-            data={"username": admin_email, "password": admin_password}
-        )
+        session.post(f"{api_base_url}/auth/token", data={"username": admin_email, "password": admin_password})
 
         # Create secretary user
         secretary_email = "test_uc005_secretary@clinicago.com.br"
         response = session.post(
             f"{api_base_url}/auth/signup",
-            json={
-                "email": secretary_email,
-                "password": "Secret@2025!Pass",
-                "role": "user"
-            }
+            json={"email": secretary_email, "password": "Secret@2025!Pass", "role": "user"},
         )
 
         # 201 if created, 400 if already exists
@@ -187,7 +181,7 @@ class TestPhase1Auth:
         try:
             response = requests.get("http://localhost:1080/email", timeout=10)
         except requests.exceptions.RequestException:
-             return None
+            return None
 
         if response.status_code != 200:
             return None
@@ -205,7 +199,12 @@ class TestPhase1Auth:
 
         for mail in emails:
             email_to = mail.get("to", [])
-            if email_to and isinstance(email_to, list) and len(email_to) > 0 and email in email_to[0].get("address", ""):
+            if (
+                email_to
+                and isinstance(email_to, list)
+                and len(email_to) > 0
+                and email in email_to[0].get("address", "")
+            ):
                 email_text = mail.get("text", "")
                 match = re.search(r"token=([a-zA-Z0-9\-_.]+)", email_text)
                 if match:
@@ -219,6 +218,7 @@ class TestPhase1Auth:
         db_url = "postgresql+psycopg2://dba:dba@localhost:15432/BotDB"
         try:
             from sqlalchemy import create_engine, text
+
             engine = create_engine(db_url)
             with engine.connect() as conn:
                 # Find user ID
@@ -227,112 +227,9 @@ class TestPhase1Auth:
                 if user_row:
                     user_id = user_row[0]
                     conn.execute(
-                        text("UPDATE credentials SET email_verified = true WHERE user_id = :uid"),
-                        {"uid": user_id}
+                        text("UPDATE credentials SET email_verified = true WHERE user_id = :uid"), {"uid": user_id}
                     )
                     conn.commit()
                     print(f"[WARN] Manually verified email in DB for {email}")
         except Exception as e:
             print(f"[ERROR] DB Verification failed: {e}")
-
-    def test_uc003_login_get_access_token(self, api_base_url):
-        """UC-003: Login - Get Access Token (with email verification)."""
-        requests.delete("http://localhost:1080/email/all", timeout=30)
-
-        test_email = "test_uc003_user@clinicago.com.br"
-        test_password = "TestUC003@2025"
-
-        signup_response = requests.post(f"{api_base_url}/auth/signup",
-            json={
-                "email": test_email,
-                "password": test_password,
-                "role": "admin"
-            }, timeout=30)
-        assert signup_response.status_code in [201, 400]
-
-        # Try Maildev first
-        token = self._get_verification_token_from_maildev_for(test_email)
-
-        if token:
-            verify_response = requests.get(f"{api_base_url}/auth/email/verify",
-                params={"token": token}, timeout=30)
-            assert verify_response.status_code == 200
-        else:
-            # Fallback
-            self._fallback_verify_db(test_email)
-
-        # Login
-        session = requests.Session()
-        response = session.post(
-            f"{api_base_url}/auth/token",
-            data={
-                "username": test_email,
-                "password": test_password
-            }
-        )
-
-        assert response.status_code == 200
-        data = response.json()
-        assert "user" in data
-        assert data["token_type"] == "bearer"
-
-    def test_uc004_validate_token_get_current_user(self, api_base_url):
-        """UC-004: Validate Token - Get Current User (independent test)."""
-        test_email = "test_uc004_user2@clinicago.com.br" # changed email to capture unique
-        test_password = "TestUC004@2025"
-
-        requests.delete("http://localhost:1080/email/all", timeout=30)
-        requests.post(f"{api_base_url}/auth/signup",
-            json={"email": test_email, "password": test_password, "role": "admin"}, timeout=30)
-
-        token = self._get_verification_token_from_maildev_for(test_email)
-        if token:
-            requests.get(f"{api_base_url}/auth/email/verify", params={"token": token}, timeout=30)
-        else:
-            self._fallback_verify_db(test_email)
-
-        session = requests.Session()
-        session.post(
-            f"{api_base_url}/auth/token",
-            data={"username": test_email, "password": test_password}
-        )
-
-        response = session.get(f"{api_base_url}/auth/me")
-        assert response.status_code == 200
-        data = response.json()
-        assert data["email"] == test_email
-
-    def test_uc005_create_secretary_user(self, api_base_url):
-        """UC-005: Create SECRETARY User (independent test)."""
-        admin_email = "test_uc005_admin@clinicago.com.br"
-        admin_password = "AdminUC005@2025"
-
-        requests.delete("http://localhost:1080/email/all", timeout=30)
-        requests.post(f"{api_base_url}/auth/signup",
-            json={"email": admin_email, "password": admin_password, "role": "admin"}, timeout=30)
-
-        token = self._get_verification_token_from_maildev_for(admin_email)
-        if token:
-            requests.get(f"{api_base_url}/auth/email/verify", params={"token": token}, timeout=30)
-        else:
-            self._fallback_verify_db(admin_email)
-
-        session = requests.Session()
-        login_resp = session.post(
-            f"{api_base_url}/auth/token",
-            data={"username": admin_email, "password": admin_password}
-        )
-        assert login_resp.status_code == 200
-
-        secretary_email = "test_uc005_secretary@clinicago.com.br"
-        response = session.post(
-            f"{api_base_url}/auth/signup",
-            json={
-                "email": secretary_email,
-                "password": "Secret@2025!Pass",
-                "role": "user"
-            }
-        )
-
-        # Verify secretary email too if needed, or just assert creation
-        assert response.status_code in [201, 400]

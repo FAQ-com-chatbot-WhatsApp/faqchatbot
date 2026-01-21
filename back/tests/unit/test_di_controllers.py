@@ -5,7 +5,6 @@ Validates that FastAPI dependencies are properly injected
 and that the container is available in request context.
 """
 
-
 import pytest
 from fastapi import Depends, FastAPI
 
@@ -36,6 +35,7 @@ def test_app(settings: Settings) -> FastAPI:
     async def lifespan(app: FastAPI):
         nonlocal container
         from robbot.config.container import initialize_container, shutdown_container
+
         await initialize_container(settings)
         yield
         await shutdown_container()
@@ -62,6 +62,7 @@ class TestDIInControllers:
     def test_get_container_dep_function_exists(self):
         """Test that get_container_dep is importable."""
         from robbot.api.v1.dependencies import get_container_dep
+
         assert callable(get_container_dep)
 
     def test_container_available_in_fastapi_context(self, test_app: FastAPI):

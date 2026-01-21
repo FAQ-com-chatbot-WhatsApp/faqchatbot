@@ -1,4 +1,5 @@
 """Pytest configuration for API tests."""
+
 import re
 import time
 
@@ -80,7 +81,7 @@ def extract_verification_token_from_email(maildev_url: str, recipient_email: str
                     # Extract token from email body
                     # Email contains verification link like: http://...?token=xxx
                     body = email.get("text", "")
-                    match = re.search(r'token=([a-zA-Z0-9\-_.]+)', body)
+                    match = re.search(r"token=([a-zA-Z0-9\-_.]+)", body)
                     if match:
                         return match.group(1)
 
@@ -103,6 +104,7 @@ def mark_email_verified_in_db(email: str, db_url: str):
     """Fallback: Manually mark email as verified in DB if Maildev fails."""
     try:
         from sqlalchemy import create_engine, text
+
         engine = create_engine(db_url)
         with engine.connect() as conn:
             # Find user ID
@@ -112,8 +114,7 @@ def mark_email_verified_in_db(email: str, db_url: str):
                 user_id = user_row[0]
                 # Update credential
                 conn.execute(
-                    text("UPDATE credentials SET email_verified = true WHERE user_id = :uid"),
-                    {"uid": user_id}
+                    text("UPDATE credentials SET email_verified = true WHERE user_id = :uid"), {"uid": user_id}
                 )
                 conn.commit()
                 print(f"[WARN] Manually verified email in DB for {email} (Maildev fallback)")
@@ -132,26 +133,23 @@ def admin_token(api_base_url: str, maildev_base_url: str, db_connection_string: 
     password = "TestAdmin123!Secure"
 
     # Step 1: Signup (cria user não verificado)
-    signup_response = requests.post(f"{api_base_url}/auth/signup",
-        json={
-            "email": email,
-            "password": password,
-            "full_name": f"Test Admin {timestamp}",
-            "role": "admin"
-        }, timeout=30)
+    signup_response = requests.post(
+        f"{api_base_url}/auth/signup",
+        json={"email": email, "password": password, "full_name": f"Test Admin {timestamp}", "role": "admin"},
+        timeout=30,
+    )
 
     if signup_response.status_code not in [201, 400]:
         pytest.skip(f"Signup failed: {signup_response.status_code} - {signup_response.text}")
 
     # Step 2: Extrair token do email capturado no Maildev
     try:
-        token = extract_verification_token_from_email(maildev_base_url, email, timeout=5) # Reduced timeout
+        token = extract_verification_token_from_email(maildev_base_url, email, timeout=5)  # Reduced timeout
         # Step 3: Verificar email usando o token
-        verify_response = requests.get(f"{api_base_url}/auth/email/verify",
-            params={"token": token}, timeout=30)
+        verify_response = requests.get(f"{api_base_url}/auth/email/verify", params={"token": token}, timeout=30)
         if verify_response.status_code not in [200, 400]:
-             print("[WARN] Email verification API failed, trying DB fallback")
-             mark_email_verified_in_db(email, db_connection_string)
+            print("[WARN] Email verification API failed, trying DB fallback")
+            mark_email_verified_in_db(email, db_connection_string)
 
     except TimeoutError:
         print(f"[WARN] Email verification timeout, using DB fallback for {email}")
@@ -159,13 +157,7 @@ def admin_token(api_base_url: str, maildev_base_url: str, db_connection_string: 
 
     # Step 4: Fazer login
     session = requests.Session()
-    login_response = session.post(
-        f"{api_base_url}/auth/token",
-        data={
-            "username": email,
-            "password": password
-        }
-    )
+    login_response = session.post(f"{api_base_url}/auth/token", data={"username": email, "password": password})
 
     if login_response.status_code != 200:
         pytest.skip(f"Login failed: {login_response.status_code} - {login_response.text}")
@@ -187,13 +179,11 @@ def secretary_token(api_base_url: str, maildev_base_url: str, db_connection_stri
     password = "TestSecretary123!Secure"
 
     # Step 1: Signup
-    signup_response = requests.post(f"{api_base_url}/auth/signup",
-        json={
-            "email": email,
-            "password": password,
-            "full_name": f"Test Secretary {timestamp}",
-            "role": "user"
-        }, timeout=30)
+    signup_response = requests.post(
+        f"{api_base_url}/auth/signup",
+        json={"email": email, "password": password, "full_name": f"Test Secretary {timestamp}", "role": "user"},
+        timeout=30,
+    )
 
     if signup_response.status_code not in [201, 400]:
         pytest.skip(f"Signup failed: {signup_response.status_code} - {signup_response.text}")
@@ -202,22 +192,15 @@ def secretary_token(api_base_url: str, maildev_base_url: str, db_connection_stri
     try:
         token = extract_verification_token_from_email(maildev_base_url, email, timeout=5)
         # Step 3: Verificar email
-        verify_response = requests.get(f"{api_base_url}/auth/email/verify",
-            params={"token": token}, timeout=30)
+        verify_response = requests.get(f"{api_base_url}/auth/email/verify", params={"token": token}, timeout=30)
         if verify_response.status_code not in [200, 400]:
-             mark_email_verified_in_db(email, db_connection_string)
+            mark_email_verified_in_db(email, db_connection_string)
     except TimeoutError:
         mark_email_verified_in_db(email, db_connection_string)
 
     # Step 4: Fazer login
     session = requests.Session()
-    login_response = session.post(
-        f"{api_base_url}/auth/token",
-        data={
-            "username": email,
-            "password": password
-        }
-    )
+    login_response = session.post(f"{api_base_url}/auth/token", data={"username": email, "password": password})
 
     if login_response.status_code != 200:
         pytest.skip(f"Login failed: {login_response.status_code} - {login_response.text}")
@@ -233,10 +216,7 @@ def secretary_token(api_base_url: str, maildev_base_url: str, db_connection_stri
 @pytest.fixture(scope="module")
 def auth_headers(admin_token: str) -> dict:
     """Headers with admin authentication."""
-    return {
-        "Authorization": f"Bearer {admin_token}",
-        "Content-Type": "application/json"
-    }
+    return {"Authorization": f"Bearer {admin_token}", "Content-Type": "application/json"}
 
 
 @pytest.fixture(scope="module")
@@ -273,7 +253,9 @@ def api_client(api_base_url: str, maildev_base_url: str, db_connection_string: s
     return APIClient(api_base_url, session)
 
 
-def create_authenticated_user(api_base_url: str, maildev_base_url: str, db_url: str, role: str = "admin") -> tuple[str, requests.Session]:
+def create_authenticated_user(
+    api_base_url: str, maildev_base_url: str, db_url: str, role: str = "admin"
+) -> tuple[str, requests.Session]:
     """Helper to create and authenticate a user for testing (with DB fallback)."""
     import time
 
@@ -283,13 +265,11 @@ def create_authenticated_user(api_base_url: str, maildev_base_url: str, db_url: 
     password = "TestUser123!Secure"
 
     # Signup
-    signup_response = requests.post(f"{api_base_url}/auth/signup",
-        json={
-            "email": email,
-            "password": password,
-            "full_name": f"Test User {timestamp}",
-            "role": role
-        }, timeout=30)
+    signup_response = requests.post(
+        f"{api_base_url}/auth/signup",
+        json={"email": email, "password": password, "full_name": f"Test User {timestamp}", "role": role},
+        timeout=30,
+    )
 
     if signup_response.status_code not in [201, 400]:
         raise Exception(f"Signup failed: {signup_response.status_code} - {signup_response.text}")
@@ -297,8 +277,7 @@ def create_authenticated_user(api_base_url: str, maildev_base_url: str, db_url: 
     # Extract verification token from email OR Fallback
     try:
         token = extract_verification_token_from_email(maildev_base_url, email, timeout=5)
-        verify_response = requests.get(f"{api_base_url}/auth/email/verify",
-            params={"token": token}, timeout=30)
+        verify_response = requests.get(f"{api_base_url}/auth/email/verify", params={"token": token}, timeout=30)
         if verify_response.status_code not in [200, 400]:
             print(f"[WARN] Verification failed via API, falling back to DB for {email}")
             mark_email_verified_in_db(email, db_url)
@@ -308,13 +287,7 @@ def create_authenticated_user(api_base_url: str, maildev_base_url: str, db_url: 
 
     # Login
     session = requests.Session()
-    login_response = session.post(
-        f"{api_base_url}/auth/token",
-        data={
-            "username": email,
-            "password": password
-        }
-    )
+    login_response = session.post(f"{api_base_url}/auth/token", data={"username": email, "password": password})
 
     if login_response.status_code != 200:
         raise Exception(f"Login failed: {login_response.status_code} - {login_response.text}")
@@ -328,13 +301,55 @@ def create_authenticated_user(api_base_url: str, maildev_base_url: str, db_url: 
 
 
 @pytest.fixture
-def authenticated_admin(api_base_url: str, maildev_base_url: str, db_connection_string: str) -> tuple[str, requests.Session]:
+def authenticated_admin(
+    api_base_url: str, maildev_base_url: str, db_connection_string: str
+) -> tuple[str, requests.Session]:
     """Create and return an authenticated admin user for testing."""
     return create_authenticated_user(api_base_url, maildev_base_url, db_connection_string, role="admin")
 
 
 @pytest.fixture
-def authenticated_secretary(api_base_url: str, maildev_base_url: str, db_connection_string: str) -> tuple[str, requests.Session]:
+def authenticated_secretary(
+    api_base_url: str, maildev_base_url: str, db_connection_string: str
+) -> tuple[str, requests.Session]:
     """Create and return an authenticated secretary user for testing."""
     return create_authenticated_user(api_base_url, maildev_base_url, db_connection_string, role="user")
 
+
+@pytest.fixture(autouse=True)
+def mock_external_dependencies_for_tests():
+    """Mock external dependencies to isolate tests from external APIs.
+
+    This prevents:
+    - Gemini API quota limits (RESOURCE_EXHAUSTED errors)
+    - WhatsApp WAHA API calls
+    - Database writes for interactions/LLM logging
+    """
+    import unittest.mock as mock
+
+    # Mock Gemini client response for intent detection
+    mock_gemini_response = {
+        "response": '{"intent": "INTERESSE_TRATAMENTO", "spin_phase": "SITUATION"}',
+        "tokens_used": 50,
+        "latency_ms": 100,
+    }
+    mock.patch(
+        "robbot.adapters.external.gemini_client.GeminiClient.generate_response", return_value=mock_gemini_response
+    ).start()
+
+    # Mock intent detector methods
+    mock.patch("robbot.services.intent_detector.IntentDetector.detect_urgency", return_value=False).start()
+    mock.patch("robbot.services.intent_detector.IntentDetector.try_extract_name", return_value=None).start()
+
+    # Mock WAHA client to avoid WhatsApp API calls
+    mock.patch("robbot.adapters.external.waha_client.WAHAClient.send_text", return_value=True).start()
+
+    # Mock interaction registration to avoid user_id requirement
+    mock.patch(
+        "robbot.services.conversation_orchestrator.ConversationOrchestrator._register_interaction", return_value=None
+    ).start()
+
+    # Mock LLM interaction logging to avoid database writes
+    mock.patch(
+        "robbot.services.conversation_orchestrator.ConversationOrchestrator._log_llm_interaction", return_value=None
+    ).start()

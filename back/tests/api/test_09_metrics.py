@@ -4,6 +4,7 @@ PHASE 9: Metrics and Analytics Tests
 Test Cases: UC-036 to UC-038
 """
 
+
 class TestPhase9Metrics:
     """Phase 9: Metrics and Analytics."""
 
@@ -24,13 +25,7 @@ class TestPhase9Metrics:
 
         today = str(date.today())
 
-        response = api_client.get(
-            "/metrics/overview",
-            params={
-                "start_date": today,
-                "end_date": today
-            }
-        )
+        response = api_client.get("/metrics/overview", params={"start_date": today, "end_date": today})
 
         assert response.status_code == 200
         data = response.json()

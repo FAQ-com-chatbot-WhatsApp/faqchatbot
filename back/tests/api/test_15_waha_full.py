@@ -9,6 +9,7 @@ Covers:
 - Presence (Typing, Online)
 - Server State (Restart, Logout)
 """
+
 import pytest
 
 
@@ -32,7 +33,7 @@ class TestPhase15WAHAFull:
         response = api_client.get(f"/waha/contacts/{phone}/profile", headers=auth_headers)
 
         if response.status_code == 404:
-             pytest.skip("Profile endpoint not implemented")
+            pytest.skip("Profile endpoint not implemented")
 
         # Might return 404 if contact not on WhatsApp, but structure should be valid
         assert response.status_code in [200, 404]
@@ -40,12 +41,12 @@ class TestPhase15WAHAFull:
     def test_uc090_set_presence_typing(self, api_client, auth_headers):
         """UC-090: Set Presence (Typing)."""
         chat_id = "5511999999999@c.us"
-        response = api_client.post("/waha/presence",
-                                   json={"chat_id": chat_id, "state": "composing"},
-                                   headers=auth_headers)
+        response = api_client.post(
+            "/waha/presence", json={"chat_id": chat_id, "state": "composing"}, headers=auth_headers
+        )
 
         if response.status_code == 404:
-             pytest.skip("Presence endpoint not implemented")
+            pytest.skip("Presence endpoint not implemented")
 
         assert response.status_code == 200
 
@@ -56,7 +57,7 @@ class TestPhase15WAHAFull:
         response = api_client.post("/waha/sessions/default/restart", headers=auth_headers)
 
         if response.status_code == 404:
-             pytest.skip("Restart endpoint not implemented")
+            pytest.skip("Restart endpoint not implemented")
 
         assert response.status_code == 200
         assert response.json()["status"] in ["STOPPED", "STARTING"]

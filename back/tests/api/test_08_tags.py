@@ -3,6 +3,7 @@ PHASE 8: Tags and Filters Tests
 
 Test Cases: UC-034 to UC-035
 """
+
 import pytest
 
 
@@ -25,10 +26,7 @@ class TestPhase8Tags:
             pytest.skip("No conversation available")
 
         response = api_client.post(
-            f"/conversations/{self.conversation_id}/tags",
-            json={
-                "tags": ["agendamento", "emagrecimento", "urgente"]
-            }
+            f"/conversations/{self.conversation_id}/tags", json={"tags": ["agendamento", "emagrecimento", "urgente"]}
         )
 
         assert response.status_code == 200
@@ -37,10 +35,7 @@ class TestPhase8Tags:
 
     def test_uc035_filter_by_tag(self, api_client):
         """UC-035: Filter Conversations by Tag."""
-        response = api_client.get(
-            "/conversations",
-            params={"tags": "urgente"}
-        )
+        response = api_client.get("/conversations", params={"tags": "urgente"})
 
         assert response.status_code == 200
         data = response.json()

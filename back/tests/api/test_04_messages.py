@@ -7,13 +7,12 @@ Este módulo testa a criação de mensagens com diferentes tipos de mídia
 e valida o enriquecimento automático por IA (transcrição, análise de imagem, metadata).
 """
 
-
 # URLs públicas para testes de enriquecimento com arquivos reais
 TEST_MEDIA_URLS = {
     "audio": "https://www2.cs.uic.edu/~i101/SoundFiles/BabyElephantWalk60.wav",
     "image": "https://images.unsplash.com/photo-1516549655169-df83a0774514?w=800",
     "video": "https://sample-videos.com/video123/mp4/240/big_buck_bunny_240p_1mb.mp4",
-    "document": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+    "document": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
 }
 
 
@@ -32,8 +31,8 @@ class TestPhase4Messages:
                 "text": "Gostaria de informações sobre emagrecimento",
                 "title": "Pergunta sobre emagrecimento",
                 "description": "Lead perguntando sobre tratamentos de emagrecimento",
-                "tags": "emagrecimento,pergunta"
-            }
+                "tags": "emagrecimento,pergunta",
+            },
         )
 
         assert response.status_code == 201, response.text
@@ -48,13 +47,9 @@ class TestPhase4Messages:
             "/messages",
             json={
                 "type": "voice",
-                "file": {
-                    "url": TEST_MEDIA_URLS["audio"],
-                    "mimetype": "audio/wav",
-                    "filename": "audio_teste.wav"
-                },
-                "caption": "Áudio do paciente sobre consulta"
-            }
+                "file": {"url": TEST_MEDIA_URLS["audio"], "mimetype": "audio/wav", "filename": "audio_teste.wav"},
+                "caption": "Áudio do paciente sobre consulta",
+            },
         )
 
         assert response.status_code == 201, response.text
@@ -67,13 +62,9 @@ class TestPhase4Messages:
             "/messages",
             json={
                 "type": "image",
-                "file": {
-                    "url": TEST_MEDIA_URLS["image"],
-                    "mimetype": "image/jpeg",
-                    "filename": "clinica.jpg"
-                },
-                "caption": "Imagem da clínica médica"
-            }
+                "file": {"url": TEST_MEDIA_URLS["image"], "mimetype": "image/jpeg", "filename": "clinica.jpg"},
+                "caption": "Imagem da clínica médica",
+            },
         )
 
         assert response.status_code == 201, response.text
@@ -86,13 +77,9 @@ class TestPhase4Messages:
             "/messages",
             json={
                 "type": "video",
-                "file": {
-                    "url": TEST_MEDIA_URLS["video"],
-                    "mimetype": "video/mp4",
-                    "filename": "procedimento.mp4"
-                },
-                "caption": "Vídeo explicando o procedimento"
-            }
+                "file": {"url": TEST_MEDIA_URLS["video"], "mimetype": "video/mp4", "filename": "procedimento.mp4"},
+                "caption": "Vídeo explicando o procedimento",
+            },
         )
 
         assert response.status_code == 201, response.text
@@ -109,10 +96,10 @@ class TestPhase4Messages:
                 "file": {
                     "url": "https://example.com/tabela_precos.pdf",
                     "mimetype": "application/pdf",
-                    "filename": "tabela_precos.pdf"
+                    "filename": "tabela_precos.pdf",
                 },
-                "caption": "Tabela de preços atualizada"
-            }
+                "caption": "Tabela de preços atualizada",
+            },
         )
         assert response.status_code == 201, response.text
         data = response.json()
@@ -124,12 +111,7 @@ class TestPhase4Messages:
         """UC-021: Create Location Message."""
         response = api_client.post(
             "/messages",
-            json={
-                "type": "location",
-                "latitude": -29.5838212,
-                "longitude": -51.0869905,
-                "title": "Clínica GO"
-            }
+            json={"type": "location", "latitude": -29.5838212, "longitude": -51.0869905, "title": "Clínica GO"},
         )
 
         assert response.status_code == 201, response.text

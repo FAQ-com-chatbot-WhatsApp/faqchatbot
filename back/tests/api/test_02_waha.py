@@ -25,12 +25,11 @@ class TestPhase2WAHA:
             json={
                 "name": self.session_name,
                 "config": {
-                    "webhooks": [{
-                        "url": "http://api:3333/api/v1/webhooks/waha",
-                        "events": ["message", "session.status"]
-                    }]
-                }
-            }
+                    "webhooks": [
+                        {"url": "http://api:3333/api/v1/webhooks/waha", "events": ["message", "session.status"]}
+                    ]
+                },
+            },
         )
 
         # Session may already exist (WAHA CORE creates 'default' at startup)
@@ -61,7 +60,6 @@ class TestPhase2WAHA:
             data = response.json()
             assert data["name"] == self.session_name
             assert data["status"] in ["SCAN_QR_CODE", "STARTING", "WORKING"]
-
 
     def test_uc008_verify_session_status(self, api_client):
         """UC-008: Verify Session Status."""

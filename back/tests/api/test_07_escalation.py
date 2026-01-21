@@ -3,6 +3,7 @@ PHASE 7: Escalation to Human Tests
 
 Test Cases: UC-031 to UC-033
 """
+
 import pytest
 
 
@@ -27,16 +28,15 @@ class TestPhase7Escalation:
 
         # Get secretary ID
         import requests
-        response = requests.get(f"{api_client.base_url}/auth/me",
-            headers={"Authorization": f"Bearer {secretary_token}"}, timeout=30)
+
+        response = requests.get(
+            f"{api_client.base_url}/auth/me", headers={"Authorization": f"Bearer {secretary_token}"}, timeout=30
+        )
         secretary_id = response.json()["id"]
 
         response = api_client.patch(
             f"/conversations/{self.conversation_id}/assign",
-            json={
-                "assigned_to": secretary_id,
-                "reason": "Alta maturidade"
-            }
+            json={"assigned_to": secretary_id, "reason": "Alta maturidade"},
         )
 
         assert response.status_code == 200
@@ -47,8 +47,9 @@ class TestPhase7Escalation:
         """UC-032: Verify Secretary Notifications."""
         import requests
 
-        response = requests.get(f"{api_base_url}/notifications",
-            headers={"Authorization": f"Bearer {secretary_token}"}, timeout=30)
+        response = requests.get(
+            f"{api_base_url}/notifications", headers={"Authorization": f"Bearer {secretary_token}"}, timeout=30
+        )
 
         assert response.status_code == 200
         data = response.json()
@@ -64,7 +65,10 @@ class TestPhase7Escalation:
 
         import requests
 
-        response = requests.patch(f"{api_base_url}/notifications/{self.notification_id}/read",
-            headers={"Authorization": f"Bearer {secretary_token}"}, timeout=30)
+        response = requests.patch(
+            f"{api_base_url}/notifications/{self.notification_id}/read",
+            headers={"Authorization": f"Bearer {secretary_token}"},
+            timeout=30,
+        )
 
         assert response.status_code == 200

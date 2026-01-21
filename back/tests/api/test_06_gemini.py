@@ -3,6 +3,7 @@ PHASE 6: Gemini AI and Context Tests
 
 Test Cases: UC-026 to UC-030
 """
+
 import time
 
 import pytest
@@ -19,7 +20,8 @@ class TestPhase6Gemini:
         """Setup: create initial conversation."""
         import requests
 
-        requests.post(f"{api_base_url}/webhooks/waha",
+        requests.post(
+            f"{api_base_url}/webhooks/waha",
             headers={"X-WAHA-Event": "message"},
             json={
                 "event": "message",
@@ -29,9 +31,9 @@ class TestPhase6Gemini:
                     "timestamp": int(time.time()),
                     "from": f"{self.test_phone}@c.us",
                     "body": "Quero emagrecer",
-                    "hasMedia": False
-                }
-            }
+                    "hasMedia": False,
+                },
+            },
         )
         time.sleep(8)
 
@@ -44,7 +46,8 @@ class TestPhase6Gemini:
         """UC-026: Simulate Continued Conversation (PROBLEM phase)."""
         import requests
 
-        response = requests.post(f"{api_base_url}/webhooks/waha",
+        response = requests.post(
+            f"{api_base_url}/webhooks/waha",
             headers={"X-WAHA-Event": "message"},
             json={
                 "event": "message",
@@ -54,9 +57,9 @@ class TestPhase6Gemini:
                     "timestamp": int(time.time()),
                     "from": f"{self.test_phone}@c.us",
                     "body": "Já tentei várias dietas mas não funciona",
-                    "hasMedia": False
-                }
-            }
+                    "hasMedia": False,
+                },
+            },
         )
 
         assert response.status_code == 202
@@ -66,7 +69,8 @@ class TestPhase6Gemini:
         """UC-027: Simulate Advanced Conversation (IMPLICATION phase)."""
         import requests
 
-        response = requests.post(f"{api_base_url}/webhooks/waha",
+        response = requests.post(
+            f"{api_base_url}/webhooks/waha",
             headers={"X-WAHA-Event": "message"},
             json={
                 "event": "message",
@@ -76,9 +80,9 @@ class TestPhase6Gemini:
                     "timestamp": int(time.time()),
                     "from": f"{self.test_phone}@c.us",
                     "body": "Isso afeta minha autoestima",
-                    "hasMedia": False
-                }
-            }
+                    "hasMedia": False,
+                },
+            },
         )
 
         assert response.status_code == 202
@@ -88,7 +92,8 @@ class TestPhase6Gemini:
         """UC-028: Detect Scheduling Intent (NEED-PAYOFF)."""
         import requests
 
-        response = requests.post(f"{api_base_url}/webhooks/waha",
+        response = requests.post(
+            f"{api_base_url}/webhooks/waha",
             headers={"X-WAHA-Event": "message"},
             json={
                 "event": "message",
@@ -98,9 +103,9 @@ class TestPhase6Gemini:
                     "timestamp": int(time.time()),
                     "from": f"{self.test_phone}@c.us",
                     "body": "Como faço para agendar?",
-                    "hasMedia": False
-                }
-            }
+                    "hasMedia": False,
+                },
+            },
         )
 
         assert response.status_code == 202
@@ -110,7 +115,8 @@ class TestPhase6Gemini:
         """UC-029: Simulate Location Question (Gemini Tool)."""
         import requests
 
-        response = requests.post(f"{api_base_url}/webhooks/waha",
+        response = requests.post(
+            f"{api_base_url}/webhooks/waha",
             headers={"X-WAHA-Event": "message"},
             json={
                 "event": "message",
@@ -120,9 +126,9 @@ class TestPhase6Gemini:
                     "timestamp": int(time.time()),
                     "from": f"{self.test_phone}@c.us",
                     "body": "Onde fica a clínica?",
-                    "hasMedia": False
-                }
-            }
+                    "hasMedia": False,
+                },
+            },
         )
 
         assert response.status_code == 202
@@ -133,10 +139,7 @@ class TestPhase6Gemini:
         if not self.conversation_id:
             pytest.skip("No conversation ID")
 
-        response = api_client.get(
-            "/llm-interactions",
-            params={"conversation_id": self.conversation_id}
-        )
+        response = api_client.get("/llm-interactions", params={"conversation_id": self.conversation_id})
 
         assert response.status_code == 200
         data = response.json()
