@@ -116,7 +116,9 @@ def create_access_refresh_tokens(subject: str, refresh_expiry_minutes: int | Non
     Optionally override refresh token expiry.
     """
     access_token = create_token_for_subject(subject, minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES, token_type="access")
-    refresh_minutes = refresh_expiry_minutes if refresh_expiry_minutes is not None else settings.REFRESH_TOKEN_EXPIRE_MINUTES
+    refresh_minutes = (
+        refresh_expiry_minutes if refresh_expiry_minutes is not None else settings.REFRESH_TOKEN_EXPIRE_MINUTES
+    )
     refresh_token = create_token_for_subject(
         subject,
         minutes=refresh_minutes,
