@@ -200,7 +200,7 @@ class LeadService:
             List of leads
         """
         # Fetch all leads and filter by status
-        all_leads = self.repo.get_all()
+        all_leads = self.repo.list_all(limit=limit)
 
         # Filtrar por status se fornecido
         if status:
@@ -218,7 +218,7 @@ class LeadService:
         Returns:
             List of leads without assignment
         """
-        all_leads = self.repo.get_all()
+        all_leads = self.repo.list_all(limit=limit)
 
         # Filter unassigned
         unassigned = [lead for lead in all_leads if lead.assigned_to_user_id is None]
@@ -228,6 +228,7 @@ class LeadService:
     def list_leads(
         self,
         status: LeadStatus | None = None,
+        phone_number: str | None = None,
         assigned_to_user_id: int | None = None,
         min_score: int | None = None,
         unassigned_only: bool = False,
@@ -248,10 +249,13 @@ class LeadService:
         Returns:
             Tuple of (leads list, total count)
         """
-        all_leads = self.repo.get_all()
+        all_leads = self.repo.list_all()
 
         # Apply filters
         filtered = all_leads
+
+        if phone_number:
+            filtered = [lead for lead in filtered if lead.phone_number == phone_number]
 
         if status:
             filtered = [lead for lead in filtered if lead.status == status]
@@ -289,7 +293,7 @@ class LeadService:
 
         # Find active secretaries
         user_repo = UserRepository(self.db)
-        all_users = user_repo.get_all()
+        all_users = user_repo.list_all()
 
         # Filtrar secretárias (role=user e ativas)
         secretaries = [u for u in all_users if u.role == "user"]
@@ -303,7 +307,7 @@ class LeadService:
 
         active_leads = [
             lead
-            for lead in self.repo.get_all()
+            for lead in self.repo.list_all()
             if lead.assigned_to_user_id and lead.status in [LeadStatus.ENGAGED, LeadStatus.INTERESTED]
         ]
         lead_counts = Counter(lead.assigned_to_user_id for lead in active_leads)
