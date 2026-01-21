@@ -137,7 +137,7 @@ def list_conversations(
             status=c.status.value,
             lead_status=c.lead.status.value if c.lead else "NEW",
             is_urgent=c.is_urgent,
-            lead_id=c.lead_id,
+            lead_id=c.lead.id if c.lead else None,
             assigned_to_user_id=c.assigned_to_user_id,
             created_at=c.created_at.isoformat(),
             updated_at=c.updated_at.isoformat(),
@@ -272,10 +272,7 @@ def search_conversations(
     # Search messages with full-text query using the model directly
 
     result = (
-        db.query(ConversationMessageModel)
-        .filter(ConversationMessageModel.body.ilike(f"%{q}%"))
-        .limit(limit * 5)
-        .all()
+        db.query(ConversationMessageModel).filter(ConversationMessageModel.body.ilike(f"%{q}%")).limit(limit * 5).all()
     )  # Get more messages to find unique conversations
 
     # Get unique conversation IDs
@@ -300,7 +297,7 @@ def search_conversations(
             status=c.status.value,
             lead_status=c.lead.status.value if c.lead else "NEW",
             is_urgent=c.is_urgent,
-            lead_id=c.lead_id,
+            lead_id=c.lead.id if c.lead else None,
             assigned_to_user_id=c.assigned_to_user_id,
             created_at=c.created_at.isoformat(),
             updated_at=c.updated_at.isoformat(),
@@ -339,7 +336,7 @@ def get_conversation(
         status=conversation.status.value,
         lead_status=conversation.lead.status.value if conversation.lead else "NEW",
         is_urgent=conversation.is_urgent,
-        lead_id=conversation.lead_id,
+        lead_id=conversation.lead.id if conversation.lead else None,
         assigned_to_user_id=conversation.assigned_to_user_id,
         created_at=conversation.created_at.isoformat(),
         updated_at=conversation.updated_at.isoformat(),
@@ -503,5 +500,3 @@ def update_conversation_notes(
         raise HTTPException(status_code=404, detail="Conversation not found") from exc
     except Exception as e:  # noqa: BLE001 (blind exception)
         raise HTTPException(status_code=500, detail=f"Failed to update notes: {e!s}") from e
-
-
