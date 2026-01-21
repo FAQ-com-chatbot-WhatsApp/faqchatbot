@@ -31,9 +31,9 @@ def run_command(cmd: list[str], description: str) -> bool:
     Returns:
         True if successful, False otherwise
     """
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"  {description}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     try:
         result = subprocess.run(cmd, check=True)
@@ -45,9 +45,7 @@ def run_command(cmd: list[str], description: str) -> bool:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Run E2E tests locally"
-    )
+    parser = argparse.ArgumentParser(description="Run E2E tests locally")
     parser.add_argument(
         "--phase",
         type=int,
@@ -94,11 +92,13 @@ def main():
 
     # Coverage
     if args.coverage:
-        cmd.extend([
-            "--cov=src/robbot",
-            "--cov-report=html",
-            "--cov-report=term-missing",
-        ])
+        cmd.extend(
+            [
+                "--cov=src/robbot",
+                "--cov-report=html",
+                "--cov-report=term-missing",
+            ]
+        )
 
     # Parallel execution
     if args.parallel:
