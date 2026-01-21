@@ -15,6 +15,16 @@ from robbot.infra.jobs.base_job import BaseJob, JobFailureError, JobRetryableErr
 logger = logging.getLogger(__name__)
 
 
+def process_gemini_job(conversation_id: str, message_id: str, user_input: str, phone: str) -> dict[str, Any]:
+    """
+    Module-level function for RQ to import and execute Gemini AI processing jobs.
+
+    This function creates a GeminiAIProcessingJob instance and runs it.
+    """
+    job = GeminiAIProcessingJob(conversation_id, message_id, user_input, phone)
+    return job.run()
+
+
 class GeminiAIProcessingJob(BaseJob):
     """
     Job para processar mensagem com IA Gemini.
@@ -45,7 +55,16 @@ class GeminiAIProcessingJob(BaseJob):
             phone: Número de telefone (para logging)
             **kwargs: Argumentos herdados
         """
-        super().__init__(**kwargs)
+        # Filter out RQ-specific kwargs that BaseJob doesn't accept
+        base_job_kwargs = {}
+        if "job_id" in kwargs:
+            base_job_kwargs["job_id"] = kwargs["job_id"]
+        if "attempt" in kwargs:
+            base_job_kwargs["attempt"] = kwargs["attempt"]
+        if "metadata" in kwargs:
+            base_job_kwargs["metadata"] = kwargs["metadata"]
+
+        super().__init__(**base_job_kwargs)
 
         self.conversation_id = conversation_id
         self.message_id = message_id
