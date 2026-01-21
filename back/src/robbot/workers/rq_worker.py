@@ -69,6 +69,27 @@ def main():
     logger.info("Redis URL: %s", settings.REDIS_URL)
     logger.info("Max retries: %s", settings.RQ_MAX_RETRIES)
 
+    # Sobrescrever a classe de death penalty globalmente
+    import rq.defaults
+    import rq.timeouts
+
+    class NoDeathPenalty(rq.timeouts.BaseDeathPenalty):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+        def setup_death_penalty(self):
+            # Não configurar nenhum sinal de morte
+            logger.debug("NoDeathPenalty: setup_death_penalty called - doing nothing")
+            pass
+
+        def cleanup_death_penalty(self):
+            # Não fazer limpeza
+            logger.debug("NoDeathPenalty: cleanup_death_penalty called - doing nothing")
+            pass
+
+    rq.defaults.DEFAULT_DEATH_PENALTY_CLASS = NoDeathPenalty
+    logger.info("Overrode DEFAULT_DEATH_PENALTY_CLASS with NoDeathPenalty")
+
     # Obter conexão Redis
     redis_conn = get_redis_client()
 
@@ -105,7 +126,7 @@ def main():
         name=worker_name,
         exception_handlers=[exception_handler],
         default_worker_ttl=420,  # 7 minutos - expira automaticamente se inativo
-        job_monitoring_interval=5,  # Verifica jobs a cada 5s
+        job_monitoring_interval=3600,  # Verificar jobs a cada 1 hora (menos frequente)
     )
 
     # Log de startup
