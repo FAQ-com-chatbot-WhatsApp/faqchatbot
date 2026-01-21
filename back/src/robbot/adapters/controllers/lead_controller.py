@@ -70,6 +70,7 @@ class MarkLostRequest(BaseModel):
 @router.get("", response_model=LeadListOut, tags=["Leads"])
 def list_leads(
     status: str | None = Query(None, description="Filter by status"),
+    phone_number: str | None = Query(None, description="Filter by phone number"),
     assigned_to_me: bool = Query(False, description="Show only assigned to current user"),
     min_score: int | None = Query(None, ge=0, le=100, description="Minimum maturity score"),
     unassigned_only: bool = Query(False, description="Show only unassigned leads"),
@@ -102,6 +103,7 @@ def list_leads(
     # Get leads using service with all filters
     leads, total = service.list_leads(
         status=status_enum,
+        phone_number=phone_number,
         assigned_to_user_id=current_user["user_id"] if assigned_to_me else None,
         min_score=min_score,
         unassigned_only=unassigned_only,
@@ -174,7 +176,7 @@ def get_lead_interactions(
         {
             "type": "note",
             "content": "Lead created automatically from WhatsApp conversation",
-            "timestamp": "2026-01-01T00:00:00Z"
+            "timestamp": "2026-01-01T00:00:00Z",
         }
     ]
 
