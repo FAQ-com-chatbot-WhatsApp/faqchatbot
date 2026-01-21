@@ -131,6 +131,7 @@ async def create_session(
                     except Exception:
                         pass
                 from robbot.config.settings import settings
+
                 webhook_url = webhook_url or settings.WAHA_WEBHOOK_URL
 
                 # Create DB record for existing WAHA session
