@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field, validator
 
 class MediaType(str, Enum):
     """Types of media in WhatsApp messages."""
+
     TEXT = "text"
     IMAGE = "image"
     VIDEO = "video"
@@ -26,6 +27,7 @@ class MediaType(str, Enum):
 
 class MessageType(str, Enum):
     """Message type enum."""
+
     TEXT = "text"
     MEDIA = "media"
     INTERACTIVE = "interactive"
@@ -35,12 +37,14 @@ class MessageType(str, Enum):
 
 class WAHAMessageContact(BaseModel):
     """Contact information in message."""
+
     name: str = Field(..., max_length=255)
     phone: str = Field(..., max_length=20, pattern=r"^\+?[\d\s\-\(\)]+$")
 
 
 class WAHAMessageLocation(BaseModel):
     """Location information in message."""
+
     latitude: float
     longitude: float
     name: str | None = Field(None, max_length=255)
@@ -48,6 +52,7 @@ class WAHAMessageLocation(BaseModel):
 
 class WAHAMessageMedia(BaseModel):
     """Media attachment in message."""
+
     media_type: MediaType
     mime_type: str = Field(..., max_length=100)
     sha256: str = Field(..., max_length=64)
@@ -132,6 +137,7 @@ class WAHAMessagePayload(BaseModel):
 
     class Config:
         """Pydantic config."""
+
         json_schema_extra = {
             "example": {
                 "message_id": "wamid.abc123",
@@ -157,6 +163,7 @@ class WAHAWebhookPayload(BaseModel):
 
     class Config:
         """Pydantic config."""
+
         json_schema_extra = {
             "example": {
                 "messages": [
