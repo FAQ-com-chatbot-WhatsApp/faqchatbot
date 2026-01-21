@@ -68,9 +68,7 @@ class MessagePipeline:
             raise ValidationError("Message content cannot be empty")
 
         if len(content) > max_length:
-            raise ValidationError(
-                f"Message exceeds maximum length ({len(content)} > {max_length})"
-            )
+            raise ValidationError(f"Message exceeds maximum length ({len(content)} > {max_length})")
 
         # Check for injection patterns
         injection_patterns = ["<script", "javascript:", "onclick=", "onerror="]
