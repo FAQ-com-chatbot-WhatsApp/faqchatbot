@@ -92,19 +92,9 @@ class IntentDetector:
             # Actually, I'll use format_intent_prompt for now or implement urgency one.
             # Looking at PromptTemplates, there is no urgency prompt.
             # For now, let's just return False or implement a generic check.
-            return False 
-
-            result = json.loads(response["response"].strip())
-            is_urgent = result.get("urgent", False)
-
-            if is_urgent:
-                logger.info("[SUCCESS] Urgency detected: %s", result.get("reason", "unknown"))
-
-            return is_urgent
-
-        except (LLMError, json.JSONDecodeError, KeyError):
-            # Se falhar parsing, assume não urgente
-            logger.warning("[WARNING] Failed to detect urgency, assuming not urgent")
+            return False
+        except Exception as e:
+            logger.warning("[WARNING] Failed to detect urgency: %s", e)
             return False
 
     async def try_extract_name(self, session: Any, message: str, context: str, conversation: ConversationModel) -> None:
@@ -224,7 +214,7 @@ class IntentDetector:
 
             logger.info(
                 "[SUCCESS] Score updated (lead_id=%s, %s → %s, delta=%s)",
-                conversation.lead_id,
+                conversation.lead.id,
                 current_score,
                 new_score,
                 score_delta,
