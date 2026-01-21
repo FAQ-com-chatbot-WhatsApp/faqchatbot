@@ -43,19 +43,12 @@ class ChromaVectorStore(VectorStore):
     async def add(self, conversation_id: str, text: str, metadata: dict[str, Any] | None = None) -> str:
         """Add a single conversation document."""
         return await asyncio.to_thread(
-            self._client.add_conversation,
-            conversation_id=conversation_id,
-            text=text,
-            metadata=metadata
+            self._client.add_conversation, conversation_id=conversation_id, text=text, metadata=metadata
         )
 
     async def search(self, conversation_id: str, limit: int = 5) -> list[dict[str, Any]]:
         """Search/Get context for a conversation."""
-        return await asyncio.to_thread(
-            self._client.get_context,
-            conversation_id=conversation_id,
-            limit=limit
-        )
+        return await asyncio.to_thread(self._client.get_context, conversation_id=conversation_id, limit=limit)
 
     async def add_documents(
         self,
@@ -88,10 +81,7 @@ class ChromaVectorStore(VectorStore):
                 )
 
             await asyncio.gather(
-                *[
-                    _add_one(doc, meta, doc_id)
-                    for doc, meta, doc_id in zip(documents, metadatas, ids, strict=False)
-                ]
+                *[_add_one(doc, meta, doc_id) for doc, meta, doc_id in zip(documents, metadatas, ids, strict=False)]
             )
             logger.debug("Added %d documents to ChromaDB", len(documents))
         except Exception as e:
