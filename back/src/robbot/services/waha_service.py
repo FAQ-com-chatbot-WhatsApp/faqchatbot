@@ -286,7 +286,9 @@ class WAHAService:
         try:
             count = self.redis_client.get(key)
             if count and int(count) >= settings.WAHA_MESSAGES_PER_HOUR:
-                logger.warning("Rate limit exceeded for %s: %s/%s msg/hour", chat_id, count, settings.WAHA_MESSAGES_PER_HOUR)
+                logger.warning(
+                    "Rate limit exceeded for %s: %s/%s msg/hour", chat_id, count, settings.WAHA_MESSAGES_PER_HOUR
+                )
                 return False
 
             pipe = self.redis_client.pipeline()
