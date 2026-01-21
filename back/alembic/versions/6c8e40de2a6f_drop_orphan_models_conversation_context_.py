@@ -1,4 +1,3 @@
-
 # pylint: disable=no-member
 """drop_orphan_models_conversation_context_and_alert
 
