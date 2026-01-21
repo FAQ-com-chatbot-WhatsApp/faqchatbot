@@ -80,17 +80,12 @@ def create_app() -> FastAPI:
         Exposes internal details in the response for debugging during development/testing.
         """
         import traceback
+
         logger = logging.getLogger("robbot.global")
         logger.exception("[ERROR] Unhandled exception: %s", exc)
 
         tb = traceback.format_exc()
-        return JSONResponse(
-            status_code=500,
-            content={
-                "detail": str(exc),
-                "traceback": tb.splitlines()
-            }
-        )
+        return JSONResponse(status_code=500, content={"detail": str(exc), "traceback": tb.splitlines()})
 
     return application
 
