@@ -1,0 +1,1400 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-01-20T13:38:10.704Z",
+  "stack": {
+    "primaryLanguage": "typescript",
+    "languages": [
+      "javascript",
+      "typescript",
+      "python"
+    ],
+    "frameworks": [],
+    "buildTools": [],
+    "testFrameworks": [],
+    "packageManager": null,
+    "isMonorepo": false,
+    "hasDocker": false,
+    "hasCI": false
+  },
+  "structure": {
+    "totalFiles": 43828,
+    "topDirectories": [
+      {
+        "name": "ARCHITECTURE.md",
+        "fileCount": 1
+      },
+      {
+        "name": "auto-commit.ps1",
+        "fileCount": 1
+      },
+      {
+        "name": "auto-commit.sh",
+        "fileCount": 1
+      },
+      {
+        "name": "back",
+        "fileCount": 440
+      },
+      {
+        "name": "CONTRIBUTING.md",
+        "fileCount": 1
+      },
+      {
+        "name": "frontend",
+        "fileCount": 43383
+      },
+      {
+        "name": "PRODUCT.md",
+        "fileCount": 1
+      }
+    ],
+    "languageDistribution": [
+      {
+        "extension": ".js",
+        "count": 18484
+      },
+      {
+        "extension": ".ts",
+        "count": 8942
+      },
+      {
+        "extension": ".map",
+        "count": 6990
+      },
+      {
+        "extension": ".cjs",
+        "count": 2314
+      },
+      {
+        "extension": ".cts",
+        "count": 2203
+      },
+      {
+        "extension": ".json",
+        "count": 1401
+      },
+      {
+        "extension": ".md",
+        "count": 1080
+      },
+      {
+        "extension": ".mjs",
+        "count": 639
+      },
+      {
+        "extension": ".mts",
+        "count": 239
+      },
+      {
+        "extension": ".py",
+        "count": 227
+      }
+    ]
+  },
+  "architecture": {
+    "layers": [
+      {
+        "name": "Config",
+        "description": "Configuration and constants",
+        "directories": [
+          "frontend",
+          "back\\src\\robbot\\config",
+          "back\\src\\robbot\\config\\prompts"
+        ],
+        "symbolCount": 11,
+        "dependsOn": []
+      },
+      {
+        "name": "Components",
+        "description": "UI components and views",
+        "directories": [
+          "frontend\\tests",
+          "frontend\\src\\components",
+          "frontend\\src\\app",
+          "frontend\\src\\components\\ui",
+          "frontend\\src\\app\\forgot",
+          "frontend\\src\\app\\styleguide",
+          "frontend\\src\\app\\reset",
+          "frontend\\src\\app\\(auth)\\signin",
+          "frontend\\src\\app\\(auth)\\signup",
+          "frontend\\src\\app\\styleguide\\components\\tooltip",
+          "frontend\\src\\app\\styleguide\\components\\tabs",
+          "frontend\\src\\app\\styleguide\\components\\table",
+          "frontend\\src\\app\\styleguide\\components\\select",
+          "frontend\\src\\app\\styleguide\\components\\separator",
+          "frontend\\src\\app\\styleguide\\components\\progress",
+          "frontend\\src\\app\\styleguide\\components\\message-input",
+          "frontend\\src\\app\\styleguide\\components\\message-bubble",
+          "frontend\\src\\app\\styleguide\\components\\login-form",
+          "frontend\\src\\app\\styleguide\\components\\input",
+          "frontend\\src\\app\\styleguide\\components\\dropdown-menu",
+          "frontend\\src\\app\\styleguide\\components\\checkbox",
+          "frontend\\src\\app\\styleguide\\components\\card",
+          "frontend\\src\\app\\styleguide\\components\\contact-card",
+          "frontend\\src\\app\\styleguide\\components\\calendar",
+          "frontend\\src\\app\\styleguide\\components\\badge",
+          "frontend\\src\\app\\styleguide\\components\\button",
+          "frontend\\src\\app\\styleguide\\components\\avatar",
+          "frontend\\src\\app\\styleguide\\components\\layouts\\page-container",
+          "frontend\\src\\app\\styleguide\\components\\layouts\\list-view",
+          "frontend\\src\\app\\styleguide\\components\\layouts\\kanban",
+          "frontend\\src\\app\\styleguide\\components\\layouts\\dashboard-grid",
+          "frontend\\src\\app\\styleguide\\components\\charts\\line",
+          "frontend\\src\\app\\styleguide\\components\\charts\\gauge",
+          "frontend\\src\\app\\styleguide\\components\\charts\\bar"
+        ],
+        "symbolCount": 46,
+        "dependsOn": []
+      },
+      {
+        "name": "Services",
+        "description": "Business logic and orchestration",
+        "directories": [
+          "frontend\\src\\services",
+          "back\\tests\\unit\\services",
+          "back\\src\\robbot\\services",
+          "back\\src\\robbot\\services\\analytics"
+        ],
+        "symbolCount": 240,
+        "dependsOn": []
+      },
+      {
+        "name": "Utils",
+        "description": "Shared utilities and helpers",
+        "directories": [
+          "frontend\\src\\lib",
+          "frontend\\src\\lib\\validations",
+          "back\\src\\robbot\\common"
+        ],
+        "symbolCount": 9,
+        "dependsOn": []
+      },
+      {
+        "name": "Controllers",
+        "description": "Request handling and routing",
+        "directories": [
+          "frontend\\src\\lib",
+          "back\\tests\\unit",
+          "back\\tests\\api",
+          "back\\tests\\unit\\controllers",
+          "back\\src\\robbot\\api",
+          "back\\src\\robbot\\api\\v1",
+          "back\\src\\robbot\\adapters\\controllers",
+          "back\\src\\robbot\\api\\v1\\routers"
+        ],
+        "symbolCount": 263,
+        "dependsOn": []
+      },
+      {
+        "name": "Models",
+        "description": "Data structures and domain objects",
+        "directories": [
+          "back\\alembic\\versions",
+          "back\\src\\robbot\\schemas",
+          "back\\src\\robbot\\domain",
+          "back\\src\\robbot\\infra\\db\\models"
+        ],
+        "symbolCount": 226,
+        "dependsOn": []
+      },
+      {
+        "name": "Repositories",
+        "description": "Data access and persistence",
+        "directories": [
+          "back\\src\\robbot\\adapters\\repositories"
+        ],
+        "symbolCount": 23,
+        "dependsOn": []
+      }
+    ],
+    "patterns": [
+      {
+        "name": "Singleton",
+        "confidence": 0.7,
+        "description": "Ensures a class has only one instance",
+        "occurrences": 1
+      },
+      {
+        "name": "Repository",
+        "confidence": 0.9,
+        "description": "Abstracts data access logic",
+        "occurrences": 25
+      },
+      {
+        "name": "Service Layer",
+        "confidence": 0.85,
+        "description": "Encapsulates business logic in service classes",
+        "occurrences": 24
+      },
+      {
+        "name": "Builder",
+        "confidence": 0.85,
+        "description": "Separates object construction from its representation",
+        "occurrences": 1
+      }
+    ],
+    "entryPoints": []
+  },
+  "symbols": {
+    "classes": [
+      {
+        "name": "ActiveConversationSchema",
+        "kind": "class",
+        "file": "back\\src\\robbot\\schemas\\metrics_schemas.py",
+        "line": 565,
+        "exported": true
+      },
+      {
+        "name": "ActivityHeatmapDataPointSchema",
+        "kind": "class",
+        "file": "back\\src\\robbot\\schemas\\metrics_schemas.py",
+        "line": 488,
+        "exported": true
+      },
+      {
+        "name": "AddTagRequest",
+        "kind": "class",
+        "file": "back\\src\\robbot\\adapters\\controllers\\tag_controller.py",
+        "line": 38,
+        "exported": true
+      },
+      {
+        "name": "AIStatsResponse",
+        "kind": "class",
+        "file": "back\\src\\robbot\\adapters\\controllers\\ai_controller.py",
+        "line": 43,
+        "exported": true
+      },
+      {
+        "name": "AnalyticsConfig",
+        "kind": "class",
+        "file": "back\\src\\robbot\\config\\analytics_config_loader.py",
+        "line": 9,
+        "exported": true
+      },
+      {
+        "name": "AnalyticsRepository",
+        "kind": "class",
+        "file": "back\\src\\robbot\\adapters\\repositories\\analytics_repository.py",
+        "line": 27,
+        "exported": true
+      },
+      {
+        "name": "AssignConversationRequest",
+        "kind": "class",
+        "file": "back\\src\\robbot\\adapters\\controllers\\handoff_controller.py",
+        "line": 36,
+        "exported": true
+      },
+      {
+        "name": "AssignRequest",
+        "kind": "class",
+        "file": "back\\src\\robbot\\adapters\\controllers\\lead_controller.py",
+        "line": 55,
+        "exported": true
+      },
+      {
+        "name": "AuditLogEntry",
+        "kind": "class",
+        "file": "back\\src\\robbot\\schemas\\auth.py",
+        "line": 293,
+        "exported": true
+      },
+      {
+        "name": "AuditLogListResponse",
+        "kind": "class",
+        "file": "back\\src\\robbot\\schemas\\auth.py",
+        "line": 307,
+        "exported": true
+      },
+      {
+        "name": "AuditLogModel",
+        "kind": "class",
+        "file": "back\\src\\robbot\\infra\\db\\models\\audit_log_model.py",
+        "line": 9,
+        "exported": true
+      },
+      {
+        "name": "AuditLogOut",
+        "kind": "class",
+        "file": "back\\src\\robbot\\adapters\\controllers\\audit_controller.py",
+        "line": 18,
+        "exported": true
+      },
+      {
+        "name": "AuditLogRepository",
+        "kind": "class",
+        "file": "back\\src\\robbot\\adapters\\repositories\\audit_log_repository.py",
+        "line": 11,
+        "exported": true
+      },
+      {
+        "name": "AuditService",
+        "kind": "class",
+        "file": "back\\src\\robbot\\services\\audit_service.py",
+        "line": 15,
+        "exported": true
+      },
+      {
+        "name": "AuthException",
+        "kind": "class",
+        "file": "back\\src\\robbot\\core\\custom_exceptions.py",
+        "line": 9,
+        "exported": true
+      },
+      {
+        "name": "AuthService",
+        "kind": "class",
+        "file": "back\\src\\robbot\\services\\auth_services.py",
+        "line": 35,
+        "exported": true
+      },
+      {
+        "name": "AuthSessionModel",
+        "kind": "class",
+        "file": "back\\src\\robbot\\infra\\db\\models\\auth_session_model.py",
+        "line": 15,
+        "exported": true
+      },
+      {
+        "name": "AuthSessionRepository",
+        "kind": "class",
+        "file": "back\\src\\robbot\\adapters\\repositories\\auth_session_repository.py",
+        "line": 14,
+        "exported": true
+      },
+      {
+        "name": "AuthSessionResponse",
+        "kind": "class",
+        "file": "back\\src\\robbot\\schemas\\auth.py",
+        "line": 189,
+        "exported": true
+      },
+      {
+        "name": "AutoscalingConfig",
+        "kind": "class",
+        "file": "back\\src\\robbot\\schemas\\worker.py",
+        "line": 52,
+        "exported": true
+      },
+      {
+        "name": "AutoscalingRecommendation",
+        "kind": "class",
+        "file": "back\\src\\robbot\\schemas\\worker.py",
+        "line": 34,
+        "exported": true
+      },
+      {
+        "name": "BackupCodesResponse",
+        "kind": "class",
+        "file": "back\\src\\robbot\\schemas\\auth.py",
+        "line": 247,
+        "exported": true
+      },
+      {
+        "name": "BaseJob",
+        "kind": "class",
+        "file": "back\\src\\robbot\\infra\\jobs\\base_job.py",
+        "line": 29,
+        "exported": true
+      },
+      {
+        "name": "BasePercentileSchema",
+        "kind": "class",
+        "file": "back\\src\\robbot\\schemas\\metrics_schemas.py",
+        "line": 23,
+        "exported": true
+      },
+      {
+        "name": "BaseRepository",
+        "kind": "class",
+        "file": "back\\src\\robbot\\adapters\\repositories\\base_repository.py",
+        "line": 23,
+        "exported": true
+      },
+      {
+        "name": "BlockUserRequest",
+        "kind": "class",
+        "file": "back\\src\\robbot\\schemas\\auth.py",
+        "line": 211,
+        "exported": true
+      },
+      {
+        "name": "BotAutonomyMetricsSchema",
+        "kind": "class",
+        "file": "back\\src\\robbot\\schemas\\metrics_schemas.py",
+        "line": 319,
+        "exported": true
+      },
+      {
+        "name": "BotAutonomyResponse",
+        "kind": "class",
+        "file": "back\\src\\robbot\\schemas\\metrics_schemas.py",
+        "line": 328,
+        "exported": true
+      },
+      {
+        "name": "BotResponseTimeResponse",
+        "kind": "class",
+        "file": "back\\src\\robbot\\schemas\\metrics_schemas.py",
+        "line": 387,
+        "exported": true
+      },
+      {
+        "name": "BotResponseTimeStatsSchema",
+        "kind": "class",
+        "file": "back\\src\\robbot\\schemas\\metrics_schemas.py",
+        "line": 375,
+        "exported": true
+      },
+      {
+        "name": "BusinessRuleError",
+        "kind": "class",
+        "file": "back\\src\\robbot\\core\\custom_exceptions.py",
+        "line": 17,
+        "exported": true
+      },
+      {
+        "name": "ButtonOption",
+        "kind": "class",
+        "file": "back\\src\\robbot\\schemas\\waha.py",
+        "line": 163,
+        "exported": true
+      },
+      {
+        "name": "CacheStatsSchema",
+        "kind": "class",
+        "file": "back\\src\\robbot\\schemas\\metrics_schemas.py",
+        "line": 340,
+        "exported": true
+      },
+      {
+        "name": "ChangePasswordRequest",
+        "kind": "class",
+        "file": "back\\src\\robbot\\schemas\\auth.py",
+        "line": 120,
+        "exported": true
+      },
+      {
+        "name": "CheckNumberRequest",
+        "kind": "class",
+        "file": "back\\src\\robbot\\schemas\\waha.py",
+        "line": 310,
+        "exported": true
+      },
+      {
+        "name": "ChromaClient",
+        "kind": "class",
+        "file": "back\\src\\robbot\\infra\\vectordb\\chroma_client.py",
+        "line": 24,
+        "exported": true
+      },
+      {
+        "name": "ChromaVectorStore",
+        "kind": "class",
+        "file": "back\\src\\robbot\\adapters\\external\\chroma_vector_store.py",
+        "line": 19,
+        "exported": true
+      },
+      {
+        "name": "CleanupJob",
+        "kind": "class",
+        "file": "back\\src\\robbot\\infra\\jobs\\scheduler_job.py",
+        "line": 156,
+        "exported": true
+      },
+      {
+        "name": "CloseRequest",
+        "kind": "class",
+        "file": "back\\src\\robbot\\adapters\\controllers\\conversation_controller.py",
+        "line": 76,
+        "exported": true
+      },
+      {
+        "name": "ColoredStructuredFormatter",
+        "kind": "class",
+        "file": "back\\src\\robbot\\core\\logging_setup.py",
+        "line": 44,
+        "exported": true
+      },
+      {
+        "name": "ConfigurationError",
+        "kind": "class",
+        "file": "back\\src\\robbot\\core\\custom_exceptions.py",
+        "line": 82,
+        "exported": true
+      },
+      {
+        "name": "ContactAboutResponse",
+        "kind": "class",
+        "file": "back\\src\\robbot\\schemas\\waha.py",
+        "line": 322,
+        "exported": true
+      },
+      {
+        "name": "ContactBlockRequest",
+        "kind": "class",
+        "file": "back\\src\\robbot\\schemas\\waha.py",
+        "line": 316,
+        "exported": true
+      },
+      {
+        "name": "ContextBuilder",
+        "kind": "class",
+        "file": "back\\src\\robbot\\services\\context_builder.py",
+        "line": 19,
+        "exported": true
+      },
+      {
+        "name": "ConversationAnalysisReportSchema",
+        "kind": "class",
+        "file": "back\\src\\robbot\\schemas\\metrics_schemas.py",
+        "line": 530,
+        "exported": true
+      },
+      {
+        "name": "ConversationFilterDTO",
+        "kind": "class",
+        "file": "back\\src\\robbot\\schemas\\filters.py",
+        "line": 125,
+        "exported": true
+      },
+      {
+        "name": "ConversationListOut",
+        "kind": "class",
+        "file": "back\\src\\robbot\\adapters\\controllers\\conversation_controller.py",
+        "line": 57,
+        "exported": true
+      },
+      {
+        "name": "ConversationMessageModel",
+        "kind": "class",
+        "file": "back\\src\\robbot\\infra\\db\\models\\conversation_message_model.py",
+        "line": 18,
+        "exported": true
+      },
+      {
+        "name": "ConversationMessageOut",
+        "kind": "class",
+        "file": "back\\src\\robbot\\adapters\\controllers\\conversation_controller.py",
+        "line": 26,
+        "exported": true
+      },
+      {
+        "name": "ConversationMessageRepository",
+        "kind": "class",
+        "file": "back\\src\\robbot\\adapters\\repositories\\conversation_message_repository.py",
+        "line": 13,
+        "exported": true
+      }
+    ],
+    "interfaces": [
+      {
+        "name": "LabelProps",
+        "kind": "interface",
+        "file": "frontend\\src\\components\\ui\\label.tsx",
+        "line": 6,
+        "exported": true
+      },
+      {
+        "name": "NavItem",
+        "kind": "interface",
+        "file": "frontend\\src\\app\\styleguide\\navigation.ts",
+        "line": 1,
+        "exported": true
+      },
+      {
+        "name": "NavSection",
+        "kind": "interface",
+        "file": "frontend\\src\\app\\styleguide\\navigation.ts",
+        "line": 6,
+        "exported": true
+      },
+      {
+        "name": "ContactCardProps",
+        "kind": "interface",
+        "file": "frontend\\src\\app\\styleguide\\components\\contact-card\\page.tsx",
+        "line": 9,
+        "exported": false
+      },
+      {
+        "name": "MessageBubbleProps",
+        "kind": "interface",
+        "file": "frontend\\src\\components\\ui\\message-bubble.tsx",
+        "line": 7,
+        "exported": false
+      },
+      {
+        "name": "MessageInputProps",
+        "kind": "interface",
+        "file": "frontend\\src\\components\\ui\\message-input.tsx",
+        "line": 9,
+        "exported": false
+      }
+    ],
+    "functions": [
+      {
+        "name": "add_request_size_limit",
+        "kind": "function",
+        "file": "back\\src\\robbot\\middleware\\request_size_limit.py",
+        "line": 48,
+        "exported": true
+      },
+      {
+        "name": "add_step",
+        "kind": "function",
+        "file": "back\\src\\robbot\\adapters\\controllers\\playbook_step_controller.py",
+        "line": 22,
+        "exported": true
+      },
+      {
+        "name": "add_tag_to_conversation",
+        "kind": "function",
+        "file": "back\\src\\robbot\\adapters\\controllers\\tag_controller.py",
+        "line": 138,
+        "exported": true
+      },
+      {
+        "name": "admin_token",
+        "kind": "function",
+        "file": "back\\tests\\api\\conftest.py",
+        "line": 128,
+        "exported": true
+      },
+      {
+        "name": "analytics_repo",
+        "kind": "function",
+        "file": "back\\tests\\integration\\test_realtime_dashboard_l4.py",
+        "line": 22,
+        "exported": true
+      },
+      {
+        "name": "analytics_repo",
+        "kind": "function",
+        "file": "back\\tests\\integration\\test_conversation_analysis_l3.py",
+        "line": 22,
+        "exported": true
+      },
+      {
+        "name": "api_base_url",
+        "kind": "function",
+        "file": "back\\tests\\api\\conftest.py",
+        "line": 12,
+        "exported": true
+      },
+      {
+        "name": "api_client",
+        "kind": "function",
+        "file": "back\\tests\\api\\conftest.py",
+        "line": 223,
+        "exported": true
+      },
+      {
+        "name": "assign_conversation",
+        "kind": "function",
+        "file": "back\\src\\robbot\\adapters\\controllers\\handoff_controller.py",
+        "line": 126,
+        "exported": true
+      },
+      {
+        "name": "assign_lead",
+        "kind": "function",
+        "file": "back\\src\\robbot\\adapters\\controllers\\lead_controller.py",
+        "line": 248,
+        "exported": true
+      },
+      {
+        "name": "auth_headers",
+        "kind": "function",
+        "file": "back\\tests\\api\\conftest.py",
+        "line": 217,
+        "exported": true
+      },
+      {
+        "name": "auth_service_mock",
+        "kind": "function",
+        "file": "back\\tests\\unit\\services\\test_idle_timeout.py",
+        "line": 18,
+        "exported": true
+      },
+      {
+        "name": "authenticated_admin",
+        "kind": "function",
+        "file": "back\\tests\\api\\conftest.py",
+        "line": 304,
+        "exported": true
+      },
+      {
+        "name": "authenticated_secretary",
+        "kind": "function",
+        "file": "back\\tests\\api\\conftest.py",
+        "line": 312,
+        "exported": true
+      },
+      {
+        "name": "AuthLayout",
+        "kind": "function",
+        "file": "frontend\\src\\app\\(auth)\\layout.tsx",
+        "line": 3,
+        "exported": true
+      },
+      {
+        "name": "auto_assign_lead",
+        "kind": "function",
+        "file": "back\\src\\robbot\\adapters\\controllers\\lead_controller.py",
+        "line": 276,
+        "exported": true
+      },
+      {
+        "name": "AvatarShowcase",
+        "kind": "function",
+        "file": "frontend\\src\\app\\styleguide\\components\\avatar\\page.tsx",
+        "line": 5,
+        "exported": true
+      },
+      {
+        "name": "BackendStatus",
+        "kind": "function",
+        "file": "frontend\\src\\app\\styleguide\\BackendStatus.tsx",
+        "line": 4,
+        "exported": true
+      },
+      {
+        "name": "BadgeShowcase",
+        "kind": "function",
+        "file": "frontend\\src\\app\\styleguide\\components\\badge\\page.tsx",
+        "line": 6,
+        "exported": true
+      },
+      {
+        "name": "block_contact",
+        "kind": "function",
+        "file": "back\\src\\robbot\\adapters\\controllers\\waha_controller.py",
+        "line": 938,
+        "exported": true
+      },
+      {
+        "name": "block_user",
+        "kind": "function",
+        "file": "back\\src\\robbot\\adapters\\controllers\\user_controller.py",
+        "line": 103,
+        "exported": true
+      },
+      {
+        "name": "bot_autonomy",
+        "kind": "function",
+        "file": "back\\src\\robbot\\adapters\\controllers\\dashboard_controller.py",
+        "line": 176,
+        "exported": true
+      },
+      {
+        "name": "bot_response_time_report",
+        "kind": "function",
+        "file": "back\\src\\robbot\\adapters\\controllers\\dashboard_controller.py",
+        "line": 194,
+        "exported": true
+      },
+      {
+        "name": "ButtonShowcase",
+        "kind": "function",
+        "file": "frontend\\src\\app\\styleguide\\components\\button\\page.tsx",
+        "line": 13,
+        "exported": true
+      },
+      {
+        "name": "cancel_job",
+        "kind": "function",
+        "file": "back\\src\\robbot\\adapters\\controllers\\queue_controller.py",
+        "line": 209,
+        "exported": true
+      },
+      {
+        "name": "check_admin",
+        "kind": "function",
+        "file": "back\\src\\robbot\\adapters\\controllers\\dashboard_controller.py",
+        "line": 76,
+        "exported": true
+      },
+      {
+        "name": "check_number_exists",
+        "kind": "function",
+        "file": "back\\src\\robbot\\adapters\\controllers\\waha_controller.py",
+        "line": 862,
+        "exported": true
+      },
+      {
+        "name": "CheckboxShowcase",
+        "kind": "function",
+        "file": "frontend\\src\\app\\styleguide\\components\\checkbox\\page.tsx",
+        "line": 6,
+        "exported": true
+      },
+      {
+        "name": "clear_failed_jobs",
+        "kind": "function",
+        "file": "back\\src\\robbot\\adapters\\controllers\\queue_controller.py",
+        "line": 301,
+        "exported": true
+      },
+      {
+        "name": "clear_rate_limiting",
+        "kind": "function",
+        "file": "back\\tests\\api\\conftest.py",
+        "line": 24,
+        "exported": true
+      },
+      {
+        "name": "client",
+        "kind": "function",
+        "file": "back\\tests\\integration\\test_mfa_login_flow.py",
+        "line": 22,
+        "exported": true
+      },
+      {
+        "name": "client_with_auth",
+        "kind": "function",
+        "file": "back\\tests\\unit\\controllers\\test_mfa_endpoints.py",
+        "line": 28,
+        "exported": true
+      },
+      {
+        "name": "client_with_mfa_user",
+        "kind": "function",
+        "file": "back\\tests\\integration\\test_mfa_login_flow.py",
+        "line": 35,
+        "exported": true
+      },
+      {
+        "name": "close_chroma_client",
+        "kind": "function",
+        "file": "back\\src\\robbot\\infra\\vectordb\\chroma_client.py",
+        "line": 348,
+        "exported": true
+      },
+      {
+        "name": "close_conversation",
+        "kind": "function",
+        "file": "back\\src\\robbot\\adapters\\controllers\\conversation_controller.py",
+        "line": 447,
+        "exported": true
+      },
+      {
+        "name": "close_gemini_client",
+        "kind": "function",
+        "file": "back\\src\\robbot\\adapters\\external\\gemini_client.py",
+        "line": 159,
+        "exported": true
+      },
+      {
+        "name": "close_queue_manager",
+        "kind": "function",
+        "file": "back\\src\\robbot\\infra\\redis\\queue.py",
+        "line": 206,
+        "exported": true
+      },
+      {
+        "name": "close_redis_pool",
+        "kind": "function",
+        "file": "back\\src\\robbot\\infra\\redis\\client.py",
+        "line": 32,
+        "exported": true
+      },
+      {
+        "name": "close_waha_client",
+        "kind": "function",
+        "file": "back\\src\\robbot\\adapters\\external\\waha_client.py",
+        "line": 1543,
+        "exported": true
+      },
+      {
+        "name": "cn",
+        "kind": "function",
+        "file": "frontend\\src\\lib\\utils.ts",
+        "line": 4,
+        "exported": true
+      },
+      {
+        "name": "complete_conversation",
+        "kind": "function",
+        "file": "back\\src\\robbot\\adapters\\controllers\\handoff_controller.py",
+        "line": 171,
+        "exported": true
+      },
+      {
+        "name": "configure_logging",
+        "kind": "function",
+        "file": "back\\src\\robbot\\core\\logging_setup.py",
+        "line": 117,
+        "exported": true
+      },
+      {
+        "name": "container",
+        "kind": "function",
+        "file": "back\\tests\\unit\\test_di_container.py",
+        "line": 35,
+        "exported": true
+      },
+      {
+        "name": "conversation_activity_heatmap",
+        "kind": "function",
+        "file": "back\\src\\robbot\\adapters\\controllers\\dashboard_controller.py",
+        "line": 385,
+        "exported": true
+      },
+      {
+        "name": "conversation_analysis_report",
+        "kind": "function",
+        "file": "back\\src\\robbot\\adapters\\controllers\\dashboard_controller.py",
+        "line": 438,
+        "exported": true
+      },
+      {
+        "name": "conversation_keywords",
+        "kind": "function",
+        "file": "back\\src\\robbot\\adapters\\controllers\\dashboard_controller.py",
+        "line": 398,
+        "exported": true
+      },
+      {
+        "name": "conversation_sentiment",
+        "kind": "function",
+        "file": "back\\src\\robbot\\adapters\\controllers\\dashboard_controller.py",
+        "line": 412,
+        "exported": true
+      },
+      {
+        "name": "conversation_service",
+        "kind": "function",
+        "file": "back\\tests\\unit\\services\\test_conversation_service_di.py",
+        "line": 50,
+        "exported": true
+      },
+      {
+        "name": "conversation_service",
+        "kind": "function",
+        "file": "back\\tests\\unit\\services\\test_conversation_service.py",
+        "line": 36,
+        "exported": true
+      },
+      {
+        "name": "conversation_topics",
+        "kind": "function",
+        "file": "back\\src\\robbot\\adapters\\controllers\\dashboard_controller.py",
+        "line": 425,
+        "exported": true
+      }
+    ],
+    "types": [
+      {
+        "name": "SignInValues",
+        "kind": "type",
+        "file": "frontend\\src\\lib\\validations\\auth.ts",
+        "line": 25,
+        "exported": true
+      },
+      {
+        "name": "SignUpValues",
+        "kind": "type",
+        "file": "frontend\\src\\lib\\validations\\auth.ts",
+        "line": 26,
+        "exported": true
+      },
+      {
+        "name": "FormFieldContextValue",
+        "kind": "type",
+        "file": "frontend\\src\\components\\ui\\form.tsx",
+        "line": 12,
+        "exported": false
+      },
+      {
+        "name": "FormItemContextValue",
+        "kind": "type",
+        "file": "frontend\\src\\components\\ui\\form.tsx",
+        "line": 59,
+        "exported": false
+      }
+    ],
+    "enums": []
+  },
+  "publicAPI": [
+    {
+      "name": "ActiveConversationSchema",
+      "kind": "class",
+      "file": "back\\src\\robbot\\schemas\\metrics_schemas.py",
+      "line": 565,
+      "exported": true
+    },
+    {
+      "name": "ActivityHeatmapDataPointSchema",
+      "kind": "class",
+      "file": "back\\src\\robbot\\schemas\\metrics_schemas.py",
+      "line": 488,
+      "exported": true
+    },
+    {
+      "name": "add_request_size_limit",
+      "kind": "function",
+      "file": "back\\src\\robbot\\middleware\\request_size_limit.py",
+      "line": 48,
+      "exported": true
+    },
+    {
+      "name": "add_step",
+      "kind": "function",
+      "file": "back\\src\\robbot\\adapters\\controllers\\playbook_step_controller.py",
+      "line": 22,
+      "exported": true
+    },
+    {
+      "name": "add_tag_to_conversation",
+      "kind": "function",
+      "file": "back\\src\\robbot\\adapters\\controllers\\tag_controller.py",
+      "line": 138,
+      "exported": true
+    },
+    {
+      "name": "AddTagRequest",
+      "kind": "class",
+      "file": "back\\src\\robbot\\adapters\\controllers\\tag_controller.py",
+      "line": 38,
+      "exported": true
+    },
+    {
+      "name": "admin_token",
+      "kind": "function",
+      "file": "back\\tests\\api\\conftest.py",
+      "line": 128,
+      "exported": true
+    },
+    {
+      "name": "AIStatsResponse",
+      "kind": "class",
+      "file": "back\\src\\robbot\\adapters\\controllers\\ai_controller.py",
+      "line": 43,
+      "exported": true
+    },
+    {
+      "name": "analytics_repo",
+      "kind": "function",
+      "file": "back\\tests\\integration\\test_realtime_dashboard_l4.py",
+      "line": 22,
+      "exported": true
+    },
+    {
+      "name": "analytics_repo",
+      "kind": "function",
+      "file": "back\\tests\\integration\\test_conversation_analysis_l3.py",
+      "line": 22,
+      "exported": true
+    },
+    {
+      "name": "AnalyticsConfig",
+      "kind": "class",
+      "file": "back\\src\\robbot\\config\\analytics_config_loader.py",
+      "line": 9,
+      "exported": true
+    },
+    {
+      "name": "AnalyticsRepository",
+      "kind": "class",
+      "file": "back\\src\\robbot\\adapters\\repositories\\analytics_repository.py",
+      "line": 27,
+      "exported": true
+    },
+    {
+      "name": "api_base_url",
+      "kind": "function",
+      "file": "back\\tests\\api\\conftest.py",
+      "line": 12,
+      "exported": true
+    },
+    {
+      "name": "api_client",
+      "kind": "function",
+      "file": "back\\tests\\api\\conftest.py",
+      "line": 223,
+      "exported": true
+    },
+    {
+      "name": "assign_conversation",
+      "kind": "function",
+      "file": "back\\src\\robbot\\adapters\\controllers\\handoff_controller.py",
+      "line": 126,
+      "exported": true
+    },
+    {
+      "name": "assign_lead",
+      "kind": "function",
+      "file": "back\\src\\robbot\\adapters\\controllers\\lead_controller.py",
+      "line": 248,
+      "exported": true
+    },
+    {
+      "name": "AssignConversationRequest",
+      "kind": "class",
+      "file": "back\\src\\robbot\\adapters\\controllers\\handoff_controller.py",
+      "line": 36,
+      "exported": true
+    },
+    {
+      "name": "AssignRequest",
+      "kind": "class",
+      "file": "back\\src\\robbot\\adapters\\controllers\\lead_controller.py",
+      "line": 55,
+      "exported": true
+    },
+    {
+      "name": "AuditLogEntry",
+      "kind": "class",
+      "file": "back\\src\\robbot\\schemas\\auth.py",
+      "line": 293,
+      "exported": true
+    },
+    {
+      "name": "AuditLogListResponse",
+      "kind": "class",
+      "file": "back\\src\\robbot\\schemas\\auth.py",
+      "line": 307,
+      "exported": true
+    },
+    {
+      "name": "AuditLogModel",
+      "kind": "class",
+      "file": "back\\src\\robbot\\infra\\db\\models\\audit_log_model.py",
+      "line": 9,
+      "exported": true
+    },
+    {
+      "name": "AuditLogOut",
+      "kind": "class",
+      "file": "back\\src\\robbot\\adapters\\controllers\\audit_controller.py",
+      "line": 18,
+      "exported": true
+    },
+    {
+      "name": "AuditLogRepository",
+      "kind": "class",
+      "file": "back\\src\\robbot\\adapters\\repositories\\audit_log_repository.py",
+      "line": 11,
+      "exported": true
+    },
+    {
+      "name": "AuditService",
+      "kind": "class",
+      "file": "back\\src\\robbot\\services\\audit_service.py",
+      "line": 15,
+      "exported": true
+    },
+    {
+      "name": "auth_headers",
+      "kind": "function",
+      "file": "back\\tests\\api\\conftest.py",
+      "line": 217,
+      "exported": true
+    },
+    {
+      "name": "auth_service_mock",
+      "kind": "function",
+      "file": "back\\tests\\unit\\services\\test_idle_timeout.py",
+      "line": 18,
+      "exported": true
+    },
+    {
+      "name": "authenticated_admin",
+      "kind": "function",
+      "file": "back\\tests\\api\\conftest.py",
+      "line": 304,
+      "exported": true
+    },
+    {
+      "name": "authenticated_secretary",
+      "kind": "function",
+      "file": "back\\tests\\api\\conftest.py",
+      "line": 312,
+      "exported": true
+    },
+    {
+      "name": "AuthException",
+      "kind": "class",
+      "file": "back\\src\\robbot\\core\\custom_exceptions.py",
+      "line": 9,
+      "exported": true
+    },
+    {
+      "name": "AuthLayout",
+      "kind": "function",
+      "file": "frontend\\src\\app\\(auth)\\layout.tsx",
+      "line": 3,
+      "exported": true
+    },
+    {
+      "name": "AuthService",
+      "kind": "class",
+      "file": "back\\src\\robbot\\services\\auth_services.py",
+      "line": 35,
+      "exported": true
+    },
+    {
+      "name": "AuthSessionModel",
+      "kind": "class",
+      "file": "back\\src\\robbot\\infra\\db\\models\\auth_session_model.py",
+      "line": 15,
+      "exported": true
+    },
+    {
+      "name": "AuthSessionRepository",
+      "kind": "class",
+      "file": "back\\src\\robbot\\adapters\\repositories\\auth_session_repository.py",
+      "line": 14,
+      "exported": true
+    },
+    {
+      "name": "AuthSessionResponse",
+      "kind": "class",
+      "file": "back\\src\\robbot\\schemas\\auth.py",
+      "line": 189,
+      "exported": true
+    },
+    {
+      "name": "auto_assign_lead",
+      "kind": "function",
+      "file": "back\\src\\robbot\\adapters\\controllers\\lead_controller.py",
+      "line": 276,
+      "exported": true
+    },
+    {
+      "name": "AutoscalingConfig",
+      "kind": "class",
+      "file": "back\\src\\robbot\\schemas\\worker.py",
+      "line": 52,
+      "exported": true
+    },
+    {
+      "name": "AutoscalingRecommendation",
+      "kind": "class",
+      "file": "back\\src\\robbot\\schemas\\worker.py",
+      "line": 34,
+      "exported": true
+    },
+    {
+      "name": "AvatarShowcase",
+      "kind": "function",
+      "file": "frontend\\src\\app\\styleguide\\components\\avatar\\page.tsx",
+      "line": 5,
+      "exported": true
+    },
+    {
+      "name": "BackendStatus",
+      "kind": "function",
+      "file": "frontend\\src\\app\\styleguide\\BackendStatus.tsx",
+      "line": 4,
+      "exported": true
+    },
+    {
+      "name": "BackupCodesResponse",
+      "kind": "class",
+      "file": "back\\src\\robbot\\schemas\\auth.py",
+      "line": 247,
+      "exported": true
+    },
+    {
+      "name": "BadgeShowcase",
+      "kind": "function",
+      "file": "frontend\\src\\app\\styleguide\\components\\badge\\page.tsx",
+      "line": 6,
+      "exported": true
+    },
+    {
+      "name": "BaseJob",
+      "kind": "class",
+      "file": "back\\src\\robbot\\infra\\jobs\\base_job.py",
+      "line": 29,
+      "exported": true
+    },
+    {
+      "name": "BasePercentileSchema",
+      "kind": "class",
+      "file": "back\\src\\robbot\\schemas\\metrics_schemas.py",
+      "line": 23,
+      "exported": true
+    },
+    {
+      "name": "BaseRepository",
+      "kind": "class",
+      "file": "back\\src\\robbot\\adapters\\repositories\\base_repository.py",
+      "line": 23,
+      "exported": true
+    },
+    {
+      "name": "block_contact",
+      "kind": "function",
+      "file": "back\\src\\robbot\\adapters\\controllers\\waha_controller.py",
+      "line": 938,
+      "exported": true
+    },
+    {
+      "name": "block_user",
+      "kind": "function",
+      "file": "back\\src\\robbot\\adapters\\controllers\\user_controller.py",
+      "line": 103,
+      "exported": true
+    },
+    {
+      "name": "BlockUserRequest",
+      "kind": "class",
+      "file": "back\\src\\robbot\\schemas\\auth.py",
+      "line": 211,
+      "exported": true
+    },
+    {
+      "name": "bot_autonomy",
+      "kind": "function",
+      "file": "back\\src\\robbot\\adapters\\controllers\\dashboard_controller.py",
+      "line": 176,
+      "exported": true
+    },
+    {
+      "name": "bot_response_time_report",
+      "kind": "function",
+      "file": "back\\src\\robbot\\adapters\\controllers\\dashboard_controller.py",
+      "line": 194,
+      "exported": true
+    },
+    {
+      "name": "BotAutonomyMetricsSchema",
+      "kind": "class",
+      "file": "back\\src\\robbot\\schemas\\metrics_schemas.py",
+      "line": 319,
+      "exported": true
+    }
+  ],
+  "dependencies": {
+    "mostImported": [
+      {
+        "file": "D:\\_projects\\clinica_go\\frontend\\.next\\types\\routes.d.ts",
+        "importedBy": 1
+      },
+      {
+        "file": "D:\\_projects\\clinica_go\\frontend\\src\\app\\globals.css",
+        "importedBy": 1
+      },
+      {
+        "file": "D:\\_projects\\clinica_go\\frontend\\src\\app\\styleguide\\BackendStatus.tsx",
+        "importedBy": 1
+      },
+      {
+        "file": "D:\\_projects\\clinica_go\\frontend\\src\\app\\styleguide\\navigation.ts",
+        "importedBy": 1
+      },
+      {
+        "file": "D:\\_projects\\clinica_go\\frontend\\src\\app\\reset\\ResetPasswordForm.tsx",
+        "importedBy": 1
+      }
+    ]
+  },
+  "stats": {
+    "totalSymbols": 967,
+    "exportedSymbols": 939,
+    "analysisTimeMs": 3642
+  }
+}
