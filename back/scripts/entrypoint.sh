@@ -179,6 +179,15 @@ if [ -f "./alembic.ini" ] && [ "${AUTO_MIGRATE,,}" = "true" ]; then
 else
   if [ -f "./alembic.ini" ]; then
     log_info "alembic.ini encontrado, mas AUTO_MIGRATE != true (${AUTO_MIGRATE}) — pulando migrações"
+    echo -e "${YELLOW}"
+    echo "========================================================================"
+    echo "  AVISO: MIGRAÇÕES AUTOMÁTICAS DESATIVADAS (AUTO_MIGRATE=${AUTO_MIGRATE})"
+    echo "  O banco de dados pode estar desatualizado em relação ao código."
+    echo ""
+    echo "  Para rodar as migrações manualmente, execute:"
+    echo "  docker compose exec api alembic upgrade head"
+    echo "========================================================================"
+    echo -e "${RESET}"
   else
     log_info "Nenhum alembic.ini encontrado — pulando migrações"
   fi
