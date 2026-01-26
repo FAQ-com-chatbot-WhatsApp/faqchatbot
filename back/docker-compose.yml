@@ -117,7 +117,7 @@ services:
 
     environment:
       PYTHONPATH: ${PYTHONPATH:-/app/src}
-      AUTO_MIGRATE: ${AUTO_MIGRATE:-true}
+      AUTO_MIGRATE: ${AUTO_MIGRATE:-false}
       SERVICE_NAME: "api"
       LOG_COLOR: "true"
       # Autoscaler tuning (kept for consistency; read by autoscaler)
