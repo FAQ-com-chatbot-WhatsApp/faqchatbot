@@ -1,6 +1,6 @@
 # API Integration Tests
 
-Testes de integração da API do Clinica GO usando **pytest + requests** em Python puro.
+Testes de integração da API GO. usando **pytest + requests** em Python puro.
 
 ## 📊 Cobertura
 
