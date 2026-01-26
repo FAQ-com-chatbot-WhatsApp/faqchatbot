@@ -1,4 +1,4 @@
-# 📚 Technical Documentation - Clinica Go Backend
+w# 📚 Technical Documentation - Clinica Go Backend
 
 **Project:** AI-powered automated customer service system for a medical clinic  
 **Stack:** FastAPI + PostgreSQL + Redis + Gemini AI + WAHA + LangChain + ChromaDB  
