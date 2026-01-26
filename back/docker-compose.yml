@@ -27,7 +27,7 @@ services:
       - db_data:/var/lib/postgresql/data
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U dba -d BotDB"]
+      test: [ "CMD-SHELL", "pg_isready -U dba -d BotDB" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -45,7 +45,7 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -71,25 +71,25 @@ services:
     image: devlikeapro/waha:chrome
     container_name: waha
     restart: unless-stopped
-    
+
     env_file:
       - .env
-    
+
     environment:
       WAHA_API_KEY: ${WAHA_API_KEY:-your-secret-api-key}
       WAHA_DASHBOARD_USERNAME: ${WAHA_DASHBOARD_USERNAME:-admin}
       WAHA_DASHBOARD_PASSWORD: ${WAHA_DASHBOARD_PASSWORD:-admin}
       WHATSAPP_SWAGGER_USERNAME: ${WHATSAPP_SWAGGER_USERNAME:-admin}
       WHATSAPP_SWAGGER_PASSWORD: ${WHATSAPP_SWAGGER_PASSWORD:-admin}
-    
+
     ports:
       - "127.0.0.1:3000:3000"
-    
+
     volumes:
       - waha_data:/app/.sessions
-    
+
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000/ping || exit 1"]
+      test: [ "CMD-SHELL", "wget -q --spider http://localhost:3000/ping || exit 1" ]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -102,14 +102,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: runtime-api  # Usa target específico do Dockerfile
+      target: runtime-api # Usa target específico do Dockerfile
       # BuildKit para builds paralelos e cache otimizado
       cache_from:
         - type=local,src=/tmp/.buildx-cache
       # Argumentos de build para otimização
       args:
         BUILDKIT_INLINE_CACHE: 1
-    image: tic-api:latest  # Nome da imagem para reutilização
+    image: tic-api:latest # Nome da imagem para reutilização
     container_name: api
     restart: unless-stopped
     env_file:
@@ -151,7 +151,6 @@ services:
 
       # WAHA (WhatsApp HTTP API) auth for server-to-server calls
       WAHA_API_KEY: ${WAHA_API_KEY:-your-secret-api-key}
-
       # Recomendação profissional:
       # SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required}
 
@@ -161,7 +160,7 @@ services:
     # DESENVOLVIMENTO: Volume bind permite hot-reload
     # PRODUÇÃO: Comente esta linha para usar código do build
     volumes:
-      - ./src:/app/src  # Monta apenas /src para hot-reload, não sobrescreve dependências
+      - ./src:/app/src # Monta apenas /src para hot-reload, não sobrescreve dependências
 
     depends_on:
       db:
@@ -174,7 +173,7 @@ services:
         condition: service_healthy
 
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:3333/api/v1/health || exit 1"]
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:3333/api/v1/health || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 6
@@ -188,11 +187,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: runtime-worker  # Usa target worker do Dockerfile consolidado
+      target: runtime-worker # Usa target worker do Dockerfile consolidado
     image: tic-worker:latest
     # container_name removido porque replicas > 1
     restart: unless-stopped
-    
+
     env_file:
       - .env
 
@@ -220,9 +219,9 @@ services:
 
     # DESENVOLVIMENTO: Volume bind permite hot-reload
     # COMENTADO: ao escalar com docker-compose --scale, volumes podem não funcionar em replicas
-    # Descomente apenas para desenvolvimento sem autoscaler
-    volumes:
-      - ./src:/app/src  # Apenas código fonte, não sobrescreve dependências
+    # Utilizando código da imagem para garantir consistência no autoscaling
+    # volumes:
+    #   - ./src:/app/src
 
     depends_on:
       db:
@@ -234,11 +233,11 @@ services:
 
     # Escalar workers conforme necessário:
     # docker compose up -d --scale worker=2
-    
+
     # NOTA: 'deploy.replicas' é ignorado em docker compose standalone
     # Use --scale worker=N para múltiplos workers em dev
     # Em produção (Swarm/K8s), descomente 'deploy' abaixo
-    
+
     # deploy:
     #   replicas: 2
     #   restart_policy:
@@ -247,7 +246,7 @@ services:
     #     max_attempts: 3
 
     healthcheck:
-      test: ["CMD-SHELL", "python -c 'from robbot.infra.redis.client import get_redis_client; get_redis_client().ping()' || exit 1"]
+      test: [ "CMD-SHELL", "python -c 'from robbot.infra.redis.client import get_redis_client; get_redis_client().ping()' || exit 1" ]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -263,8 +262,8 @@ services:
       - MAILDEV_WEB_PORT=1080
       - MAILDEV_SMTP_PORT=1025
     ports:
-      - "127.0.0.1:1080:1080"  # UI web
-      - "127.0.0.1:1025:1025"  # SMTP
+      - "127.0.0.1:1080:1080" # UI web
+      - "127.0.0.1:1025:1025" # SMTP
 
   # ---------------------------------------------------------------------------
   # Autoscaler (Ajuste automático de workers)
@@ -278,10 +277,10 @@ services:
     container_name: autoscaler
     restart: unless-stopped
     user: "root"
-    
+
     env_file:
       - .env
-    
+
     environment:
       PYTHONPATH: /app/src
       REDIS_URL: redis://redis:6379/0
@@ -294,7 +293,7 @@ services:
       AUTOSCALER_SCALE_UP_THRESHOLD: ${AUTOSCALER_SCALE_UP_THRESHOLD:-5}
       AUTOSCALER_SCALE_DOWN_THRESHOLD: ${AUTOSCALER_SCALE_DOWN_THRESHOLD:-0}
       AUTOSCALER_IDLE_TIME_THRESHOLD: ${AUTOSCALER_IDLE_TIME_THRESHOLD:-300}
-    
+
     command: >
       sh -c "
         while true; do
@@ -302,21 +301,19 @@ services:
           sleep 120
         done
       "
-    
+
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
-      api:
-        condition: service_healthy
-    
+
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./:/app/back:ro
-    
+
     healthcheck:
-      test: ["CMD-SHELL", "test -f /app/back/scripts/autoscale_workers.py || exit 1"]
+      test: [ "CMD-SHELL", "test -f /app/back/scripts/autoscale_workers.py || exit 1" ]
       interval: 30s
       timeout: 5s
       retries: 3
