@@ -6,9 +6,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from sqlalchemy.orm import Session
 
-from robbot.core.security import get_current_user
+from robbot.api.v1.dependencies import get_current_user, get_db
 from robbot.domain.enums import LeadStatus
-from robbot.infra.db.session import get_db
+from robbot.infra.db.models.user_model import UserModel
 from robbot.services.lead_service import LeadService
 
 router = APIRouter()
@@ -76,13 +76,13 @@ def list_leads(
     unassigned_only: bool = Query(False, description="Show only unassigned leads"),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    current_user: dict = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
     List leads with filters.
 
-    Requires JWT authentication.
+    Requires JWT authentication via HttpOnly cookie.
 
     Filters:
     - status: NEW, CONTACTED, QUALIFIED, CONVERTED, LOST
@@ -104,7 +104,7 @@ def list_leads(
     leads, total = service.list_leads(
         status=status_enum,
         phone_number=phone_number,
-        assigned_to_user_id=current_user["user_id"] if assigned_to_me else None,
+        assigned_to_user_id=current_user.id if assigned_to_me else None,
         min_score=min_score,
         unassigned_only=unassigned_only,
         limit=limit,
@@ -133,13 +133,13 @@ def list_leads(
 @router.get("/{lead_id}", response_model=LeadOut, tags=["Leads"])
 def get_lead(
     lead_id: str,
-    _current_user: dict = Depends(get_current_user),
+    _current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
     Get lead by ID.
 
-    Requires JWT authentication.
+    Requires JWT authentication via HttpOnly cookie.
     """
     service = LeadService(db)
     lead = service.repo.get_by_id(lead_id)
@@ -163,13 +163,13 @@ def get_lead(
 @router.get("/{lead_id}/interactions", response_model=list[dict], tags=["Leads"])
 def get_lead_interactions(
     lead_id: str,
-    _current_user: dict = Depends(get_current_user),
+    _current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
     Get lead interaction history.
 
-    Requires JWT authentication.
+    Requires JWT authentication via HttpOnly cookie.
     """
     # For now, return a mock interaction to satisfy tests
     return [
@@ -184,13 +184,13 @@ def get_lead_interactions(
 @router.post("", response_model=LeadOut, tags=["Leads"])
 def create_lead(
     request: CreateLeadRequest,
-    _current_user: dict = Depends(get_current_user),
+    _current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
     Create a new lead manually.
 
-    Requires JWT authentication.
+    Requires JWT authentication via HttpOnly cookie.
     """
     service = LeadService(db)
 
@@ -220,13 +220,13 @@ def create_lead(
 def update_lead_maturity(
     lead_id: str,
     request: UpdateMaturityRequest,
-    _current_user: dict = Depends(get_current_user),
+    _current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
     Update lead maturity score.
 
-    Requires JWT authentication.
+    Requires JWT authentication via HttpOnly cookie.
     """
     service = LeadService(db)
 
@@ -248,13 +248,13 @@ def update_lead_maturity(
 def assign_lead(
     lead_id: str,
     request: AssignRequest,
-    _current_user: dict = Depends(get_current_user),
+    _current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
     Assign lead to user (secretary).
 
-    Requires JWT authentication.
+    Requires JWT authentication via HttpOnly cookie.
     """
     service = LeadService(db)
 
@@ -275,13 +275,13 @@ def assign_lead(
 @router.post("/{lead_id}/auto-assign", tags=["Leads"])
 def auto_assign_lead(
     lead_id: str,
-    _current_user: dict = Depends(get_current_user),
+    _current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
     Auto-assign lead using round-robin algorithm.
 
-    Requires JWT authentication.
+    Requires JWT authentication via HttpOnly cookie.
     """
     service = LeadService(db)
 
@@ -302,13 +302,13 @@ def auto_assign_lead(
 @router.post("/{lead_id}/convert", tags=["Leads"])
 def convert_lead(
     lead_id: str,
-    _current_user: dict = Depends(get_current_user),
+    _current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
     Mark lead as converted (maturity score = 100).
 
-    Requires JWT authentication.
+    Requires JWT authentication via HttpOnly cookie.
     """
     service = LeadService(db)
 
@@ -331,13 +331,13 @@ def convert_lead(
 def mark_lead_lost(
     lead_id: str,
     request: MarkLostRequest,
-    _current_user: dict = Depends(get_current_user),
+    _current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
     Mark lead as lost with reason (maturity score = 0).
 
-    Requires JWT authentication.
+    Requires JWT authentication via HttpOnly cookie.
     """
     service = LeadService(db)
 
@@ -360,7 +360,7 @@ def mark_lead_lost(
 @router.delete("/{lead_id}", status_code=204, tags=["Leads"])
 def delete_lead(
     lead_id: str,
-    _current_user: dict = Depends(get_current_user),
+    _current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -387,13 +387,13 @@ def delete_lead(
 @router.post("/{lead_id}/restore", tags=["Leads"])
 def restore_lead(
     lead_id: str,
-    _current_user: dict = Depends(get_current_user),
+    _current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
     Restore a soft-deleted lead.
 
-    Requires JWT authentication.
+    Requires JWT authentication via HttpOnly cookie.
     """
     service = LeadService(db)
 
