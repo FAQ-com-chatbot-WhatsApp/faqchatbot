@@ -141,13 +141,19 @@ async def login_for_access_token(
         body = await request.json()
         if "rememberMe" in body:
             remember_me = bool(body["rememberMe"])
-    token_result = service.authenticate_user(
-        form_data.username,
-        form_data.password,
-        user_agent=user_agent,
-        ip_address=client_ip,
-        remember_me=remember_me,
-    )
+    try:
+        token_result = service.authenticate_user(
+            form_data.username,
+            form_data.password,
+            user_agent=user_agent,
+            ip_address=client_ip,
+            remember_me=remember_me,
+        )
+    except AuthException as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(exc),
+        ) from exc
     if token_result is None:
         # Checa se o usuário existe para mensagem mais clara
         user_exists = False
