@@ -1,9 +1,9 @@
 @echo off
-REM Script to run API tests for Clinica GO
+REM Script to run API tests for GO.
 
 setlocal enabledelayedexpansion
 
-echo 🧪 Running API Tests for Clinica GO
+echo 🧪 Running API Tests for GO.
 echo ====================================
 
 REM Get argument or default to "all"
