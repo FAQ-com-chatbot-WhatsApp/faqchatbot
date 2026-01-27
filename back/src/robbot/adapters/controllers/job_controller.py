@@ -5,9 +5,9 @@ Jobs Controller - Endpoints for manual job execution.
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from robbot.core.security import get_current_user
+from robbot.api.v1.dependencies import get_current_user, get_db
 from robbot.domain.enums import Role
-from robbot.infra.db.session import get_db
+from robbot.infra.db.models.user_model import UserModel
 from robbot.infra.jobs.reengagement_job import run_reengagement_job
 
 router = APIRouter()
@@ -15,7 +15,7 @@ router = APIRouter()
 
 @router.post("/reengagement", tags=["Jobs"])
 def trigger_reengagement_job(
-    current_user: dict = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
