@@ -274,8 +274,15 @@ async def refresh_token(request: Request, response: Response, db: Session = Depe
     }
 
 
+from robbot.infra.db.models.user_model import UserModel
+
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-def logout(request: Request, response: Response, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+def logout(
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user),
+):
     """
     Logout: revoke tokens in DB and clear HttpOnly cookies.
     """
@@ -330,7 +337,7 @@ async def password_change(
 
 
 @router.get("/me", response_model=AuthSessionResponse)
-def read_me(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+def read_me(current_user: UserModel = Depends(get_current_user), db: Session = Depends(get_db)):
     """Obtém informações da sessão de autenticação atual.
 
     Retorna AuthSessionResponse (dados relacionados à autenticação).
