@@ -1,0 +1,13 @@
+{
+  "active": [
+    {
+      "slug": "context-setup-plan",
+      "path": "plans/context-setup-plan.md",
+      "title": "Plan: Context Implementation & Exploration",
+      "linkedAt": "2026-01-27T13:37:49.336Z",
+      "status": "active"
+    }
+  ],
+  "completed": [],
+  "primary": "context-setup-plan"
+}
