@@ -13,9 +13,9 @@ from sqlalchemy.orm import Session
 from robbot.adapters.repositories.conversation_message_repository import ConversationMessageRepository
 from robbot.adapters.repositories.conversation_repository import ConversationRepository
 from robbot.adapters.repositories.lead_repository import LeadRepository
-from robbot.core.security import get_current_user
+from robbot.api.v1.dependencies import get_current_user, get_db
 from robbot.domain.enums import ConversationStatus
-from robbot.infra.db.session import get_db
+from robbot.infra.db.models.user_model import UserModel
 from robbot.services.handoff_service import HandoffService
 
 logger = logging.getLogger(__name__)
@@ -69,7 +69,7 @@ async def trigger_handoff(
     conversation_id: str,
     request: TriggerHandoffRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
 ) -> Any:
     """
     Disparar handoff bot→humano.
@@ -107,7 +107,7 @@ async def trigger_handoff(
             "[SUCCESS] Handoff triggered via API: conv=%s, reason=%s, user_id=%s",
             conversation_id,
             request.reason,
-            current_user["user_id"],
+            current_user.id,
         )
 
         return HandoffResponse(**result)
@@ -127,7 +127,7 @@ async def assign_conversation(
     conversation_id: str,
     request: AssignConversationRequest,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
 ) -> Any:
     """
     Atribuir conversa para atendente humano.
@@ -150,7 +150,7 @@ async def assign_conversation(
             "[SUCCESS] Conversation assigned via API: conv=%s, to_user=%s, by_user_id=%s",
             conversation_id,
             request.user_id,
-            current_user["user_id"],
+            current_user.id,
         )
 
         return HandoffResponse(
@@ -171,7 +171,7 @@ async def assign_conversation(
 async def complete_conversation(
     conversation_id: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
 ) -> Any:
     """
     Marcar conversa como concluída após agendamento confirmado.
@@ -188,13 +188,13 @@ async def complete_conversation(
         result = await handoff_service.mark_as_completed(
             session=db,
             conversation_id=conversation_id,
-            user_id=str(current_user["user_id"]),
+            user_id=str(current_user.id),
         )
 
         logger.info(
             "[SUCCESS] Conversation completed via API: conv=%s, user_id=%s, metrics=%s",
             conversation_id,
-            current_user["user_id"],
+            current_user.id,
             result["metrics"],
         )
 
@@ -214,7 +214,7 @@ async def complete_conversation(
 async def return_conversation_to_bot(
     conversation_id: str,
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
 ) -> Any:
     """
     Devolver conversa ao bot.
@@ -232,13 +232,13 @@ async def return_conversation_to_bot(
         await handoff_service.return_to_bot(
             session=db,
             conversation_id=conversation_id,
-            user_id=str(current_user["user_id"]),
+            user_id=str(current_user.id),
         )
 
         logger.info(
             "[SUCCESS] Conversation returned to bot via API: conv=%s, user_id=%s",
             conversation_id,
-            current_user["user_id"],
+            current_user.id,
         )
 
         return HandoffResponse(
@@ -258,7 +258,7 @@ async def return_conversation_to_bot(
 @router.get("/pending-handoff", response_model=list[PendingHandoffConversation])
 async def get_pending_handoffs(
     db: Session = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
 ) -> Any:
     """
     Listar conversas aguardando handoff.
@@ -314,7 +314,7 @@ async def get_pending_handoffs(
         logger.info(
             "[SUCCESS] Pending handoffs retrieved: %s conversas, user_id=%s",
             len(result),
-            current_user["user_id"],
+            current_user.id,
         )
 
         return result
