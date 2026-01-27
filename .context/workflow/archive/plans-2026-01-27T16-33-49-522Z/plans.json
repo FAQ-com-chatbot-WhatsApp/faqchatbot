@@ -1,0 +1,20 @@
+{
+  "active": [
+    {
+      "slug": "context-setup-plan",
+      "path": "plans/context-setup-plan.md",
+      "title": "Plan: Context Implementation & Exploration",
+      "linkedAt": "2026-01-27T13:37:49.336Z",
+      "status": "active"
+    },
+    {
+      "slug": "test-cases-documentation-rewrite",
+      "path": "plans/test-cases-documentation-rewrite.md",
+      "title": "Plano: Reescrita do Documento de Casos de Teste e Validação",
+      "linkedAt": "2026-01-27T14:58:20.031Z",
+      "status": "active"
+    }
+  ],
+  "completed": [],
+  "primary": "context-setup-plan"
+}
