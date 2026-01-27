@@ -1,4 +1,8 @@
-# Project Overview: Clinica Go (Conversational CRM Platform)
+---
+status: filled
+---
+# Project Overview: Clinica Go
+ (Conversational CRM Platform)
 
 This document provides a comprehensive overview of the **Clinica Go** codebase, outlining its purpose, high-level architecture, technology stack, and core development patterns.
 

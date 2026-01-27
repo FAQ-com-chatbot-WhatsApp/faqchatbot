@@ -1,165 +1,93 @@
-# Development Workflow Guide
+---
+status: filled
+---
+# Development Workflow: Clinica Go
 
-This document outlines the standard development workflow for the `clinica_go` repository, covering branching strategy, local environment setup, code review expectations, and onboarding guidelines.
+
+**Status:** filled
+**Updated:** 2026-01-27
+
+This document outlines the standard processes for setting up, developing, testing, and contributing to the **Clinica Go** repository.
 
 ---
 
-## I. Day-to-Day Development Process
+## 1. Prerequisites & Setup
 
-The workflow follows a standard feature-branch model, emphasizing clear requirements, mandatory testing, and thorough code review.
+Ensure you have the following installed on your local machine:
+- **Python 3.10+** (with `poetry` for dependency management).
+- **Node.js 18+** (with `pnpm` or `npm` recommended).
+- **Docker & Docker Compose** (for running the database, Redis, and WAHA).
 
-### 1. Planning and Initiation
+### Local Environment Setup
 
-1.  **Issue Creation:** All work must be initiated via a defined issue or task in the project management system.
-2.  **Branching:** Create a new branch off the `main` branch.
-
-    **Branch Naming Convention:**
-    *   `feat/descriptive-name`: For implementing new features.
-    *   `fix/descriptive-name`: For resolving bugs.
-    *   `chore/descriptive-name`: For maintenance, refactoring, or tooling updates (e.g., CI/CD configuration).
-
-### 2. Local Implementation
-
-1.  **Setup:** Ensure both the frontend (Next.js) and backend (Python/FastAPI) environments are running locally (see [Local Development](#iii-local-development)).
-2.  **Implementation:** Write code, ensuring adherence to established standards and conventions. Refer to the [Tooling Guide](./tooling.md) for details on linters and formatters.
-
-### 3. Testing and Committing
-
-1.  **Testing:** Write or update unit, integration, and API tests to cover all changes. **All tests must pass** before opening a Pull Request (PR). Detailed guidelines are found in the [Testing Strategy Guide](./testing-strategy.md).
-2.  **Committing:** Commit frequently. Commits should be atomic, descriptive, and address a single logical unit of work.
-
-### 4. Pull Request (PR)
-
-1.  **Open PR:** Push your branch and open a PR targeting the `main` branch.
-2.  **Description:** The PR description must clearly:
-    *   Summarize the changes.
-    *   Link back to the original issue/task ID.
-    *   Include necessary testing evidence (e.g., screenshots for UI changes, or confirmation of passing tests).
-
----
-
-## II. Branching & Releases
-
-We use a modified Trunk-Based Development approach where `main` is always stable and deployable.
-
-### Branch Stability
-
-| Branch Name | Purpose | Stability |
-| :--- | :--- | :--- |
-| `main` | Production ready. The source of truth for the latest release. | Highly stable |
-| `feat/*` / `fix/*` | Development of new features or bug fixes. Short-lived branches. | Volatile |
-
-### Release Cadence
-
-Releases are performed based on significant feature completion or urgent bug fixes, generally on a weekly or bi-weekly cycle.
-
-### Tagging Conventions (Semantic Versioning)
-
-Releases are marked using Semantic Versioning tags (`vX.Y.Z`) applied directly to the `main` branch:
-
-*   **`X` (Major):** Breaking changes or significant, non-backward compatible rewrites.
-*   **`Y` (Minor):** New features added in a backward-compatible manner.
-*   **`Z` (Patch):** Backward-compatible bug fixes or minor hotfixes.
+1.  **Clone the Repository:**
+    ```bash
+    git clone https://github.com/organization/clinica_go.git
+    cd clinica_go
+    ```
+2.  **Backend Setup:**
+    ```bash
+    cd back
+    poetry install
+    cp .env.example .env  # Update variables AS needed
+    ```
+3.  **Frontend Setup:**
+    ```bash
+    cd ../frontend
+    npm install
+    cp .env.example .env.local
+    ```
+4.  **Infrastructure:**
+    ```bash
+    docker-compose up -d  # Starts DB, Redis, and WAHA gateway
+    ```
 
 ---
 
-## III. Local Development
+## 2. Development Cycle
 
-The project is a monorepo consisting of a Python backend (`back/`) and a Next.js/React frontend (`frontend/`). Both must run concurrently.
+### Backend Development
+- **Running the API:** `poetry run uvicorn src.robbot.main:app --reload`
+- **Linting & Formatting:** Use `ruff` or `flake8` as configured.
+- **Dependency Injection:** When adding new services, register them in the DI container configuration. Ensure controllers receive dependencies via injection, not manual instantiation.
 
-### Prerequisites
-
-*   Python (3.10+)
-*   Node.js/npm (LTS version)
-
-### 1. Backend Setup (`back/`)
-
-It is strongly recommended to use a virtual environment for Python dependencies.
-
-```bash
-# Navigate to the backend directory
-cd back
-
-# 1. Create and activate a virtual environment
-python -m venv venv
-source venv/bin/activate
-
-# 2. Install dependencies (Requires requirements.txt to be accurate)
-pip install -r requirements.txt
-
-# 3. Run database migrations (using Alembic)
-alembic upgrade head
-
-# 4. Start the backend server (FastAPI with Uvicorn)
-uvicorn robbot.main:app --reload
-```
-The backend server will typically run on `http://127.0.0.1:8000`.
-
-### 2. Frontend Setup (`frontend/`)
-
-The frontend uses standard Node.js tools and Next.js.
-
-```bash
-# Navigate to the frontend directory
-cd frontend
-
-# 1. Install dependencies
-npm install
-
-# 2. Run the frontend development server
-npm run dev
-```
-The frontend server will typically run on `http://localhost:3000`.
-
-### 3. Running Tests
-
-Always run tests locally to verify changes.
-
-| Component | Directory | Command |
-| :--- | :--- | :--- |
-| **Backend (Python)** | `back/` | `pytest` |
-| **Frontend (Next.js)** | `frontend/` | `npm run test` |
+### Frontend Development
+- **Running the UI:** `npm run dev`
+- **Styleguide:** Access `/styleguide` in your browser to view and test atomic UI components in isolation.
+- **API Interaction:** Use the `fetchApi` wrapper. Never call `fetch` directly for internal API requests.
 
 ---
 
-## IV. Code Review Expectations
+## 3. Testing Requirements
 
-All Pull Requests (PRs) require formal review before merging into `main`. The goal is to ensure high code quality, consistency, and shared knowledge.
+Strict adherence to testing is required for all PRs.
 
-### Required Reviewer Checklist
-
-Reviewers must explicitly confirm the following points:
-
-1.  **Functionality:** Does the code correctly solve the intended problem? (Verified locally or via a CI deployment.)
-2.  **Test Coverage:** Are new features or fixes adequately covered by unit, integration, and API tests? (See [testing-strategy.md](./testing-strategy.md).)
-3.  **Style & Clarity:** Does the code adhere to style guides (e.g., Black/Flake8 for Python, ESLint/Prettier for TypeScript)? Is the logic clear, well-structured, and appropriately documented?
-4.  **Error Handling:** Are edge cases considered? Is error handling graceful and informative?
-5.  **Security:** Have known security risks (e.g., input validation, access control, rate limiting) been addressed?
-6.  **Performance:** Are there any obvious performance bottlenecks or excessive resource usage (e.g., N+1 database queries)?
-
-### Approval Process
-
-A PR requires at least **one approval from a non-author team member** before it can be merged. An approval signifies readiness for production deployment.
-
-### Collaboration with Agents
-
-If AI development agents are used, ensure that the PR clearly labels or discusses agent-generated code. Agent outputs must be reviewed with the same level of scrutiny as human-written code, particularly focusing on security and logical correctness.
+- **Backend:** Run `pytest`. Focus on:
+  - **Unit Tests:** For services and individual functions (`back/tests/unit`).
+  - **Integration Tests:** For database and DI resolution.
+  - **API Tests:** For verifying routers and authentication (`back/tests/api`).
+- **Frontend:** Run `npm run test` (if configured) or verify components within the styleguide.
 
 ---
 
-## V. Onboarding Tasks
+## 4. Git & Contribution Process
 
-Welcome aboard! Use these tasks to familiarize yourself with the codebase and workflow:
-
-1.  **Environment Setup:** Successfully complete the [Local Development](#iii-local-development) steps and confirm you can run the full application stack.
-2.  **Explore the Styleguide:** Run the frontend and navigate to the styleguide (typically accessible at `/styleguide` on the local development URL). This is the best way to understand the shared UI component library, including components like `AvatarShowcase`, `ButtonShowcase`, and various utility components (e.g., `TooltipShowcase`, `TabsShowcase`).
-3.  **Run All Tests:** Execute the full test suites in both the `back` and `frontend` directories (`pytest` and `npm run test`) to ensure your environment is configured correctly.
-4.  **Find a Starter Task:** Look for open issues labeled `good first issue` or contribute by improving existing documentation or tooling configurations.
+1.  **Branching:** Create a feature branch from `main`: `feature/short-description`.
+2.  **Commits:** Follow conventional commits (e.g., `feat:`, `fix:`, `docs:`, `chore:`).
+3.  **Pull Requests:**
+    - Ensure all tests pass locally.
+    - Reference the associated issue in the description.
+    - Await approval from at least one reviewer.
+4.  **Database Migrations:** If modifying models, generate a migration using Alembic:
+    ```bash
+    poetry run alembic revision --autogenerate -m "description"
+    ```
 
 ---
 
-## Related Resources
+## 5. Collaboration with Agents
 
-*   [Testing Strategy Guide](./testing-strategy.md)
-*   [Tooling Guide](./tooling.md)
-*   AGENTS.md (Internal Guide)
+When using AI agents (like Antigravity):
+- Utilize the **PREVC** (Plan -> Review -> Execute -> Verify -> Complete) workflow for non-trivial tasks.
+- Ensure the agent's playbooks in `.context/agents/*.md` are up to date with current project patterns.
+- Review agent-generated code with the same scrutiny as human-written code.

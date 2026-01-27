@@ -1,4 +1,8 @@
+---
+status: filled
+---
 # Data Flow and System Architecture
+
 
 The Clinica Go application employs a modern, layered architecture designed for reliability, scalability, and maintainability, crucial for handling high-volume, asynchronous conversational data. The system enforces strict boundaries between layers using Dependency Injection (DI) and centers its operations around the **Conversation** entity.
 
