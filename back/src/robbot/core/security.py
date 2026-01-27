@@ -6,13 +6,9 @@ from uuid import uuid4
 
 import bcrypt
 import jwt
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from robbot.config.settings import settings
 from robbot.core.custom_exceptions import AuthException
-
-security_scheme = HTTPBearer()
 
 
 def parse_device_name(user_agent: str | None) -> str:
@@ -149,66 +145,3 @@ def validate_password_policy(password: str) -> None:
         raise AuthException("Password must be at least 8 characters")
 
 
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
-) -> dict:
-    """
-    FastAPI dependency to extract and validate the current user from JWT token.
-
-    Args:
-        credentials: Bearer token from Authorization header
-        db: Database session (optional, for future user validation)
-
-    Returns:
-        dict: Decoded token payload with user info
-
-    Raises:
-        HTTPException: 401 if token is invalid or expired
-    """
-    if not credentials:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    try:
-        token = credentials.credentials
-        payload = decode_token(token, verify_exp=True)
-
-        # Validate token type
-        if payload.get("type") != "access":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token type. Expected access token.",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-
-        # Extract user_id from subject
-        user_id = payload.get("sub")
-        if not user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token payload invalid",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-
-        # Return user context (can be extended with DB validation)
-        return {
-            "user_id": int(user_id),
-            "exp": payload.get("exp"),
-            "iat": payload.get("iat"),
-        }
-
-    except AuthException as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
-            headers={"WWW-Authenticate": "Bearer"},
-        ) from e
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        ) from e
