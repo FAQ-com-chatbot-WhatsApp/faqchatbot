@@ -13,10 +13,10 @@ from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.conversation_message_repository import ConversationMessageRepository
 from robbot.core.custom_exceptions import NotFoundException
-from robbot.core.security import get_current_user
+from robbot.api.v1.dependencies import get_current_user, get_db
 from robbot.domain.enums import ConversationStatus, Role
 from robbot.infra.db.models.conversation_message_model import ConversationMessageModel
-from robbot.infra.db.session import get_db
+from robbot.infra.db.models.user_model import UserModel
 from robbot.services.conversation_service import ConversationService
 
 router = APIRouter()
@@ -94,7 +94,7 @@ def list_conversations(
     assigned_to_me: bool = Query(False, description="Show only assigned to current user"),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    current_user: dict = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -123,7 +123,7 @@ def list_conversations(
         phone_number=phone_number,
         status=status_enum,
         is_urgent=True if urgent_only else None,
-        assigned_to_user_id=current_user["user_id"] if assigned_to_me else None,
+        assigned_to_user_id=current_user.id if assigned_to_me else None,
         limit=limit,
         offset=offset,
     )
@@ -154,7 +154,7 @@ def export_conversations(
     start_date: str | None = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: str | None = Query(None, description="End date (YYYY-MM-DD)"),
     status: str | None = Query(None, description="Filter by status"),
-    current_user: dict = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -255,7 +255,7 @@ def export_conversations(
 def search_conversations(
     q: str = Query(..., min_length=3, description="Search query (min 3 chars)"),
     limit: int = Query(50, ge=1, le=100),
-    current_user: dict = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -315,7 +315,7 @@ def search_conversations(
 )
 def get_conversation(
     conversation_id: str,
-    _current_user: dict = Depends(get_current_user),
+    _current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -351,7 +351,7 @@ def get_conversation(
 def get_conversation_messages(
     conversation_id: str,
     limit: int = Query(50, ge=1, le=100),
-    _current_user: dict = Depends(get_current_user),
+    _current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -380,7 +380,7 @@ def get_conversation_messages(
 def update_conversation_status(
     conversation_id: str,
     request: UpdateStatusRequest,
-    _current_user: dict = Depends(get_current_user),
+    _current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -418,7 +418,7 @@ def update_conversation_status(
 def transfer_conversation(
     conversation_id: str,
     request: TransferRequest,
-    _current_user: dict = Depends(get_current_user),
+    _current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -447,7 +447,7 @@ def transfer_conversation(
 def close_conversation(
     conversation_id: str,
     request: CloseRequest,
-    _current_user: dict = Depends(get_current_user),
+    _current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -476,7 +476,7 @@ def close_conversation(
 def update_conversation_notes(
     conversation_id: str,
     request: UpdateNotesRequest,
-    _current_user: dict = Depends(get_current_user),
+    _current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
