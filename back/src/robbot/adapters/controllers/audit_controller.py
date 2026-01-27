@@ -6,9 +6,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
-from robbot.core.security import get_current_user
+from robbot.api.v1.dependencies import get_current_user, get_db
 from robbot.domain.enums import Role
-from robbot.infra.db.session import get_db
+from robbot.infra.db.models.user_model import UserModel
 from robbot.services.audit_service import AuditService
 
 router = APIRouter()
@@ -40,7 +40,7 @@ def list_audit_logs(
     entity_id: str | None = Query(None, description="Filter by entity ID"),
     user_id: int | None = Query(None, description="Filter by user ID"),
     limit: int = Query(100, ge=1, le=1000),
-    current_user: dict = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -88,7 +88,7 @@ def get_entity_audit_trail(
     entity_type: str,
     entity_id: str,
     limit: int = Query(50, ge=1, le=500),
-    current_user: dict = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
