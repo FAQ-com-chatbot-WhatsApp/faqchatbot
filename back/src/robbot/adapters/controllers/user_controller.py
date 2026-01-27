@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from robbot.api.v1.dependencies import get_current_user, get_db, require_role
 from robbot.core.custom_exceptions import NotFoundException
+from robbot.infra.db.models.user_model import UserModel
 from robbot.schemas.auth import BlockUserRequest, UnblockUserRequest
 from robbot.schemas.user import MessageResponse, UserList, UserOut, UserUpdate
 from robbot.services.user_service import UserService
@@ -14,7 +15,7 @@ router = APIRouter()
 
 @router.get("/me", response_model=UserOut)
 def get_current_user_profile(
-    current_user=Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
 ):
     """Obtém perfil do usuário autenticado atual.
 
@@ -28,7 +29,7 @@ def get_current_user_profile(
 def update_current_user_profile(
     payload: UserUpdate,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
 ):
     """Atualiza perfil do usuário autenticado atual.
 
