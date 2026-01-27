@@ -3,7 +3,10 @@
 This directory contains plans for coordinating work across documentation and playbooks.
 
 ## Plan Queue
-1. [Context Setup Plan](./context-setup-plan.md)
+1. [Cleanup Legacy Auth](./cleanup-legacy-auth.md)
+2. [Context Setup Plan](./context-setup-plan.md)
+3. [Test Cases Documentation Rewrite](./test-cases-documentation-rewrite.md)
+4. [Test Validation Execution](./test-validation-execution.md)
 
 ## How To Create Or Update Plans
 - Run "ai-context plan <name>" to scaffold a new plan template.
