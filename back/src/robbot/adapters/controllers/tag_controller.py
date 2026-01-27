@@ -8,9 +8,9 @@ from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.conversation_repository import ConversationRepository
 from robbot.adapters.repositories.conversation_tag_repository import ConversationTagRepository
-from robbot.core.security import get_current_user
+from robbot.api.v1.dependencies import get_current_user, get_db
 from robbot.domain.enums import Role
-from robbot.infra.db.session import get_db
+from robbot.infra.db.models.user_model import UserModel
 from robbot.services.tag_service import TagService
 
 router = APIRouter()
@@ -47,7 +47,7 @@ class AddTagRequest(BaseModel):
 @router.post("/tags", response_model=TagOut, tags=["Tags"])
 def create_tag(
     request: CreateTagRequest,
-    current_user: dict = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -82,7 +82,7 @@ def create_tag(
 
 @router.get("/tags", response_model=list[TagOut], tags=["Tags"])
 def list_tags(
-    current_user: dict = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -107,7 +107,7 @@ def list_tags(
 @router.delete("/{tag_id}", tags=["Tags"])
 def delete_tag(
     tag_id: int,
-    current_user: dict = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -138,7 +138,7 @@ def delete_tag(
 def add_tag_to_conversation(
     conversation_id: str,
     request: AddTagRequest,
-    current_user: dict = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -179,7 +179,7 @@ def add_tag_to_conversation(
 def remove_tag_from_conversation(
     conversation_id: str,
     tag_id: int,
-    current_user: dict = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -215,7 +215,7 @@ def remove_tag_from_conversation(
 @router.get("/conversations/{conversation_id}/tags", response_model=list[TagOut], tags=["Tags"])
 def get_conversation_tags(
     conversation_id: str,
-    current_user: dict = Depends(get_current_user),
+    current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
