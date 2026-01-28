@@ -97,13 +97,6 @@ async def receive_waha_webhook(
             extra={"webhook_log_id": log.id, "error": str(e)},
             exc_info=True,
         )
-    except Exception as e:  # noqa: BLE001 (blind exception)
-        logger.error(
-            "Erro inesperado ao processar webhook: %s",
-            e,
-            extra={"webhook_log_id": log.id, "error": str(e)},
-            exc_info=True,
-        )
 
     return WebhookLogOut.model_validate(log)
 
