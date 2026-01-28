@@ -2,7 +2,7 @@
 
 On-demand expertise for AI agents. Skills are task-specific procedures that get activated when relevant.
 
-> Project: clinica_go
+> Project: go.
 
 ## How Skills Work
 

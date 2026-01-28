@@ -22,8 +22,8 @@ Ensure you have the following installed on your local machine:
 
 1.  **Clone the Repository:**
     ```bash
-    git clone https://github.com/organization/clinica_go.git
-    cd clinica_go
+    git clone https://github.com/organization/go.git
+    cd go
     ```
 2.  **Backend Setup:**
     ```bash

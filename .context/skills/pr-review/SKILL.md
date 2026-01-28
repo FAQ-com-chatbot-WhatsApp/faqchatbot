@@ -1,10 +1,10 @@
 ---
-type: skill
 name: Pr Review
 description: Review pull requests against team standards and best practices
-skillSlug: pr-review
 phases: [R, V]
-generated: 2026-01-20
-status: unfilled
-scaffoldVersion: "2.0.0"
+source_tool: codex
+source_path: .codex\skills\pr-review\SKILL.md
+imported_at: 2026-01-28T18:28:34.081Z
+ai_context_version: 0.7.0
 ---
+
