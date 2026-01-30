@@ -1,4 +1,4 @@
-"""Constantes e funções para gerenciar localização da Clínica GO."""
+"""Constantes e funções para gerenciar localização da Go."""
 
 import logging
 
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 def get_clinic_location() -> dict:
     """
-    Retornar dados de localização da Clínica GO.
+    Retornar dados de localização da Go.
 
     Returns:
         Dict com:
@@ -33,12 +33,12 @@ async def send_clinic_location_via_waha(
     chat_id: str, session_name: str = "default", custom_title: str | None = None
 ) -> dict:
     """
-    Enviar localização da Clínica GO via WAHA.
+    Enviar localização da Go via WAHA.
 
     Args:
         chat_id: ID do chat do WhatsApp (número + @c.us)
         session_name: Nome da sessão WAHA
-        custom_title: Título customizado (padrão: "Clínica GO")
+        custom_title: Título customizado (padrão: "Go")
 
     Returns:
         Resposta do WAHA com dados da mensagem enviada
