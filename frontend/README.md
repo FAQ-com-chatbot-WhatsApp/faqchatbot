@@ -1,4 +1,4 @@
-# Frontend - Clínica Go
+# Frontend - Go
 
 Frontend desenvolvido com **Next.js** seguindo a documentação oficial.
 

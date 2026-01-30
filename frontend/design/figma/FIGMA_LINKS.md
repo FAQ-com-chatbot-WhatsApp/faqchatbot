@@ -1,4 +1,4 @@
-# Links do Figma - Clínica Go
+# Links do Figma - Go
 
 ## Projeto Principal
 

@@ -1,4 +1,4 @@
-z# Design System - Clínica Go
+z# Design System - Go
 
 Documentação e recursos de design do projeto.
 

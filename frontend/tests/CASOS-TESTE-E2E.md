@@ -1,8 +1,8 @@
-# Casos de Teste E2E - Clínica Go
+# Casos de Teste E2E - Go
 
 ## Visão Geral
 
-Este documento descreve os casos de teste end-to-end (e2e) implementados para a aplicação Clínica Go. Os testes foram criados usando Playwright e cobrem todas as principais funcionalidades da interface do usuário.
+Este documento descreve os casos de teste end-to-end (e2e) implementados para a aplicação Go. Os testes foram criados usando Playwright e cobrem todas as principais funcionalidades da interface do usuário.
 
 ## Estrutura dos Testes
 
@@ -325,4 +325,4 @@ npm run test:e2e
 
 ---
 
-*Documento gerado em Janeiro 2026 - Clínica Go*
+*Documento gerado em Janeiro 2026 - Go*
