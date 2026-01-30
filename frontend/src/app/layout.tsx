@@ -15,8 +15,8 @@ const lora = Lora({
 })
 
 export const metadata: Metadata = {
-  title: 'Clínica Go - Design System',
-  description: 'Design system for Clínica Go application',
+  title: 'Go - Design System',
+  description: 'Design system for Go application',
 }
 
 export default function RootLayout({
