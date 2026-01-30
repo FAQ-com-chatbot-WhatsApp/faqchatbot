@@ -111,7 +111,7 @@ class TestPhase4Messages:
         """UC-021: Create Location Message."""
         response = api_client.post(
             "/messages",
-            json={"type": "location", "latitude": -29.5838212, "longitude": -51.0869905, "title": "Clínica GO"},
+            json={"type": "location", "latitude": -29.5838212, "longitude": -51.0869905, "title": "Go"},
         )
 
         assert response.status_code == 201, response.text
