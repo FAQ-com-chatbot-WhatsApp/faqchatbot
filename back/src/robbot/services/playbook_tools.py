@@ -226,7 +226,7 @@ def send_playbook_message_tool(
 SEND_CLINIC_LOCATION_DECLARATION = {
     "name": "send_clinic_location",
     "description": (
-        "Envia a localização da Clínica GO via WhatsApp para o paciente. "
+        "Envia a localização da Go via WhatsApp para o paciente. "
         "Use quando o paciente perguntar sobre: endereço, localização, como chegar, "
         "onde fica a clínica, mapa, GPS, coordenadas, direções, rota, etc. "
         "A localização é enviada como um pin no WhatsApp com as coordenadas exatas da clínica. "
@@ -239,8 +239,8 @@ SEND_CLINIC_LOCATION_DECLARATION = {
             "chat_id": {"type": "string", "description": "ID do chat do WhatsApp (formato: 5551999999999@c.us)"},
             "custom_title": {
                 "type": "string",
-                "description": "Título customizado para o pin de localização (opcional, padrão: 'Clínica GO')",
-                "default": "Clínica GO",
+                "description": "Título customizado para o pin de localização (opcional, padrão: 'Go')",
+                "default": "Go",
             },
         },
         "required": ["chat_id"],
@@ -248,9 +248,9 @@ SEND_CLINIC_LOCATION_DECLARATION = {
 }
 
 
-def send_clinic_location_tool(chat_id: str, custom_title: str = "Clínica GO") -> dict[str, Any]:
+def send_clinic_location_tool(chat_id: str, custom_title: str = "Go") -> dict[str, Any]:
     """
-    Enviar localização da Clínica GO via WhatsApp.
+    Enviar localização da Go via WhatsApp.
 
     Args:
         db: Database session (não usado, mas mantido por consistência)
@@ -269,8 +269,8 @@ def send_clinic_location_tool(chat_id: str, custom_title: str = "Clínica GO") -
 
         return {
             "success": True,
-            "message": "Localização da Clínica GO enviada com sucesso",
-            "clinic_name": "Clínica GO",
+            "message": "Localização da Go enviada com sucesso",
+            "clinic_name": "Go",
             "address": "Av. São Miguel, 1000 - sala 102 - Centro, Dois Irmãos - RS",
             "result": result,
         }
