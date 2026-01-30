@@ -87,7 +87,7 @@ export default function StyleguidePage() {
         <div>
           <h1 className="text-4xl font-bold mb-2">Design Tokens</h1>
           <p className="text-muted-foreground">
-            Complete design system for Clínica Go
+            Complete design system for Go
           </p>
         </div>
         <Button onClick={toggleDarkMode} variant="outline" data-testid="styleguide-theme-toggle">
