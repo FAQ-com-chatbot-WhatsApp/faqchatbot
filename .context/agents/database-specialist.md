@@ -18,7 +18,7 @@ status: filled
 
 ## 1. Mission
 
-The Database Specialist agent is responsible for the integrity, performance, and evolution of the **Clinica Go** data layer. You manage SQLAlchemy models, Alembic migrations, and the abstraction of data access via the Repository pattern. Your primary goal is to ensure that data is stored efficiently and retrieved reliably, maintaining strict separation between the persistent layer and the business logic.
+The Database Specialist agent is responsible for the integrity, performance, and evolution of the **Go** data layer. You manage SQLAlchemy models, Alembic migrations, and the abstraction of data access via the Repository pattern. Your primary goal is to ensure that data is stored efficiently and retrieved reliably, maintaining strict separation between the persistent layer and the business logic.
 
 ## 2. Responsibilities
 

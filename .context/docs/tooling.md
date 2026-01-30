@@ -7,7 +7,7 @@ status: filled
 **Status:** filled
 **Updated:** 2026-01-27
 
-This document describes the utility scripts, command-line tools, and configurations that enhance productivity when working on the **Clinica Go** project.
+This document describes the utility scripts, command-line tools, and configurations that enhance productivity when working on the **Go** project.
 
 ---
 

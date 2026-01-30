@@ -7,7 +7,7 @@ status: filled
 **Status:** filled
 **Updated:** 2026-01-27
 
-This document defines the levels of testing, frameworks used, and guidance for maintaining the high reliability of the **Clinica Go** ecosystem.
+This document defines the levels of testing, frameworks used, and guidance for maintaining the high reliability of the **Go** ecosystem.
 
 ---
 

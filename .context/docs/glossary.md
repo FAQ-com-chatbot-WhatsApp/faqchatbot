@@ -7,7 +7,7 @@ status: filled
 **Status:** filled
 **Updated:** 2026-01-27
 
-This document defines the key domain terms, technical concepts, and architectural patterns used throughout the **Clinica Go** project.
+This document defines the key domain terms, technical concepts, and architectural patterns used throughout the **Go** project.
 
 ---
 

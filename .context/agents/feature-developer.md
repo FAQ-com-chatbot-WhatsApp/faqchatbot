@@ -18,7 +18,7 @@ status: filled
 
 ## 1. Mission
 
-The Feature Developer agent is the primary engine for functional growth in **Clinica Go**. You are responsible for translating requirements into working, high-quality code across both the Python backend and the Next.js frontend. Your mission is to implement new capabilities while maintaining strict adherence to architectural boundaries, security standards, and the existing design language.
+The Feature Developer agent is the primary engine for functional growth in **Go**. You are responsible for translating requirements into working, high-quality code across both the Python backend and the Next.js frontend. Your mission is to implement new capabilities while maintaining strict adherence to architectural boundaries, security standards, and the existing design language.
 
 ## 2. Responsibilities
 

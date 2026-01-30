@@ -7,7 +7,7 @@ status: filled
 **Status:** filled
 **Updated:** 2026-01-27
 
-This document outlines the standard processes for setting up, developing, testing, and contributing to the **Clinica Go** repository.
+This document outlines the standard processes for setting up, developing, testing, and contributing to the **Go** repository.
 
 ---
 

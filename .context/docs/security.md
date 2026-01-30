@@ -7,7 +7,7 @@ status: filled
 **Status:** filled
 **Updated:** 2026-01-27
 
-This document provides a comprehensive overview of the security measures, authentication models, and compliance practices implemented in the **Clinica Go** system.
+This document provides a comprehensive overview of the security measures, authentication models, and compliance practices implemented in the **Go** system.
 
 ---
 

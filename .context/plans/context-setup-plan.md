@@ -12,7 +12,7 @@ status: filled
 
 ## 1. Objectives & Scope
 
-The goal of this plan is to establish a robust and accurate context for the **Clinica Go** project within the `.context` directory. This includes:
+The goal of this plan is to establish a robust and accurate context for the **Go** project within the `.context` directory. This includes:
 - Verifying and refining generated documentation (architecture, data flow, structure).
 - Ensuring all AI Agent playbooks are tailored to the specific patterns of the codebase (FastAPI, Next.js, Dependency Injection).
 - Establishing the baseline for structured development using the PREVC workflow.

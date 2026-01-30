@@ -4,7 +4,7 @@ status: filled
 # Clinica Go Repository Documentation Index
 
 
-Welcome to the **Clinica Go** repository knowledge base. This documentation serves as the central hub for understanding the system's architecture, development practices, and key concepts.
+Welcome to the **Go** repository knowledge base. This documentation serves as the central hub for understanding the system's architecture, development practices, and key concepts.
 
 ---
 
