@@ -20,7 +20,7 @@ export default function StyleguideLayout({
           <Link href="/styleguide" className="text-xl font-bold font-serif">
             Design System
           </Link>
-          <p className="text-sm text-muted-foreground mt-1">Clínica Go</p>
+          <p className="text-sm text-muted-foreground mt-1">Go</p>
         </div>
 
         <nav className="flex flex-col gap-6">
