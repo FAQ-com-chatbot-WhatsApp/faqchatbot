@@ -28,11 +28,11 @@ export default function BadgeShowcase() {
       <section className="space-y-4">
         <h2 className="text-2xl font-medium">Status (Semântico)</h2>
         <div className="flex flex-wrap gap-4">
-          <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+          <Badge variant="default" className="bg-success text-success-foreground hover:bg-success/90">
             <Check />
             Success
           </Badge>
-          <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600">
+          <Badge variant="default" className="bg-warning text-warning-foreground hover:bg-warning/90">
             <AlertCircle />
             Warning
           </Badge>
@@ -40,7 +40,7 @@ export default function BadgeShowcase() {
             <X />
             Error
           </Badge>
-          <Badge variant="default" className="bg-blue-500 hover:bg-blue-600">
+          <Badge variant="default" className="bg-info text-info-foreground hover:bg-info/90">
             <Info />
             Info
           </Badge>
@@ -52,16 +52,16 @@ export default function BadgeShowcase() {
       <section className="space-y-4">
         <h2 className="text-2xl font-medium">Categorias</h2>
         <div className="flex flex-wrap gap-4">
-          <Badge variant="outline" className="border-purple-500 text-purple-600">
+          <Badge variant="outline" className="border-success text-success-foreground">
             Design
           </Badge>
-          <Badge variant="outline" className="border-blue-500 text-blue-600">
+          <Badge variant="outline" className="border-info text-info-foreground">
             Development
           </Badge>
-          <Badge variant="outline" className="border-orange-500 text-orange-600">
+          <Badge variant="outline" className="border-warning text-warning-foreground">
             Marketing
           </Badge>
-          <Badge variant="outline" className="border-green-500 text-green-600">
+          <Badge variant="outline" className="border-success text-success-foreground">
             Sales
           </Badge>
         </div>
@@ -168,7 +168,7 @@ export default function BadgeShowcase() {
 <Badge className="bg-info text-info-foreground">Info</Badge>
 
 {/* Categorias com outline */}
-<Badge variant="outline" className="border-purple-500 text-purple-600">
+<Badge variant="outline" className="border-success text-success-foreground">
   Design
 </Badge>`}</code>
           </pre>
