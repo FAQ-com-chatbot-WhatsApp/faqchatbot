@@ -4,6 +4,77 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* === SEMANTIC TOKENS: COLORS === */
+  --text-primary: var(--foreground);
+  --text-secondary: var(--secondary-foreground);
+  --text-muted: var(--muted-foreground);
+  --text-on-dark: var(--card-foreground);
+  --text-on-brand: var(--primary-foreground);
+
+  --surface-page: var(--background);
+  --surface-section: var(--popover);
+  --surface-card: var(--card);
+  --surface-subtle: var(--muted);
+  --surface-elevated: var(--popover);
+
+  --action-primary: var(--primary);
+  --action-primary-hover: color-mix(in oklab, var(--primary) 90%, black 10%);
+  --action-primary-active: color-mix(in oklab, var(--primary) 80%, black 20%);
+  --action-secondary: var(--secondary);
+  --action-strong: var(--accent);
+  --action-strong-hover: color-mix(in oklab, var(--accent) 90%, black 10%);
+
+  --border-default: var(--border);
+  --border-subtle: var(--muted);
+  --border-focus: var(--ring);
+
+  --status-success: var(--success);
+  --status-warning: var(--warning);
+  --status-error: var(--destructive);
+
+  /* === SEMANTIC TOKENS: SPACING === */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+
+  /* === SEMANTIC TOKENS: TYPOGRAPHY === */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* === SEMANTIC TOKENS: RADIUS === */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-full: 9999px;
+
+  /* === SEMANTIC TOKENS: SHADOWS === */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-card: 0 2px 8px 0 rgb(0 0 0 / 0.06);
+  --shadow-card-hover: 0 4px 16px 0 rgb(0 0 0 / 0.10);
+  --shadow-button-primary: 0 1px 4px 0 rgb(84 115 232 / 0.15);
+
+  /* === LEGACY/COMPATIBILITY === */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist);
@@ -44,13 +115,8 @@
   --color-warning-foreground: var(--warning-foreground);
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+  --radius-3xl: 20px;
+  --radius-4xl: 24px;
 }
 
 :root {
