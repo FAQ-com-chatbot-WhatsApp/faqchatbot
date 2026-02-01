@@ -38,16 +38,20 @@ class ConversationRepository(BaseRepository[ConversationModel]):
         )
         return self.db.scalars(stmt).first()
 
-    def get_by_id(self, id: str) -> ConversationModel | None:
+    def get_by_id(self, conversation_id: int) -> ConversationModel | None:  # pylint: disable=arguments-renamed
         """Get conversation by ID with lead loaded.
 
         Args:
-            id: Conversation ID
+            conversation_id: Conversation ID
 
         Returns:
             Conversation or None if not found
         """
-        stmt = select(ConversationModel).options(joinedload(ConversationModel.lead)).where(ConversationModel.id == id)
+        stmt = (
+            select(ConversationModel)
+            .options(joinedload(ConversationModel.lead))
+            .where(ConversationModel.id == conversation_id)
+        )
         return self.db.scalars(stmt).first()
 
     def update_status(
@@ -171,6 +175,12 @@ class ConversationRepository(BaseRepository[ConversationModel]):
 
         if "created_before" in filters and filters["created_before"]:
             stmt = stmt.where(ConversationModel.created_at <= filters["created_before"])
+
+        if "conversation_ids" in filters:
+            conversation_ids = filters["conversation_ids"]
+            if not conversation_ids:
+                return []
+            stmt = stmt.where(ConversationModel.id.in_(conversation_ids))
 
         # Order and paginate
         stmt = stmt.order_by(ConversationModel.updated_at.desc()).limit(limit).offset(offset)
