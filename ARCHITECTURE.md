@@ -183,6 +183,15 @@ Multi-layered security approach:
 - Audit logging for sensitive operations
 - Environment-based configuration
 
+**Development Mode (DEV_MODE):**
+- Phone number filtering for safe testing
+- Prevents bot from responding to all contacts in personal WhatsApp
+- Configured via environment variables:
+  - `DEV_MODE=true` - Enables development mode
+  - `DEV_PHONE_NUMBER=5511999999999` - Only this number receives bot responses
+- Logs ignored messages for debugging
+- **Use case**: Developer testing with personal phone connected to WAHA
+
 ### 7. Vector Database (ChromaDB)
 
 Semantic search for conversation context:

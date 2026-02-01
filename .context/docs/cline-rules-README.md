@@ -1,8 +1,7 @@
-# Project Rules and Guidelines
-
-> Auto-generated from .context/docs on 2026-02-01T07:07:59.324Z
-
-## README
+---
+source: .cline\rules\README.md
+type: clinerules
+---
 
 ---
 status: filled
@@ -53,4 +52,3 @@ Specialized roles for AI development agents working on this repository.
 2.  **Setup Environment:** Follow the steps in [Development Workflow](./development-workflow.md).
 3.  **Explore components:** Visit `/styleguide` in your browser once the frontend is running.
 4.  **Run Tests:** Execute `pytest` in the `back/` directory to verify your setup.
-

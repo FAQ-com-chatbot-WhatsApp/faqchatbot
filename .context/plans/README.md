@@ -5,8 +5,10 @@ This directory contains plans for coordinating work across documentation and pla
 ## Plan Queue
 1. [Cleanup Legacy Auth](./cleanup-legacy-auth.md)
 2. [Context Setup Plan](./context-setup-plan.md)
-3. [Test Cases Documentation Rewrite](./test-cases-documentation-rewrite.md)
-4. [Test Validation Execution](./test-validation-execution.md)
+3. [Fix Waha Message Polling](./fix-waha-message-polling.md)
+4. [Frontend Design System Usage Audit And Refactor](./frontend-design-system-usage-audit-and-refactor.md)
+5. [Test Cases Documentation Rewrite](./test-cases-documentation-rewrite.md)
+6. [Test Validation Execution](./test-validation-execution.md)
 
 ## How To Create Or Update Plans
 - Run "ai-context plan <name>" to scaffold a new plan template.

@@ -1,3 +1,8 @@
+---
+source: CONVENTIONS.md
+type: aider
+---
+
 # Project Rules and Guidelines
 
 > Auto-generated from .context/docs on 2026-02-01T07:07:59.324Z
