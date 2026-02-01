@@ -4,7 +4,6 @@
 # improve readability despite exceeding 100 characters
 
 import logging
-from uuid import UUID
 
 import chromadb
 from chromadb.config import Settings as ChromaSettings
@@ -231,7 +230,7 @@ class PlaybookService:
 
         for step in steps:
             # Get message details
-            msg = self.message_repo.get_by_id(UUID(step.message_id))
+            msg = self.message_repo.get_by_id(step.message_id)
             if not msg:
                 logger.warning("[WARNING] Message %s not found for step %s", step.message_id, step.id)
                 continue
