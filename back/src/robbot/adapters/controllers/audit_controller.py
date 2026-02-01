@@ -34,7 +34,7 @@ class AuditLogOut(BaseModel):
 # ===== ENDPOINTS =====
 
 
-@router.get("/audit-logs", response_model=list[AuditLogOut], tags=["Audit"])
+@router.get("/", response_model=list[AuditLogOut], tags=["Audit"])
 def list_audit_logs(
     entity_type: str | None = Query(None, description="Filter by entity type"),
     entity_id: str | None = Query(None, description="Filter by entity ID"),
@@ -83,7 +83,7 @@ def list_audit_logs(
     ]
 
 
-@router.get("/audit-logs/entity/{entity_type}/{entity_id}", response_model=list[AuditLogOut], tags=["Audit"])
+@router.get("/entity/{entity_type}/{entity_id}", response_model=list[AuditLogOut], tags=["Audit"])
 def get_entity_audit_trail(
     entity_type: str,
     entity_id: str,
