@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.webhook_log_repository import WebhookLogRepository
 from robbot.api.v1.dependencies import get_db
+from robbot.config.settings import get_settings
 from robbot.core.custom_exceptions import ExternalServiceError, QueueError
 from robbot.schemas.waha import WebhookLogOut, WebhookPayload
 from robbot.services.queue_service import get_queue_service
@@ -14,6 +15,7 @@ from robbot.services.queue_service import get_queue_service
 router = APIRouter()
 
 logger = logging.getLogger(__name__)
+settings = get_settings()
 
 
 def _get_webhook_repo(db: Session = Depends(get_db)) -> WebhookLogRepository:
@@ -66,12 +68,32 @@ async def receive_waha_webhook(
             chat_id = message_data.get("from", "")
             phone = chat_id.split("@")[0] if "@" in chat_id else chat_id
 
+            # DEV MODE: Filtrar mensagens por número de telefone (exceto sessão de teste)
+            if settings.DEV_MODE and settings.DEV_PHONE_NUMBER and payload.session != "test":
+                if phone != settings.DEV_PHONE_NUMBER:
+                    logger.info(
+                        "[DEV MODE] Mensagem ignorada - número não autorizado: %s (permitido: %s)",
+                        phone,
+                        settings.DEV_PHONE_NUMBER,
+                        extra={
+                            "dev_mode": True,
+                            "phone": phone,
+                            "allowed_phone": settings.DEV_PHONE_NUMBER,
+                            "webhook_log_id": log.id,
+                        },
+                    )
+                    return log
+                else:
+                    logger.info(
+                        "[DEV MODE] Mensagem aceita de número autorizado: %s",
+                        phone,
+                        extra={"dev_mode": True, "phone": phone, "webhook_log_id": log.id},
+                    )
+
             job_id = queue_service.enqueue_message_processing(
                 message_data=message_data,
                 message_direction="inbound",
             )
-
-            print(f"DEBUG: Job enqueued with ID: {job_id}")  # Debug print
 
             logger.info(
                 "[SUCCESS] Mensagem enfileirada para processamento: %s",
