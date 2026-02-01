@@ -123,13 +123,12 @@ async def create_session(
             if not existing:
                 # Extract webhook URL
                 webhook_url = data.webhook_url or None
-                if not webhook_url and data.config:
-                    try:
-                        webhooks = data.config.get("webhooks") or []
-                        if isinstance(webhooks, list) and webhooks:
-                            webhook_url = webhooks[0].get("url")
-                    except Exception:
-                        pass
+                if not webhook_url and isinstance(data.config, dict):
+                    webhooks = data.config.get("webhooks") or []
+                    if isinstance(webhooks, list) and webhooks:
+                        first_webhook = webhooks[0] if isinstance(webhooks[0], dict) else None
+                        if first_webhook:
+                            webhook_url = first_webhook.get("url")
                 from robbot.config.settings import settings
 
                 webhook_url = webhook_url or settings.WAHA_WEBHOOK_URL
@@ -986,7 +985,7 @@ async def unblock_contact(
 # ============================================================================
 @router.post(
     "/presence",
-    status_code=status.HTTP_201_CREATED,
+    status_code=status.HTTP_200_OK,
     tags=["Presence"],
     dependencies=[Depends(get_current_user)],
 )
