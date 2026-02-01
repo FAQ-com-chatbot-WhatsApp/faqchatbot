@@ -1,6 +1,5 @@
+# pylint: disable=no-member,invalid-name,line-too-long
 """Increase phone_number and related fields to 64 chars for WhatsApp compatibility
-
-# pylint: disable=no-member
 
 Revision ID: 9d9796c95ff4
 Revises: 6c8e40de2a6f
