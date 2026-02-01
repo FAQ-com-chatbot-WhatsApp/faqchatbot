@@ -13,16 +13,19 @@ from robbot.adapters.controllers import (
     job_controller,
     lead_controller,
     message_controller,
+    metrics_controller,
     notification_controller,
     playbook_controller,
     playbook_step_controller,
     queue_controller,
+    queues_controller,
     tag_controller,
     topic_controller,
     user_controller,
     waha_controller,
     webhook_controller,
 )
+from robbot.adapters.controllers.ai_controller import get_llm_interactions
 from robbot.api.v1 import worker_routes
 
 api_router = APIRouter()
@@ -34,8 +37,9 @@ api_router.include_router(user_controller.router, prefix="/users", tags=["Users"
 # System & Infrastructure
 api_router.include_router(health_controller.router, prefix="/health", tags=["Health"])
 api_router.include_router(queue_controller.router, prefix="/queue", tags=["Queue"])
+api_router.include_router(queues_controller.router, prefix="/queues", tags=["Queues"])
 api_router.include_router(worker_routes.router, prefix="/workers", tags=["Workers"])
-api_router.include_router(audit_controller.router, prefix="/audit", tags=["Audit"])
+api_router.include_router(audit_controller.router, prefix="/audit-logs", tags=["Audit"])
 api_router.include_router(job_controller.router, prefix="/jobs", tags=["Jobs"])
 
 # Core Features
@@ -52,10 +56,13 @@ api_router.include_router(playbook_step_controller.router, prefix="/playbook-ste
 
 # AI & Automation
 api_router.include_router(ai_controller.router, prefix="/ai", tags=["AI"])
+# Direct endpoint for compatibility
+api_router.add_api_route("/llm-interactions", get_llm_interactions, methods=["GET"], tags=["AI"])
 api_router.include_router(handoff_controller.router, prefix="/handoff", tags=["Handoff"])
 
 # Analytics & Metrics
 api_router.include_router(dashboard_controller.router, prefix="/dashboard", tags=["Dashboard"])
+api_router.include_router(metrics_controller.router, prefix="/metrics", tags=["Metrics"])
 
 # External Integrations
 api_router.include_router(waha_controller.router, prefix="/waha", tags=["WAHA"])
