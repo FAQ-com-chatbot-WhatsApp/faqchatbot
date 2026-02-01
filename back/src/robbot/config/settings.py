@@ -9,6 +9,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Core application configuration with sane defaults."""
 
+    # Development Mode (filter messages by phone number)
+    DEV_MODE: bool = Field(default=False, description="Enable dev mode (only respond to DEV_PHONE_NUMBER)")
+    DEV_PHONE_NUMBER: str | None = Field(
+        default=None, description="Phone number to respond to in dev mode (e.g., 5511999999999)"
+    )
+
     # Use Postgres via Docker for local/dev. Provide connection via env.
     # Example in .env:
     # DATABASE_URL=postgresql+psycopg2://postgres:postgres@db:5432/robbot
@@ -64,6 +70,7 @@ class Settings(BaseSettings):
     WAHA_API_KEY: str | None = Field(default=None)
     WAHA_SESSION_NAME: str = Field(default="default")
     WAHA_WEBHOOK_URL: str = Field(default="http://api:3333/api/v1/webhooks/waha")
+    WAHA_MOCK_REQUESTS: bool = Field(default=False, description="Use mock WAHA responses in DEV_MODE")
 
     # Anti-ban settings (WhatsApp best practices)
     WAHA_ANTI_BAN_ENABLED: bool = Field(default=True, description="Enable anti-ban delays")
