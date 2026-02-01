@@ -143,5 +143,3 @@ def validate_password_policy(password: str) -> None:
     """
     if not password or len(password) < 8:
         raise AuthException("Password must be at least 8 characters")
-
-
