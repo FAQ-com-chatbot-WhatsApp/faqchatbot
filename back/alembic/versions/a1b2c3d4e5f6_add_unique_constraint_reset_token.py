@@ -8,7 +8,7 @@ Adds unique constraint to credentials.reset_token to prevent duplicate tokens.
 This is a critical security fix to ensure password reset tokens are unique.
 """
 
-# pylint: disable=no-member,invalid-name
+# pylint: disable=no-member,invalid-name,line-too-long
 from collections.abc import Sequence
 
 from alembic import op
