@@ -5,6 +5,7 @@ Service para orquestração de filas (jobs assíncronos).
 import logging
 from typing import Any
 
+from rq.exceptions import NoSuchJobError
 from rq.job import Job
 from rq.registry import FailedJobRegistry
 
@@ -80,12 +81,14 @@ class QueueService:
         try:
             enqueued_job.timeout = 600  # 10 minutes
             enqueued_job.save()
-            logger.debug(f"Job {job.job_id} timeout set to 600s in Redis")
-        except Exception as e:
-            logger.warning(f"Failed to set job timeout in Redis: {e}")
+            logger.debug("Job %s timeout set to 600s in Redis", job.job_id)
+        except Exception as e:  # noqa: BLE001
+            logger.warning("Failed to set job timeout in Redis: %s", e)
 
         logger.info(
-            f"Mensagem enfileirada (fila: messages, timeout: {settings.RQ_JOB_TIMEOUT_MESSAGE}s) -> {job.job_id}",
+            "Mensagem enfileirada (fila: messages, timeout: %ss) -> %s",
+            settings.RQ_JOB_TIMEOUT_MESSAGE,
+            job.job_id,
             extra={
                 "job_id": job.job_id,
                 "queue": "messages",
@@ -185,7 +188,8 @@ class QueueService:
         )
 
         logger.info(
-            f"⬆️ Escalação enfileirada (fila: escalation) -> {job.job_id}",
+            "Escalação enfileirada (fila: escalation) -> %s",
+            job.job_id,
             extra={
                 "job_id": job.job_id,
                 "queue": "escalation",
@@ -221,7 +225,9 @@ class QueueService:
         )
 
         logger.info(
-            f"Job scheduled: {scheduled_job.job_id} (executa em {scheduled_job.scheduled_for})",
+            "Job scheduled: %s (executa em %s)",
+            scheduled_job.job_id,
+            scheduled_job.scheduled_for,
             extra={
                 "job_id": scheduled_job.job_id,
                 "scheduled_for": scheduled_job.scheduled_for.isoformat(),
@@ -230,6 +236,50 @@ class QueueService:
         )
 
         return scheduled_job.job_id
+
+    def enqueue_custom(
+        self,
+        func: Any,
+        queue_name: str = "messages",
+        job_id: str | None = None,
+        timeout: int | None = None,
+    ) -> str:
+        """
+        Enfileirar job customizado (sem argumentos).
+
+        Args:
+            func: Função a executar (sem argumentos)
+            queue_name: Nome da fila
+            job_id: ID customizado do job
+
+        Returns:
+            Job ID
+        """
+        queue = self.queue_manager.get_queue(queue_name)
+        
+        # Enqueue simples - permite timeout customizado
+        enqueue_kwargs: dict[str, Any] = {
+            "job_id": job_id,
+            "result_ttl": settings.RQ_DEFAULT_RESULT_TTL,
+            "failure_ttl": settings.RQ_DEFAULT_FAILURE_TTL,
+        }
+        if timeout is not None:
+            enqueue_kwargs["timeout"] = timeout
+
+        enqueued_job = queue.enqueue(func, **enqueue_kwargs)
+        
+        logger.info(
+            "Job customizado enfileirado (fila: %s) -> %s",
+            queue_name,
+            enqueued_job.id,
+            extra={
+                "job_id": enqueued_job.id,
+                "queue": queue_name,
+                "function": func.__name__,
+            },
+        )
+        
+        return enqueued_job.id
 
     # =====================================================================
     # MONITORAR JOBS
@@ -340,12 +390,13 @@ class QueueService:
                     job.requeue()
 
                     logger.info(
-                        f"Job {job_id} reenfileirado para retry",
+                        "Job %s reenfileirado para retry",
+                        job_id,
                         extra={"job_id": job_id, "queue": queue_name},
                     )
                     return True
 
-                except (QueueError, ValueError):
+                except (QueueError, ValueError, NoSuchJobError):
                     # Queue não existe ou job inválido
                     continue
 
@@ -455,7 +506,7 @@ _queue_service: QueueService | None = None
 
 def get_queue_service() -> QueueService:
     """Obter instância singleton de QueueService."""
-    global _queue_service
+    global _queue_service  # pylint: disable=global-statement
 
     if _queue_service is None:
         _queue_service = QueueService()
