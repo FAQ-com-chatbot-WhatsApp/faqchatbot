@@ -8,7 +8,7 @@ import json
 import secrets
 
 import pyotp
-from passlib.hash import bcrypt
+from passlib.hash import bcrypt, pbkdf2_sha256
 from sqlalchemy.orm import Session
 
 from robbot.adapters.repositories.credential_repository import CredentialRepository
@@ -41,7 +41,7 @@ class MfaService:
         for _ in range(count):
             code = secrets.token_hex(4)  # 8 hex chars
             codes.append(code)
-            hashed.append(bcrypt.hash(code))
+            hashed.append(pbkdf2_sha256.hash(code))
         return codes, json.dumps(hashed)
 
     def setup_mfa(self, user_id: int) -> tuple[str, str, list[str]]:
@@ -56,8 +56,11 @@ class MfaService:
         qr_code_base64 = base64.b64encode(uri.encode()).decode()
 
         codes, hashed_json = self._generate_backup_codes()
+        credential = self.credential_repo.get_by_user_id(user_id)
+        if not credential:
+            raise AuthException("Credential not found")
         self.credential_repo.enable_mfa(
-            credential=self.credential_repo.get_by_user_id(user_id),
+            credential=credential,
             secret=secret,
             backup_codes=hashed_json,
         )
@@ -84,7 +87,7 @@ class MfaService:
         # Procura correspondente
         match_index = None
         for i, h in enumerate(hashed_list):
-            if bcrypt.verify(code, h):
+            if pbkdf2_sha256.verify(code, h) or bcrypt.verify(code, h):
                 match_index = i
                 break
         if match_index is None:
