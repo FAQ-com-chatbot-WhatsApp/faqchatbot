@@ -22,12 +22,12 @@ class LLMInteractionRepository(BaseRepository[LLMInteractionModel]):
             limit: Maximum number of interactions
 
         Returns:
-            List of LLMInteractionModels ordered by timestamp
+            List of LLMInteractionModels ordered by created_at
         """
         return (
             self.session.query(LLMInteractionModel)
             .filter_by(conversation_id=conversation_id)
-            .order_by(LLMInteractionModel.timestamp.desc())
+            .order_by(LLMInteractionModel.created_at.desc())
             .limit(limit)
             .all()
         )
@@ -41,12 +41,12 @@ class LLMInteractionRepository(BaseRepository[LLMInteractionModel]):
             limit: Maximum number of interactions
 
         Returns:
-            List of LLMInteractionModels ordered by timestamp
+            List of LLMInteractionModels ordered by created_at
         """
         return (
             self.session.query(LLMInteractionModel)
             .filter_by(user_id=user_id)
-            .order_by(LLMInteractionModel.timestamp.desc())
+            .order_by(LLMInteractionModel.created_at.desc())
             .limit(limit)
             .all()
         )
