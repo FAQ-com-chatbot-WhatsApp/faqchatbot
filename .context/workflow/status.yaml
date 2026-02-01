@@ -1,21 +1,21 @@
 project:
-  name: "cleanup-legacy-auth-and-tests"
+  name: "fix-waha-message-polling"
   scale: MEDIUM
-  started: "2026-01-27T16:33:49.528Z"
+  started: "2026-02-01T09:25:25.807Z"
   current_phase: E
 
 phases:
   P:
     status: filled
-    started_at: "2026-01-27T16:33:49.528Z"
-    completed_at: "2026-01-27T16:34:32.782Z"
+    started_at: "2026-02-01T09:25:25.807Z"
+    completed_at: "2026-02-01T09:29:21.041Z"
   R:
     status: filled
-    started_at: "2026-01-27T16:34:32.792Z"
-    completed_at: "2026-01-27T16:34:50.814Z"
+    started_at: "2026-02-01T09:29:21.053Z"
+    completed_at: "2026-02-01T09:30:39.444Z"
   E:
     status: in_progress
-    started_at: "2026-01-27T16:34:50.822Z"
+    started_at: "2026-02-01T09:30:39.452Z"
   V:
     status: pending
   C:
@@ -24,16 +24,18 @@ phases:
 
 execution:
   history:
-    - timestamp: "2026-01-27T16:34:50.822Z"
+    - timestamp: "2026-02-01T09:30:39.452Z"
       phase: E
       action: started
-  last_activity: "2026-01-27T16:34:50.822Z"
+  last_activity: "2026-02-01T09:30:39.452Z"
   resume_context: "Fase E (Execução) em progresso"
+
+settings:
+  autonomous_mode: false
+  require_plan: true
+  require_approval: false
 
 approval:
   plan_created: true
-  plan_approved: true
-  approved_by: "architect"
-  approved_at: "2026-01-27T16:34:44.192Z"
-  approval_notes: "The plan is sound and addresses both the cleanup of legacy code and the necessary regression testing."
+  plan_approved: false
 
