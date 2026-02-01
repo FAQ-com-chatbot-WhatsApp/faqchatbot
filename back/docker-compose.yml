@@ -218,10 +218,8 @@ services:
       AUTOSCALER_IDLE_TIME_THRESHOLD: ${AUTOSCALER_IDLE_TIME_THRESHOLD:-300}
 
     # DESENVOLVIMENTO: Volume bind permite hot-reload
-    # COMENTADO: ao escalar com docker-compose --scale, volumes podem não funcionar em replicas
-    # Utilizando código da imagem para garantir consistência no autoscaling
-    # volumes:
-    #   - ./src:/app/src
+    volumes:
+      - ./src:/app/src
 
     depends_on:
       db:
@@ -249,6 +247,49 @@ services:
       test: [ "CMD-SHELL", "python -c 'from robbot.infra.redis.client import get_redis_client; get_redis_client().ping()' || exit 1" ]
       interval: 30s
       timeout: 5s
+      retries: 3
+
+  # ---------------------------------------------------------------------------
+  # Polling Worker (Substitui webhooks não-funcionais do WEBJS)
+  # ---------------------------------------------------------------------------
+  polling-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime-worker
+    image: tic-polling-worker:latest
+    container_name: polling-worker
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    environment:
+      PYTHONPATH: /app/src
+      DATABASE_URL: postgresql+psycopg2://dba:dba@db:5432/BotDB
+      REDIS_URL: redis://redis:6379/0
+      SERVICE_NAME: "polling-worker"
+      LOG_COLOR: "true"
+      WAHA_POLLING_INTERVAL: ${WAHA_POLLING_INTERVAL:-10}
+
+    # DESENVOLVIMENTO: Volume bind permite hot-reload
+    volumes:
+      - ./src:/app/src
+
+    command: python -m robbot.workers.polling_worker
+
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      waha:
+        condition: service_healthy
+
+    healthcheck:
+      test: [ "CMD-SHELL", "ps aux | grep polling_worker | grep -v grep || exit 1" ]
+      interval: 30s
+      timeout: 10s
       retries: 3
 
   # ---------------------------------------------------------------------------
