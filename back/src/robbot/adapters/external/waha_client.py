@@ -7,6 +7,7 @@ Swagger: https://waha.devlike.pro/swagger/
 import asyncio
 import logging
 import random
+import time
 from typing import Any
 
 import httpx
@@ -87,6 +88,8 @@ class WAHAClient:
             ExternalServiceError: On HTTP errors or timeouts
         """
         await self._ensure_client()
+        if settings.DEV_MODE and settings.WAHA_MOCK_REQUESTS:
+            return self._mock_request(method, endpoint, **kwargs)
 
         try:
             response = await self._client.request(method, endpoint, **kwargs)
@@ -110,7 +113,7 @@ class WAHAClient:
                 f"WAHA API error: {e.response.status_code} - {error_detail}",
                 original_error=e,
                 status_code=e.response.status_code,
-            )
+            ) from e
 
         except httpx.TimeoutException as e:
             logger.error(
@@ -119,7 +122,7 @@ class WAHAClient:
                 endpoint,
                 extra={"timeout": self.timeout},
             )
-            raise WAHAError(f"WAHA timeout after {self.timeout}s", original_error=e)
+            raise WAHAError(f"WAHA timeout after {self.timeout}s", original_error=e) from e
 
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error(
@@ -127,7 +130,66 @@ class WAHAClient:
                 e,
                 extra={"endpoint": endpoint, "method": method},
             )
-            raise WAHAError(f"WAHA request failed: {e}", original_error=e)
+            raise WAHAError(f"WAHA request failed: {e}", original_error=e) from e
+
+    def _mock_request(self, method: str, endpoint: str, **kwargs: Any) -> dict[str, Any] | list[dict[str, Any]]:
+        """Return mock WAHA responses for DEV_MODE."""
+        payload = kwargs.get("json") or {}
+
+        if endpoint == "/api/sessions" and method == "GET":
+            return [
+                {
+                    "name": "default",
+                    "status": "STOPPED",
+                    "qr": None,
+                }
+            ]
+
+        if endpoint == "/api/sessions" and method == "POST":
+            name = payload.get("name", "default")
+            return {
+                "name": name,
+                "status": "STOPPED",
+                "qr": None,
+            }
+
+        if endpoint.startswith("/api/sessions/"):
+            session_name = endpoint.split("/api/sessions/")[-1].split("/")[0]
+            if endpoint.endswith("/start") and method == "POST":
+                return {"name": session_name, "status": "STARTING"}
+            if endpoint.endswith("/restart") and method == "POST":
+                return {"name": session_name, "status": "STARTING"}
+            if endpoint.endswith("/stop") and method == "POST":
+                return {"name": session_name, "status": "STOPPED"}
+            if endpoint.endswith("/logout") and method == "POST":
+                return {"name": session_name, "status": "STOPPED"}
+            if method == "GET":
+                return {
+                    "name": session_name,
+                    "status": "SCAN_QR_CODE",
+                    "qr": None,
+                }
+
+        if endpoint.endswith("/presence") and method == "POST":
+            return {"success": True}
+        if endpoint.endswith("/presence") and method == "GET":
+            return []
+
+        if endpoint == "/api/sendText" and method == "POST":
+            return {
+                "message_id": "mock-message-id",
+                "timestamp": int(time.time()),
+                "chat_id": payload.get("chatId"),
+                "success": True,
+            }
+
+        if endpoint in {"/api/startTyping", "/api/stopTyping", "/api/sendSeen"} and method == "POST":
+            return {"success": True}
+
+        if endpoint == "/api/server/status" and method == "GET":
+            return {"status": "ok"}
+
+        return {"success": True}
 
     # ========================================================================
     # SESSION MANAGEMENT
@@ -508,13 +570,13 @@ class WAHAClient:
             typing_delay = len(text) * 0.1
             total_delay = min(base_delay + typing_delay, 120)  # Max 2min
 
-            logger.debug(f"Anti-ban delay: {total_delay:.1f}s for {len(text)} chars")
+            logger.debug("Anti-ban delay: %.1fs for %s chars", total_delay, len(text))
             await asyncio.sleep(total_delay)
 
             # Stop typing before sending
             await self.stop_typing(session, chat_id)
 
-        except Exception as e:  # noqa: BLE001 (blind exception)
+        except Exception as e:  # noqa: BLE001 (blind exception)  # pylint: disable=broad-exception-caught
             # Don't fail message sending if anti-ban flow fails
             logger.warning("[WARNING] Anti-ban flow error (non-critical): %s", e)
 
@@ -600,7 +662,7 @@ class WAHAClient:
             "downloadMedia": download_media,
         }
 
-        logger.info(f"Getting messages from {chat_id} (limit={limit}, offset={offset})")
+        logger.info("Getting messages from %s (limit=%s, offset=%s)", chat_id, limit, offset)
         return await self._request("GET", endpoint, params=params)
 
     async def send_link_custom_preview(
@@ -1481,7 +1543,7 @@ class WAHAClient:
         """
         return await self._request("GET", "/api/server/version")
 
-    async def get_server_environment(self, all: bool = False) -> dict[str, Any]:
+    async def get_server_environment(self, include_all: bool = False) -> dict[str, Any]:
         """Get WAHA server environment info.
 
         Args:
@@ -1492,7 +1554,7 @@ class WAHAClient:
 
         Docs: GET /api/server/environment
         """
-        params = {"all": all}
+        params = {"all": include_all}
         return await self._request("GET", "/api/server/environment", params=params)
 
     async def get_server_status(self) -> dict[str, Any]:
@@ -1528,7 +1590,7 @@ class WAHAClient:
 _waha_client_instance: WAHAClient | None = None
 
 
-def get_waha_client() -> WAHAClient:
+def get_waha_client() -> WAHAClient:  # pylint: disable=global-statement
     """Get or create singleton WAHA client instance.
 
     Returns:
@@ -1540,7 +1602,7 @@ def get_waha_client() -> WAHAClient:
     return _waha_client_instance
 
 
-async def close_waha_client():
+async def close_waha_client():  # pylint: disable=global-statement
     """Close global WAHA client connection."""
     global _waha_client_instance
     if _waha_client_instance:
