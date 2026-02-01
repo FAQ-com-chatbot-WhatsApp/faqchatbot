@@ -201,7 +201,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       SERVICE_NAME: "worker"
       LOG_COLOR: "true"
-      AUTO_MIGRATE: "false"
+      AUTO_MIGRATE: "true"
       RQ_JOB_TIMEOUT_MESSAGE: 600
       TESTING: "1"
       SMTP_HOST: maildev
