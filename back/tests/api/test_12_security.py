@@ -15,6 +15,8 @@ import pyotp
 import pytest
 import requests
 
+from .conftest import create_authenticated_user
+
 
 class TestPhase12Security:
     """Phase 12: Advanced Security."""
@@ -22,9 +24,8 @@ class TestPhase12Security:
     @pytest.fixture
     def dedicated_admin(self, api_base_url, maildev_base_url):
         """Create a dedicated admin for security tests to handle MFA state."""
-        from conftest import create_authenticated_user
-
-        email, session = create_authenticated_user(api_base_url, maildev_base_url, role="admin")
+        db_url = "postgresql://dba:dba@localhost:15432/BotDB"
+        email, session = create_authenticated_user(api_base_url, maildev_base_url, db_url, role="admin")
         return email, session
 
     def test_uc045_to_uc048_mfa_lifecycle(self, api_base_url, dedicated_admin):

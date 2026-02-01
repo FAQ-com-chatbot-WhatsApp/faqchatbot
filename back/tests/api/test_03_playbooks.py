@@ -35,7 +35,11 @@ class TestPhase3Playbooks:
         # Get existing topic or create one
         topics_response = api_client.get("/topics")
         if topics_response.status_code == 200:
-            topics = topics_response.json()
+            topics_payload = topics_response.json()
+            if isinstance(topics_payload, dict):
+                topics = topics_payload.get("topics", [])
+            else:
+                topics = topics_payload
             if topics:
                 topic_id = topics[0]["id"]  # Use first available topic
             else:
