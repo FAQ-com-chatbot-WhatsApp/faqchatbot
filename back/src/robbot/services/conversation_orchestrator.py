@@ -15,6 +15,7 @@ The orchestrator coordinates:
 5. Logging and persistence
 """
 
+import ast
 import logging
 from typing import Any
 
@@ -145,6 +146,9 @@ class ConversationOrchestrator:
                     session, conversation.id, message_text, from_phone=conversation.phone_number
                 )
 
+                # Persist conversation/lead/message early to avoid losing data on downstream failures
+                session.commit()
+
                 # Get conversational context
                 context_text = await context_builder.get_conversation_context(conversation.id)
 
@@ -169,12 +173,21 @@ class ConversationOrchestrator:
                     conversation=conversation,
                 )
 
-                response_text = response_data["response"]
+                response_text = self._normalize_response_text(response_data["response"])
+                
+                # DEBUG: Log response type and value
+                logger.debug(
+                    "[DEBUG] response_text type=%s, value=%s",
+                    type(response_text).__name__,
+                    str(response_text)[:200]
+                )
 
                 # Request name if appropriate
                 response_text = await self._append_name_request_if_needed(
                     conversation, context_text, response_text, spin_phase
                 )
+
+                response_text = self._normalize_response_text(response_text)
 
                 # Update score
                 new_score = await intent_detector.update_maturity_score(session, conversation, message_text, intent)
@@ -194,6 +207,13 @@ class ConversationOrchestrator:
                     {"intent": intent, "score": new_score},
                 )
 
+                # DEBUG: Log before send
+                logger.debug(
+                    "[DEBUG] Before WAHA send - response_text type=%s, value=%s",
+                    type(response_text).__name__,
+                    str(response_text)[:200]
+                )
+                
                 # Send response via WAHA
                 sent = await self._send_response_via_waha(chat_id, response_text, session_name)
 
@@ -246,12 +266,28 @@ class ConversationOrchestrator:
                 extra={"chat_id": chat_id, "phone": phone_number},
             )
 
-            # Try fallback
+            # Rollback any partial changes
+            session.rollback()
+
+            # Try fallback only for non-database errors
             try:
                 fallback_response = await self._generate_fallback_response(str(e))
                 await self._send_response_via_waha(chat_id, fallback_response, session_name)
+                
+                # Save fallback message to database
+                message_processor = MessageProcessor(session, self.transcription_service)
+                conversation = await self._get_or_create_conversation(session, chat_id, phone_number)
+                
+                await message_processor.save_outbound_message(
+                    session, conversation.id, fallback_response, to_phone=phone_number
+                )
+                
+                session.commit()
+                logger.info("[SUCCESS] Fallback response sent and saved (conv_id=%s)", conversation.id)
+                
             except (LLMError, WAHAError) as fallback_error:
                 logger.error("[ERROR] Fallback failed: %s", fallback_error)
+                session.rollback()
 
             raise BusinessRuleError(f"Failed to process message: {e}") from e
 
@@ -432,6 +468,21 @@ class ConversationOrchestrator:
             logger.error("[ERROR] Failed to send via WAHA: %s", e)
             raise WAHAError(f"Failed to send message: {e}", original_error=e) from e
 
+    def _normalize_response_text(self, response_text: Any) -> str:
+        """Normalize response payloads into plain text."""
+        if isinstance(response_text, dict):
+            return str(response_text.get("text", response_text))
+        if isinstance(response_text, list):
+            return " ".join(str(item) for item in response_text)
+        if isinstance(response_text, str) and response_text.lstrip().startswith("{") and "'text'" in response_text:
+            try:
+                parsed = ast.literal_eval(response_text)
+                if isinstance(parsed, dict) and "text" in parsed:
+                    return str(parsed["text"])
+            except (ValueError, SyntaxError):
+                pass
+        return str(response_text)
+
     async def _register_interaction(self, session: Any, lead_id: str | None, interaction_type: str, notes: str) -> None:
         """
         Register interaction in lead history.
@@ -454,7 +505,7 @@ class ConversationOrchestrator:
 
             interaction = LeadInteractionModel(
                 lead_id=lead_id,
-                user_id=user_id,  # Need to get user_id from somewhere
+                user_id=None,  # Bot interactions don't have a user_id (automated)
                 interaction_type=type_map.get(interaction_type, InteractionType.MESSAGE),
                 notes=notes,
             )
@@ -533,7 +584,7 @@ def get_conversation_orchestrator() -> ConversationOrchestrator:
     Returns:
         ConversationOrchestrator singleton
     """
-    global _orchestrator
+    global _orchestrator  # pylint: disable=global-statement
 
     if _orchestrator is None:
         _orchestrator = ConversationOrchestrator()
