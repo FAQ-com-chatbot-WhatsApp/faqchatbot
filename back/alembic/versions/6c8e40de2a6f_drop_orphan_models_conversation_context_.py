@@ -1,4 +1,4 @@
-# pylint: disable=no-member
+# pylint: disable=no-member,invalid-name,line-too-long
 """drop_orphan_models_conversation_context_and_alert
 
 Revision ID: 6c8e40de2a6f
@@ -11,7 +11,7 @@ from collections.abc import Sequence
 
 import sqlalchemy as sa
 
-from alembic import op  # type: ignore
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "6c8e40de2a6f"
