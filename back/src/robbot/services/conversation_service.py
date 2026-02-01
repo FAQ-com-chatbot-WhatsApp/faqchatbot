@@ -222,6 +222,7 @@ class ConversationService:
         status: ConversationStatus | None = None,
         is_urgent: bool | None = None,
         assigned_to_user_id: int | None = None,
+        conversation_ids: list[str] | None = None,
         limit: int = 50,
         offset: int = 0,
     ) -> tuple[list[ConversationModel], int]:
@@ -252,6 +253,8 @@ class ConversationService:
             filters["is_urgent"] = is_urgent
         if assigned_to_user_id is not None:
             filters["assigned_to_user_id"] = assigned_to_user_id
+        if conversation_ids is not None:
+            filters["conversation_ids"] = conversation_ids
 
         conversations = repo.find_by_criteria(filters, limit=limit, offset=offset)
         total = len(repo.find_by_criteria(filters))
