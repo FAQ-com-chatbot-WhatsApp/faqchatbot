@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 class MfaSetupRequest(BaseModel):
     """Request to setup MFA (no payload needed, uses current user)."""
 
-    pass
+    model_config = {"extra": "forbid"}
 
 
 class MfaSetupResponse(BaseModel):
@@ -17,6 +17,7 @@ class MfaSetupResponse(BaseModel):
 
     secret: str = Field(..., description="Base32 TOTP secret")
     qr_code_base64: str = Field(..., description="QR code image as base64")
+    qr_code: str = Field(..., description="QR code image as base64 (legacy key)")
     backup_codes: list[str] = Field(..., description="List of backup codes (plain text)")
 
 
@@ -31,6 +32,7 @@ class MfaVerifyResponse(BaseModel):
 
     verified: bool
     message: str
+    mfa_enabled: bool
 
 
 class MfaDisableRequest(BaseModel):
@@ -43,3 +45,4 @@ class MfaDisableResponse(BaseModel):
     """Response after disabling MFA."""
 
     message: str
+    mfa_enabled: bool
