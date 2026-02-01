@@ -2,6 +2,8 @@
 Conversation Tag Repository - manage conversation-tag associations.
 """
 
+from datetime import datetime
+
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, MetaData, String, Table, text
 from sqlalchemy.orm import Session
 
@@ -45,7 +47,13 @@ class ConversationTagRepository:
             return  # Already associated
 
         # Insert
-        self.session.execute(self.table.insert().values(conversation_id=conversation_id, tag_id=tag_id))
+        self.session.execute(
+            self.table.insert().values(
+                conversation_id=conversation_id,
+                tag_id=tag_id,
+                created_at=datetime.utcnow(),
+            )
+        )
         self.session.flush()
 
     def remove_tag_from_conversation(self, conversation_id: str, tag_id: int) -> bool:
