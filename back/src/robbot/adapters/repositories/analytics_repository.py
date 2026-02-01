@@ -10,6 +10,7 @@ Seções:
 3. Bot Performance Analytics (autonomia do bot)
 4. Dashboard Analytics (sumários agregados)
 """
+# pylint: disable=not-callable
 
 import logging
 from datetime import datetime
@@ -25,15 +26,12 @@ from robbot.infra.db.models.conversation_model import ConversationModel
 from robbot.infra.db.models.lead_model import LeadModel
 from robbot.infra.db.models.user_model import UserModel
 
-# try:
-#     from robbot.adapters.external.gemini_client import GeminiClient
-#     from robbot.core.cache import get_cache
-# except ImportError:
-#     GeminiClient = None
-#     get_cache = None
-
-# DEBUG: Check what func.count actually is
-print("DEBUG func.count:", func.count, type(func.count))
+try:
+    from robbot.adapters.external.gemini_client import GeminiClient
+    from robbot.core.cache import get_cache
+except Exception:  # noqa: BLE001 (blind exception)
+    GeminiClient = None
+    get_cache = None
 
 
 class AnalyticsRepository:
@@ -156,7 +154,7 @@ class AnalyticsRepository:
                 FROM leads l
                 LEFT JOIN conversations c ON c.id = l.conversation_id
                 LEFT JOIN conversation_messages cm ON c.id = cm.conversation_id
-                    AND cm.direction = 'INCOMING'
+                    AND cm.direction = 'INBOUND'
                 WHERE l.created_at >= :start_date
                     AND l.created_at <= :end_date
                     AND l.deleted_at IS NULL
@@ -599,13 +597,11 @@ class AnalyticsRepository:
                 FROM conversation_messages m_in
                 JOIN conversations c ON m_in.conversation_id = c.id
                 JOIN conversation_messages m_out ON m_out.conversation_id = c.id
-                    AND m_out.direction = 'OUTGOING'
+                    AND m_out.direction = 'OUTBOUND'
                     AND m_out.created_at > m_in.created_at
-                WHERE m_in.direction = 'INCOMING'
-                    AND c.handoff_at IS NOT NULL
+                WHERE m_in.direction = 'INBOUND'
                     AND m_in.created_at >= :start_date
                     AND m_in.created_at <= :end_date
-                    AND (:user_id::uuid IS NULL OR c.handoff_to = :user_id::uuid)
                 GROUP BY c.id, m_in.id, m_in.created_at
             )
             SELECT
@@ -676,8 +672,8 @@ class AnalyticsRepository:
             """
             SELECT
                 date_trunc(:granularity, created_at) as timestamp,
-                COUNT(*) FILTER (WHERE direction = 'INCOMING') as incoming,
-                COUNT(*) FILTER (WHERE direction = 'OUTGOING') as outgoing,
+                COUNT(*) FILTER (WHERE direction = 'INBOUND') as incoming,
+                COUNT(*) FILTER (WHERE direction = 'OUTBOUND') as outgoing,
                 COUNT(*) as total
             FROM conversation_messages
             WHERE created_at >= :start_date
@@ -782,9 +778,9 @@ class AnalyticsRepository:
         query = text("""
             SELECT
                 COUNT(DISTINCT l.id) as total_leads,
-                COUNT(DISTINCT CASE WHEN l.status = 'CONVERTED' THEN l.id END) as converted_leads,
+                COUNT(DISTINCT CASE WHEN l.status = 'SCHEDULED' THEN l.id END) as converted_leads,
                 COUNT(DISTINCT c.id) as total_conversations,
-                COUNT(DISTINCT CASE WHEN c.status IN ('ACTIVE', 'WAITING') THEN c.id END) as active_conversations,
+                COUNT(DISTINCT CASE WHEN c.status IN ('ACTIVE_BOT', 'PENDING_HANDOFF') THEN c.id END) as active_conversations,
                 COUNT(m.id) as total_messages,
                 AVG(msg_count.message_count) as avg_messages_per_conversation
             FROM leads l
@@ -797,7 +793,6 @@ class AnalyticsRepository:
             ) msg_count ON c.id = msg_count.conversation_id
             WHERE l.created_at >= :start_date
                 AND l.created_at <= :end_date
-                AND l.deleted_at IS NULL
         """)
 
         result = self.db.execute(query, {"start_date": start_date, "end_date": end_date})
@@ -1273,6 +1268,9 @@ class AnalyticsRepository:
         P3 #3: Batch processing + cache para reduzir custos.
         """
         logger = logging.getLogger(__name__)
+        if GeminiClient is None:
+            return sentiment_counts
+
         cache = get_cache() if get_cache else None
 
         # Config Gemini
@@ -1293,7 +1291,7 @@ class AnalyticsRepository:
             for msg in batch:
                 # Check cache primeiro
                 cache_key = f"sentiment:gemini:{msg['id']}"
-                cached_sentiment = cache.get(cache_key)
+                cached_sentiment = cache.get(cache_key) if cache else None
 
                 if cached_sentiment:
                     if cached_sentiment == "POSITIVE":
@@ -1307,15 +1305,19 @@ class AnalyticsRepository:
                 # Chamada Gemini
                 try:
                     prompt = prompt_template.replace("{message}", msg["body"])
-                    response = gemini_client.generate_text(prompt)
-                    gemini_sentiment = response.strip().upper()
+                    if hasattr(gemini_client, "generate_text"):
+                        response = gemini_client.generate_text(prompt)
+                        gemini_sentiment = response.strip().upper()
+                    else:
+                        gemini_sentiment = "NEUTRAL"
 
                     # Normalizar resposta
                     if gemini_sentiment not in ["POSITIVE", "NEGATIVE", "NEUTRAL"]:
                         gemini_sentiment = "NEUTRAL"
 
                     # Cache resultado
-                    cache.set(cache_key, gemini_sentiment, ttl=cache_ttl)
+                    if cache:
+                        cache.set(cache_key, gemini_sentiment, ttl=cache_ttl)
 
                     # Contar
                     if gemini_sentiment == "POSITIVE":
@@ -1325,7 +1327,7 @@ class AnalyticsRepository:
                     else:
                         refined_neutral += 1
 
-                except Exception as e:
+                except Exception as e:  # pylint: disable=broad-exception-caught
                     logger.warning("Gemini sentiment analysis failed for message %s: %s", msg.get("id"), e)
                     refined_neutral += 1  # Fallback: mantém como neutral
 
@@ -1361,8 +1363,6 @@ class AnalyticsRepository:
                 ...
             ]
         """
-        from robbot.config.analytics_config_loader import get_analytics_config
-
         config = get_analytics_config()
         topic_cases_sql = config.build_topic_sql_cases()
 
@@ -1477,6 +1477,11 @@ class AnalyticsRepository:
                 "failed_interactions": 38
             }
         """
+        logger = logging.getLogger(__name__)
+        logger.debug(
+            "Performance thresholds: latency=%sms, error_rate=%s%%", latency_threshold_ms, error_rate_threshold
+        )
+
         query = text("""
             WITH recent_interactions AS (
                 SELECT
