@@ -41,9 +41,9 @@ class ChromaClient:
         """
         try:
             # Configurar ChromaDB com persistência
-            self.client = chromadb.Client(
-                ChromaSettings(
-                    persist_directory=settings.CHROMA_PERSIST_DIR,
+            self.client = chromadb.PersistentClient(
+                path=settings.CHROMA_PERSIST_DIR,
+                settings=ChromaSettings(
                     anonymized_telemetry=False,
                 )
             )
