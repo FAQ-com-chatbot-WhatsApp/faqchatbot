@@ -194,6 +194,7 @@ class AuthSessionResponse(BaseModel):
     """
 
     user_id: int
+    id: int
     email: EmailStr
     role: str
     is_active: bool
@@ -320,7 +321,8 @@ class MfaLoginRequest(BaseModel):
     User provides the temporary token received from login + TOTP/backup code.
     """
 
-    temporary_token: str = Field(..., description="Temporary access token from login response")
+    temporary_token: str | None = Field(None, description="Temporary access token from login response")
+    email: EmailStr | None = Field(None, description="User email (dev-mode compatibility)")
     code: str = Field(..., min_length=6, max_length=6, description="TOTP code or backup code")
 
 
