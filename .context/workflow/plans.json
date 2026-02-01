@@ -1,13 +1,14 @@
 {
   "active": [
     {
-      "slug": "cleanup-legacy-auth",
-      "path": "plans/cleanup-legacy-auth.md",
-      "title": "Plan: Cleanup Legacy Auth and Regression Tests",
-      "linkedAt": "2026-01-27T16:34:27.872Z",
+      "slug": "fix-waha-message-polling",
+      "path": "plans/fix-waha-message-polling.md",
+      "title": "Implementar Polling de Mensagens WAHA",
+      "summary": "Substituir dependência de webhooks não-funcionais do WEBJS por sistema de polling robusto baseado na API oficial do WAHA para garantir recepção de todas as mensagens",
+      "linkedAt": "2026-02-01T09:27:16.025Z",
       "status": "active"
     }
   ],
   "completed": [],
-  "primary": "cleanup-legacy-auth"
+  "primary": "fix-waha-message-polling"
 }
