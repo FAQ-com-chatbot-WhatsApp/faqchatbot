@@ -34,12 +34,12 @@ class LeadInteractionModel(Base):
         comment="Foreign key to leads table",
     )
 
-    user_id: Mapped[int] = mapped_column(
+    user_id: Mapped[int | None] = mapped_column(
         Integer,
         ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
         index=True,
-        comment="User who performed the interaction",
+        comment="User who performed the interaction (NULL for bot interactions)",
     )
 
     interaction_type: Mapped[InteractionType] = mapped_column(
@@ -52,7 +52,7 @@ class LeadInteractionModel(Base):
 
     # Relationships
     lead: Mapped["LeadModel"] = relationship("LeadModel", back_populates="interactions")
-    user: Mapped["UserModel"] = relationship("UserModel")
+    user: Mapped["UserModel | None"] = relationship("UserModel")
 
     def __repr__(self) -> str:
         return f"<LeadInteractionModel(id='{self.id}', type='{self.interaction_type}', lead_id='{self.lead_id}')>"
