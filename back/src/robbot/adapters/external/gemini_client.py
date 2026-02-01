@@ -5,6 +5,8 @@ This module provides a singleton client to interact with Google Gemini LLM using
 It handles connection setup, prompt formatting, error handling, and logging for all LLM interactions.
 """
 
+import ast
+import json
 import logging
 import time
 from typing import Any
@@ -82,12 +84,34 @@ class GeminiClient:
             LLMError: On any error from LangChain or Gemini
         """
         full_prompt = self._build_full_prompt(prompt, context)
+        
         try:
             logger.info("[INFO] Generating Gemini response via LangChain")
             start_time = time.time()
             response = self.llm.invoke(full_prompt)
             latency_ms = int((time.time() - start_time) * 1000)
-            response_text = response.content if hasattr(response, "content") else str(response)
+
+            # Handle response.content (can be str, list, dict, or other types)
+            if hasattr(response, "content"):
+                if isinstance(response.content, list):
+                    response_text = " ".join(str(item) for item in response.content)
+                elif isinstance(response.content, dict):
+                    # Extract text from dict (handles {'type': 'text', 'text': '...'})
+                    response_text = response.content.get("text", str(response.content))
+                else:
+                    response_text = str(response.content)
+            else:
+                response_text = str(response)
+
+            # Normalize dict-like strings if model returns a serialized payload
+            if isinstance(response_text, str) and response_text.lstrip().startswith("{") and "'text'" in response_text:
+                try:
+                    parsed = ast.literal_eval(response_text)
+                    if isinstance(parsed, dict) and "text" in parsed:
+                        response_text = parsed["text"]
+                except (ValueError, SyntaxError):
+                    pass
+
             logger.info("[SUCCESS] Response generated via LangChain (%sms)", latency_ms)
             return {
                 "response": response_text,
@@ -140,6 +164,52 @@ class GeminiClient:
         """
         # Not supported in LangChain Google GenAI integration
         return "UNKNOWN"
+
+    def _mock_response(self, prompt: str) -> str:
+        """
+        Return a deterministic mock response for DEV_MODE.
+
+        Args:
+            prompt: Full prompt text
+
+        Returns:
+            str: Mock response content
+        """
+        normalized_prompt = prompt.lower()
+
+        if "responda apenas em json" in normalized_prompt and '"intent"' in prompt:
+            return json.dumps(
+                {
+                    "intent": "OUTRO",
+                    "spin_phase": "SITUATION",
+                    "confidence": 50,
+                }
+            )
+
+        if "responda apenas em json" in normalized_prompt and '"name"' in prompt:
+            return json.dumps(
+                {
+                    "name": None,
+                    "confidence": 0,
+                    "source": "none",
+                }
+            )
+
+        if "gere uma pergunta natural para descobrir o nome" in normalized_prompt:
+            return json.dumps(
+                {
+                    "should_ask": False,
+                    "name_request": None,
+                }
+            )
+
+        if "gere uma resposta seguindo metodologia spin selling" in normalized_prompt:
+            return "Oi! Entendi. Pode me contar um pouco mais sobre o que voce esta sentindo?"
+
+        if "gere resposta de fallback" in normalized_prompt:
+            return "Desculpe, tive uma dificuldade tecnica. O que voce gostaria de resolver hoje?"
+
+        return "Oi! Entendi. Pode me contar um pouco mais para eu te ajudar?"
 
 
 def get_gemini_client() -> GeminiClient:
