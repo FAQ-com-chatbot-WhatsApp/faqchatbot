@@ -7,7 +7,7 @@ This module exposes REST endpoints for:
 - Managing contexts
 """
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from robbot.adapters.repositories.conversation_repository import ConversationRepository
@@ -48,6 +48,19 @@ class AIStatsResponse(BaseModel):
     total_tokens_used: int
     average_latency_ms: float
     chromadb_documents: int
+
+
+class LLMInteractionOut(BaseModel):
+    """Response para interação LLM."""
+
+    id: str
+    conversation_id: str
+    prompt: str
+    response: str
+    tokens_used: int
+    latency_ms: float
+    model: str
+    created_at: str
 
 
 # ========== ENDPOINTS ==========
@@ -134,11 +147,11 @@ async def get_ai_stats() -> AIStatsResponse:
             chroma = get_chroma_client()
 
             # Contar conversas
-            all_conversations = conv_repo.get_all()
+            all_conversations = conv_repo.list_all(limit=1000)
             total_conversations = len(all_conversations)
 
             # Contar interações LLM
-            all_llm = llm_repo.get_all()
+            all_llm = llm_repo.list_all(limit=1000)
             total_llm_interactions = len(all_llm)
 
             # Calcular tokens e latência
@@ -159,4 +172,43 @@ async def get_ai_stats() -> AIStatsResponse:
     except Exception as e:  # noqa: BLE001 (blind exception)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to get AI stats: {str(e)}"
+        ) from e
+
+
+@router.get("/llm-interactions", response_model=list[LLMInteractionOut], summary="Get LLM interactions")
+def get_llm_interactions(
+    conversation_id: str | None = Query(None, description="Filter by conversation ID"),
+) -> list[LLMInteractionOut]:
+    """
+    Recuperar histórico de interações LLM.
+
+    Filtra por conversation_id se fornecido.
+    """
+    try:
+        with get_sync_session() as session:
+            llm_repo = LLMInteractionRepository(session)
+
+            if conversation_id:
+                interactions = llm_repo.get_by_conversation_id(conversation_id)
+            else:
+                interactions = llm_repo.list_all(limit=100)
+
+            return [
+                LLMInteractionOut(
+                    id=i.id,
+                    conversation_id=i.conversation_id,
+                    prompt=i.prompt[:200],  # Limitar tamanho
+                    response=i.response[:200],
+                    tokens_used=i.tokens_used,
+                    latency_ms=i.latency_ms,
+                    model=i.model_name,
+                    created_at=i.created_at.isoformat(),
+                )
+                for i in interactions
+            ]
+
+    except Exception as e:  # noqa: BLE001 (blind exception)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get LLM interactions: {str(e)}",
         ) from e
