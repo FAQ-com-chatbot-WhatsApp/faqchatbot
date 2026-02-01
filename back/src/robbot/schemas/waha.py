@@ -111,10 +111,18 @@ class WebhookMessage(BaseModel):
 
 
 class WebhookPayload(BaseModel):
-    """WAHA webhook payload wrapper."""
+    """WAHA webhook payload wrapper (matches official schema envelope)."""
 
-    event: str = Field(..., description="Event type: message, message.ack, etc.")
+    model_config = ConfigDict(extra="ignore")
+
+    id: str | None = Field(None, description="WAHA event id (ULID)")
+    timestamp: int | None = Field(None, description="Event timestamp (ms)")
     session: str = Field(..., description="Session name")
+    event: str = Field(..., description="Event type: message, message.ack, etc.")
+    engine: str | None = Field(None, description="Engine type: WEBJS/NOWEB/GOWS")
+    metadata: dict[str, Any] | None = Field(None, description="Session metadata")
+    me: dict[str, Any] | None = Field(None, description="Authenticated account info")
+    environment: dict[str, Any] | None = Field(None, description="WAHA environment info")
     payload: dict[str, Any] = Field(default_factory=dict, description="Event payload")
 
 
@@ -331,8 +339,10 @@ class ContactAboutResponse(BaseModel):
 class SetPresenceRequest(BaseModel):
     """Set session presence request."""
 
-    presence: str = Field(..., description="Presence: available, unavailable, composing, recording")
+    presence: str = Field(..., description="Presence: available, unavailable, composing, recording", alias="state")
     chat_id: str | None = Field(None, description="Optional specific chat")
+
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class PresenceData(BaseModel):
