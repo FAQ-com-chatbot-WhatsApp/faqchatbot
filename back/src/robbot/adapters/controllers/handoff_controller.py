@@ -51,6 +51,7 @@ class HandoffResponse(BaseModel):
 class PendingHandoffConversation(BaseModel):
     """Conversa aguardando handoff."""
 
+    id: str
     conversation_id: str
     phone_number: str
     lead_name: str | None
@@ -110,7 +111,12 @@ async def trigger_handoff(
             current_user.id,
         )
 
-        return HandoffResponse(**result)
+        return HandoffResponse(
+            status=ConversationStatus.PENDING_HANDOFF.value,
+            conversation_id=conversation_id,
+            message=result.get("message"),
+            reason=result.get("reason"),
+        )
 
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
@@ -125,7 +131,7 @@ async def trigger_handoff(
 @router.post("/{conversation_id}/assign", response_model=HandoffResponse)
 async def assign_conversation(
     conversation_id: str,
-    request: AssignConversationRequest,
+    request: AssignConversationRequest | None = None,
     db: Session = Depends(get_db),
     current_user: UserModel = Depends(get_current_user),
 ) -> Any:
@@ -140,21 +146,25 @@ async def assign_conversation(
     try:
         handoff_service = HandoffService(ConversationRepository(db), LeadRepository(db))
 
-        await handoff_service.assign_to_human(
+        user_id = request.user_id if request else str(current_user.id)
+
+        conversation = await handoff_service.assign_to_human(
             session=db,
             conversation_id=conversation_id,
-            user_id=request.user_id,
+            user_id=user_id,
         )
 
         logger.info(
             "[SUCCESS] Conversation assigned via API: conv=%s, to_user=%s, by_user_id=%s",
             conversation_id,
-            request.user_id,
+            user_id,
             current_user.id,
         )
 
         return HandoffResponse(
-            status="assigned", conversation_id=conversation_id, message=f"Conversa atribuída para {request.user_id}"
+            status=conversation.status.value,
+            conversation_id=conversation_id,
+            message=f"Conversa atribuída para {user_id}",
         )
 
     except ValueError as e:
@@ -282,21 +292,24 @@ async def get_pending_handoffs(
 
         for conv in conversations:
             # Calcular tempo aguardando
-            waiting_time = datetime.now(UTC) - conv.updated_at
+            now = datetime.now(UTC)
+            updated_at = conv.updated_at.replace(tzinfo=UTC) if conv.updated_at.tzinfo is None else conv.updated_at
+            waiting_time = now - updated_at
             waiting_minutes = int(waiting_time.total_seconds() / 60)
 
             # Buscar última mensagem
             messages = msg_repo.get_by_conversation(conv.id, limit=1)
-            last_message = messages[0].content if messages else "N/A"
+            last_message = messages[0].body if messages else "N/A"
 
             result.append(
                 PendingHandoffConversation(
+                    id=conv.id,
                     conversation_id=conv.id,
                     phone_number=conv.phone_number,
                     lead_name=conv.lead.name if conv.lead else None,
                     maturity_score=conv.lead.maturity_score if conv.lead else 0,
                     escalation_reason=conv.escalation_reason,
-                    is_urgent=conv.is_urgent,
+                    is_urgent=getattr(conv, "is_urgent", False),
                     waiting_time_minutes=waiting_minutes,
                     last_message=last_message[:100],
                 )
@@ -319,9 +332,36 @@ async def get_pending_handoffs(
 
         return result
 
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:  # noqa: BLE001 (blind exception)
-        logger.error("[ERROR] Erro ao buscar pending handoffs: %s", e)
+        logger.error("[ERROR] Erro ao listar handoffs pendentes: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get pending handoffs: {str(e)}",
+            detail=f"Failed to list pending handoffs: {str(e)}",
         ) from e
+
+
+@router.get("/pending", response_model=list[PendingHandoffConversation])
+async def get_pending_handoffs_alias(
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user),
+) -> Any:
+    """Alias for /pending-handoff to keep compatibility with tests."""
+    return await get_pending_handoffs(db=db, current_user=current_user)
+
+
+@router.post("/{conversation_id}/trigger", response_model=HandoffResponse)
+async def trigger_handoff_alias(
+    conversation_id: str,
+    request: TriggerHandoffRequest,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user),
+) -> Any:
+    """Alias for /{conversation_id}/handoff to keep compatibility with tests."""
+    return await trigger_handoff(
+        conversation_id=conversation_id,
+        request=request,
+        db=db,
+        current_user=current_user,
+    )
