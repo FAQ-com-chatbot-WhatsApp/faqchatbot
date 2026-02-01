@@ -23,6 +23,7 @@ from robbot.core.rate_limiting import (
     RATE_LIMIT_REFRESH,
     RATE_LIMIT_REGISTER,
 )
+from robbot.infra.db.models.user_model import UserModel
 from robbot.schemas.auth import (
     AuthSessionResponse,
     ChangePasswordRequest,
@@ -274,8 +275,6 @@ async def refresh_token(request: Request, response: Response, db: Session = Depe
     }
 
 
-from robbot.infra.db.models.user_model import UserModel
-
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 def logout(
     request: Request,
@@ -293,8 +292,6 @@ def logout(
     service = AuthService(db)
 
     # Use service to revoke tokens and session, and log audit
-    import contextlib
-
     with contextlib.suppress(Exception):
         # Proceed to clear cookies regardless
         service.logout(
@@ -362,6 +359,7 @@ def read_me(current_user: UserModel = Depends(get_current_user), db: Session = D
 
     return AuthSessionResponse(
         user_id=current_user.id,
+        id=current_user.id,
         email=current_user.email,
         role=current_user.role,
         is_active=current_user.is_active,
@@ -528,8 +526,6 @@ async def verify_email(token: str, db: Session = Depends(get_db)):
     try:
         user_id = service.verify_email(token)
         # Gerar access_token JWT para o usuário autenticado
-        from robbot.services.auth_services import AuthService
-
         auth_service = AuthService(db)
         user = auth_service.repo.get_by_id(user_id)
         from robbot.core import security
@@ -601,7 +597,12 @@ def setup_mfa(
     service = MfaService(db)
     try:
         secret, qr_code_base64, backup_codes = service.setup_mfa(current_user.id)
-        return MfaSetupResponse(secret=secret, qr_code_base64=qr_code_base64, backup_codes=backup_codes)
+        return MfaSetupResponse(
+            secret=secret,
+            qr_code_base64=qr_code_base64,
+            qr_code=qr_code_base64,
+            backup_codes=backup_codes,
+        )
     except AuthException as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -634,12 +635,20 @@ def verify_mfa_code(
     try:
         # Try TOTP first
         service.verify_mfa(current_user.id, payload.code)
-        return MfaVerifyResponse(verified=True, message="MFA code verified successfully")
+        return MfaVerifyResponse(
+            verified=True,
+            message="MFA code verified successfully",
+            mfa_enabled=True,
+        )
     except AuthException:
         # Try backup code
         try:
             service.verify_backup_code(current_user.id, payload.code)
-            return MfaVerifyResponse(verified=True, message="Backup code verified successfully (code consumed)")
+            return MfaVerifyResponse(
+                verified=True,
+                message="Backup code verified successfully (code consumed)",
+                mfa_enabled=True,
+            )
         except AuthException as exc:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -673,7 +682,7 @@ def disable_mfa(
         # Verify code before disabling
         service.verify_mfa(current_user.id, payload.code)
         service.disable_mfa(current_user.id)
-        return MfaDisableResponse(message="MFA disabled successfully")
+        return MfaDisableResponse(message="MFA disabled successfully", mfa_enabled=False)
     except AuthException as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -695,12 +704,6 @@ def mfa_login(
     3. Usuário chama este endpoint com token temporário + código TOTP/backup
     4. Retorna tokens finais de access e refresh
 
-    Args:
-        payload: MfaLoginRequest com temporary_token e código
-
-    Returns:
-        LoginResponse: Tokens finais de access e refresh
-
     Raises:
         HTTPException: Se token inválido, expirado, ou verificação MFA falha
     """
@@ -711,12 +714,36 @@ def mfa_login(
     ip_address = request.client.host if request and request.client else None
 
     try:
-        token = service.verify_mfa_and_complete_login(
-            temporary_token=payload.temporary_token,
-            code=payload.code,
-            user_agent=user_agent,
-            ip_address=ip_address,
-        )
+        if payload.temporary_token:
+            token = service.verify_mfa_and_complete_login(
+                temporary_token=payload.temporary_token,
+                code=payload.code,
+                user_agent=user_agent,
+                ip_address=ip_address,
+            )
+        else:
+            if not payload.email:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="temporary_token or email is required",
+                )
+            user = service.repo.get_by_email(payload.email)
+            if not user:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+            from robbot.core import security
+
+            temporary_token = security.create_token_for_subject(
+                str(user.id),
+                minutes=5,
+                token_type="mfa-pending",
+            )
+            token = service.verify_mfa_and_complete_login(
+                temporary_token=temporary_token,
+                code=payload.code,
+                user_agent=user_agent,
+                ip_address=ip_address,
+            )
 
         return LoginResponse(
             access_token=token.access_token,
