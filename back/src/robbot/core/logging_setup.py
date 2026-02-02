@@ -17,8 +17,12 @@ import logging
 import os
 import re
 import sys
+from datetime import datetime, timezone, timedelta
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+
+# Timezone de Brasília (UTC-3)
+BRT = timezone(timedelta(hours=-3))
 
 
 class StructuredFormatter(logging.Formatter):
@@ -33,6 +37,15 @@ class StructuredFormatter(logging.Formatter):
         # Python's logging can append milliseconds via %(msecs)03d
         fmt = "%(service_name)s | [%(asctime)s.%(msecs)03d] %(levelname)s (%(module_name)s/%(process)d): %(message)s"
         super().__init__(fmt=fmt, datefmt="%H:%M:%S")
+
+    def formatTime(self, record, datefmt=None):
+        """Override para usar timezone de Brasília (BRT/UTC-3)."""
+        ct = datetime.fromtimestamp(record.created, tz=BRT)
+        if datefmt:
+            s = ct.strftime(datefmt)
+        else:
+            s = ct.strftime("%Y-%m-%d %H:%M:%S")
+        return s
 
     def format(self, record: logging.LogRecord) -> str:
         # Enrich record with shortened module name and service name
@@ -67,6 +80,7 @@ class ColoredStructuredFormatter(StructuredFormatter):
         # basic fields
         service = os.getenv("SERVICE_NAME", "app")
         module_name = record.name.replace("robbot.", "")
+        # Usar formatTime que já aplica BRT da classe pai
         ts = f"{self.formatTime(record, '%H:%M:%S')}.{int(record.msecs):03d}"
         level = record.levelname
         message = record.getMessage()
