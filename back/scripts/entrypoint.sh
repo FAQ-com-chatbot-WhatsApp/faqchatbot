@@ -14,14 +14,16 @@ set -euo pipefail
 : "${POSTGRES_USER:=${POSTGRES_USER:-postgres}}"
 : "${POSTGRES_DB:=${POSTGRES_DB:-postgres}}"
 : "${POSTGRES_PASSWORD:=${POSTGRES_PASSWORD:-}}"
-: "${AUTO_MIGRATE:=true}"
+: "${AUTO_MIGRATE:=false}"
 : "${WAIT_FOR_DB:=true}"
 : "${DB_WAIT_RETRIES:=60}"
 : "${DB_WAIT_SLEEP:=2}"
 
-# Garante src/ no PYTHONPATH em execução local ou dev container
-if [ -d "./src" ]; then
-  export PYTHONPATH="${PYTHONPATH:+${PYTHONPATH}:}$(pwd)/src"
+# Garante /app/src no PYTHONPATH (força usar caminho absoluto do container)
+if [ -z "${PYTHONPATH}" ] || [ "${PYTHONPATH}" = "" ]; then
+  export PYTHONPATH="/app/src"
+elif ! echo "${PYTHONPATH}" | grep -q "/app/src"; then
+  export PYTHONPATH="/app/src:${PYTHONPATH}"
 fi
 
 # Se DATABASE_URL não estiver definida, tenta construir a partir das variáveis POSTGRES_*
