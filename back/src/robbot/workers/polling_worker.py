@@ -8,15 +8,12 @@ from rq import Worker
 from rq.job import Job, JobStatus
 
 from robbot.config.settings import get_settings
+from robbot.core.logging_setup import configure_logging
 from robbot.infra.jobs.message_polling_job import poll_waha_messages
 from robbot.infra.redis.client import get_redis_client
 from robbot.services.queue_service import get_queue_service
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
-
+configure_logging()
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
