@@ -117,8 +117,10 @@ def main():
         clean_registries(queue)
     logger.info("Cleaned stale worker registries")
 
-    # Create worker with unique name based on hostname
-    worker_name = f"worker-{socket.gethostname()}"
+    # Create worker with unique name based on hostname + PID
+    # PID garante unicidade quando múltiplos workers rodam no mesmo container
+    import os
+    worker_name = f"worker-{socket.gethostname()}-{os.getpid()}"
 
     worker = Worker(
         queues,
