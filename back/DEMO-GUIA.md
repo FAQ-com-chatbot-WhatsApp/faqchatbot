@@ -5,7 +5,13 @@
 ### Windows (PowerShell):
 ```powershell
 cd d:\_projects\clinica_go\back
-.\demo-queries.ps1
+pwsh -File .\demo-queries.ps1
+```
+
+**OU via Git Bash:**
+```bash
+cd /d/_projects/clinica_go/back
+pwsh -File demo-queries.ps1
 ```
 
 ### Linux/Mac (Bash):
@@ -129,7 +135,7 @@ LIMIT 1;"
 
 ### DEMO 2: Ver mensagens no DB (1 min)
 ```bash
-.\demo-queries.ps1
+pwsh -File demo-queries.ps1
 ```
 Mostrar query #1 (última conversa)
 
@@ -141,7 +147,7 @@ Abrir arquivos e apontar:
 
 ### DEMO 4: Estatísticas (30s)
 ```bash
-.\demo-queries.ps1
+pwsh -File demo-queries.ps1
 ```
 Queries #2, #4, #6 (stats, leads, SPIN)
 
@@ -210,7 +216,7 @@ docker-compose exec -T db psql -U dba -d BotDB -c "SELECT COUNT(*) FROM conversa
 - [ ] WAHA conectado: `curl http://localhost:3000/api/default/sessions`
 - [ ] Workers processando: `docker-compose logs worker --tail=5`
 - [ ] DB acessível: `docker-compose exec -T db psql -U dba -d BotDB -c "SELECT 1;"`
-- [ ] Scripts testados: `.\demo-queries.ps1`
+- [ ] Scripts testados: `pwsh -File demo-queries.ps1`
 - [ ] Arquivos abertos no VSCode:
   - `conversation_orchestrator.py`
   - `templates.py`
