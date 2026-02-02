@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 
 
-def poll_waha_messages():
+def poll_waha_messages(**kwargs):
     """
     Busca mensagens novas do WAHA via API e enfileira para processamento.
     
@@ -26,6 +26,9 @@ def poll_waha_messages():
     DEV_MODE:
     - True: Processa APENAS mensagens de DEV_PHONE_NUMBER
     - False: Processa mensagens de TODOS os números
+    
+    Args:
+        **kwargs: Aceita argumentos adicionais do RQ (ex: timeout) mas não os utiliza
     """
     job = get_current_job()
     job_id = job.id if job else "no-job"
