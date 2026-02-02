@@ -32,7 +32,8 @@ if [ -z "${DATABASE_URL}" ]; then
 fi
 export DATABASE_URL
 
-ts() { date +"%H:%M:%S.%3N"; }
+# Timezone BRT (Brasília, UTC-3)
+ts() { TZ='America/Sao_Paulo' date +"%H:%M:%S.%3N"; }
 LOG_TAG="Entrypoint"
 SERVICE_NAME="${SERVICE_NAME:-app}"
 LOG_COLOR="${LOG_COLOR:-false}"
