@@ -8,14 +8,12 @@ Available jobs:
 - GeminiAIProcessingJob, MessageAnalysisJob: LLM inference tasks
 - ReEngagementJob: Re-engage inactive leads
 - ScheduledJob, ReminderJob, CleanupJob, SyncJob: Scheduled tasks
-- poll_waha_messages: Polling job for WAHA message retrieval
 """
 
 from robbot.infra.jobs.base_job import BaseJob
 from robbot.infra.jobs.escalation_job import EscalationJob, MultipleEscalationJob
 from robbot.infra.jobs.gemini_job import GeminiAIProcessingJob, MessageAnalysisJob
 from robbot.infra.jobs.message_job import MessageBatchProcessingJob, MessageProcessingJob
-from robbot.infra.jobs.message_polling_job import poll_waha_messages
 from robbot.infra.jobs.reengagement_job import ReEngagementJob
 from robbot.infra.jobs.scheduler_job import CleanupJob, ReminderJob, ScheduledJob, SyncJob
 
@@ -32,5 +30,4 @@ __all__ = [
     "ReminderJob",
     "ScheduledJob",
     "SyncJob",
-    "poll_waha_messages",
 ]
