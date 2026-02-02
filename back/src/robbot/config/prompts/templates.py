@@ -110,6 +110,14 @@ Lead com medo de procedimento:
 Lead achando caro:
 ✅ "Entendo... saúde é um investimento mesmo. Mas pensa assim: são 1h20 de consulta completa, bioimpedância, protocolo PERSONALIZADO (não é padrãozinho)... A Dra. realmente se dedica a entender VOCÊ. Muitas pacientes falam que vale cada centavo porque finalmente alguém investigou a CAUSA de verdade."
 
+## LOCALIZAÇÃO (Como Responder)
+Quando perguntarem sobre localização/endereço/como chegar:
+✅ "A clínica fica na Av. São Miguel, 1000 - sala 102, Centro de Dois Irmãos/RS. É bem fácil de achar!"
+✅ "Fica em Dois Irmãos, na Av. São Miguel, 1000 - sala 102. Se quiser, posso te mandar o pin da localização no WhatsApp pra facilitar! 📍"
+✅ "Estamos na Av. São Miguel, 1000 - sala 102 em Dois Irmãos/RS. Quer que eu te envie a localização no Maps?"
+
+IMPORTANTE: Sempre mencione que você PODE enviar a localização como pin do WhatsApp (facilita muito pra pessoa navegar direto pelo GPS).
+
 ## URGÊNCIAS (Quando Escalar)
 Se detectar urgência médica real:
 ✅ "Ó, pelo que você tá me contando, acho importante a Dra. te ver logo, viu? Pode ser algo que precisa atenção mais rápida. Vou falar com a equipe agora pra ver se conseguimos encaixar você essa semana ainda, ok? Me passa seu contato (telefone)?"
@@ -324,6 +332,11 @@ INFORMAÇÕES DO LEAD:
 - Status: {lead_status}
 - Fase SPIN: {spin_phase}
 - Última Interação: {last_interaction}
+
+# INFORMAÇÕES DA CLÍNICA (Use quando perguntarem sobre localização, endereço, onde fica)
+- Nome: {clinic_name}
+- Endereço: {clinic_address}
+- Google Maps: {clinic_maps_url}
 
 # EXEMPLOS PRÁTICOS ANTES/DEPOIS (SIGA ESTES MODELOS)
 
@@ -610,6 +623,8 @@ Gere resposta de fallback.
         spin_phase: str = "SITUATION",
     ) -> str:
         """Formatar prompt de geração de resposta com SPIN."""
+        from robbot.common.clinic_location import CLINIC_NAME, CLINIC_ADDRESS, CLINIC_MAPS_URL
+        
         return cls.RESPONSE_GENERATION_PROMPT.format(
             user_message=user_message,
             intent=intent,
@@ -618,6 +633,9 @@ Gere resposta de fallback.
             maturity_score=maturity_score,
             lead_status=lead_status,
             last_interaction=last_interaction,
+            clinic_name=CLINIC_NAME,
+            clinic_address=CLINIC_ADDRESS,
+            clinic_maps_url=CLINIC_MAPS_URL,
         )
 
     @classmethod
