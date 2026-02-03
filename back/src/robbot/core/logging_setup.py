@@ -17,7 +17,7 @@ import logging
 import os
 import re
 import sys
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -27,71 +27,59 @@ BRT = timezone(timedelta(hours=-3))
 
 class StructuredFormatter(logging.Formatter):
     """
-    Custom formatter following WAHA-style structured logging.
+    WAHA-style structured logging for files (no colors).
 
-    Format: service | [HH:MM:SS.mmm] LEVEL (ModuleName/ProcessID): Message
-    Example: api | [12:13:58.177] INFO (Bootstrap/48): Application started
+    Format: [HH:MM:SS.mmm] LEVEL (PID): Message
+    Example: [12:13:58.177] INFO (48): Application started
     """
 
-    def __init__(self) -> None:
-        # Python's logging can append milliseconds via %(msecs)03d
-        fmt = "%(service_name)s | [%(asctime)s.%(msecs)03d] %(levelname)s (%(module_name)s/%(process)d): %(message)s"
-        super().__init__(fmt=fmt, datefmt="%H:%M:%S")
-
-    def formatTime(self, record, datefmt=None):
-        """Override para usar timezone de Brasília (BRT/UTC-3)."""
+    def format(self, record: logging.LogRecord) -> str:
+        # Use BRT timezone
         ct = datetime.fromtimestamp(record.created, tz=BRT)
-        if datefmt:
-            s = ct.strftime(datefmt)
-        else:
-            s = ct.strftime("%Y-%m-%d %H:%M:%S")
-        return s
-
-    def format(self, record: logging.LogRecord) -> str:
-        # Enrich record with shortened module name and service name
-        record.module_name = record.name.replace("robbot.", "")
-        record.service_name = os.getenv("SERVICE_NAME", "app")
-        return super().format(record)
+        ts = f"{ct.strftime('%H:%M:%S')}.{int(record.msecs):03d}"
+        
+        # Format exactly like WAHA - no padding
+        return f"[{ts}] {record.levelname} ({record.process}): {record.getMessage()}"
 
 
-class ColoredStructuredFormatter(StructuredFormatter):
-    """Colorized console formatter (optional), using ANSI escape codes.
+class ColoredStructuredFormatter(logging.Formatter):
+    """WAHA-style colorized formatter - clean and beautiful logs.
 
-    - Service name colored by service
-    - Level colored by severity
+    Format: [HH:MM:SS.mmm] LEVEL (PID): Message
+    Colors: Level-based (green=INFO, yellow=WARNING, red=ERROR)
     """
 
-    COLORS = {
-        "reset": "\x1b[0m",
-        # levels
-        "DEBUG": "\x1b[34m",  # blue
-        "INFO": "\x1b[32m",  # green
-        "WARNING": "\x1b[33m",  # yellow
-        "ERROR": "\x1b[31m",  # red
-        "CRITICAL": "\x1b[91m",  # bright red
-        # services
-        "api": "\x1b[36m",  # cyan
-        "worker": "\x1b[35m",  # magenta
-        "autoscaler": "\x1b[33m",  # yellow
-        "default": "\x1b[37m",  # white
-    }
+    # ANSI colors
+    RESET = "\x1b[0m"
+    BOLD = "\x1b[1m"
+    DIM = "\x1b[2m"
+    
+    # Level colors (bright and clear)
+    DEBUG = "\x1b[36m"      # Cyan
+    INFO = "\x1b[32m"       # Green
+    WARNING = "\x1b[33m"    # Yellow
+    ERROR = "\x1b[31m"      # Red
+    CRITICAL = "\x1b[91m"   # Bright red
+    
+    # Timestamp color
+    TIME = "\x1b[90m"       # Gray
 
     def format(self, record: logging.LogRecord) -> str:
-        # basic fields
-        service = os.getenv("SERVICE_NAME", "app")
-        module_name = record.name.replace("robbot.", "")
-        # Usar formatTime que já aplica BRT da classe pai
-        ts = f"{self.formatTime(record, '%H:%M:%S')}.{int(record.msecs):03d}"
-        level = record.levelname
-        message = record.getMessage()
-        pid = record.process
-
-        # colors
-        svc_color = self.COLORS.get(service, self.COLORS["default"])
-        lvl_color = self.COLORS.get(level, self.COLORS["default"])
-        reset = self.COLORS["reset"]
-
-        return f"{svc_color}{service}{reset} | [{ts}] {lvl_color}{level}{reset} ({module_name}/{pid}): {message}"
+        # Use BRT timezone
+        ct = datetime.fromtimestamp(record.created, tz=BRT)
+        ts = f"{ct.strftime('%H:%M:%S')}.{int(record.msecs):03d}"
+        
+        # Get level color
+        level_color = getattr(self, record.levelname, self.INFO)
+        
+        # Format: [HH:MM:SS.mmm] LEVEL (PID): Message
+        # Exactly like WAHA - no extra spaces
+        return (
+            f"{self.TIME}[{ts}]{self.RESET} "
+            f"{level_color}{record.levelname}{self.RESET} "
+            f"{self.DIM}({record.process}){self.RESET}: "
+            f"{record.getMessage()}"
+        )
 
 
 class MessagePrefixStripFilter(logging.Filter):
@@ -186,7 +174,18 @@ def configure_logging(
     file_handler.addFilter(msg_filter)
     root.addHandler(file_handler)
 
-    # Log initial configuration
+    # Silence noisy HTTP loggers (DEBUG spam from httpcore/httpx)
+    # Set to WARNING to only see errors, not every HTTP request detail
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
+    logging.getLogger("httpcore.http11").setLevel(logging.WARNING)
+    logging.getLogger("httpcore.connection").setLevel(logging.WARNING)
+    logging.getLogger("httpx").setLevel(logging.WARNING)  # Silence all httpx noise
+    
+    # Silence noisy RQ DEBUG logs (queue operations are too verbose)
+    logging.getLogger("rq.queue").setLevel(logging.INFO)
+    logging.getLogger("rq.worker").setLevel(logging.INFO)
+    logging.getLogger("rq.scheduler").setLevel(logging.INFO)
+
     # Harmonize uvicorn loggers to use root handlers/format
     for name in ("uvicorn", "uvicorn.error", "uvicorn.access"):
         uv_logger = logging.getLogger(name)
