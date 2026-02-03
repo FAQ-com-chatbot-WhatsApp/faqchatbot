@@ -110,18 +110,27 @@ class IntentDetector:
         """
         try:
             prompt = self.prompt_templates.format_name_extraction_prompt(message, context)
+            logger.info("[NAME_EXTRACTION_DEBUG] Attempting name extraction from message: %s", message[:100])
+
             response = self.gemini_client.generate_response(prompt)
 
             # Parse JSON response - try to extract JSON from response
             response_text = response["response"].strip()
-            
+            logger.info("[NAME_EXTRACTION_DEBUG] Gemini raw response: %s", response_text[:200])
+
             # Try to find JSON in response (sometimes Gemini adds extra text)
             if "{" in response_text:
                 json_start = response_text.find("{")
                 json_end = response_text.rfind("}") + 1
                 response_text = response_text[json_start:json_end]
-            
+
             result = json.loads(response_text)
+            logger.info(
+                "[NAME_EXTRACTION_DEBUG] Parsed result: name=%s, confidence=%s, source=%s",
+                result.get("name"),
+                result.get("confidence"),
+                result.get("source"),
+            )
 
             name = result.get("name")
             confidence = result.get("confidence", 0)
@@ -183,14 +192,10 @@ class IntentDetector:
 
             response = self.gemini_client.generate_response(prompt)
 
-            result = json.loads(response["response"].strip())
-
-            should_ask = result.get("should_ask", False)
-            name_request = result.get("name_request")
-
-            if should_ask and name_request:
+            response_text = response["response"].strip()
+            if response_text:
                 logger.info("[SUCCESS] Name request generated")
-                return name_request
+                return response_text
 
             return None
 
