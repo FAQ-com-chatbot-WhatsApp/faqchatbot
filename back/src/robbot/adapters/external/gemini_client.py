@@ -3,6 +3,7 @@ Gemini AI client for Google Generative AI API (via LangChain).
 
 This module provides a singleton client to interact with Google Gemini LLM using LangChain's ChatGoogleGenerativeAI.
 It handles connection setup, prompt formatting, error handling, and logging for all LLM interactions.
+Implements automatic fallback to alternative models when quota limits are reached.
 """
 
 import ast
@@ -20,6 +21,18 @@ logger = logging.getLogger(__name__)
 
 _singleton: dict[str, "GeminiClient | None"] = {"client": None}
 
+# Lista de modelos para fallback automático quando quota é excedida
+# Ordem: flash (rápido) -> lite (leve) -> experimental -> pro (mais poderoso)
+FALLBACK_MODELS = [
+    "gemini-flash-latest",          # Alias para versão mais recente do flash
+    "gemini-2.0-flash-lite",        # Versão lite, menor quota usage
+    "gemini-2.0-flash",             # Versão 2.0 estável
+    "gemini-exp-1206",              # Modelo experimental
+    "gemini-3-flash-preview",       # Preview versão 3
+    "gemini-pro-latest",            # Pro com maior capacidade
+    "gemini-2.5-flash-lite",        # Lite da versão 2.5
+]
+
 
 class GeminiClient:
     """
@@ -28,6 +41,7 @@ class GeminiClient:
     Responsibilities:
     - Configure connection to Gemini API using API key and model settings
     - Generate LLM responses with context and prompt composition
+    - Automatic fallback to alternative models when quota is exceeded
     - Handle errors and log all interactions
     - Provide a singleton interface for the application
     """
@@ -42,16 +56,19 @@ class GeminiClient:
             LLMError: If initialization fails
         """
         try:
+            # Modelo primário vem das configurações
+            self.primary_model = settings.GEMINI_MODEL
             self.llm = ChatGoogleGenerativeAI(
-                model=settings.GEMINI_MODEL,
+                model=self.primary_model,
                 temperature=settings.GEMINI_TEMPERATURE,
                 max_output_tokens=settings.GEMINI_MAX_TOKENS,
                 google_api_key=settings.GOOGLE_API_KEY,
                 timeout=60,  # 60 seconds timeout
             )
+            self.current_model = self.primary_model
             logger.info(
                 "[SUCCESS] GeminiClient initialized via LangChain (model=%s, temp=%s)",
-                settings.GEMINI_MODEL,
+                self.primary_model,
                 settings.GEMINI_TEMPERATURE,
             )
         except Exception as e:
@@ -64,7 +81,10 @@ class GeminiClient:
         context: str | None = None,
     ) -> dict[str, Any]:
         """
-        Generate a response from Gemini LLM using LangChain.
+        Generate a response from Gemini LLM using LangChain with automatic fallback.
+
+        Tenta usar o modelo primário. Se falhar por quota (429 RESOURCE_EXHAUSTED),
+        automaticamente tenta modelos alternativos da lista FALLBACK_MODELS.
 
         Args:
             prompt: Main user prompt (str)
@@ -76,53 +96,93 @@ class GeminiClient:
                 "response": str (LLM output),
                 "tokens_used": None (not available),
                 "latency_ms": int (response time in ms),
-                "model": str (model name),
+                "model": str (model name usado),
                 "finish_reason": None (not available)
             }
 
         Raises:
-            LLMError: On any error from LangChain or Gemini
+            LLMError: Se todos os modelos falharem ou erro não relacionado a quota
         """
         full_prompt = self._build_full_prompt(prompt, context)
         
-        try:
-            logger.info("[INFO] Generating Gemini response via LangChain")
-            start_time = time.time()
-            response = self.llm.invoke(full_prompt)
-            latency_ms = int((time.time() - start_time) * 1000)
+        # Lista de modelos para tentar: primário + fallbacks
+        models_to_try = [self.primary_model] + [m for m in FALLBACK_MODELS if m != self.primary_model]
+        last_error = None
 
-            # Handle response.content (can be str, list, dict, or other types)
-            if hasattr(response, "content"):
-                if isinstance(response.content, list):
-                    response_text = " ".join(str(item) for item in response.content)
-                elif isinstance(response.content, dict):
-                    # Extract text from dict (handles {'type': 'text', 'text': '...'})
-                    response_text = response.content.get("text", str(response.content))
+        for model_name in models_to_try:
+            try:
+                # Se não for o modelo atual, reconfigura o LLM
+                if model_name != self.current_model:
+                    logger.info("[FALLBACK] Tentando modelo alternativo: %s", model_name)
+                    self.llm = ChatGoogleGenerativeAI(
+                        model=model_name,
+                        temperature=settings.GEMINI_TEMPERATURE,
+                        max_output_tokens=settings.GEMINI_MAX_TOKENS,
+                        google_api_key=settings.GOOGLE_API_KEY,
+                        timeout=60,
+                    )
+                    self.current_model = model_name
+
+                logger.info("[INFO] Generating Gemini response via LangChain (model=%s)", self.current_model)
+                start_time = time.time()
+                response = self.llm.invoke(full_prompt)
+                latency_ms = int((time.time() - start_time) * 1000)
+
+                # Handle response.content (can be str, list, dict, or other types)
+                if hasattr(response, "content"):
+                    if isinstance(response.content, list):
+                        response_text = " ".join(str(item) for item in response.content)
+                    elif isinstance(response.content, dict):
+                        # Extract text from dict (handles {'type': 'text', 'text': '...'})
+                        response_text = response.content.get("text", str(response.content))
+                    else:
+                        response_text = str(response.content)
                 else:
-                    response_text = str(response.content)
-            else:
-                response_text = str(response)
+                    response_text = str(response)
 
-            # Normalize dict-like strings if model returns a serialized payload
-            if isinstance(response_text, str) and response_text.lstrip().startswith("{") and "'text'" in response_text:
-                try:
-                    parsed = ast.literal_eval(response_text)
-                    if isinstance(parsed, dict) and "text" in parsed:
-                        response_text = parsed["text"]
-                except (ValueError, SyntaxError):
-                    pass
+                # Normalize dict-like strings if model returns a serialized payload
+                if isinstance(response_text, str) and response_text.lstrip().startswith("{") and "'text'" in response_text:
+                    try:
+                        parsed = ast.literal_eval(response_text)
+                        if isinstance(parsed, dict) and "text" in parsed:
+                            response_text = parsed["text"]
+                    except (ValueError, SyntaxError):
+                        pass
 
-            logger.info("[SUCCESS] Response generated via LangChain (%sms)", latency_ms)
-            return {
-                "response": response_text,
-                "tokens_used": None,
-                "latency_ms": latency_ms,
-                "model": settings.GEMINI_MODEL,
-                "finish_reason": None,
-            }
-        except Exception as e:
-            logger.error("[ERROR] Unexpected error calling Gemini via LangChain: %s", e, exc_info=True)
-            raise LLMError("Gemini", f"Unexpected error: {e}", original_error=e) from e
+                logger.info("[SUCCESS] Response generated via LangChain (model=%s, %sms)", self.current_model, latency_ms)
+                return {
+                    "response": response_text,
+                    "tokens_used": None,
+                    "latency_ms": latency_ms,
+                    "model": self.current_model,
+                    "finish_reason": None,
+                }
+
+            except Exception as e:
+                error_str = str(e)
+                last_error = e
+
+                # Verifica se é erro de quota (429 RESOURCE_EXHAUSTED)
+                if "429" in error_str and "RESOURCE_EXHAUSTED" in error_str:
+                    logger.warning(
+                        "[QUOTA] Modelo %s atingiu limite de quota: %s",
+                        model_name,
+                        error_str[:200]  # Trunca erro para log
+                    )
+                    # Continua para próximo modelo
+                    continue
+                else:
+                    # Erro não relacionado a quota - falha imediatamente
+                    logger.error("[ERROR] Unexpected error calling Gemini via LangChain: %s", e, exc_info=True)
+                    raise LLMError("Gemini", f"Unexpected error: {e}", original_error=e) from e
+
+        # Se chegou aqui, todos os modelos falharam por quota
+        logger.error("[QUOTA] Todos os modelos Gemini esgotaram a quota. Modelos tentados: %s", models_to_try)
+        raise LLMError(
+            "Gemini",
+            f"Todos os modelos atingiram limite de quota. Tente novamente mais tarde. Modelos tentados: {', '.join(models_to_try)}",
+            original_error=last_error
+        )
 
     def _build_full_prompt(self, prompt: str, context: str | None) -> str:
         """
