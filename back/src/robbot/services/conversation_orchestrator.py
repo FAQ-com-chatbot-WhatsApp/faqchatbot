@@ -169,13 +169,13 @@ class ConversationOrchestrator:
                         or lead_name == conversation.lead.phone_number  # Phone placeholder
                         or (len(lead_name.split()) == 1 and len(lead_name) < 15)  # Single word < 15 chars (incomplete)
                     )
-                    
+
                     logger.debug(
                         "[DEBUG] Name extraction check: lead_name='%s', should_extract=%s",
                         lead_name,
                         should_extract,
                     )
-                    
+
                     if should_extract:
                         await intent_detector.try_extract_name(session, message_text, context_text, conversation)
                 else:
@@ -191,25 +191,23 @@ class ConversationOrchestrator:
                 )
 
                 response_text = self._normalize_response_text(response_data["response"])
-                
+
                 # DEBUG: Log response type and value
                 logger.debug(
-                    "[DEBUG] response_text type=%s, value=%s",
-                    type(response_text).__name__,
-                    str(response_text)[:200]
+                    "[DEBUG] response_text type=%s, value=%s", type(response_text).__name__, str(response_text)[:200]
                 )
-
-                # Request name if appropriate
-                response_text = await self._append_name_request_if_needed(
-                    conversation, context_text, response_text, spin_phase
-                )
-
-                response_text = self._normalize_response_text(response_text)
 
                 # Update score (baseado em fase SPIN)
                 new_score = await intent_detector.update_maturity_score(
                     session, conversation, message_text, intent, spin_phase
                 )
+
+                # Request name if appropriate (use updated score)
+                response_text = await self._append_name_request_if_needed(
+                    conversation, context_text, response_text, spin_phase, new_score
+                )
+
+                response_text = self._normalize_response_text(response_text)
 
                 # Check escalation
                 should_escalate = await intent_detector.check_escalation_needed(
@@ -230,9 +228,9 @@ class ConversationOrchestrator:
                 logger.debug(
                     "[DEBUG] Before WAHA send - response_text type=%s, value=%s",
                     type(response_text).__name__,
-                    str(response_text)[:200]
+                    str(response_text)[:200],
                 )
-                
+
                 # Send response via WAHA
                 sent = await self._send_response_via_waha(chat_id, response_text, session_name)
 
@@ -292,18 +290,18 @@ class ConversationOrchestrator:
             try:
                 fallback_response = await self._generate_fallback_response(str(e))
                 await self._send_response_via_waha(chat_id, fallback_response, session_name)
-                
+
                 # Save fallback message to database
                 message_processor = MessageProcessor(session, self.transcription_service)
                 conversation = await self._get_or_create_conversation(session, chat_id, phone_number)
-                
+
                 await message_processor.save_outbound_message(
                     session, conversation.id, fallback_response, to_phone=phone_number
                 )
-                
+
                 session.commit()
                 logger.info("[SUCCESS] Fallback response sent and saved (conv_id=%s)", conversation.id)
-                
+
             except (LLMError, WAHAError) as fallback_error:
                 logger.error("[ERROR] Fallback failed: %s", fallback_error)
                 session.rollback()
@@ -354,21 +352,22 @@ class ConversationOrchestrator:
         logger.info("[INFO] Urgency detected (conv_id=%s)", conversation.id)
 
     async def _append_name_request_if_needed(
-        self, conversation: ConversationModel, context: str, response_text: str, spin_phase: str
+        self,
+        conversation: ConversationModel,
+        context: str,
+        response_text: str,
+        spin_phase: str,
+        maturity_score: int,
     ) -> str:
         """Append name request if appropriate."""
-        should_ask_name = (
-            conversation.lead
-            and conversation.lead.name == conversation.lead.phone_number
-            and 20 <= conversation.lead.maturity_score < 50
-        )
+        lead_name = conversation.lead.name if conversation.lead else None
+        lead_phone = conversation.lead.phone_number if conversation.lead else None
+        should_ask_name = conversation.lead and (not lead_name or lead_name == lead_phone) and 20 <= maturity_score < 50
 
         if should_ask_name:
             # Instanciar IntentDetector localmente (como em process_inbound_message)
             intent_detector = IntentDetector(self.gemini_client, self.prompt_templates)
-            name_request = await intent_detector.generate_name_request(
-                context, spin_phase, conversation.lead.maturity_score
-            )
+            name_request = await intent_detector.generate_name_request(context, spin_phase, maturity_score)
 
             if name_request:
                 response_text = f"{response_text}\n\n{name_request}"
@@ -454,7 +453,7 @@ class ConversationOrchestrator:
             lead_status=conversation.lead.status.value if conversation.lead else "NEW",
             last_interaction="Agora",
         )
-        
+
         # DEBUG: Log do prompt completo (primeiros 800 caracteres)
         logger.info("[PROMPT_DEBUG] Generated prompt (first 800 chars): %s...", prompt[:800])
 
@@ -504,7 +503,47 @@ class ConversationOrchestrator:
                     return str(parsed["text"])
             except (ValueError, SyntaxError):
                 pass
-        return str(response_text)
+
+        # Convert to string and clean LLM artifacts
+        text = str(response_text)
+
+        # Remove common LLM formatting markers
+        markers_to_remove = [
+            "**RESPONSE:**",
+            "**RESPOSTA:**",
+            "RESPONSE:",
+            "RESPOSTA:",
+            "**Response:**",
+            "Response:",
+        ]
+
+        for marker in markers_to_remove:
+            if text.strip().startswith(marker):
+                text = text.replace(marker, "", 1).strip()
+                break
+
+        # Enforce maximum 2 paragraphs (WhatsApp best practice)
+        text = self._enforce_paragraph_limit(text, max_paragraphs=2)
+
+        return text
+
+    def _enforce_paragraph_limit(self, text: str, max_paragraphs: int = 2) -> str:
+        """Enforce maximum paragraph limit for WhatsApp messages."""
+        paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
+
+        if len(paragraphs) <= max_paragraphs:
+            return text
+
+        # Keep first max_paragraphs and truncate
+        limited = "\n\n".join(paragraphs[:max_paragraphs])
+
+        logger.warning(
+            "[RESPONSE_TRUNCATE] Response had %s paragraphs, truncated to %s",
+            len(paragraphs),
+            max_paragraphs,
+        )
+
+        return limited
 
     async def _register_interaction(self, session: Any, lead_id: str | None, interaction_type: str, notes: str) -> None:
         """
