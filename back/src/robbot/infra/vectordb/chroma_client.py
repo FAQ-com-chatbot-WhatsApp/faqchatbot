@@ -45,7 +45,7 @@ class ChromaClient:
                 path=settings.CHROMA_PERSIST_DIR,
                 settings=ChromaSettings(
                     anonymized_telemetry=False,
-                )
+                ),
             )
 
             # Obter ou criar coleção
