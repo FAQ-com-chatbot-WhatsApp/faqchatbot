@@ -38,14 +38,6 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 # CRITICO: Copia APENAS arquivos de dependencias primeiro (cache layer)
 COPY pyproject.toml ./
-RUN echo "# wpp-bot" > README.md
-RUN mkdir -p src/robbot && touch src/robbot/__init__.py
-
-# Instala todas as dependências (uv usa pyproject.toml automaticamente)
-# PyTorch será instalado no stage ML separado
-RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=cache,target=/root/.cache/pip \
-    uv pip install --system -e . --no-deps || true
 
 # Instala deps do pyproject.toml (exceto ML: torch, transformers, faster-whisper)
 # IMPORTANTE: openpyxl e reportlab são necessários para export_service.py
@@ -53,7 +45,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=cache,target=/root/.cache/pip \
     uv pip install --system \
     alembic bcrypt chromadb email-validator fastapi google-genai google-api-core httpx \
-    langchain langchain-google-genai passlib pillow psycopg2-binary pydantic \
+    langchain langchain-google-genai langchain-groq passlib pillow psycopg2-binary pydantic \
     pydantic-settings pyjwt python-dotenv python-multipart redis redis-om \
     requests rq sqlalchemy tiktoken uvicorn pyotp qrcode sentry-sdk schedule \
     gunicorn watchfiles hiredis python-jose cryptography openai pyyaml
@@ -138,6 +130,9 @@ COPY alembic/ ./alembic/
 COPY scripts/ ./scripts/
 COPY alembic.ini pyproject.toml ./
 
+# Cria diretório ChromaDB com permissões corretas
+RUN mkdir -p /app/data/chroma && chmod -R 777 /app/data/chroma
+
 # Ajusta permissões
 RUN chown -R appuser:appuser /app
 
@@ -156,6 +151,10 @@ CMD ["/bin/sh", "-c", "python -m uvicorn robbot.main:app --host 0.0.0.0 --port $
 FROM runtime-api AS runtime-worker
 
 LABEL description="RQ Worker for bot_wpp - Background job processing"
+
+# CRITICO: Define PYTHONPATH com caminho absoluto ANTES de qualquer comando
+# Isso garante que o módulo 'robbot' seja encontrado independente do diretório de trabalho
+ENV PYTHONPATH="/app/src"
 
 # Healthcheck específico para worker
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
