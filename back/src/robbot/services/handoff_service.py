@@ -189,15 +189,15 @@ class HandoffService:
         """Generates natural transition message based on context."""
         messages = {
             "score_high": (
-                f"Vejo que você está bem interessado (score: {score})! 🎯\n\n"
-                "Vou conectar você com um de nossos especialistas para "
-                "agilizar o agendamento e tirar dúvidas mais específicas. "
-                "Aguarde um momento, por favor."
+                "Vejo que você está bem interessado! 🎯\n\n"
+                "Vou transferir você para nossa equipe de agendamento "
+                "que vai conseguir te ajudar melhor com horários e detalhes finais. "
+                "Aguarde só um momento, ok?"
             ),
             "bot_confused": (
                 "Entendo que você precisa de uma orientação mais específica. "
-                "Vou conectar você com um atendente humano que pode te ajudar "
-                "melhor nessa situação. Aguarde só um momento."
+                "Vou te conectar com alguém da equipe que pode te ajudar "
+                "melhor nessa situação. Aguarde só um instante."
             ),
             "manual": (
                 "Um de nossos atendentes vai assumir essa conversa agora "
