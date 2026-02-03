@@ -452,6 +452,7 @@ class WAHAClient:
         Docs: POST /api/sendText
         """
         if apply_anti_ban:
+            logger.info("[ANTI-BAN] Applying delays (chars=%s, chat_id=%s)", len(text), chat_id)
             await self._apply_anti_ban_flow(session, chat_id, text)
 
         payload = {"session": session, "chatId": chat_id, "text": text}
