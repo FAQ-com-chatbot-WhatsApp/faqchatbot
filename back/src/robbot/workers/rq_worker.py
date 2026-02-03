@@ -117,10 +117,29 @@ def main():
         clean_registries(queue)
     logger.info("Cleaned stale worker registries")
 
-    # Create worker with unique name based on hostname + PID
-    # PID garante unicidade quando múltiplos workers rodam no mesmo container
+    # Create worker with unique name based on hostname + PID + timestamp
+    # Timestamp garante unicidade mesmo em restarts rápidos
     import os
-    worker_name = f"worker-{socket.gethostname()}-{os.getpid()}"
+    import time
+
+    worker_name = f"worker-{socket.gethostname()}-{os.getpid()}-{int(time.time())}"
+
+    # Force cleanup of any existing worker with similar name pattern
+    # This prevents "worker already exists" errors on container restart
+    try:
+        from rq import Worker as RQWorker
+
+        pattern = f"worker-{socket.gethostname()}-*"
+        all_workers = RQWorker.all(connection=redis_conn)
+        for w in all_workers:
+            if w.name.startswith(f"worker-{socket.gethostname()}"):
+                logger.info("Removing stale worker registration: %s", w.name)
+                try:
+                    w.unregister()
+                except Exception as e:
+                    logger.warning("Failed to unregister worker %s: %s", w.name, e)
+    except Exception as e:
+        logger.warning("Failed to cleanup stale workers: %s", e)
 
     worker = Worker(
         queues,
