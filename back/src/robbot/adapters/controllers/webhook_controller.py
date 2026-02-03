@@ -62,8 +62,15 @@ async def receive_waha_webhook(
     queue_service = get_queue_service()
 
     try:
-        if payload.event == "message" and payload.payload:
+        if payload.event in {"message", "message.any"} and payload.payload:
             message_data = payload.payload
+
+            if message_data.get("fromMe") is True:
+                logger.debug(
+                    "[WEBHOOK] Ignorando mensagem enviada pelo bot (fromMe=true)",
+                    extra={"event": payload.event, "webhook_log_id": log.id},
+                )
+                return log
 
             chat_id = message_data.get("from", "")
             phone = chat_id.split("@")[0] if "@" in chat_id else chat_id
