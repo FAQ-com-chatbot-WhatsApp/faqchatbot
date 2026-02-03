@@ -100,7 +100,7 @@ class IntentDetector:
     async def try_extract_name(self, session: Any, message: str, context: str, conversation: ConversationModel) -> None:
         """
         Tentar extrair nome do paciente da mensagem de forma inteligente.
-        Atualiza o lead se encontrar nome com confiança >= 70%.
+        Atualiza o lead se encontrar nome com confiança >= 65%.
 
         Args:
             session: Sessão do banco de dados
@@ -112,20 +112,56 @@ class IntentDetector:
             prompt = self.prompt_templates.format_name_extraction_prompt(message, context)
             response = self.gemini_client.generate_response(prompt)
 
-            # Parse JSON response
-            result = json.loads(response["response"].strip())
+            # Parse JSON response - try to extract JSON from response
+            response_text = response["response"].strip()
+            
+            # Try to find JSON in response (sometimes Gemini adds extra text)
+            if "{" in response_text:
+                json_start = response_text.find("{")
+                json_end = response_text.rfind("}") + 1
+                response_text = response_text[json_start:json_end]
+            
+            result = json.loads(response_text)
 
             name = result.get("name")
             confidence = result.get("confidence", 0)
+            source = result.get("source", "unknown")
 
-            if name and name != "null" and confidence >= 70:
-                # Update lead name
-                lead_repo = LeadRepository(session)
-                conversation.lead.name = name
-                lead_repo.update(conversation.lead)
-                session.flush()
+            # Accept name if confidence >= 65% (was 70% - now more permissive)
+            if name and name != "null" and confidence >= 65:
+                current_name = conversation.lead.name
 
-                logger.info("[SUCCESS] Name extracted: %s (confidence=%s%%)", name, confidence)
+                # Only update if: no name, phone placeholder, or new name has higher confidence
+                should_update = (
+                    not current_name  # No name yet
+                    or current_name == conversation.lead.phone_number  # Phone placeholder
+                    or (len(current_name.split()) == 1 and len(name.split()) > 1)  # Upgrade from single to full name
+                )
+
+                if should_update:
+                    # Capitalize properly (title case for names)
+                    formatted_name = name.title()
+
+                    # Update lead name
+                    lead_repo = LeadRepository(session)
+                    conversation.lead.name = formatted_name
+                    lead_repo.update(conversation.lead)
+                    session.flush()
+
+                    logger.info(
+                        "[SUCCESS] Name extracted: '%s' (confidence=%s%%, source=%s, previous='%s')",
+                        formatted_name,
+                        confidence,
+                        source,
+                        current_name or "none",
+                    )
+                else:
+                    logger.debug(
+                        "[SKIP] Name extraction confidence too low to replace existing (new='%s' %s%%, current='%s')",
+                        name,
+                        confidence,
+                        current_name,
+                    )
 
         except (LLMError, json.JSONDecodeError, KeyError) as e:
             logger.warning("[WARNING] Failed to extract name: %s", e)
@@ -163,25 +199,28 @@ class IntentDetector:
             return None
 
     async def update_maturity_score(
-        self, session: Any, conversation: ConversationModel, message: str, intent: str
+        self, session: Any, conversation: ConversationModel, message: str, intent: str, spin_phase: str = "SITUATION"
     ) -> int:
         """
-        Atualizar score de maturidade do lead baseado na intenção.
+        Atualizar score de maturidade do lead baseado na FASE SPIN.
 
-        Score mapping:
-        - INTERESSE_PRODUTO: +5
-        - DUVIDA_TECNICA: +3
-        - ORCAMENTO: +15
-        - AGENDAMENTO: +20
-        - RECLAMACAO: +0
-        - AGRADECIMENTO: +1
-        - OUTRO: +0
+        Score baseado em progressão SPIN:
+        - SITUATION: 10-30 (início da conversa, contexto)
+        - PROBLEM: 30-50 (descreveu problema)
+        - IMPLICATION: 50-75 (entendeu impacto)
+        - NEED_PAYOFF: 75-85 (quer solução)
+        - READY: 85-100 (pronto para agendar)
+
+        Bônus por intents específicos:
+        - AGENDAMENTO: +10 (forte sinal de interesse)
+        - ORCAMENTO: +5 (perguntou valor)
 
         Args:
             session: Sessão do banco de dados
             conversation: Conversa atual
             message: Mensagem do cliente
             intent: Intenção detectada
+            spin_phase: Fase SPIN atual (CRUCIAL para scoring)
 
         Returns:
             int: Novo score de maturidade
@@ -195,16 +234,28 @@ class IntentDetector:
 
             current_score = conversation.lead.maturity_score
 
-            score_delta = {
-                "INTERESSE_PRODUTO": 5,
-                "DUVIDA_TECNICA": 3,
-                "ORCAMENTO": 15,
-                "AGENDAMENTO": 20,
-                "RECLAMACAO": 0,
-                "AGRADECIMENTO": 1,
+            # Score base por fase SPIN (progressão natural)
+            spin_score_target = {
+                "SITUATION": 20,
+                "PROBLEM": 40,
+                "IMPLICATION": 60,
+                "NEED_PAYOFF": 80,
+                "READY": 90,
+            }.get(spin_phase.upper(), 10)
+
+            # Bônus por intents que indicam forte interesse
+            intent_bonus = {
+                "AGENDAMENTO": 10,
+                "ORCAMENTO": 5,
+                "INTERESSE_PRODUTO": 3,
             }.get(intent, 0)
 
-            new_score = min(100, current_score + score_delta)
+            # Calcular novo score: progride em direção ao target da fase
+            # Se já passou do target, mantém; se abaixo, avança
+            if current_score < spin_score_target:
+                new_score = min(100, spin_score_target + intent_bonus)
+            else:
+                new_score = min(100, current_score + intent_bonus)
 
             if conversation.lead:
                 lead_repo = LeadRepository(session)
@@ -213,11 +264,12 @@ class IntentDetector:
                 session.flush()
 
             logger.info(
-                "[SUCCESS] Score updated (lead_id=%s, %s → %s, delta=%s)",
+                "[SUCCESS] Score updated (lead_id=%s, %s → %s, phase=%s, intent=%s)",
                 conversation.lead.id,
                 current_score,
                 new_score,
-                score_delta,
+                spin_phase,
+                intent,
             )
 
             return new_score
