@@ -160,9 +160,26 @@ class ConversationOrchestrator:
                 if is_urgent and not conversation.is_urgent:
                     await self._mark_as_urgent(session, conversation)
 
-                # Extract name if we don't have it yet
-                if conversation.lead and conversation.lead.name == conversation.lead.phone_number:
-                    await intent_detector.try_extract_name(session, message_text, context_text, conversation)
+                # Extract name if we don't have it yet (None, empty, or phone number placeholder)
+                if conversation.lead:
+                    lead_name = conversation.lead.name
+                    # Try extraction if: no name, empty name, phone placeholder, or single word (incomplete)
+                    should_extract = (
+                        not lead_name  # None or empty
+                        or lead_name == conversation.lead.phone_number  # Phone placeholder
+                        or (len(lead_name.split()) == 1 and len(lead_name) < 15)  # Single word < 15 chars (incomplete)
+                    )
+                    
+                    logger.debug(
+                        "[DEBUG] Name extraction check: lead_name='%s', should_extract=%s",
+                        lead_name,
+                        should_extract,
+                    )
+                    
+                    if should_extract:
+                        await intent_detector.try_extract_name(session, message_text, context_text, conversation)
+                else:
+                    logger.warning("[WARNING] No lead attached to conversation, skipping name extraction")
 
                 # Generate response
                 response_data = await self._generate_response(
@@ -189,8 +206,10 @@ class ConversationOrchestrator:
 
                 response_text = self._normalize_response_text(response_text)
 
-                # Update score
-                new_score = await intent_detector.update_maturity_score(session, conversation, message_text, intent)
+                # Update score (baseado em fase SPIN)
+                new_score = await intent_detector.update_maturity_score(
+                    session, conversation, message_text, intent, spin_phase
+                )
 
                 # Check escalation
                 should_escalate = await intent_detector.check_escalation_needed(
@@ -430,6 +449,7 @@ class ConversationOrchestrator:
             intent=intent,
             spin_phase=spin_phase,
             context=context,
+            lead_name=conversation.lead.name if conversation.lead else None,
             maturity_score=conversation.lead.maturity_score if conversation.lead else 0,
             lead_status=conversation.lead.status.value if conversation.lead else "NEW",
             last_interaction="Agora",
