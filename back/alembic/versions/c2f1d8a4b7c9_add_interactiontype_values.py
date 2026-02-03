@@ -27,4 +27,4 @@ def upgrade() -> None:
 def downgrade() -> None:
     """Downgrade schema."""
     # Removing enum values is unsafe and not supported here.
-    return None
+    return
