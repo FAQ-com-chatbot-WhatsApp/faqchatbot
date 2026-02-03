@@ -76,16 +76,16 @@ async def receive_waha_webhook(
             phone = chat_id.split("@")[0] if "@" in chat_id else chat_id
 
             # DEV MODE: Filtrar mensagens por número de telefone (exceto sessão de teste)
-            if settings.DEV_MODE and settings.DEV_PHONE_NUMBER and payload.session != "test":
-                if phone != settings.DEV_PHONE_NUMBER:
+            if settings.DEV_MODE and settings.dev_phone_list and payload.session != "test":
+                if phone not in settings.dev_phone_list:
                     logger.info(
-                        "[DEV MODE] Mensagem ignorada - número não autorizado: %s (permitido: %s)",
+                        "[DEV MODE] Mensagem ignorada - número não autorizado: %s (permitidos: %s)",
                         phone,
-                        settings.DEV_PHONE_NUMBER,
+                        ", ".join(settings.dev_phone_list),
                         extra={
                             "dev_mode": True,
                             "phone": phone,
-                            "allowed_phone": settings.DEV_PHONE_NUMBER,
+                            "allowed_phones": settings.dev_phone_list,
                             "webhook_log_id": log.id,
                         },
                     )
