@@ -19,9 +19,10 @@ def poll_waha_messages(**kwargs):
     """
     Busca mensagens novas do WAHA via API e enfileira para processamento.
     
-    SUBSTITUIÇÃO DE WEBHOOKS:
-    - WAHA WEBJS não dispara webhooks message/message.any de forma confiável
-    - Solução: Polling periódico via GET /api/{session}/chats (doc oficial)
+    FALLBACK DE WEBHOOKS:
+    - Priorize webhooks (message/message.any) para capturar todas as mensagens
+    - Polling periódico via GET /api/{session}/chats como fallback
+    - Para contatos @c.us, tenta resolver LID via GET /api/{session}/lids/pn/{phoneNumber}
     
     DEV_MODE:
     - True: Processa APENAS mensagens de DEV_PHONE_NUMBER
@@ -43,103 +44,184 @@ def poll_waha_messages(**kwargs):
         redis_client = get_redis_client()
         
         try:
-            # WEBJS: /chats está quebrado, usar endpoint direto
-            # Em DEV_MODE: buscar apenas mensagens do DEV_PHONE_NUMBER
-            phone_numbers = []
-            if settings.DEV_MODE and settings.DEV_PHONE_NUMBER:
-                phone_numbers = [settings.DEV_PHONE_NUMBER]
-            
-            if not phone_numbers:
-                logger.warning("[POLLING] Sem números para processar")
-                return
-            
             headers = {"X-Api-Key": settings.WAHA_API_KEY}
             messages_processed = 0
             messages_skipped = 0
-            
-            # Processar cada número
-            for phone in phone_numbers:
-                chat_id = f"{phone}@c.us"
-                
-                # Buscar mensagens recentes deste chat (últimas 10)
-                messages_url = f"{settings.WAHA_URL}/api/{settings.WAHA_SESSION_NAME}/chats/{chat_id}/messages"
-                params = {"limit": 10}
-                
-                with httpx.Client(timeout=30.0) as client:
+
+            with httpx.Client(timeout=30.0) as client:
+                chat_ids: list[str] = []
+                if settings.DEV_MODE and settings.DEV_PHONE_NUMBER:
+                    target_phone = settings.DEV_PHONE_NUMBER
+                    normalized_phone = target_phone
+                    check_exists_url = (
+                        f"{settings.WAHA_URL}/api/contacts/check-exists"
+                        f"?session={settings.WAHA_SESSION_NAME}&phone={target_phone}"
+                    )
+                    check_exists_response = client.get(check_exists_url, headers=headers)
+                    if check_exists_response.status_code == 200:
+                        check_payload = check_exists_response.json()
+                        normalized_chat_id = check_payload.get("chatId")
+                        if normalized_chat_id:
+                            normalized_phone = normalized_chat_id.split("@")[0]
+
+                    lids_url = f"{settings.WAHA_URL}/api/{settings.WAHA_SESSION_NAME}/lids/pn/{normalized_phone}"
+                    lids_response = client.get(lids_url, headers=headers)
+                    if lids_response.status_code == 200:
+                        lid_payload = lids_response.json()
+                        resolved_lid = lid_payload.get("lid")
+                        if resolved_lid:
+                            chat_ids = [resolved_lid]
+                    if not chat_ids:
+                        logger.warning(
+                            "[POLLING] LID não encontrado para DEV_PHONE_NUMBER=%s (normalizado=%s); aguardando sincronização",
+                            target_phone,
+                            normalized_phone,
+                        )
+                else:
+                    overview_url = f"{settings.WAHA_URL}/api/{settings.WAHA_SESSION_NAME}/chats/overview"
+                    overview_params = {"limit": 200, "offset": 0}
+                    overview_response = client.get(overview_url, headers=headers, params=overview_params)
+                    if overview_response.status_code == 200:
+                        try:
+                            chat_ids = [chat.get("id") for chat in overview_response.json() if chat.get("id")]
+                        except Exception:
+                            chat_ids = []
+                    else:
+                        logger.warning(
+                            "[POLLING] Falha ao buscar chats/overview: %s",
+                            overview_response.text,
+                            extra={"status": overview_response.status_code},
+                        )
+
+                    if not chat_ids:
+                        chats_url = f"{settings.WAHA_URL}/api/{settings.WAHA_SESSION_NAME}/chats"
+                        chats_params = {"limit": 200, "offset": 0}
+                        chats_response = client.get(chats_url, headers=headers, params=chats_params)
+                        if chats_response.status_code == 200:
+                            try:
+                                chat_ids = [chat.get("id") for chat in chats_response.json() if chat.get("id")]
+                            except Exception:
+                                chat_ids = []
+                        else:
+                            logger.warning(
+                                "[POLLING] Falha ao buscar chats: %s",
+                                chats_response.text,
+                                extra={"status": chats_response.status_code},
+                            )
+
+                if not chat_ids:
+                    logger.warning("[POLLING] Sem chats para processar")
+                    return
+
+                # Processar cada chat
+                for chat_id in chat_ids:
+                    resolved_chat_id = chat_id
+                    if chat_id.endswith("@c.us"):
+                        phone = chat_id.split("@")[0]
+                        lids_url = f"{settings.WAHA_URL}/api/{settings.WAHA_SESSION_NAME}/lids/pn/{phone}"
+                        lids_response = client.get(lids_url, headers=headers)
+                        if lids_response.status_code == 200:
+                            lid_payload = lids_response.json()
+                            resolved_chat_id = lid_payload.get("lid")
+                            if not resolved_chat_id:
+                                logger.debug(
+                                    "[POLLING] LID vazio para %s; ignorando chat",
+                                    chat_id,
+                                    extra={"chat_id": chat_id},
+                                )
+                                continue
+                        else:
+                            logger.debug(
+                                "[POLLING] LID não encontrado para %s (status=%s)",
+                                chat_id,
+                                lids_response.status_code,
+                                extra={"chat_id": chat_id},
+                            )
+                            continue
+
+                    messages_url = (
+                        f"{settings.WAHA_URL}/api/{settings.WAHA_SESSION_NAME}/chats/"
+                        f"{resolved_chat_id}/messages"
+                    )
+                    params = {"limit": 10}
+
                     msg_response = client.get(messages_url, headers=headers, params=params)
 
                     if msg_response.status_code == 422:
                         logger.warning(
                             "[POLLING] WAHA retornou 422 (sessão não pronta ou payload inválido): %s",
                             msg_response.text,
-                            extra={"status": msg_response.status_code},
+                            extra={"status": msg_response.status_code, "chat_id": chat_id},
                         )
-                        return
+                        continue
+
+                    if msg_response.status_code >= 500:
+                        logger.error(
+                            "[POLLING] WAHA retornou %s ao buscar mensagens: %s",
+                            msg_response.status_code,
+                            msg_response.text,
+                            extra={"status": msg_response.status_code, "chat_id": chat_id},
+                        )
+                        continue
 
                     msg_response.raise_for_status()
                     messages = msg_response.json()
-                
-                # Processar apenas mensagens recebidas (não enviadas pelo bot)
-                for message in messages:
-                    if message.get("fromMe", True):  # Ignorar mensagens enviadas pelo bot
-                        continue
-                    
-                    # Verificar timestamp (processar apenas mensagens dos últimos 60 segundos)
-                    timestamp = message.get("timestamp", 0)
-                    message_time = datetime.fromtimestamp(timestamp, tz=timezone.utc)
-                    now = datetime.now(timezone.utc)
-                    
-                    if now - message_time > timedelta(seconds=60):
-                        continue
-                    
-                    # Verificar se já processamos esta mensagem (via ack ou outro indicador)
-                    # WAHA retorna ack=1 (SERVER), 2 (DELIVERED), 3 (READ)
-                    # Vamos processar apenas mensagens não lidas (ack < 3)
-                    ack = message.get("ack", 0)
-                    if ack >= 3:  # Já foi lida/processada
-                        continue
-                    
-                    message_id = message.get("id")
-                    if message_id:
-                        redis_key = f"waha:processed:{message_id}"
-                        if redis_client.get(redis_key):
-                            messages_skipped += 1
+
+                    # Processar apenas mensagens recebidas (não enviadas pelo bot)
+                    for message in messages:
+                        if message.get("fromMe", True):  # Ignorar mensagens enviadas pelo bot
                             continue
 
-                    # Montar payload no formato esperado pelo webhook_controller
-                    message_data = {
-                        "id": message_id,
-                        "from": message.get("from"),
-                        "to": message.get("to"),
-                        "body": message.get("body", ""),
-                        "timestamp": timestamp,
-                        "hasMedia": message.get("hasMedia", False),
-                        "ack": ack,
-                        "_data": message.get("_data", {}),
-                    }
-                    
-                    # Enfileirar para processamento
-                    job_id = queue_service.enqueue_message_processing(
-                        message_data=message_data,
-                        message_direction="inbound",
-                    )
+                        # Verificar timestamp (processar apenas mensagens dos últimos 60 segundos)
+                        timestamp = message.get("timestamp", 0)
+                        message_time = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+                        now = datetime.now(timezone.utc)
 
-                    if message_id:
-                        redis_client.set(redis_key, "1", ex=86400)
-                    
-                    messages_processed += 1
-                    
-                    logger.info(
-                        "[POLLING] Mensagem enfileirada: %s de %s",
-                        message.get("id"),
-                        phone,
-                        extra={
-                            "job_id": job_id,
-                            "phone": phone,
-                            "message_id": message.get("id"),
+                        if now - message_time > timedelta(seconds=60):
+                            continue
+
+                        ack = message.get("ack", 0)
+                        message_id = message.get("id")
+                        if message_id:
+                            redis_key = f"waha:processed:{message_id}"
+                            if redis_client.get(redis_key):
+                                messages_skipped += 1
+                                continue
+
+                        # Montar payload no formato esperado pelo webhook_controller
+                        message_data = {
+                            "id": message_id,
+                            "from": message.get("from"),
+                            "to": message.get("to"),
+                            "body": message.get("body", ""),
                             "timestamp": timestamp,
+                            "hasMedia": message.get("hasMedia", False),
+                            "ack": ack,
+                            "_data": message.get("_data", {}),
                         }
-                    )
+
+                        # Enfileirar para processamento
+                        job_id = queue_service.enqueue_message_processing(
+                            message_data=message_data,
+                            message_direction="inbound",
+                        )
+
+                        if message_id:
+                            redis_client.set(redis_key, "1", ex=86400)
+
+                        messages_processed += 1
+
+                        logger.info(
+                            "[POLLING] Mensagem enfileirada: %s de %s",
+                            message.get("id"),
+                            message.get("from"),
+                            extra={
+                                "job_id": job_id,
+                                "chat_id": message.get("from"),
+                                "message_id": message.get("id"),
+                                "timestamp": timestamp,
+                            }
+                        )
             
             logger.info(
                 "[POLLING] Busca concluída - %d mensagens processadas, %d ignoradas",
@@ -165,7 +247,11 @@ def poll_waha_messages(**kwargs):
                 extra={"error": str(e)},
                 exc_info=True,
             )
-            raise
+            return {
+                "status": "error",
+                "reason": "http_error",
+                "error": str(e),
+            }
         except Exception as e:
             logger.error(
                 "[POLLING] Erro inesperado no polling: %s",
@@ -173,4 +259,8 @@ def poll_waha_messages(**kwargs):
                 extra={"error": str(e)},
                 exc_info=True,
             )
-            raise
+            return {
+                "status": "error",
+                "reason": "unexpected_error",
+                "error": str(e),
+            }
