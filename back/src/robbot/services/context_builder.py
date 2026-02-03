@@ -52,6 +52,9 @@ class ContextBuilder:
             context_text = "\n---\n".join(context_parts)
 
             logger.info("[SUCCESS] Context retrieved (%s documents)", len(results))
+            
+            # DEBUG: Log o contexto completo
+            logger.info("[CONTEXT_DEBUG] Full context text: %s", context_text)
 
             return context_text
 
