@@ -454,6 +454,9 @@ class ConversationOrchestrator:
             lead_status=conversation.lead.status.value if conversation.lead else "NEW",
             last_interaction="Agora",
         )
+        
+        # DEBUG: Log do prompt completo (primeiros 800 caracteres)
+        logger.info("[PROMPT_DEBUG] Generated prompt (first 800 chars): %s...", prompt[:800])
 
         response_data = self.gemini_client.generate_response(prompt)
 
