@@ -128,6 +128,7 @@ class PlaybookOrchestrationMixin:
             user_message=message_text,
             intent=intent,
             context=context,
+            lead_name=conversation.lead.name if conversation.lead else None,
             maturity_score=conversation.lead.maturity_score if conversation.lead else 0,
             lead_status=conversation.lead.status.value if conversation.lead else "NEW",
             last_interaction="Agora",
