@@ -5,7 +5,7 @@
 ### Windows (PowerShell):
 ```powershell
 cd d:\_projects\clinica_go\back
-pwsh -File .\demo-queries.ps1
+.\demo-queries.ps1
 ```
 
 **OU via Git Bash:**
