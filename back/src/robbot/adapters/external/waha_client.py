@@ -21,6 +21,8 @@ logger = logging.getLogger(__name__)
 class WAHAClient:
     """Async HTTP client for WAHA API with anti-ban features."""
 
+    _DEFAULT_WEBHOOK_EVENTS = ["message", "message.any", "session.status"]
+
     def __init__(
         self,
         base_url: str | None = None,
@@ -219,17 +221,49 @@ class WAHAClient:
             payload["config"] = config
 
         if webhook_url:
-            cfg = payload.setdefault("config", {})
-            webhooks = cfg.setdefault("webhooks", [])
-            if webhooks:
-                webhooks[0]["url"] = webhook_url
-                if "events" not in webhooks[0]:
-                    webhooks[0]["events"] = ["message", "session.status"]
-            else:
-                webhooks.append({"url": webhook_url, "events": ["message", "session.status"]})
+            self._apply_webhook_config(payload, webhook_url)
 
         logger.info("[INFO] Creating WAHA session: %s", name)
         return await self._request("POST", "/api/sessions", json=payload)
+
+    async def update_session(
+        self,
+        name: str,
+        webhook_url: str | None = None,
+        config: dict | None = None,
+    ) -> dict[str, Any]:
+        """Update an existing WhatsApp session.
+
+        Args:
+            name: Session name
+            webhook_url: Webhook URL for events
+            config: Optional WAHA session config
+
+        Returns:
+            Session data dict
+
+        Docs: PUT /api/sessions/{name}
+        """
+        payload: dict[str, Any] = {}
+
+        if config:
+            payload["config"] = config
+
+        if webhook_url:
+            self._apply_webhook_config(payload, webhook_url)
+
+        logger.info("[INFO] Updating WAHA session: %s", name)
+        return await self._request("PUT", f"/api/sessions/{name}", json=payload)
+
+    def _apply_webhook_config(self, payload: dict[str, Any], webhook_url: str) -> None:
+        cfg = payload.setdefault("config", {})
+        webhooks = cfg.setdefault("webhooks", [])
+        if webhooks:
+            webhooks[0]["url"] = webhook_url
+            existing_events = webhooks[0].get("events") or []
+            webhooks[0]["events"] = list(dict.fromkeys(existing_events + self._DEFAULT_WEBHOOK_EVENTS))
+        else:
+            webhooks.append({"url": webhook_url, "events": self._DEFAULT_WEBHOOK_EVENTS})
 
     async def start_session(self, name: str) -> dict[str, Any]:
         """Start WhatsApp session (generates QR code).
