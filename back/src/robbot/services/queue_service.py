@@ -57,6 +57,10 @@ class QueueService:
 
         Returns:
             Job ID para rastreamento
+        
+        Note:
+            Dedupe é feito via message_id no polling_job antes de chamar esta função.
+            Não bloqueamos por phone_number para permitir múltiplas mensagens em sequência.
         """
         job = MessageProcessingJob(
             message_data=message_data,
