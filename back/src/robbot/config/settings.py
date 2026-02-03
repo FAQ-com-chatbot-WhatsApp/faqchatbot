@@ -10,10 +10,18 @@ class Settings(BaseSettings):
     """Core application configuration with sane defaults."""
 
     # Development Mode (filter messages by phone number)
-    DEV_MODE: bool = Field(default=False, description="Enable dev mode (only respond to DEV_PHONE_NUMBER)")
-    DEV_PHONE_NUMBER: str | None = Field(
-        default=None, description="Phone number to respond to in dev mode (e.g., 5511999999999)"
+    DEV_MODE: bool = Field(default=False, description="Enable dev mode (only respond to DEV_PHONE_NUMBERS)")
+    DEV_PHONE_NUMBERS: str | None = Field(
+        default=None,
+        description="Phone numbers to respond to in dev mode (comma-separated, e.g., 5511999999999,5511888888888)",
     )
+
+    @property
+    def dev_phone_list(self) -> list[str]:
+        """Parse comma-separated phone numbers into a list."""
+        if not self.DEV_PHONE_NUMBERS:
+            return []
+        return [p.strip() for p in self.DEV_PHONE_NUMBERS.split(",") if p.strip()]
 
     # Use Postgres via Docker for local/dev. Provide connection via env.
     # Example in .env:
@@ -55,11 +63,22 @@ class Settings(BaseSettings):
     REDIS_CACHE_TTL: int = Field(default=3600)
     REDIS_MAX_CONNECTIONS: int = Field(default=10)
 
-    # Gemini AI
+    # Groq (Primary - generous free tier, fast)
+    GROQ_API_KEY: str | None = Field(default=None)
+    GROQ_MODEL: str = Field(default="llama-3.3-70b-versatile")
+    GROQ_MAX_TOKENS: int = Field(default=2048)
+    GROQ_TEMPERATURE: float = Field(default=0.7)
+
+    # Gemini AI (Fallback - quota limited)
     GOOGLE_API_KEY: str  # required field
-    GEMINI_MODEL: str = Field(default="gemini-2.0-flash-exp")
+    GEMINI_MODEL: str = Field(default="gemini-1.5-pro")
     GEMINI_MAX_TOKENS: int = Field(default=2048)
     GEMINI_TEMPERATURE: float = Field(default=0.7)
+
+    # LLM Provider Selection
+    LLM_PRIMARY_PROVIDER: str = Field(default="groq", description="Primary LLM provider (groq or gemini)")
+    LLM_ENABLE_FALLBACK: bool = Field(default=True, description="Enable fallback to secondary provider")
+    LLM_TIMEOUT: int = Field(default=60, description="LLM request timeout in seconds")
 
     # OpenAI (Whisper for transcription)
     OPENAI_API_KEY: str | None = Field(default=None)
