@@ -57,7 +57,7 @@ class QueueService:
 
         Returns:
             Job ID para rastreamento
-        
+
         Note:
             Dedupe é feito via message_id no polling_job antes de chamar esta função.
             Não bloqueamos por phone_number para permitir múltiplas mensagens em sequência.
@@ -260,7 +260,7 @@ class QueueService:
             Job ID
         """
         queue = self.queue_manager.get_queue(queue_name)
-        
+
         # Enqueue simples - permite timeout customizado
         enqueue_kwargs: dict[str, Any] = {
             "job_id": job_id,
@@ -271,7 +271,7 @@ class QueueService:
             enqueue_kwargs["timeout"] = timeout
 
         enqueued_job = queue.enqueue(func, **enqueue_kwargs)
-        
+
         logger.info(
             "Job customizado enfileirado (fila: %s) -> %s",
             queue_name,
@@ -282,7 +282,7 @@ class QueueService:
                 "function": func.__name__,
             },
         )
-        
+
         return enqueued_job.id
 
     # =====================================================================
