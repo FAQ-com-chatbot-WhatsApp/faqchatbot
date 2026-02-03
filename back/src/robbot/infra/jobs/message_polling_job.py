@@ -172,13 +172,10 @@ def poll_waha_messages(**kwargs):
                         if message.get("fromMe", True):  # Ignorar mensagens enviadas pelo bot
                             continue
 
-                        # Verificar timestamp (processar apenas mensagens dos últimos 60 segundos)
+                        # Verificar timestamp (processar mensagens recentes; confiar no dedupe por message_id)
                         timestamp = message.get("timestamp", 0)
                         message_time = datetime.fromtimestamp(timestamp, tz=timezone.utc)
                         now = datetime.now(timezone.utc)
-
-                        if now - message_time > timedelta(seconds=60):
-                            continue
 
                         ack = message.get("ack", 0)
                         message_id = message.get("id")
