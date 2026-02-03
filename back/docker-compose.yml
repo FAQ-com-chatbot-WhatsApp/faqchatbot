@@ -218,6 +218,11 @@ services:
 
 
 
+    # Volumes para persistência
+    volumes:
+      - chroma_data:/app/data/chroma
+      - ./src:/app/src # Hot-reload em desenvolvimento
+
     depends_on:
       db:
         condition: service_healthy
@@ -361,3 +366,4 @@ volumes:
   db_data:
   redis_data:
   waha_data:
+  chroma_data:
