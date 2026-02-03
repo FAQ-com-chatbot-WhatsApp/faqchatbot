@@ -248,25 +248,21 @@ CONTEXTO ANTERIOR:
 {context}
 
 # INTENÇÕES POSSÍVEIS
-1. INTERESSE_TRATAMENTO - Paciente interessado em tratamentos/procedimentos
-2. DUVIDA_MEDICA - Dúvidas sobre funcionamento de tratamentos
-3. CONSULTA_VALOR - Pergunta sobre investimento/valores
+1. INTERESSE_PRODUTO - Paciente interessado em tratamentos/procedimentos
+2. DUVIDA_TECNICA - Dúvidas sobre funcionamento de tratamentos
+3. ORCAMENTO - Pergunta sobre investimento/valores
 4. AGENDAMENTO - Deseja agendar consulta/avaliação
-5. COMPARTILHA_SINTOMA - Descreve sintomas ou condição de saúde
-6. HISTORICO_MEDICO - Conta tratamentos anteriores ou histórico
-7. INFORMACAO - Busca informações gerais sobre especialidade
-8. SAUDACAO - Cumprimento inicial
-9. DESPEDIDA - Finalização
-10. CONFIRMACAO - Confirma interesse em prosseguir
-11. OBJECAO - Expressa dúvida, medo ou objeção
-12. OUTRO - Não se encaixa
+5. RECLAMACAO - Expressa insatisfação ou problema
+6. AGRADECIMENTO - Agradece ou demonstra gratidão
+7. OUTRO - Não se encaixa nas categorias acima
 
-# FASE SPIN ATUAL
-- SITUATION - Falando sobre situação atual
-- PROBLEM - Descrevendo problemas/dificuldades
-- IMPLICATION - Mencionando impactos/consequências
-- NEED_PAYOFF - Expressando desejo de solução/benefícios
-- READY - Pronto para agendamento/próximo passo
+# FASE SPIN ATUAL (IMPORTANTE PARA SCORING)
+A fase SPIN é CRUCIAL para calcular a maturidade do lead:
+- SITUATION (Score: 10-30) - Falando sobre situação atual, contexto, início da conversa
+- PROBLEM (Score: 30-50) - Descrevendo problemas/dificuldades específicas
+- IMPLICATION (Score: 50-75) - Mencionando impactos/consequências, como afeta a vida
+- NEED_PAYOFF (Score: 75-85) - Expressando desejo de solução, perguntando sobre benefícios
+- READY (Score: 85-100) - Pronto para agendamento/próximo passo, quer marcar consulta
 
 Responda APENAS em JSON:
 {{
@@ -342,10 +338,22 @@ CONTEXTO RELEVANTE:
 {context}
 
 INFORMAÇÕES DO LEAD:
+- Nome: {lead_name}
 - Score de Maturidade: {maturity_score}/100
 - Status: {lead_status}
 - Fase SPIN: {spin_phase}
 - Última Interação: {last_interaction}
+
+# ⚠️ USO DO NOME
+**SE O NOME DO LEAD ESTIVER DISPONÍVEL ({lead_name} ≠ "Desconhecido"):**
+- Use o primeiro nome NATURALMENTE durante a conversa (não precisa em toda mensagem, mas periodicamente)
+- Exemplos: "Oi {lead_name}! Tudo bem?", "Entendo, {lead_name}...", "Perfeito, {lead_name}!"
+- NÃO force: use quando parecer natural e próximo
+
+**SE O NOME NÃO ESTIVER DISPONÍVEL ({lead_name} = "Desconhecido"):**
+- Converse normalmente SEM usar pronomes de tratamento genéricos
+- OBSERVAÇÃO: O sistema já tenta extrair nome automaticamente - você NÃO precisa perguntar diretamente
+- Apenas foque na conversa SPIN
 
 # INFORMAÇÕES DA CLÍNICA (Use quando perguntarem sobre localização, endereço, onde fica)
 - Nome: {clinic_name}
@@ -502,37 +510,71 @@ Gere APENAS a resposta natural (como se estivesse digitando no WhatsApp pessoalm
 """
 
     # ========== EXTRAÇÃO DE NOME (Natural) ==========
-    NAME_EXTRACTION_PROMPT = """Extraia o nome do paciente desta mensagem de forma inteligente.
+    NAME_EXTRACTION_PROMPT = """Extraia o nome do paciente desta mensagem de forma inteligente e ampla.
 
 MENSAGEM: "{message}"
 CONTEXTO: {context}
 
-# REGRAS DE EXTRAÇÃO
-1. Procure por apresentações naturais:
-   - "Meu nome é Maria" → Maria
-   - "Sou o João" → João
-   - "Me chamo Ana Paula" → Ana Paula
-   - "Pode me chamar de Carlos" → Carlos
+# REGRAS DE EXTRAÇÃO (Em ordem de prioridade)
 
-2. Procure assinaturas:
-   - "Obrigada! Maria" → Maria
-   - "Att, João Silva" → João Silva
+## 1. APRESENTAÇÕES EXPLÍCITAS (Confiança 90-100%)
+- "Meu nome é Maria" → Maria
+- "Sou o João" / "Eu sou João" → João
+- "Me chamo Ana Paula" → Ana Paula
+- "Pode me chamar de Carlos" → Carlos
+- "Aqui é a Fernanda" → Fernanda
 
-3. Ignore apelidos de usuário do WhatsApp (não são nomes reais)
+## 2. REFERÊNCIAS EM CONTEXTO (Confiança 75-90%)
+- "Minha filha Maria precisa de consulta" → Maria
+- "É para minha mãe, dona Rosa" → Rosa
+- "Queria agendar pra Beatriz" → Beatriz
+- "Meu marido Paulo tá com sintomas" → Paulo
 
-4. Se não encontrar nome claro, retorne "null"
+## 3. ASSINATURAS E DESPEDIDAS (Confiança 70-85%)
+- "Obrigada! Maria" → Maria
+- "Att, João Silva" → João Silva
+- "Abraços, Ana" → Ana
+- "Bjs, Carol" → Carol
 
-RESPONDA APENAS EM JSON:
+## 4. NOMES EM MENSAGENS NATURAIS (Confiança 65-80%)
+- "Maria aqui, gostaria de informações" → Maria
+- "Oi, Juliana falando" → Juliana
+- "Aqui quem fala é o Roberto" → Roberto
+
+## 5. CONTEXTO CONVERSACIONAL (Confiança 60-75%)
+Se no CONTEXTO anterior você perguntou o nome e a pessoa respondeu:
+- Bot: "Como posso te chamar?"
+  User: "Gabriela" → Gabriela (confidence: 85)
+
+## ❌ IGNORE SEMPRE
+- Apelidos genéricos: "amor", "querida", "moça", "amiga"
+- Cargo/profissão: "doutora", "secretária"
+- Pronomes de tratamento isolados: "dona", "seu"
+- Palavras soltas sem contexto de nome próprio
+
+## ⚠️ VALIDAÇÕES
+- Nome com 2+ caracteres
+- Não deve ser número de telefone
+- Primeira letra maiúscula (capitalize se necessário)
+- Se capturar "dona Maria" → extraia só "Maria"
+- Se capturar "Dra. Ana" → extraia só "Ana"
+
+IMPORTANTE: Responda APENAS com JSON válido, nada mais. Sem explicações, sem texto adicional.
+
+FORMATO DE RESPOSTA (copie exatamente):
 {{
-    "name": "<nome_extraído>",
+    "name": "<nome_extraído_ou_null>",
     "confidence": <0-100>,
-    "source": "<onde_encontrou: 'presentation'|'signature'|'context'|'none'>"
+    "source": "<presentation|signature|context|reference|none>"
 }}
 
-Exemplos:
-- "Oi, meu nome é Maria Silva" → {{"name": "Maria Silva", "confidence": 95, "source": "presentation"}}
-- "Obrigada! Ana" → {{"name": "Ana", "confidence": 80, "source": "signature"}}
-- "Olá" → {{"name": null, "confidence": 0, "source": "none"}}
+# EXEMPLOS
+✅ "Oi, meu nome é Maria Silva" → {{"name": "Maria Silva", "confidence": 95, "source": "presentation"}}
+✅ "Obrigada! Ana" → {{"name": "Ana", "confidence": 75, "source": "signature"}}
+✅ "É pra minha filha Laura" → {{"name": "Laura", "confidence": 80, "source": "reference"}}
+✅ "Juliana aqui, queria saber sobre consulta" → {{"name": "Juliana", "confidence": 85, "source": "presentation"}}
+❌ "Olá" → {{"name": null, "confidence": 0, "source": "none"}}
+❌ "Oi querida" → {{"name": null, "confidence": 0, "source": "none"}}
 """
 
     # ========== SOLICITAÇÃO DE NOME (Natural) ==========
@@ -663,15 +705,25 @@ Gere resposta de fallback.
         lead_status: str = "NEW",
         last_interaction: str = "Agora",
         spin_phase: str = "SITUATION",
+        lead_name: str | None = None,
     ) -> str:
         """Formatar prompt de geração de resposta com SPIN."""
         from robbot.common.clinic_location import CLINIC_NAME, CLINIC_ADDRESS, CLINIC_MAPS_URL
+        
+        # Use "Desconhecido" if name not available or looks like a phone/placeholder
+        formatted_name = "Desconhecido"
+        if lead_name:
+            normalized = lead_name.strip()
+            is_numeric = normalized.isdigit()
+            if not is_numeric:
+                formatted_name = normalized
         
         return cls.RESPONSE_GENERATION_PROMPT.format(
             user_message=user_message,
             intent=intent,
             spin_phase=spin_phase,
             context=context or "[Sem contexto]",
+            lead_name=formatted_name,
             maturity_score=maturity_score,
             lead_status=lead_status,
             last_interaction=last_interaction,
