@@ -26,6 +26,12 @@ elif ! echo "${PYTHONPATH}" | grep -q "/app/src"; then
   export PYTHONPATH="/app/src:${PYTHONPATH}"
 fi
 
+# Cria diretório ChromaDB com permissões corretas
+echo "[ENTRYPOINT] Creating ChromaDB directory..."
+mkdir -p /app/data/chroma
+chmod -R 755 /app/data/chroma || true
+echo "[ENTRYPOINT] ChromaDB directory ready"
+
 # Se DATABASE_URL não estiver definida, tenta construir a partir das variáveis POSTGRES_*
 if [ -z "${DATABASE_URL}" ]; then
   DATABASE_URL="postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
