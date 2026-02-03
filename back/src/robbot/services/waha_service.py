@@ -115,6 +115,19 @@ class WAHAService:
         if not session:
             raise ValueError(f"Session '{name}' not found")
 
+        # Ensure webhooks are configured (message.any)
+        try:
+            await self.waha_client.update_session(
+                name=name,
+                webhook_url=settings.WAHA_WEBHOOK_URL,
+            )
+        except Exception as exc:  # noqa: BLE001 - non-fatal for start
+            logger.warning(
+                "[WARN] Failed to update WAHA session webhooks before start: %s",
+                exc,
+                extra={"session": name},
+            )
+
         # Start in WAHA
         await self.waha_client.start_session(name)
 
@@ -167,6 +180,19 @@ class WAHAService:
         session = self.session_repo.get_by_name(name)
         if not session:
             raise ValueError(f"Session '{name}' not found")
+
+        # Ensure webhooks are configured (message.any)
+        try:
+            await self.waha_client.update_session(
+                name=name,
+                webhook_url=settings.WAHA_WEBHOOK_URL,
+            )
+        except Exception as exc:  # noqa: BLE001 - non-fatal for restart
+            logger.warning(
+                "[WARN] Failed to update WAHA session webhooks before restart: %s",
+                exc,
+                extra={"session": name},
+            )
 
         # Restart in WAHA
         result = await self.waha_client.restart_session(name)
