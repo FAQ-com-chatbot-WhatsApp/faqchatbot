@@ -196,7 +196,7 @@ services:
       - .env
 
     environment:
-      PYTHONPATH: /app/src
+      PYTHONPATH: "/app/src"
       DATABASE_URL: postgresql+psycopg2://dba:dba@db:5432/BotDB
       REDIS_URL: redis://redis:6379/0
       SERVICE_NAME: "worker"
