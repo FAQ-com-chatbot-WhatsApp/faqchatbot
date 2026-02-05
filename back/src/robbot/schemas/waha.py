@@ -127,12 +127,11 @@ class WebhookPayload(BaseModel):
 
 
 class WebhookLogOut(BaseModel):
-    """Webhook log output schema."""
+    """Webhook log output schema (simplified for less verbosity)."""
 
     id: int
     session_name: str
     event_type: str
-    payload: dict[str, Any]
     processed: bool
     created_at: datetime
 
