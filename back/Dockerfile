@@ -91,7 +91,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # ============================================================================
 FROM python:3.11-slim AS runtime-api
 
-LABEL maintainer="edyoCampos <you@example.com>"
+LABEL maintainer="edyoCampos <camposevero@gmail.com>"
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
