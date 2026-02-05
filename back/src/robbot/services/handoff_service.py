@@ -64,9 +64,10 @@ class HandoffService:
         ]:
             raise BusinessRuleError(f"Cannot handoff conversation in status {conversation.status}")
 
-        # Update status and reason
+        # Update status, reason, and escalation timestamp
         conversation.status = ConversationStatus.PENDING_HANDOFF
         conversation.escalation_reason = reason
+        conversation.escalated_at = datetime.now(UTC)
         conversation.updated_at = datetime.now(UTC)
 
         self.conversation_repo.update(conversation)
