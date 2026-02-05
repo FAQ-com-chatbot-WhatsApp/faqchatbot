@@ -37,7 +37,7 @@ class StructuredFormatter(logging.Formatter):
         # Use BRT timezone
         ct = datetime.fromtimestamp(record.created, tz=BRT)
         ts = f"{ct.strftime('%H:%M:%S')}.{int(record.msecs):03d}"
-        
+
         # Format exactly like WAHA - no padding
         return f"[{ts}] {record.levelname} ({record.process}): {record.getMessage()}"
 
@@ -53,25 +53,25 @@ class ColoredStructuredFormatter(logging.Formatter):
     RESET = "\x1b[0m"
     BOLD = "\x1b[1m"
     DIM = "\x1b[2m"
-    
+
     # Level colors (bright and clear)
-    DEBUG = "\x1b[36m"      # Cyan
-    INFO = "\x1b[32m"       # Green
-    WARNING = "\x1b[33m"    # Yellow
-    ERROR = "\x1b[31m"      # Red
-    CRITICAL = "\x1b[91m"   # Bright red
-    
+    DEBUG = "\x1b[36m"  # Cyan
+    INFO = "\x1b[32m"  # Green
+    WARNING = "\x1b[33m"  # Yellow
+    ERROR = "\x1b[31m"  # Red
+    CRITICAL = "\x1b[91m"  # Bright red
+
     # Timestamp color
-    TIME = "\x1b[90m"       # Gray
+    TIME = "\x1b[90m"  # Gray
 
     def format(self, record: logging.LogRecord) -> str:
         # Use BRT timezone
         ct = datetime.fromtimestamp(record.created, tz=BRT)
         ts = f"{ct.strftime('%H:%M:%S')}.{int(record.msecs):03d}"
-        
+
         # Get level color
         level_color = getattr(self, record.levelname, self.INFO)
-        
+
         # Format: [HH:MM:SS.mmm] LEVEL (PID): Message
         # Exactly like WAHA - no extra spaces
         return (
@@ -180,7 +180,7 @@ def configure_logging(
     logging.getLogger("httpcore.http11").setLevel(logging.WARNING)
     logging.getLogger("httpcore.connection").setLevel(logging.WARNING)
     logging.getLogger("httpx").setLevel(logging.WARNING)  # Silence all httpx noise
-    
+
     # Silence noisy RQ DEBUG logs (queue operations are too verbose)
     logging.getLogger("rq.queue").setLevel(logging.INFO)
     logging.getLogger("rq.worker").setLevel(logging.INFO)
@@ -194,6 +194,9 @@ def configure_logging(
 
     logger = logging.getLogger(__name__)
     logger.info(
-        f"Logging configured: level={logging.getLevelName(level)}, "
-        f"file={log_file}, max_bytes={max_bytes}, backup_count={backup_count}"
+        "Logging configured: level=%s, file=%s, max_bytes=%s, backup_count=%s",
+        logging.getLevelName(level),
+        log_file,
+        max_bytes,
+        backup_count,
     )
