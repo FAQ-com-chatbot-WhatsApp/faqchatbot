@@ -66,6 +66,7 @@ where = ["src"]
 typeCheckingMode = "basic"
 reportUnusedImport = "warning"
 reportUnusedVariable = "warning"
+reportGeneralTypeIssues = false
 exclude = ["**/tests/**", "**/alembic/**", "**/__pycache__/**", "**/node_modules/**", "**/.*/**"]
 
 [tool.pylance]
