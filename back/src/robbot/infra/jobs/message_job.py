@@ -3,14 +3,18 @@ Job para processar mensagens recebidas/enviadas via WAHA.
 """
 
 import asyncio
+import json
 import logging
+import time
 from typing import Any
 
 from robbot.adapters.repositories.conversation_message_repository import (
     ConversationMessageRepository,
 )
+from robbot.config.settings import settings
 from robbot.infra.db.session import get_sync_session
 from robbot.infra.jobs.base_job import BaseJob, JobRetryableError
+from robbot.infra.redis.client import get_redis_client
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +38,52 @@ def process_message_job(
         **kwargs,
     )
     return job.run()
+
+
+def process_debounced_message(chat_id: str) -> dict[str, Any]:
+    """Process buffered messages for a chat as a single inbound message."""
+    if not chat_id:
+        return {"status": "skipped", "reason": "missing_chat_id"}
+
+    redis_client = get_redis_client()
+    buffer_key = f"waha:debounce:{chat_id}"
+    job_key = f"waha:debounce:job:{chat_id}"
+
+    raw = redis_client.get(buffer_key)
+    if not raw:
+        redis_client.delete(job_key)
+        return {"status": "empty"}
+
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError:
+        redis_client.delete(buffer_key)
+        redis_client.delete(job_key)
+        return {"status": "error", "reason": "invalid_payload"}
+
+    messages = [m for m in payload.get("messages", []) if isinstance(m, str) and m.strip()]
+    if not messages:
+        redis_client.delete(buffer_key)
+        redis_client.delete(job_key)
+        return {"status": "empty"}
+
+    combined_text = "\n".join(messages).strip()
+    last_payload = payload.get("last_payload", {})
+
+    message_data = {
+        "from": chat_id,
+        "body": combined_text,
+        "timestamp": int(time.time()),
+        "session": last_payload.get("session", "default"),
+        "type": "text",
+        "debounced": True,
+        "debounce_window": settings.MESSAGE_DEBOUNCE_SECONDS,
+    }
+
+    redis_client.delete(buffer_key)
+    redis_client.delete(job_key)
+
+    return process_message_job(message_data=message_data, message_direction="inbound")
 
 
 class MessageProcessingJob(BaseJob):
@@ -186,14 +236,19 @@ class MessageProcessingJob(BaseJob):
     def _persist_outbound_message(self) -> dict[str, Any]:
         """Persistir mensagem outbound."""
         try:
+            from robbot.services.conversation_orchestrator import enforce_whatsapp_style
+
             with get_sync_session() as db:
                 conv_msg_repo = ConversationMessageRepository(db)
                 from robbot.infra.db.models import MessageModel
 
+                content = self.message_data.get("text") or self.message_data.get("body")
+                content = enforce_whatsapp_style(content)
+
                 message_record = MessageModel(
                     conversation_id=self.conversation_id,
                     direction=self.message_direction,
-                    content=self.message_data.get("text") or self.message_data.get("body"),
+                    content=content,
                     message_type=self.message_data.get("type", "text"),
                     waha_message_id=self.message_data.get("id"),
                     phone=self.message_data.get("phone"),
