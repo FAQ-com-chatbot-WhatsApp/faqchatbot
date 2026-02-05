@@ -14,6 +14,7 @@ import httpx
 
 from robbot.config.settings import settings
 from robbot.core.custom_exceptions import WAHAError
+from robbot.services.text_sanitizer import enforce_whatsapp_style
 
 logger = logging.getLogger(__name__)
 
@@ -451,6 +452,7 @@ class WAHAClient:
 
         Docs: POST /api/sendText
         """
+        text = enforce_whatsapp_style(text)
         if apply_anti_ban:
             logger.info("[ANTI-BAN] Applying delays (chars=%s, chat_id=%s)", len(text), chat_id)
             await self._apply_anti_ban_flow(session, chat_id, text)
@@ -585,11 +587,12 @@ class WAHAClient:
         chat_id: str,
         text: str,
     ):
-        """Apply WhatsApp anti-ban best practices.
+        """Apply WhatsApp anti-ban best practices with session heartbeat.
 
         Flow:
         1. Start typing indicator
         2. Wait random delay (30-60s base + message length factor)
+           - Ping session status every 10 seconds to keep it alive
         3. Stop typing
 
         Note: sendSeen skipped here as we don't have message_id context.
@@ -605,8 +608,26 @@ class WAHAClient:
             typing_delay = len(text) * 0.1
             total_delay = min(base_delay + typing_delay, 120)  # Max 2min
 
-            logger.debug("Anti-ban delay: %.1fs for %s chars", total_delay, len(text))
-            await asyncio.sleep(total_delay)
+            logger.info("Anti-ban delay: %.1fs for %s chars", total_delay, len(text))
+
+            # Sleep in intervals with heartbeat pings to keep session alive
+            # Ping every 10 seconds to prevent session timeout
+            heartbeat_interval = 10
+            elapsed = 0.0
+
+            while elapsed < total_delay:
+                sleep_time = min(heartbeat_interval, total_delay - elapsed)
+                await asyncio.sleep(sleep_time)
+                elapsed += sleep_time
+
+                # Send heartbeat ping to keep session alive (non-critical)
+                if elapsed < total_delay:
+                    try:
+                        await self.get_session_status(session)
+                        logger.info("[HEARTBEAT] Session alive: %s (elapsed: %.1fs)", session, elapsed)
+                    except Exception as e:  # noqa: BLE001
+                        # Heartbeat failure is non-critical, just log and continue
+                        logger.warning("[HEARTBEAT] Ping failed (non-critical): %s", e)
 
             # Stop typing before sending
             await self.stop_typing(session, chat_id)
@@ -1326,6 +1347,136 @@ class WAHAClient:
 
         logger.info("Unblocking contact: %s", contact_id)
         return await self._request("POST", "/api/contacts/unblock", json=payload)
+
+    # ========================================================================
+    # LID (Lightweight ID) RESOLUTION
+    # ========================================================================
+
+    async def get_phone_by_lid(
+        self,
+        session: str,
+        lid: str,
+    ) -> dict[str, Any] | None:
+        """Resolve WhatsApp LID to real phone number.
+
+        Args:
+            session: Session name (e.g., 'default')
+            lid: LID identifier (e.g., '24988337893388@lid' or '24988337893388')
+
+        Returns:
+            {"lid": "123@lid", "pn": "123456789@c.us"} or None if not found
+
+        Note:
+            - Only works if contact exists in session's contact list
+            - Returns None if contact not found (404)
+            - For group messages, bot must be admin to resolve participant LIDs
+
+        Docs: GET /api/{session}/lids/{lid}
+        """
+        # Normalize LID format (remove @lid if present for URL)
+        lid_normalized = lid.split("@")[0] if "@" in lid else lid
+        lid_url_param = f"{lid_normalized}@lid"
+
+        # URL encode @ symbol
+        lid_encoded = lid_url_param.replace("@", "%40")
+
+        try:
+            response = await self._request("GET", f"/api/{session}/lids/{lid_encoded}")
+            logger.debug("LID resolved: %s -> %s", lid, response.get("pn"))
+            return response
+        except WAHAError as e:
+            if "404" in str(e):
+                logger.debug("LID not found in contact list: %s", lid)
+                return None
+            raise
+
+    async def get_lid_by_phone(
+        self,
+        session: str,
+        phone: str,
+    ) -> dict[str, Any] | None:
+        """Resolve phone number to WhatsApp LID.
+
+        Args:
+            session: Session name
+            phone: Phone number (e.g., '123456789' or '123456789@c.us')
+
+        Returns:
+            {"lid": "123@lid", "pn": "123456789@c.us"} or None if not found
+
+        Note:
+            - Only works if contact exists in session's contact list
+            - Returns None if contact not found (404)
+
+        Docs: GET /api/{session}/lids/pn/{phoneNumber}
+        """
+        # Normalize phone format (remove @c.us if present)
+        phone_normalized = phone.split("@")[0] if "@" in phone else phone
+
+        try:
+            response = await self._request("GET", f"/api/{session}/lids/pn/{phone_normalized}")
+            logger.debug("Phone resolved to LID: %s -> %s", phone, response.get("lid"))
+            return response
+        except WAHAError as e:
+            if "404" in str(e):
+                logger.debug("Phone not found in contact list: %s", phone)
+                return None
+            raise
+
+    async def get_all_lids(
+        self,
+        session: str,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> list[dict[str, Any]]:
+        """Get all known LID mappings from contact list.
+
+        Args:
+            session: Session name
+            limit: Number of records (default: 100)
+            offset: Pagination offset (default: 0)
+
+        Returns:
+            List of {"lid": "123@lid", "pn": "123456789@c.us"} mappings
+
+        Docs: GET /api/{session}/lids?limit=100&offset=0
+        """
+        params = {"limit": limit, "offset": offset}
+        response = await self._request("GET", f"/api/{session}/lids", params=params)
+        return response if isinstance(response, list) else []
+
+    async def update_contact(
+        self,
+        session: str,
+        chat_id: str,
+        name: str,
+    ) -> dict[str, Any]:
+        """Create or update contact in WhatsApp contact list.
+
+        Args:
+            session: Session name
+            chat_id: Contact chat ID (phone with @c.us or LID with @lid)
+            name: Contact name to save
+
+        Returns:
+            Success response
+
+        Docs: PUT /api/{session}/contacts/{chatId}
+        
+        Note: Adding a contact to WhatsApp's contact list is REQUIRED
+        before LID resolution will work. WAHA can only resolve LIDs for
+        contacts that exist in the WhatsApp contact list.
+        """
+        payload = {"name": name}
+        logger.info(
+            "[WAHA_CLIENT] Updating contact: chat_id='%s', name='%s', session='%s'",
+            chat_id,
+            name,
+            session,
+        )
+        return await self._request(
+            "PUT", f"/api/{session}/contacts/{chat_id}", json=payload
+        )
 
     # ========================================================================
     # PRESENCE (Online/Offline Status)
