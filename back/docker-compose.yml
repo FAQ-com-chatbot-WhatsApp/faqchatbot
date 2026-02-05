@@ -221,7 +221,7 @@ services:
     # Volumes para persistência
     volumes:
       - chroma_data:/app/data/chroma
-      - ./src:/app/src # Hot-reload em desenvolvimento
+     # - ./src:/app/src # Hot-reload em desenvolvimento
 
     depends_on:
       db:
