@@ -75,9 +75,71 @@ async def receive_waha_webhook(
             chat_id = message_data.get("from", "")
             phone = chat_id.split("@")[0] if "@" in chat_id else chat_id
 
+            # LID RESOLUTION: Try to resolve @lid to real phone number (non-blocking)
+            if "@lid" in chat_id:
+                from robbot.services.lid_resolver_service import get_lid_resolver
+
+                lid_resolver = get_lid_resolver()
+                resolved_phone = None
+
+                try:
+                    # Quick attempt with 500ms timeout (non-blocking)
+                    import asyncio
+
+                    resolved_phone = await asyncio.wait_for(
+                        lid_resolver.try_resolve_lid(phone, payload.session),
+                        timeout=0.5,
+                    )
+
+                    if resolved_phone:
+                        phone = resolved_phone
+                        logger.info(
+                            "[WEBHOOK] LID resolved: %s -> %s",
+                            chat_id,
+                            phone,
+                            extra={"lid": chat_id, "phone": phone, "webhook_log_id": log.id},
+                        )
+                except asyncio.TimeoutError:
+                    logger.debug(
+                        "[WEBHOOK] LID resolution timeout, accepting original: %s",
+                        phone,
+                        extra={"lid": chat_id, "webhook_log_id": log.id},
+                    )
+                except Exception as e:
+                    logger.warning(
+                        "[WEBHOOK] LID resolution error, accepting original: %s - %s",
+                        phone,
+                        str(e),
+                        extra={"lid": chat_id, "webhook_log_id": log.id},
+                    )
+
             # DEV MODE: Filtrar mensagens por número de telefone (exceto sessão de teste)
+            # IMPORTANTE: O WAHA pode retornar LID (24988337893388@lid) ou número (555191628223@c.us)
             if settings.DEV_MODE and settings.dev_phone_list and payload.session != "test":
-                if phone not in settings.dev_phone_list:
+                # Procurar correspondência em dev_phone_list (números originais)
+                phone_is_allowed = phone in settings.dev_phone_list
+
+                # Se não encontrou direto e recebeu um LID, tenta encontrar via Redis cache
+                if not phone_is_allowed and "@" in chat_id and "@lid" in chat_id:
+                    from robbot.infra.redis.client import get_redis_client
+
+                    redis_client = get_redis_client()
+
+                    # Procurar o número original baseado no LID
+                    cached_number = redis_client.get(f"waha:dev_phone:{phone}")
+                    if cached_number:
+                        cached_number_str = (
+                            cached_number.decode() if isinstance(cached_number, bytes) else cached_number
+                        )
+                        if cached_number_str in settings.dev_phone_list:
+                            phone_is_allowed = True
+                            logger.debug(
+                                "[DEV MODE] LID encontrado em cache: %s -> %s",
+                                phone,
+                                cached_number_str,
+                            )
+
+                if not phone_is_allowed:
                     logger.info(
                         "[DEV MODE] Mensagem ignorada - número não autorizado: %s (permitidos: %s)",
                         phone,
@@ -97,7 +159,7 @@ async def receive_waha_webhook(
                         extra={"dev_mode": True, "phone": phone, "webhook_log_id": log.id},
                     )
 
-            job_id = queue_service.enqueue_message_processing(
+            job_id = queue_service.enqueue_message_processing_debounced(
                 message_data=message_data,
                 message_direction="inbound",
             )
