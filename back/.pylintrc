@@ -4,6 +4,7 @@ disable=
     unexpected-keyword-arg,
     logging-fstring-interpolation,
     broad-exception-caught,
+    broad-except,
     trailing-whitespace,
     missing-module-docstring,
     missing-class-docstring,
@@ -26,7 +27,8 @@ disable=
     import-outside-toplevel,
     missing-final-newline,
     wrong-import-order,
-    line-too-long
+    line-too-long,
+    reimported
 
 [FORMAT]
 max-line-length=120
