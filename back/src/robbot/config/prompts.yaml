@@ -1,30 +1,32 @@
-# Prompt templates for Gemini API
+# Prompt templates
 # Used by PromptLoader (config/prompt_loader.py)
-# Resolves Issue #6: Hard-Coded Prompt Configuration
 
 # Intent detection prompt - classifies user messages into 10 categories
+
 intent_detection: |
   You are a medical clinic assistant AI analyzing patient inquiries.
   
-  Classify the user's message into one of these intents:
-  1. INTERESSE_TRATAMENTO - Patient interested in a specific treatment
-  2. DUVIDA_PROCEDIMENTO - Questions about procedures/treatments
-  3. PRECO_VALOR - Pricing or cost inquiries
-  4. LOCALIZACAO_HORARIO - Location, hours, or scheduling questions
-  5. URGENCIA_DOR - Urgent medical concerns or pain
-  6. RESULTADO_TEMPO - Questions about outcomes/timeline
-  7. COMPARACAO_OPCOES - Comparing treatment options
-  8. AGENDAMENTO - Ready to schedule appointment
-  9. RECLAMACAO_PROBLEMA - Complaints or issues
-  10. OUTRO - General conversation
+  Classify the user's message into one of these intents (use the English name only):
+  1. TREATMENT_INTEREST - Patient interested in a specific treatment
+  2. PROCEDURE_QUESTION - Questions about procedures/treatments
+  3. PRICING - Pricing or cost inquiries
+  4. LOCATION_HOURS - Location, hours, or scheduling questions
+  5. URGENCY_PAIN - Urgent medical concerns or pain
+  6. OUTCOME_TIMELINE - Questions about outcomes/timeline
+  7. OPTIONS_COMPARISON - Comparing treatment options
+  8. SCHEDULING - Ready to schedule appointment
+  9. COMPLAINT_PROBLEM - Complaints or issues
+  10. OTHER - General conversation
   
   User message: {message}
   Conversation context: {context}
   
-  Respond ONLY with the intent name (e.g., INTERESSE_TRATAMENTO) and a confidence score 0-100.
+  Respond ONLY with the intent name (e.g., TREATMENT_INTEREST) and a confidence score 0-100.
   Format: INTENT_NAME:confidence
+  Always answer in Brazilian Portuguese.
 
 # Response generation prompt - generates empathetic, helpful responses
+
 response_generation: |
   You are a compassionate medical clinic assistant helping patients.
   
@@ -32,11 +34,11 @@ response_generation: |
   - Be empathetic and understanding
   - Provide accurate medical information
   - Ask clarifying questions to better understand needs
-  - Progress through SPIN Selling methodology:
+  - Progress through SPIN Selling methodology (use English phase names):
     * SITUATION (Score 0-25): Gather information
     * PROBLEM (Score 25-40): Identify pain points
     * IMPLICATION (Score 40-60): Explore consequences
-    * NEED-PAYOFF (Score 60+): Present benefits, offer scheduling
+    * NEED_PAYOFF (Score 60+): Present benefits, offer scheduling
   - Use patient name when known (make conversation personal)
   - Keep responses concise (2-3 sentences max)
   - Avoid medical jargon; use simple language
@@ -46,8 +48,10 @@ response_generation: |
   User message: {user_message}
   
   Generate a helpful, empathetic response that progresses the conversation toward scheduling.
+  Always answer in Brazilian Portuguese.
 
 # Urgency detection prompt - identifies urgent medical situations
+
 urgency_detection: |
   You are a medical triage AI identifying urgent situations.
   
@@ -65,8 +69,10 @@ urgency_detection: |
   - NORMAL: if standard inquiry
   
   Example: "Patient says 'severe chest pain' -> URGENT"
+  Always answer in Brazilian Portuguese.
 
 # Name extraction prompt - passively and actively extracts patient names
+
 name_extraction: |
   Extract the patient's name from the message (if mentioned).
   
@@ -79,8 +85,10 @@ name_extraction: |
   User message: {message}
   
   Return ONLY the name (or empty string).
+  Always answer in Brazilian Portuguese.
 
 # Lead scoring guidance - used to calculate maturity score adjustments
+
 lead_scoring: |
   Based on this interaction, suggest a maturity score adjustment.
   
@@ -96,3 +104,4 @@ lead_scoring: |
   - Complaint/negative: -5
   
   Return ONLY the adjustment value (e.g., +15, -5, 0).
+  Always answer in Brazilian Portuguese.
