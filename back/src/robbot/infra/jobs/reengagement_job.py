@@ -7,6 +7,7 @@ Job automático que:
 3. Atualiza status para AWAITING_RESPONSE
 """
 
+import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
 
@@ -75,7 +76,10 @@ class ReEngagementJob:
                 inactive_conversations = self._find_inactive_conversations(session)
                 stats["conversations_found"] = len(inactive_conversations)
 
-                logger.info(f"[SUCCESS] Encontradas {len(inactive_conversations)} conversas inativas")
+                logger.info(
+                    "[SUCCESS] Encontradas %s conversas inativas",
+                    len(inactive_conversations),
+                )
 
                 # Processar cada conversa
                 for conversation in inactive_conversations:
@@ -83,13 +87,19 @@ class ReEngagementJob:
                         self._reengage_conversation(session, conversation)
                         stats["messages_sent"] += 1
                     except (WAHAError, DatabaseError) as e:
-                        logger.error(f"[ERROR] Erro ao reengajar conversa {conversation.id}: {e}")
+                        logger.error(
+                            "[ERROR] Erro ao reengajar conversa %s: %s",
+                            conversation.id,
+                            e,
+                        )
                         stats["errors"] += 1
 
                 session.commit()
 
                 logger.info(
-                    f"[SUCCESS] Re-engagement concluído: {stats['messages_sent']} enviadas, {stats['errors']} erros"
+                    "[SUCCESS] Re-engagement concluído: %s enviadas, %s erros",
+                    stats["messages_sent"],
+                    stats["errors"],
                 )
 
         except JobError:
@@ -98,7 +108,7 @@ class ReEngagementJob:
             logger.error("[ERROR] Fatal error in re-engagement job: %s", e)
             stats["status"] = "error"
             stats["error_message"] = str(e)
-            raise JobError(job_name="reengagement", message=f"Fatal error: {e}", original_error=e)
+            raise JobError(job_name="reengagement", message=f"Fatal error: {e}", original_error=e) from e
 
         return stats
 
@@ -130,7 +140,7 @@ class ReEngagementJob:
 
         for conv in active_conversations:
             # Buscar última mensagem da conversa
-            messages = msg_repo.get_by_conversation_id(conv.id, limit=1)
+            messages = msg_repo.get_by_conversation(conv.id, limit=1)
 
             if not messages:
                 # Sem mensagens, pular
@@ -158,8 +168,17 @@ class ReEngagementJob:
 
         # Enviar via WAHA
         try:
-            self.waha_client.send_text_message(session="default", chat_id=conversation.chat_id, text=message_text)
-            logger.info(f"[SUCCESS] Mensagem de re-engagement enviada (conv_id={conversation.id})")
+            asyncio.run(
+                self.waha_client.send_text(
+                    session="default",
+                    chat_id=conversation.chat_id,
+                    text=message_text,
+                )
+            )
+            logger.info(
+                "[SUCCESS] Mensagem de re-engagement enviada (conv_id=%s)",
+                conversation.id,
+            )
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("[ERROR] Failed to send via WAHA: %s", e)
             raise
@@ -177,10 +196,14 @@ class ReEngagementJob:
 
         # Atualizar status da conversa
         conv_repo = ConversationRepository(session)
-        conv_repo.update(conversation_id=conversation.id, data={"status": ConversationStatus.WAITING_SECRETARY})
+        conversation = conv_repo.update_status(conversation.id, ConversationStatus.WAITING_SECRETARY)
         session.flush()
 
-        logger.info(f"[SUCCESS] Conversa reengajada (id={conversation.id}, status={conversation.status.value})")
+        logger.info(
+            "[SUCCESS] Conversa reengajada (id=%s, status=%s)",
+            conversation.id,
+            conversation.status.value,
+        )
 
 
 def run_reengagement_job():
