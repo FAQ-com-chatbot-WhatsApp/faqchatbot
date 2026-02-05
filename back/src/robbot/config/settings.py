@@ -15,13 +15,17 @@ class Settings(BaseSettings):
         default=None,
         description="Phone numbers to respond to in dev mode (comma-separated, e.g., 5511999999999,5511888888888)",
     )
+    MESSAGE_DEBOUNCE_SECONDS: int = Field(
+        default=4,
+        description="Debounce window to merge rapid inbound messages into one response (seconds)",
+    )
 
     @property
     def dev_phone_list(self) -> list[str]:
         """Parse comma-separated phone numbers into a list."""
         if not self.DEV_PHONE_NUMBERS:
             return []
-        return [p.strip() for p in self.DEV_PHONE_NUMBERS.split(",") if p.strip()]
+        return [p.strip() for p in str(self.DEV_PHONE_NUMBERS).split(",") if p.strip()]
 
     # Use Postgres via Docker for local/dev. Provide connection via env.
     # Example in .env:
