@@ -73,19 +73,18 @@ def main():
     import rq.defaults
     import rq.timeouts
 
-    class NoDeathPenalty(rq.timeouts.BaseDeathPenalty):
+    class NoDeathPenalty(rq.timeouts.BaseDeathPenalty):  # pyright: ignore[reportIncompatibleMethodOverride]
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
         def setup_death_penalty(self):
-            # Não configurar nenhum sinal de morte
+            """Não configurar nenhum sinal de morte."""
             logger.debug("NoDeathPenalty: setup_death_penalty called - doing nothing")
-            pass
 
-        def cleanup_death_penalty(self):
-            # Não fazer limpeza
-            logger.debug("NoDeathPenalty: cleanup_death_penalty called - doing nothing")
-            pass
+        def cancel_death_penalty(self):
+            """Método abstrato implementado - não fazer nada."""
+            logger.debug("NoDeathPenalty: cancel_death_penalty called - doing nothing")
+            return
 
     rq.defaults.DEFAULT_DEATH_PENALTY_CLASS = NoDeathPenalty
     logger.info("Overrode DEFAULT_DEATH_PENALTY_CLASS with NoDeathPenalty")
@@ -127,18 +126,15 @@ def main():
     # Force cleanup of any existing worker with similar name pattern
     # This prevents "worker already exists" errors on container restart
     try:
-        from rq import Worker as RQWorker
-
-        pattern = f"worker-{socket.gethostname()}-*"
-        all_workers = RQWorker.all(connection=redis_conn)
+        all_workers = Worker.all(connection=redis_conn)  # type: ignore[attr-defined]
         for w in all_workers:
             if w.name.startswith(f"worker-{socket.gethostname()}"):
                 logger.info("Removing stale worker registration: %s", w.name)
                 try:
                     w.unregister()
-                except Exception as e:
+                except Exception as e:  # pylint: disable=broad-except
                     logger.warning("Failed to unregister worker %s: %s", w.name, e)
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
         logger.warning("Failed to cleanup stale workers: %s", e)
 
     worker = Worker(
@@ -146,7 +142,7 @@ def main():
         connection=redis_conn,
         name=worker_name,
         exception_handlers=[exception_handler],
-        default_worker_ttl=420,  # 7 minutos - expira automaticamente se inativo
+        worker_ttl=420,  # 7 minutos - expira automaticamente se inativo
         job_monitoring_interval=3600,  # Verificar jobs a cada 1 hora (menos frequente)
     )
 
