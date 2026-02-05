@@ -40,14 +40,13 @@ def run_polling_worker():
 
     if settings.DEV_MODE and settings.dev_phone_list:
         logger.info(
-            f"[DEV MODE] Monitorando {len(settings.dev_phone_list)} números: {', '.join(settings.dev_phone_list)}"
+            "[DEV MODE] Monitorando %d números: %s", len(settings.dev_phone_list), ", ".join(settings.dev_phone_list)
         )
     elif settings.DEV_MODE:
         logger.warning("[DEV MODE] ATIVO mas sem números configurados - ignorando todas as mensagens")
     else:
         logger.info("[PROD MODE] Monitorando TODOS os números")
 
-    last_poll_time = None
     consecutive_failures = 0
     max_failures = 5
 
@@ -104,14 +103,13 @@ def run_polling_worker():
                 consecutive_failures = 0
 
             # Aguardar próximo intervalo
-            last_poll_time = now
             time.sleep(polling_interval)
 
         except KeyboardInterrupt:
             logger.info("[POLLING WORKER] Interrompido pelo usuário")
             break
 
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             logger.error("[POLLING WORKER] Erro inesperado: %s", e, extra={"error": str(e)}, exc_info=True)
             consecutive_failures += 1
             time.sleep(polling_interval)
