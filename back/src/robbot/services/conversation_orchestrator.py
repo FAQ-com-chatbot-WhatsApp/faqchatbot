@@ -22,10 +22,16 @@ from typing import Any
 from robbot.adapters.external.chroma_vector_store import ChromaVectorStore
 from robbot.adapters.external.gemini_client import get_gemini_client
 from robbot.adapters.external.waha_client import WAHAClient
-from robbot.adapters.repositories.conversation_repository import ConversationRepository
-from robbot.adapters.repositories.lead_interaction_repository import LeadInteractionRepository
+from robbot.adapters.repositories.conversation_repository import (
+    ConversationRepository,
+)
+from robbot.adapters.repositories.lead_interaction_repository import (
+    LeadInteractionRepository,
+)
 from robbot.adapters.repositories.lead_repository import LeadRepository
-from robbot.adapters.repositories.llm_interaction_repository import LLMInteractionRepository
+from robbot.adapters.repositories.llm_interaction_repository import (
+    LLMInteractionRepository,
+)
 from robbot.config.prompts import get_prompt_templates
 from robbot.core.custom_exceptions import (
     BusinessRuleError,
@@ -40,13 +46,22 @@ from robbot.domain.enums import (
 from robbot.infra.db.models.conversation_model import ConversationModel
 from robbot.infra.db.models.lead_interaction_model import LeadInteractionModel
 from robbot.infra.db.models.lead_model import LeadModel
-from robbot.infra.db.models.llm_interaction_model import LLMInteractionModel
+from robbot.infra.db.models.llm_interaction_model import (
+    LLMInteractionModel,
+)
 from robbot.infra.db.session import get_sync_session
+from robbot.services.answered_questions import AnsweredQuestionsMemory
 from robbot.services.context_builder import ContextBuilder
+from robbot.services.context_validator import (
+    ContextValidator,
+    ResponseDeduplicator,
+)
 from robbot.services.handoff_service import HandoffService
 from robbot.services.intent_detector import IntentDetector
 from robbot.services.message_processor import MessageProcessor
+from robbot.services.text_sanitizer import enforce_whatsapp_style
 from robbot.services.transcription_service import TranscriptionService
+
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +84,7 @@ class ConversationOrchestrator:
         # Specialized services without DB dependency
         self.transcription_service = TranscriptionService()
         self.vector_store = ChromaVectorStore()
+        self.answered_questions_memory = AnsweredQuestionsMemory()  # Memory for answered questions
 
         logger.info("[SUCCESS] ConversationOrchestrator initialized")
 
@@ -150,7 +166,23 @@ class ConversationOrchestrator:
                 session.commit()
 
                 # Get conversational context
-                context_text = await context_builder.get_conversation_context(conversation.id)
+                raw_context = await context_builder.get_conversation_context(conversation.id)
+
+                # SAFEGUARD: Validate context before using it
+                validator = ContextValidator(min_similarity_score=0.65)
+                validation = await validator.validate_context(
+                    user_message=message_text, retrieved_context=raw_context, conversation_id=conversation.id
+                )
+
+                if not validation["is_valid"]:
+                    logger.warning(
+                        "[CONTEXT_VALIDATION] Context validation failed for conversation %s: %s",
+                        conversation.id,
+                        validation.get("reason", "Unknown"),
+                    )
+                    context_text = ""  # Use empty context instead of contaminated
+                else:
+                    context_text = validation["filtered_context"]
 
                 # Detect intent and urgency
                 intent, spin_phase = await intent_detector.detect_intent(message_text, context_text)
@@ -177,9 +209,60 @@ class ConversationOrchestrator:
                     )
 
                     if should_extract:
+                        # Store previous name for comparison
+                        previous_name = conversation.lead.name
                         await intent_detector.try_extract_name(session, message_text, context_text, conversation)
+
+                        # LID RESOLUTION: If name was extracted/updated, try to resolve LID
+                        logger.info(
+                            "[LID_DEBUG] After name extraction: lead.name='%s', previous='%s', phone='%s', is_lid=%s",
+                            conversation.lead.name,
+                            previous_name,
+                            conversation.lead.phone_number,
+                            "@lid" in conversation.lead.phone_number,
+                        )
+                        if conversation.lead.name and conversation.lead.name != previous_name:
+                            from robbot.services.lid_resolver_service import get_lid_resolver
+
+                            lid_resolver = get_lid_resolver()
+                            logger.info(
+                                "[LID] Name change detected ('%s' -> '%s'), attempting progressive resolution for lead %s (phone=%s)",
+                                previous_name,
+                                conversation.lead.name,
+                                conversation.lead.id,
+                                conversation.lead.phone_number,
+                            )
+                            try:
+                                resolved = await lid_resolver.resolve_and_update_lead(
+                                    lead_id=conversation.lead.id,
+                                    current_phone=conversation.lead.phone_number,
+                                    lead_name=conversation.lead.name,
+                                    session=session,
+                                )
+                                if resolved:
+                                    logger.info(
+                                        "[LID] Lead phone updated after name extraction: lead_id=%s",
+                                        conversation.lead.id,
+                                    )
+                            except Exception as e:
+                                logger.warning("[LID] Error resolving LID after name extraction: %s", str(e))
                 else:
                     logger.warning("[WARNING] No lead attached to conversation, skipping name extraction")
+
+                # Checagem de pergunta já respondida
+                if self.answered_questions_memory.was_answered(message_text):
+                    response_text = "Já respondi essa pergunta antes! Se precisar de mais detalhes, me avise. 😊"
+                    sent = await self._send_response_via_waha(chat_id, response_text, session_name)
+                    await message_processor.save_outbound_message(
+                        session, conversation.id, response_text, to_phone=conversation.phone_number
+                    )
+                    return {
+                        "conversation_id": conversation.id,
+                        "response_sent": sent,
+                        "response_text": response_text,
+                        "intent": "REPETIDA",
+                        "maturity_score": 0,
+                    }
 
                 # Generate response
                 response_data = await self._generate_response(
@@ -217,10 +300,32 @@ class ConversationOrchestrator:
                 if should_escalate:
                     response_text = await self._handle_handoff(session, conversation, new_score)
 
-                # Save context to ChromaDB
+                # SAFEGUARD: Check for duplicate responses before sending
+                deduplicator = ResponseDeduplicator(max_age_seconds=300)
+                if deduplicator.is_duplicate(conversation.id, response_text):
+                    logger.warning(
+                        "[DEDUPLICATION] Duplicate response detected for conversation %s, skipping send",
+                        conversation.id,
+                    )
+                    # Store that we skipped this to avoid retrying
+                    deduplicator.record_response(conversation.id, response_text)
+                    # Skip sending and return early
+                    session.commit()
+                    return {
+                        "conversation_id": conversation.id,
+                        "response_sent": False,
+                        "duplicate_response": True,
+                        "status": conversation.status.value,
+                    }
+
+                # Record this response as sent
+                deduplicator.record_response(conversation.id, response_text)
+
+                # Save context to ChromaDB (ONLY user message, not bot response)
+                # Storing bot responses creates feedback loop and contaminates the vector store
                 await context_builder.save_to_chroma(
                     conversation.id,
-                    f"User: {message_text}\nBot: {response_text}",
+                    f"User: {message_text}",  # Only save user message
                     {"intent": intent, "score": new_score},
                 )
 
@@ -267,6 +372,9 @@ class ConversationOrchestrator:
                     sent,
                 )
 
+                # Após gerar resposta, registrar pergunta como respondida
+                self.answered_questions_memory.add(message_text)
+
                 return {
                     "conversation_id": conversation.id,
                     "response_sent": sent,
@@ -287,8 +395,11 @@ class ConversationOrchestrator:
             session.rollback()
 
             # Try fallback only for non-database errors
+
             try:
                 fallback_response = await self._generate_fallback_response(str(e))
+                # Garante padrão WhatsApp mesmo em fallback
+                fallback_response = enforce_whatsapp_style(fallback_response)
                 await self._send_response_via_waha(chat_id, fallback_response, session_name)
 
                 # Save fallback message to database
@@ -415,11 +526,25 @@ class ConversationOrchestrator:
         repo.create(conversation)
         session.flush()
 
+        # LID RESOLUTION: Try quick resolution before creating lead
+        resolved_phone = phone_number
+        from robbot.services.lid_resolver_service import get_lid_resolver
+
+        lid_resolver = get_lid_resolver()
+        if lid_resolver.is_lid_format(phone_number):
+            try:
+                resolved = await lid_resolver.try_resolve_lid(phone_number, timeout_seconds=1.0)
+                if resolved:
+                    resolved_phone = resolved
+                    logger.info("[LID] Phone resolved at conversation creation: %s -> %s", phone_number, resolved_phone)
+            except Exception as e:
+                logger.debug("[LID] Could not resolve at creation, will retry later: %s", str(e))
+
         # Create new lead associated with conversation
         lead_repo = LeadRepository(session)
         lead = LeadModel(
-            phone_number=phone_number,
-            name=phone_number,
+            phone_number=resolved_phone,
+            name=resolved_phone,  # Use resolved phone as placeholder
             maturity_score=0,
             conversation_id=conversation.id,
         )
@@ -491,41 +616,24 @@ class ConversationOrchestrator:
             raise WAHAError(f"Failed to send message: {e}", original_error=e) from e
 
     def _normalize_response_text(self, response_text: Any) -> str:
-        """Normalize response payloads into plain text."""
+        """Normaliza e aplica enforce_whatsapp_style para garantir resposta curta e limpa."""
         if isinstance(response_text, dict):
-            return str(response_text.get("text", response_text))
-        if isinstance(response_text, list):
-            return " ".join(str(item) for item in response_text)
-        if isinstance(response_text, str) and response_text.lstrip().startswith("{") and "'text'" in response_text:
+            text = str(response_text.get("text", response_text))
+        elif isinstance(response_text, list):
+            text = " ".join(str(item) for item in response_text)
+        elif isinstance(response_text, str) and response_text.lstrip().startswith("{") and "'text'" in response_text:
             try:
                 parsed = ast.literal_eval(response_text)
                 if isinstance(parsed, dict) and "text" in parsed:
-                    return str(parsed["text"])
+                    text = str(parsed["text"])
+                else:
+                    text = str(response_text)
             except (ValueError, SyntaxError):
-                pass
-
-        # Convert to string and clean LLM artifacts
-        text = str(response_text)
-
-        # Remove common LLM formatting markers
-        markers_to_remove = [
-            "**RESPONSE:**",
-            "**RESPOSTA:**",
-            "RESPONSE:",
-            "RESPOSTA:",
-            "**Response:**",
-            "Response:",
-        ]
-
-        for marker in markers_to_remove:
-            if text.strip().startswith(marker):
-                text = text.replace(marker, "", 1).strip()
-                break
-
-        # Enforce maximum 2 paragraphs (WhatsApp best practice)
-        text = self._enforce_paragraph_limit(text, max_paragraphs=2)
-
-        return text
+                text = str(response_text)
+        else:
+            text = str(response_text)
+        # Aplica pós-processamento para WhatsApp
+        return enforce_whatsapp_style(text, max_paragraphs=2)
 
     def _enforce_paragraph_limit(self, text: str, max_paragraphs: int = 2) -> str:
         """Enforce maximum paragraph limit for WhatsApp messages."""
