@@ -52,7 +52,7 @@ class ContextBuilder:
             context_text = "\n---\n".join(context_parts)
 
             # Limit context to ~2000 chars to avoid excessive token usage
-            MAX_CONTEXT_CHARS = 2000
+            MAX_CONTEXT_CHARS = 2000  # noqa: N806
             if len(context_text) > MAX_CONTEXT_CHARS:
                 logger.warning(
                     "[CONTEXT_TRIM] Context too long (%s chars), trimming to %s chars",
