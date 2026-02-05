@@ -2,7 +2,9 @@
 Service para orquestração de filas (jobs assíncronos).
 """
 
+import json
 import logging
+from datetime import timedelta
 from typing import Any
 
 from rq.exceptions import NoSuchJobError
@@ -13,8 +15,9 @@ from robbot.config.settings import settings
 from robbot.core.custom_exceptions import QueueError
 from robbot.infra.jobs.escalation_job import EscalationJob, process_escalation_job
 from robbot.infra.jobs.gemini_job import GeminiAIProcessingJob, process_gemini_job
-from robbot.infra.jobs.message_job import MessageProcessingJob, process_message_job
+from robbot.infra.jobs.message_job import MessageProcessingJob, process_debounced_message, process_message_job
 from robbot.infra.jobs.scheduler_job import ScheduledJob
+from robbot.infra.redis.client import get_redis_client
 from robbot.infra.redis.queue import get_queue_manager
 
 logger = logging.getLogger(__name__)
@@ -86,7 +89,7 @@ class QueueService:
             enqueued_job.timeout = 600  # 10 minutes
             enqueued_job.save()
             logger.debug("Job %s timeout set to 600s in Redis", job.job_id)
-        except Exception as e:  # noqa: BLE001
+        except (AttributeError, RuntimeError, ValueError, TypeError) as e:
             logger.warning("Failed to set job timeout in Redis: %s", e)
 
         logger.info(
@@ -102,6 +105,98 @@ class QueueService:
         )
 
         return job.job_id
+
+    def enqueue_message_processing_debounced(
+        self,
+        message_data: dict[str, Any],
+        conversation_id: str | None = None,
+        message_direction: str = "inbound",
+    ) -> str:
+        """
+        Enfileirar mensagens com debounce para evitar múltiplas respostas.
+
+        Junta mensagens rápidas do mesmo chat e processa uma única resposta.
+        """
+        if message_direction != "inbound":
+            return self.enqueue_message_processing(
+                message_data=message_data,
+                conversation_id=conversation_id,
+                message_direction=message_direction,
+            )
+
+        chat_id = message_data.get("from") or message_data.get("phone")
+        if not chat_id:
+            return self.enqueue_message_processing(
+                message_data=message_data,
+                conversation_id=conversation_id,
+                message_direction=message_direction,
+            )
+
+        debounce_seconds = max(0, int(settings.MESSAGE_DEBOUNCE_SECONDS))
+        if debounce_seconds == 0:
+            return self.enqueue_message_processing(
+                message_data=message_data,
+                conversation_id=conversation_id,
+                message_direction=message_direction,
+            )
+
+        redis_client = get_redis_client()
+        buffer_key = f"waha:debounce:{chat_id}"
+        job_key = f"waha:debounce:job:{chat_id}"
+
+        existing = redis_client.get(buffer_key)
+        if existing:
+            try:
+                payload = json.loads(existing)
+            except json.JSONDecodeError:
+                payload = {"messages": [], "last_payload": {}}
+        else:
+            payload = {"messages": [], "last_payload": {}}
+
+        body = message_data.get("body", "")
+        if isinstance(body, str) and body.strip():
+            payload.setdefault("messages", []).append(body)
+
+        payload["last_payload"] = {
+            "session": message_data.get("session", "default"),
+        }
+
+        redis_client.setex(buffer_key, debounce_seconds + 10, json.dumps(payload))
+
+        if redis_client.set(job_key, "1", nx=True, ex=debounce_seconds + 30):
+            delay = timedelta(seconds=debounce_seconds)
+            enqueued_job = self.queue_manager.queue_messages.enqueue_in(
+                delay,
+                process_debounced_message,
+                chat_id=chat_id,
+                result_ttl=settings.RQ_DEFAULT_RESULT_TTL,
+                failure_ttl=settings.RQ_DEFAULT_FAILURE_TTL,
+            )
+            logger.info(
+                "Mensagem enfileirada com debounce (%ss) -> %s",
+                debounce_seconds,
+                enqueued_job.id,
+                extra={
+                    "job_id": enqueued_job.id,
+                    "queue": "messages",
+                    "phone": message_data.get("phone"),
+                    "chat_id": chat_id,
+                    "debounce_seconds": debounce_seconds,
+                },
+            )
+            return enqueued_job.id
+
+        logger.info(
+            "Mensagem adicionada ao buffer de debounce",
+            extra={
+                "queue": "messages",
+                "phone": message_data.get("phone"),
+                "chat_id": chat_id,
+                "debounce_seconds": debounce_seconds,
+            },
+        )
+
+        return f"debounce-buffer:{chat_id}"
 
     def enqueue_ai_processing(
         self,
