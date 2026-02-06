@@ -14,8 +14,8 @@ from typing import Any
 from robbot.config.prompt_loader import PromptLoader
 from robbot.core.custom_exceptions import LLMError
 from robbot.core.interfaces import LLMProvider
-from robbot.domain.enums import IntentType
-from robbot.services.playbook_service import PlaybookService
+from robbot.domain.shared.enums import IntentType
+from robbot.services.ai.context_service import ContextService
 
 logger = logging.getLogger(__name__)
 
@@ -29,19 +29,14 @@ class ResponseGenerator:
         self,
         llm_provider: LLMProvider,
         prompt_loader: PromptLoader,
-        playbook_service: PlaybookService,
+        context_service: ContextService,
     ):
         """
         Initialize response generator with dependencies.
-
-        Args:
-            llm_provider: LLM interface (Gemini, Claude, etc)
-            prompt_loader: Loads prompt templates
-            playbook_service: Manages conversation playbooks
         """
         self.llm = llm_provider
         self.prompt_loader = prompt_loader
-        self.playbook_service = playbook_service
+        self.context_service = context_service
 
     async def generate_response(
         self,
@@ -53,31 +48,18 @@ class ResponseGenerator:
     ) -> str:
         """
         Generate response for user message based on SPIN selling methodology.
-
-        Args:
-            user_message: User's input message
-            context: Conversation history context
-            detected_intent: Detected intent category
-            maturity_score: Lead maturity score (0-100)
-            clinic_info: Clinic details for personalization
-
-        Returns:
-            Generated response text
-
-        Raises:
-            LLMError: If response generation fails
         """
         try:
-            # Step 1: Try to match and apply relevant playbook
-            playbook_response = await self._try_playbook_response(
+            # Step 1: Try to match and apply relevant context
+            context_response = await self._try_context_response(
                 user_message,
                 detected_intent,
                 clinic_info,
             )
 
-            if playbook_response:
-                logger.info("[INFO] Using playbook response for intent: %s", detected_intent)
-                return playbook_response
+            if context_response:
+                logger.info("[INFO] Using context response for intent: %s", detected_intent)
+                return context_response
 
             # Step 2: Generate contextual response with Gemini
             response = await self._generate_contextual_response(
@@ -98,48 +80,40 @@ class ResponseGenerator:
             logger.error("[ERROR] Failed to generate response: %s", e)
             raise LLMError(f"Response generation failed: {e}") from e
 
-    async def _try_playbook_response(
+    async def _try_context_response(
         self,
         user_message: str,
         detected_intent: IntentType,
         clinic_info: dict[str, Any] | None,
     ) -> str | None:
         """
-        Try to retrieve playbook response for detected intent.
-
-        Args:
-            user_message: User message
-            detected_intent: Intent type
-            clinic_info: Clinic information
-
-        Returns:
-            Playbook response if found, None otherwise
+        Try to retrieve context response for detected intent.
         """
         try:
-            # Search for relevant playbook
-            playbooks = await self.playbook_service.search_playbooks(
+            # Search for relevant contexts
+            contexts = self.context_service.search_contexts(
                 query=user_message,
-                intent=detected_intent,
             )
 
-            if not playbooks:
+            if not contexts:
                 return None
 
-            # Get first matching playbook
-            playbook = playbooks[0]
+            # Get first matching context
+            context_match = contexts[0]
 
-            # Get playbook messages
-            messages = await self.playbook_service.get_playbook_messages(
-                playbook_id=playbook.id,
+            # Get context items
+            items = self.context_service.get_context_items_with_details(
+                context_id=context_match.context_id,
             )
 
-            if not messages:
+            if not items:
                 return None
 
-            # Format first playbook message
-            response = messages[0].get("message", "")
+            # Get first item content
+            item = items[0]
+            response = item.get("content_text") or item.get("content_caption") or ""
 
-            if clinic_info:
+            if response and clinic_info:
                 # Personalize with clinic info
                 response = response.format(
                     clinic_name=clinic_info.get("name", "nossa clínica"),
@@ -149,7 +123,7 @@ class ResponseGenerator:
             return response
 
         except Exception as e:
-            logger.warning("[WARNING] Failed to get playbook response: %s", e)
+            logger.warning("[WARNING] Failed to get context response: %s", e)
             return None
 
     async def _generate_contextual_response(
@@ -328,3 +302,4 @@ through the appropriate SPIN selling phase. Be conversational and helpful.
             response = response.replace(placeholder, value)
 
         return response
+
