@@ -10,22 +10,10 @@ class Settings(BaseSettings):
     """Core application configuration with sane defaults."""
 
     # Development Mode (filter messages by phone number)
-    DEV_MODE: bool = Field(default=False, description="Enable dev mode (only respond to DEV_PHONE_NUMBERS)")
-    DEV_PHONE_NUMBERS: str | None = Field(
-        default=None,
-        description="Phone numbers to respond to in dev mode (comma-separated, e.g., 5511999999999,5511888888888)",
+    DEV_MODE: bool = Field(default=False, description="Enable dev mode (only respond to DEV_PHONE_NUMBER)")
+    DEV_PHONE_NUMBER: str | None = Field(
+        default=None, description="Phone number to respond to in dev mode (e.g., 5511999999999)"
     )
-    MESSAGE_DEBOUNCE_SECONDS: int = Field(
-        default=4,
-        description="Debounce window to merge rapid inbound messages into one response (seconds)",
-    )
-
-    @property
-    def dev_phone_list(self) -> list[str]:
-        """Parse comma-separated phone numbers into a list."""
-        if not self.DEV_PHONE_NUMBERS:
-            return []
-        return [p.strip() for p in str(self.DEV_PHONE_NUMBERS).split(",") if p.strip()]
 
     # Use Postgres via Docker for local/dev. Provide connection via env.
     # Example in .env:
@@ -96,10 +84,17 @@ class Settings(BaseSettings):
     WAHA_MOCK_REQUESTS: bool = Field(default=False, description="Use mock WAHA responses in DEV_MODE")
 
     # Anti-ban settings (WhatsApp best practices)
+    # NOTE: Reduced delays for better UX. Monitor for bans and adjust if needed.
     WAHA_ANTI_BAN_ENABLED: bool = Field(default=True, description="Enable anti-ban delays")
-    WAHA_MIN_DELAY_SECONDS: int = Field(default=30, description="Min delay before sending (30-60s recommended)")
-    WAHA_MAX_DELAY_SECONDS: int = Field(default=60, description="Max delay before sending")
-    WAHA_MESSAGES_PER_HOUR: int = Field(default=20, description="Max messages per hour (conservative limit)")
+    WAHA_MIN_DELAY_SECONDS: int = Field(default=3, description="Min delay before sending (balance UX vs safety)")
+    WAHA_MAX_DELAY_SECONDS: int = Field(default=8, description="Max delay before sending")
+    WAHA_MESSAGES_PER_HOUR: int = Field(default=30, description="Max messages per hour (increased for faster conversations)")
+
+    # Message debouncing (group rapid messages)
+    MESSAGE_DEBOUNCE_SECONDS: int = Field(
+        default=2,
+        description="Seconds to wait before processing message (groups rapid messages together)"
+    )
 
     # ChromaDB (persistência vetorial)
     CHROMA_PERSIST_DIR: str = Field(default="./data/chroma")
@@ -149,6 +144,23 @@ class Settings(BaseSettings):
         case_sensitive=True,
         extra="ignore",
     )
+
+    @property
+    def dev_phone_list(self) -> list[str]:
+        """
+        Convert DEV_PHONE_NUMBER to list format for compatibility.
+        
+        Supports:
+        - Single phone: "555198098876" → ["555198098876"]
+        - Multiple phones: "555198098876,555191234567" → ["555198098876", "555191234567"]
+        - Empty: None or "" → []
+        """
+        if not self.DEV_PHONE_NUMBER:
+            return []
+        
+        # Split by comma and strip whitespace
+        phones = [p.strip() for p in str(self.DEV_PHONE_NUMBER).split(",") if p.strip()]
+        return phones
 
 
 @lru_cache
