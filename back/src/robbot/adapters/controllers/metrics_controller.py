@@ -7,7 +7,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from robbot.adapters.repositories.analytics_repository import AnalyticsRepository
+from robbot.infra.persistence.repositories.analytics_repository import AnalyticsRepository
 from robbot.api.v1.dependencies import get_current_user, get_db
 from robbot.infra.redis.client import get_redis_client
 from robbot.infra.redis.queue import get_queue_manager
@@ -44,7 +44,7 @@ def _parse_dates(start_date: str | None, end_date: str | None) -> tuple[datetime
 
 
 @router.get("/overview")
-def get_metrics_overview(
+async def get_metrics_overview(
     start_date: str | None = Query(default=None),
     end_date: str | None = Query(default=None),
     _current_user=Depends(get_current_user),
@@ -52,7 +52,7 @@ def get_metrics_overview(
 ):
     """Legacy overview metrics endpoint used by API tests."""
     start, end, period = _parse_dates(start_date, end_date)
-    summary = svc.get_dashboard_summary(start, end)
+    summary = await svc.get_dashboard_summary(start, end)
     kpis = summary.get("kpis", {})
 
     return {
@@ -70,3 +70,4 @@ def get_campaign_metrics(
 ):
     """Legacy campaigns metrics endpoint used by API tests."""
     return []
+
