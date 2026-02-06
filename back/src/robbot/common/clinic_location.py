@@ -47,7 +47,7 @@ async def send_clinic_location_via_waha(
         >>> result = await send_clinic_location_via_waha("5551999999999@c.us")
         >>> print(result)  # {"id": "...", "status": "sent"}
     """
-    from robbot.adapters.external.waha_client import WAHAClient
+    from robbot.infra.integrations.waha.waha_client import WAHAClient
 
     location = get_clinic_location()
     title = custom_title or location["name"]
@@ -92,3 +92,4 @@ CLINIC_ADDRESS = settings.CLINIC_ADDRESS
 CLINIC_LATITUDE = settings.CLINIC_LATITUDE
 CLINIC_LONGITUDE = settings.CLINIC_LONGITUDE
 CLINIC_MAPS_URL = settings.CLINIC_MAPS_URL
+
