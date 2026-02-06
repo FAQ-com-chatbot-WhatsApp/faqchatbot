@@ -12,15 +12,15 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
-from robbot.adapters.repositories.conversation_message_repository import ConversationMessageRepository
-from robbot.adapters.repositories.conversation_tag_repository import ConversationTagRepository
-from robbot.adapters.repositories.tag_repository import TagRepository
+from robbot.infra.persistence.repositories.conversation_message_repository import ConversationMessageRepository
+from robbot.infra.persistence.repositories.conversation_tag_repository import ConversationTagRepository
+from robbot.infra.persistence.repositories.tag_repository import TagRepository
 from robbot.api.v1.dependencies import get_current_user, get_db
 from robbot.core.custom_exceptions import NotFoundException
-from robbot.domain.enums import ConversationStatus, Role
-from robbot.infra.db.models.conversation_message_model import ConversationMessageModel
-from robbot.infra.db.models.user_model import UserModel
-from robbot.services.conversation_service import ConversationService
+from robbot.domain.shared.enums import ConversationStatus, Role
+from robbot.infra.persistence.models.conversation_message_model import ConversationMessageModel
+from robbot.infra.persistence.models.user_model import UserModel
+from robbot.services.bot.conversation_service import ConversationService
 
 router = APIRouter()
 
@@ -205,7 +205,7 @@ def add_tags_to_conversation(
     db: Session = Depends(get_db),
 ):
     """Add tags to a conversation by name (test compatibility)."""
-    from robbot.adapters.repositories.conversation_repository import ConversationRepository
+    from robbot.infra.persistence.repositories.conversation_repository import ConversationRepository
     from robbot.services.tag_service import TagService
 
     conv_repo = ConversationRepository(db)
@@ -639,3 +639,4 @@ def update_conversation_notes(
         raise HTTPException(status_code=404, detail="Conversation not found") from exc
     except Exception as e:  # noqa: BLE001 (blind exception)
         raise HTTPException(status_code=500, detail=f"Failed to update notes: {e!s}") from e
+
