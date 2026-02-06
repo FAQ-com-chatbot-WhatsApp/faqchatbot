@@ -25,11 +25,11 @@ from fastapi.responses import Response
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
-from robbot.adapters.repositories.analytics_repository import AnalyticsRepository
+from robbot.infra.persistence.repositories.analytics_repository import AnalyticsRepository
 from robbot.api.v1.dependencies import get_current_user, get_db
 from robbot.config.settings import get_settings
-from robbot.domain.enums import Role
-from robbot.infra.db.models.user_model import UserModel
+from robbot.domain.shared.enums import Role
+from robbot.infra.persistence.models.user_model import UserModel
 from robbot.infra.redis.client import get_redis_client
 from robbot.infra.redis.queue import get_queue_manager
 from robbot.schemas.metrics_schemas import (
@@ -147,7 +147,7 @@ async def verify_websocket_token(token: str) -> UserModel:
 
 
 @router.get("/dashboard", response_model=DashboardSummaryResponse)
-def dashboard(
+async def dashboard(
     start_date: str | None = None,
     end_date: str | None = None,
     period: str = Query("30d"),
@@ -156,11 +156,11 @@ def dashboard(
 ):
     """KPIs: conversão, mensagens, tempo resposta. Cache 5min."""
     start, end = parse_dates(start_date, end_date, period)
-    return svc.get_dashboard_summary(start, end)
+    return await svc.get_dashboard_summary(start, end)
 
 
 @router.get("/conversion-funnel", response_model=ConversionFunnelResponse)
-def funnel(
+async def funnel(
     start_date: str | None = None,
     end_date: str | None = None,
     period: str = Query("30d"),
@@ -169,11 +169,11 @@ def funnel(
 ):
     """Funil 5 etapas + drop-off. Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
-    return svc.get_conversion_funnel(start, end)
+    return await svc.get_conversion_funnel(start, end)
 
 
 @router.get("/bot-autonomy", response_model=BotAutonomyResponse)
-def bot_autonomy(
+async def bot_autonomy(
     start_date: str | None = None,
     end_date: str | None = None,
     period: str = Query("30d"),
@@ -182,7 +182,7 @@ def bot_autonomy(
 ):
     """Taxa autonomia bot. Admin only. Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
-    return svc.get_bot_autonomy_rate(start, end)
+    return await svc.get_bot_autonomy_rate(start, end)
 
 
 # =============================================================================
@@ -191,7 +191,7 @@ def bot_autonomy(
 
 
 @router.get("/performance/bot-response-time", response_model=BotResponseTimeResponse)
-def bot_response_time_report(
+async def bot_response_time_report(
     start_date: str | None = None,
     end_date: str | None = None,
     period: str = Query("30d"),
@@ -200,11 +200,11 @@ def bot_response_time_report(
 ):
     """Tempo de resposta do bot via LLM latency. Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
-    return svc.get_bot_response_time(start, end)
+    return await svc.get_bot_response_time(start, end)
 
 
 @router.get("/performance/handoff-rate", response_model=HandoffRateResponse)
-def handoff_rate_report(
+async def handoff_rate_report(
     start_date: str | None = None,
     end_date: str | None = None,
     period: str = Query("30d"),
@@ -213,11 +213,11 @@ def handoff_rate_report(
 ):
     """Taxa de resolução automática vs handoff. Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
-    return svc.get_handoff_rate(start, end)
+    return await svc.get_handoff_rate(start, end)
 
 
 @router.get("/performance/peak-hours", response_model=PeakHoursResponse)
-def peak_hours_report(
+async def peak_hours_report(
     start_date: str | None = None,
     end_date: str | None = None,
     period: str = Query("30d"),
@@ -226,11 +226,11 @@ def peak_hours_report(
 ):
     """Horários de pico de atendimento. Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
-    return svc.get_peak_hours(start, end)
+    return await svc.get_peak_hours(start, end)
 
 
 @router.get("/performance/conversations-by-status", response_model=ConversationsByStatusResponse)
-def conversations_by_status_report(
+async def conversations_by_status_report(
     start_date: str | None = None,
     end_date: str | None = None,
     period: str = Query("30d"),
@@ -239,11 +239,11 @@ def conversations_by_status_report(
 ):
     """Distribuição de conversas por status. Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
-    return svc.get_conversations_by_status(start, end)
+    return await svc.get_conversations_by_status(start, end)
 
 
 @router.get("/performance/report", response_model=PerformanceReportSchema)
-def performance_full_report(
+async def performance_full_report(
     start_date: str | None = None,
     end_date: str | None = None,
     period: str = Query("30d"),
@@ -252,11 +252,11 @@ def performance_full_report(
 ):
     """Relatório completo de performance (L1): bot response time, handoff rate, peak hours, status distribution. Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
-    return svc.get_performance_report(start, end)
+    return await svc.get_performance_report(start, end)
 
 
 @router.get("/performance/report/export/pdf")
-def performance_report_export_pdf(
+async def performance_report_export_pdf(
     start_date: str | None = None,
     end_date: str | None = None,
     period: str = Query("30d"),
@@ -265,7 +265,7 @@ def performance_report_export_pdf(
 ):
     """Exporta relatório de performance em PDF."""
     start, end = parse_dates(start_date, end_date, period)
-    report_data = svc.get_performance_report(start, end)
+    report_data = await svc.get_performance_report(start, end)
 
     # Gerar PDF
     pdf_bytes = ExportService.export_performance_report_pdf(report_data)
@@ -281,7 +281,7 @@ def performance_report_export_pdf(
 
 
 @router.get("/performance/report/export/excel")
-def performance_report_export_excel(
+async def performance_report_export_excel(
     start_date: str | None = None,
     end_date: str | None = None,
     period: str = Query("30d"),
@@ -290,7 +290,7 @@ def performance_report_export_excel(
 ):
     """Exporta relatório de performance em Excel."""
     start, end = parse_dates(start_date, end_date, period)
-    report_data = svc.get_performance_report(start, end)
+    report_data = await svc.get_performance_report(start, end)
 
     # Gerar Excel
     excel_bytes = ExportService.export_performance_report_excel(report_data)
@@ -311,7 +311,7 @@ def performance_report_export_excel(
 
 
 @router.get("/conversion/time-to-conversion-extended", response_model=TimeToConversionExtendedResponse)
-def time_to_conversion_extended_report(
+async def time_to_conversion_extended_report(
     start_date: str | None = None,
     end_date: str | None = None,
     period: str = Query("30d"),
@@ -320,11 +320,11 @@ def time_to_conversion_extended_report(
 ):
     """Tempo até conversão com p75, p90. Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
-    return svc.get_time_to_conversion_extended(start, end)
+    return await svc.get_time_to_conversion_extended(start, end)
 
 
 @router.get("/conversion/by-source", response_model=ConversionBySourceResponse)
-def conversion_by_source_report(
+async def conversion_by_source_report(
     start_date: str | None = None,
     end_date: str | None = None,
     period: str = Query("30d"),
@@ -333,11 +333,11 @@ def conversion_by_source_report(
 ):
     """Taxa de conversão por origem (direct, group). Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
-    return svc.get_conversion_by_source(start, end)
+    return await svc.get_conversion_by_source(start, end)
 
 
 @router.get("/conversion/lost-leads", response_model=LostLeadsAnalysisResponse)
-def lost_leads_analysis_report(
+async def lost_leads_analysis_report(
     start_date: str | None = None,
     end_date: str | None = None,
     period: str = Query("30d"),
@@ -346,11 +346,11 @@ def lost_leads_analysis_report(
 ):
     """Análise de leads perdidos (status LOST). Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
-    return svc.get_lost_leads_analysis(start, end)
+    return await svc.get_lost_leads_analysis(start, end)
 
 
 @router.get("/conversion/trend", response_model=ConversionTrendResponse)
-def conversion_trend_report(
+async def conversion_trend_report(
     start_date: str | None = None,
     end_date: str | None = None,
     period: str = Query("30d"),
@@ -360,11 +360,11 @@ def conversion_trend_report(
 ):
     """Tendência temporal de conversão (day/week/month). Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
-    return svc.get_conversion_trend(start, end, granularity)
+    return await svc.get_conversion_trend(start, end, granularity)
 
 
 @router.get("/conversion/report-extended", response_model=ConversionReportExtendedSchema)
-def conversion_report_extended(
+async def conversion_report_extended(
     start_date: str | None = None,
     end_date: str | None = None,
     period: str = Query("30d"),
@@ -373,7 +373,7 @@ def conversion_report_extended(
 ):
     """Relatório COMPLETO de conversão (L2): time to conversion extended, by source, lost leads, trend. Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
-    return svc.get_conversion_report_extended(start, end)
+    return await svc.get_conversion_report_extended(start, end)
 
 
 # =====================================================================
@@ -382,7 +382,7 @@ def conversion_report_extended(
 
 
 @router.get("/conversation/activity-heatmap", response_model=dict)
-def conversation_activity_heatmap(
+async def conversation_activity_heatmap(
     start_date: str | None = None,
     end_date: str | None = None,
     period: str = Query("30d"),
@@ -391,11 +391,11 @@ def conversation_activity_heatmap(
 ):
     """Heatmap de atividade: mensagens por dia da semana e hora. Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
-    return svc.get_activity_heatmap(start, end)
+    return await svc.get_activity_heatmap(start, end)
 
 
 @router.get("/conversation/keywords", response_model=dict)
-def conversation_keywords(
+async def conversation_keywords(
     start_date: str | None = None,
     end_date: str | None = None,
     period: str = Query("30d"),
@@ -405,11 +405,11 @@ def conversation_keywords(
 ):
     """Palavras-chave mais frequentes nas mensagens INBOUND. Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
-    return svc.get_keyword_frequency(start, end, limit)
+    return await svc.get_keyword_frequency(start, end, limit)
 
 
 @router.get("/conversation/sentiment", response_model=dict)
-def conversation_sentiment(
+async def conversation_sentiment(
     start_date: str | None = None,
     end_date: str | None = None,
     period: str = Query("30d"),
@@ -418,11 +418,11 @@ def conversation_sentiment(
 ):
     """Análise de sentimento nas mensagens INBOUND. Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
-    return svc.get_sentiment_distribution(start, end)
+    return await svc.get_sentiment_distribution(start, end)
 
 
 @router.get("/conversation/topics", response_model=dict)
-def conversation_topics(
+async def conversation_topics(
     start_date: str | None = None,
     end_date: str | None = None,
     period: str = Query("30d"),
@@ -431,11 +431,11 @@ def conversation_topics(
 ):
     """Topics mais discutidos nas mensagens INBOUND. Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
-    return svc.get_topic_distribution(start, end)
+    return await svc.get_topic_distribution(start, end)
 
 
 @router.get("/conversation/report", response_model=ConversationAnalysisReportSchema)
-def conversation_analysis_report(
+async def conversation_analysis_report(
     start_date: str | None = None,
     end_date: str | None = None,
     period: str = Query("30d"),
@@ -444,7 +444,7 @@ def conversation_analysis_report(
 ):
     """Relatório COMPLETO de análise de conversas (L3): heatmap, keywords, sentiment, topics. Cache 15min."""
     start, end = parse_dates(start_date, end_date, period)
-    return svc.get_conversation_analysis_report(start, end)
+    return await svc.get_conversation_analysis_report(start, end)
 
 
 # =====================================================================
@@ -453,12 +453,12 @@ def conversation_analysis_report(
 
 
 @router.get("/realtime/dashboard", response_model=RealtimeDashboardSchema)
-def realtime_dashboard(
+async def realtime_dashboard(
     current_user: UserModel = Depends(get_current_user),
     svc: MetricsService = Depends(get_metrics_service),
 ):
     """Dashboard completo em tempo real: summary, active conversations, queue stats, alerts. Cache 30s."""
-    return svc.get_realtime_dashboard()
+    return await svc.get_realtime_dashboard()
 
 
 @router.websocket("/ws/realtime")
@@ -547,3 +547,4 @@ async def websocket_realtime_metrics(
             _ws_connections[user_id].remove(websocket)
         if not _ws_connections[user_id]:
             del _ws_connections[user_id]
+
