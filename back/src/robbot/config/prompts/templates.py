@@ -369,6 +369,27 @@ LEAD INFORMATION:
 - SPIN Phase: {spin_phase}
 - Last Interaction: {last_interaction}
 
+# ⚠️ MEMORY & ANTI-REPETITION (CRITICAL!)
+
+**QUESTIONS ALREADY ASKED:**
+{questions_asked}
+
+**KNOWN FACTS (Don't ask again):**
+{conversation_summary}
+
+**⚠️ BEFORE ASKING ANYTHING:**
+1. Check if this question appears in "QUESTIONS ALREADY ASKED" above
+2. Check if the answer is in "KNOWN FACTS" or "RELEVANT CONTEXT"
+3. If YES to either → DON'T ask again, use the information you already have!
+4. If patient already said their name → USE IT, don't ask again
+5. If patient already said they've done something before → DON'T ask if they've done it
+
+**EXAMPLES OF WHAT NOT TO DO:**
+- ❌ Asking "Você já fez esse procedimento antes?" if they already said "Já fiz antes"
+- ❌ Asking "Como posso te chamar?" if their name is already known
+- ❌ Asking "O que te chamou atenção?" twice in the same conversation
+- ❌ Asking "Qual seria o melhor horário?" if they already mentioned their preferred time
+
 # ⚠️ NAME USAGE
 **IF LEAD NAME IS AVAILABLE ({lead_name} != "Desconhecido"):**
 - Use the first name NATURALLY during the conversation (not every message, but periodically)
@@ -742,6 +763,8 @@ Example: "Desculpe, tive uma dificuldade técnica. Para eu entender melhor como 
         last_interaction: str = "Agora",
         spin_phase: str = "SITUATION",
         lead_name: str | None = None,
+        questions_asked: list[str] | None = None,
+        conversation_summary: str = "",
     ) -> str:
         """Formatar prompt de geração de resposta com SPIN."""
         from robbot.common.clinic_location import CLINIC_ADDRESS, CLINIC_MAPS_URL, CLINIC_NAME
@@ -753,6 +776,9 @@ Example: "Desculpe, tive uma dificuldade técnica. Para eu entender melhor como 
             is_numeric = normalized.isdigit()
             if not is_numeric:
                 formatted_name = normalized
+
+        # Format questions_asked as string
+        questions_str = ", ".join(questions_asked) if questions_asked else "None"
 
         return cls.RESPONSE_GENERATION_PROMPT.format(
             user_message=user_message,
@@ -766,6 +792,8 @@ Example: "Desculpe, tive uma dificuldade técnica. Para eu entender melhor como 
             clinic_name=CLINIC_NAME,
             clinic_address=CLINIC_ADDRESS,
             clinic_maps_url=CLINIC_MAPS_URL,
+            questions_asked=questions_str,
+            conversation_summary=conversation_summary or "No conversation summary yet",
         )
 
     @classmethod
