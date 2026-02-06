@@ -13,9 +13,9 @@ from typing import Any
 from sqlalchemy import asc, desc
 from sqlalchemy.orm import Query
 
-from robbot.infra.db.models.conversation_model import ConversationModel
-from robbot.infra.db.models.lead_interaction_model import LeadInteractionModel
-from robbot.infra.db.models.lead_model import LeadModel
+from robbot.infra.persistence.models.conversation_model import ConversationModel
+from robbot.infra.persistence.models.lead_interaction_model import LeadInteractionModel
+from robbot.infra.persistence.models.lead_model import LeadModel
 from robbot.schemas.filters import (
     ConversationFilterDTO,
     InteractionFilterDTO,
@@ -233,3 +233,4 @@ class FilterService:
 
         logger.warning("Sort column '%s' not found on %s", column_name, model.__name__)
         return None
+
