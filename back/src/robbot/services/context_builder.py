@@ -28,13 +28,13 @@ class ContextBuilder:
         """
         self.vector_store = vector_store
 
-    async def get_conversation_context(self, conversation_id: str, limit: int = 5) -> str:
+    async def get_conversation_context(self, conversation_id: str, limit: int = 10) -> str:
         """
         Retrieve formatted conversational context from the vector store.
 
         Args:
             conversation_id: Conversation identifier
-            limit: Max number of past interactions to include
+            limit: Max number of past interactions to include (default 10 for better memory)
 
         Returns:
             Formatted context string (empty if no history)
@@ -51,15 +51,16 @@ class ContextBuilder:
             context_parts = [r.get("text", "") for r in results]
             context_text = "\n---\n".join(context_parts)
 
-            # Limit context to ~2000 chars to avoid excessive token usage
-            MAX_CONTEXT_CHARS = 2000  # noqa: N806
+            # Limit context to ~5000 chars (2.5x increase for better context retention)
+            MAX_CONTEXT_CHARS = 5000  # noqa: N806
             if len(context_text) > MAX_CONTEXT_CHARS:
                 logger.warning(
                     "[CONTEXT_TRIM] Context too long (%s chars), trimming to %s chars",
                     len(context_text),
                     MAX_CONTEXT_CHARS,
                 )
-                context_text = context_text[:MAX_CONTEXT_CHARS] + "\n[...context truncated]"
+                # Keep most recent context (trim from beginning, not end)
+                context_text = "[...older context trimmed]\n" + context_text[-MAX_CONTEXT_CHARS:]
 
             logger.info("[SUCCESS] Context retrieved (%s documents, %s chars)", len(results), len(context_text))
 
