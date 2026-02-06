@@ -5,10 +5,12 @@ using LangChain's ChatGroq with automatic model fallback.
 """
 
 import logging
+import time
+from typing import Any
 
 from langchain_groq import ChatGroq
 
-from robbot.adapters.external.providers.base import LLMProvider
+from robbot.core.interfaces import LLMProvider
 from robbot.core.custom_exceptions import LLMError
 
 logger = logging.getLogger(__name__)
@@ -16,9 +18,8 @@ logger = logging.getLogger(__name__)
 # Groq models ordered by preference (speed, capability, availability)
 GROQ_FALLBACK_MODELS = [
     "llama-3.3-70b-versatile",      # Latest Llama 3.3, best balance
-    "llama-3.1-8b-instant",         # Fast, lower capability (3.1-70b DECOMMISSIONED)
+    "llama-3.1-8b-instant",         # Fast, lower capability
     "mixtral-8x7b-32768",           # Good for long context
-    "gemma2-9b-it",                 # Google's Gemma, efficient
 ]
 
 
@@ -37,18 +38,7 @@ class GroqProvider(LLMProvider):
         default_max_tokens: int = 2048,
         timeout: int = 60,
     ):
-        """Initialize Groq provider.
-
-        Args:
-            api_key: Groq API key
-            model: Model identifier (e.g., 'llama-3.3-70b-versatile')
-            default_temperature: Default sampling temperature
-            default_max_tokens: Default maximum output tokens
-            timeout: Request timeout in seconds
-
-        Raises:
-            LLMError: If initialization fails
-        """
+        """Initialize Groq provider."""
         self._api_key = api_key
         self._primary_model = model
         self._current_model = model
@@ -73,119 +63,96 @@ class GroqProvider(LLMProvider):
             logger.error("Failed to initialize Groq provider: %s", e)
             raise LLMError("Groq", f"Initialization failed: {e}", original_error=e) from e
 
-    def generate_response(
+    async def generate_response(
         self,
         prompt: str,
-        temperature: float | None = None,
-        max_tokens: int | None = None,
-    ) -> str:
-        """Generate response using Groq model with automatic fallback.
-
-        Attempts primary model first. If it fails due to quota or unavailability,
-        automatically tries alternative models from GROQ_FALLBACK_MODELS list.
-
-        Args:
-            prompt: Input prompt text
-            temperature: Override default temperature
-            max_tokens: Override default max tokens
-
-        Returns:
-            Generated text response
-
-        Raises:
-            LLMError: If all models fail
-        """
-        effective_temp = temperature if temperature is not None else self._default_temperature
-        effective_max = max_tokens if max_tokens is not None else self._default_max_tokens
-
+        context: str | None = None,
+        max_retries: int = 3,
+    ) -> dict[str, Any]:
+        """Generate response using Groq model with automatic fallback."""
+        full_prompt = f"Context:\n{context}\n\nPrompt:\n{prompt}" if context else prompt
+        
+        start_time = time.time()
         # Build list of models to try: primary + fallbacks
         models_to_try = [self._primary_model] + [
             m for m in GROQ_FALLBACK_MODELS if m != self._primary_model
         ]
         last_error = None
 
-        for model_name in models_to_try:
-            try:
-                # Switch model if needed
-                if model_name != self._current_model:
-                    logger.info("[FALLBACK] Switching to Groq model: %s", model_name)
-                    self._client = ChatGroq(
-                        model=model_name,
-                        groq_api_key=self._api_key,
-                        temperature=effective_temp,
-                        max_tokens=effective_max,
-                        timeout=self._timeout,
-                    )
-                    self._current_model = model_name
-                else:
-                    self._client.temperature = effective_temp
-                    self._client.max_tokens = effective_max
+        for attempt in range(max_retries):
+            for model_name in models_to_try:
+                try:
+                    # Switch model if needed
+                    if model_name != self._current_model:
+                        logger.info("[FALLBACK] Switching to Groq model: %s", model_name)
+                        self._client = ChatGroq(
+                            model=model_name,
+                            groq_api_key=self._api_key,
+                            temperature=self._default_temperature,
+                            max_tokens=self._default_max_tokens,
+                            timeout=self._timeout,
+                        )
+                        self._current_model = model_name
 
-                response = self._client.invoke(prompt)
-                
-                # Log success if using fallback
-                if model_name != self._primary_model:
-                    logger.info("[SUCCESS] Response generated with fallback model: %s", model_name)
-                
-                return response.content
+                    response = await self._client.ainvoke(full_prompt)
+                    latency_ms = int((time.time() - start_time) * 1000)
+                    
+                    return {
+                        "response": response.content,
+                        "tokens_used": None,
+                        "latency_ms": latency_ms,
+                        "model": self._current_model,
+                        "provider": "groq",
+                        "finish_reason": "stop",
+                    }
 
-            except Exception as e:
-                error_msg = str(e).lower()
-                last_error = e
+                except Exception as e:
+                    error_msg = str(e).lower()
+                    last_error = e
 
-                # Check for quota/rate limit or model availability errors
-                if any(
-                    keyword in error_msg
-                    for keyword in [
-                        "rate_limit",
-                        "quota",
-                        "429",
-                        "503",
-                        "decommissioned",
-                        "model not found",
-                        "not found",
-                        "invalid_request_error",
-                    ]
-                ):
-                    logger.warning(
-                        "[QUOTA] Groq model %s hit limit or unavailable: %s",
-                        model_name,
-                        str(e)[:200],
-                    )
-                    continue  # Try next model
+                    if any(k in error_msg for k in ["rate_limit", "quota", "429", "503", "not found"]):
+                        logger.warning("[QUOTA/AVAILABILITY] Groq model %s issue: %s", model_name, error_msg[:100])
+                        continue  # Try next model
 
-                # For other errors, fail immediately
-                logger.error("Groq generation failed: %s", e)
-                raise LLMError("Groq", str(e), original_error=e) from e
+                    logger.error("Groq generation failed: %s", e)
+                    raise LLMError("Groq", str(e), original_error=e) from e
 
-        # All models failed
-        logger.error("[QUOTA] All Groq models exhausted. Models tried: %s", models_to_try)
-        raise LLMError(
-            "Groq",
-            f"All models hit rate limits. Tried: {', '.join(models_to_try)}",
-            original_error=last_error,
-        ) from last_error
+        raise LLMError("Groq", "All models and retries failed", original_error=last_error)
+
+    async def generate_structured(
+        self,
+        prompt: str,
+        schema: dict[str, Any],
+        context: str | None = None,
+    ) -> dict[str, Any]:
+        """Generate structured response from Groq."""
+        structured_prompt = f"{prompt}\n\nYour response MUST be a valid JSON object matching this schema: {schema}"
+        result = await self.generate_response(structured_prompt, context)
+        return result
+
+    async def call_function(
+        self,
+        prompt: str,
+        tools: list[dict[str, Any]],
+        context: str | None = None,
+    ) -> dict[str, Any]:
+        """Placeholder for tool usage."""
+        return await self.generate_response(prompt, context)
+
+    async def embed_text(self, text: str) -> list[float]:
+        """Groq typically doesn't provide embeddings, so this is a placeholder or uses a fallback model."""
+        # For now, we raise LLMError as Groq is primarily for inference
+        raise LLMError("Groq", "Embeddings not supported natively by Groq provider")
+
+    async def close(self) -> None:
+        """Cleanup."""
+        pass
 
     def is_available(self) -> bool:
-        """Check if Groq provider is available.
-
-        Returns:
-            True if client is initialized, False otherwise
-        """
         return self._client is not None
 
     def get_provider_name(self) -> str:
-        """Get provider name.
-
-        Returns:
-            'groq'
-        """
         return "groq"
 
     def get_model_name(self) -> str:
-        """Get the currently active model identifier.
-
-        Returns:
-            Current model name (may differ from primary if fallback occurred)
-        """
         return self._current_model
