@@ -9,11 +9,11 @@ from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-from robbot.adapters.repositories.user_repository import UserRepository
+from robbot.infra.persistence.repositories.user_repository import UserRepository
 from robbot.core import security
 from robbot.core.custom_exceptions import AuthException
 from robbot.core.rate_limiting import init_rate_limiter
-from robbot.infra.db.models.user_model import UserModel
+from robbot.infra.persistence.models.user_model import UserModel
 from robbot.infra.db.session import get_db as session_get_db
 from robbot.infra.redis.client import get_redis_client
 
@@ -80,7 +80,7 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> UserMod
         ) from exc
 
     # CRITICAL: Check if token was revoked (logout/password change)
-    from robbot.adapters.repositories.token_repository import TokenRepository
+    from robbot.infra.persistence.repositories.token_repository import TokenRepository
 
     token_repo = TokenRepository(db)
     if token_repo.is_revoked(token):
@@ -183,3 +183,4 @@ def get_waha_from_container(container=Depends(get_container_dep)):
 def get_prompt_loader_from_container(container=Depends(get_container_dep)):
     """Dependency to get prompt loader from DI container."""
     return container.get_prompt_loader()  # type: PromptLoader
+
