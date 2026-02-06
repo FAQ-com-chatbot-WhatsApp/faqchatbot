@@ -10,7 +10,7 @@ Utiliza CredentialRepository para persistência e security helpers para hashing.
 
 from sqlalchemy.orm import Session
 
-from robbot.adapters.repositories.credential_repository import CredentialRepository
+from robbot.infra.persistence.repositories.credential_repository import CredentialRepository
 from robbot.core import security
 from robbot.core.custom_exceptions import AuthException
 
@@ -51,3 +51,4 @@ class CredentialService:
         if not security.verify_password(old_password, cred.hashed_password):
             raise AuthException("Senha atual inválida")
         self.set_password(user_id, new_password)
+
