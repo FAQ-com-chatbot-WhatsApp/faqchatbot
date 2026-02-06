@@ -5,11 +5,11 @@ from urllib.parse import quote
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from robbot.adapters.external.waha_client import WAHAClient, get_waha_client
-from robbot.adapters.repositories.session_repository import SessionRepository
+from robbot.infra.integrations.waha.waha_client import WAHAClient, get_waha_client
+from robbot.infra.persistence.repositories.session_repository import SessionRepository
 from robbot.api.v1.dependencies import get_current_user, get_db, require_role
 from robbot.core.custom_exceptions import ExternalServiceError
-from robbot.domain.enums import Role
+from robbot.domain.shared.enums import Role
 from robbot.schemas.waha import (
     ContactBlockRequest,
     ConvertVideoRequest,
@@ -1300,3 +1300,4 @@ async def screenshot(
         return await waha.screenshot(session=session.name)
     except ExternalServiceError as e:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+
