@@ -1,14 +1,13 @@
 {
   "active": [
     {
-      "slug": "fix-waha-message-polling",
-      "path": "plans/fix-waha-message-polling.md",
-      "title": "Implementar Polling de Mensagens WAHA",
-      "summary": "Substituir dependência de webhooks não-funcionais do WEBJS por sistema de polling robusto baseado na API oficial do WAHA para garantir recepção de todas as mensagens",
-      "linkedAt": "2026-02-01T09:27:16.025Z",
+      "slug": "architectural-reorganization-plan",
+      "path": "plans/architectural-reorganization-plan.md",
+      "title": "Architectural Reorganization & Modularization",
+      "linkedAt": "2026-02-06T17:10:33.403Z",
       "status": "active"
     }
   ],
   "completed": [],
-  "primary": "fix-waha-message-polling"
+  "primary": "architectural-reorganization-plan"
 }
