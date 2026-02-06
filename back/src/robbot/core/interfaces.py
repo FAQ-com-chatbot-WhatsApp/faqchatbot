@@ -20,6 +20,7 @@ class LLMProvider(ABC):
     Abstract interface for Language Model providers.
 
     Enables swapping between Gemini, Claude, GPT, etc. without changing services.
+    Supports text generation, structured output, embeddings, and tool usage.
     """
 
     @abstractmethod
@@ -30,7 +31,7 @@ class LLMProvider(ABC):
         max_retries: int = 3,
     ) -> dict[str, Any]:
         """
-        Generate a response from the LLM.
+        Generate a text response from the LLM.
 
         Args:
             prompt: User message/prompt
@@ -38,7 +39,45 @@ class LLMProvider(ABC):
             max_retries: Max retry attempts
 
         Returns:
-            Dict with keys: response, tokens_used, latency_ms, model, finish_reason
+            Dict with keys: response, tokens_used, latency_ms, model, provider, finish_reason
+        """
+
+    @abstractmethod
+    async def generate_structured(
+        self,
+        prompt: str,
+        schema: dict[str, Any],
+        context: str | None = None,
+    ) -> dict[str, Any]:
+        """
+        Generate a structured JSON response following a specific schema.
+
+        Args:
+            prompt: User message/prompt
+            schema: JSON schema or dictionary describing the expected structure
+            context: Additional context
+
+        Returns:
+            Dict containing the parsed JSON response and metadata
+        """
+
+    @abstractmethod
+    async def call_function(
+        self,
+        prompt: str,
+        tools: list[dict[str, Any]],
+        context: str | None = None,
+    ) -> dict[str, Any]:
+        """
+        Generate a response that may include tool/function calls.
+
+        Args:
+            prompt: User message/prompt
+            tools: List of tool definitions
+            context: Additional context
+
+        Returns:
+            Dict containing tool calls and/or text response
         """
 
     @abstractmethod
