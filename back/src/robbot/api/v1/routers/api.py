@@ -6,17 +6,17 @@ from robbot.adapters.controllers import (
     ai_controller,
     audit_controller,
     auth_controller,
+    content_controller,
+    context_controller,
+    context_item_controller,
     conversation_controller,
     dashboard_controller,
     handoff_controller,
     health_controller,
     job_controller,
     lead_controller,
-    message_controller,
     metrics_controller,
     notification_controller,
-    playbook_controller,
-    playbook_step_controller,
     queue_controller,
     queues_controller,
     tag_controller,
@@ -43,16 +43,16 @@ api_router.include_router(audit_controller.router, prefix="/audit-logs", tags=["
 api_router.include_router(job_controller.router, prefix="/jobs", tags=["Jobs"])
 
 # Core Features
-api_router.include_router(message_controller.router, prefix="/messages", tags=["Messages"])
 api_router.include_router(conversation_controller.router, prefix="/conversations", tags=["Conversations"])
 api_router.include_router(lead_controller.router, prefix="/leads", tags=["Leads"])
 api_router.include_router(notification_controller.router, prefix="/notifications", tags=["Notifications"])
 api_router.include_router(tag_controller.router, prefix="/tags", tags=["Tags"])
 
-# Playbooks & Content
+# Contents & Contexts
+api_router.include_router(content_controller.router, prefix="/contents", tags=["Contents"])
 api_router.include_router(topic_controller.router, prefix="/topics", tags=["Topics"])
-api_router.include_router(playbook_controller.router, prefix="/playbooks", tags=["Playbooks"])
-api_router.include_router(playbook_step_controller.router, prefix="/playbook-steps", tags=["Playbook Steps"])
+api_router.include_router(context_controller.router, prefix="/contexts", tags=["Contexts"])
+api_router.include_router(context_item_controller.router, prefix="/context-items", tags=["Context Items"])
 
 # AI & Automation
 api_router.include_router(ai_controller.router, prefix="/ai", tags=["AI"])
