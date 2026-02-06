@@ -19,7 +19,7 @@ from uuid import UUID
 
 from redis import Redis
 
-from robbot.adapters.repositories.analytics_repository import AnalyticsRepository
+from robbot.infra.persistence.repositories.analytics_repository import AnalyticsRepository
 from robbot.config.settings import get_settings
 from robbot.infra.redis.queue import RQQueueManager
 
@@ -89,7 +89,7 @@ class MetricsService:
 
         return f"metrics:{metric_name}:{period}:{user_part}"
 
-    def _get_cached_or_compute(
+    async def _get_cached_or_compute(
         self,
         cache_key: str,
         ttl: int,
@@ -104,6 +104,8 @@ class MetricsService:
         2. Se cache miss, computa e salva
         3. Retorna resultado
         """
+        import inspect
+
         try:
             # Tentar buscar do cache
             cached = self.redis.get(cache_key)
@@ -116,8 +118,11 @@ class MetricsService:
             logger.warning("[WARNING] Redis error on GET %s: %s", cache_key, e)
             # Continua sem cache se Redis falhar
 
-        # Computar métrica
-        result = compute_fn(*args, **kwargs)
+        # Computar métrica (suporta sync e async)
+        if inspect.iscoroutinefunction(compute_fn):
+            result = await compute_fn(*args, **kwargs)
+        else:
+            result = compute_fn(*args, **kwargs)
 
         # Salvar no cache
         try:
@@ -150,7 +155,7 @@ class MetricsService:
     # DASHBOARD METRICS
     # =============================================================================
 
-    def get_dashboard_summary(
+    async def get_dashboard_summary(
         self,
         start_date: datetime,
         end_date: datetime,
@@ -181,7 +186,7 @@ class MetricsService:
             end_date,
         )
 
-        result = self._get_cached_or_compute(
+        result = await self._get_cached_or_compute(
             cache_key,
             settings.ANALYTICS_CACHE_TTL_REALTIME,
             self.analytics.get_dashboard_summary,
@@ -201,7 +206,7 @@ class MetricsService:
     # CONVERSION ANALYTICS
     # =============================================================================
 
-    def get_conversion_rate(
+    async def get_conversion_rate(
         self,
         start_date: datetime,
         end_date: datetime,
@@ -230,7 +235,7 @@ class MetricsService:
             segment_by=segment_by,
         )
 
-        result = self._get_cached_or_compute(
+        result = await self._get_cached_or_compute(
             cache_key,
             settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_conversion_rate,
@@ -248,7 +253,7 @@ class MetricsService:
             "segments": result.get("segments") if segment_by else None,
         }
 
-    def get_conversion_funnel(
+    async def get_conversion_funnel(
         self,
         start_date: datetime,
         end_date: datetime,
@@ -281,7 +286,7 @@ class MetricsService:
             end_date,
         )
 
-        result = self._get_cached_or_compute(
+        result = await self._get_cached_or_compute(
             cache_key,
             settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_conversion_funnel,
@@ -297,7 +302,7 @@ class MetricsService:
             "funnel": result,
         }
 
-    def get_time_to_conversion(
+    async def get_time_to_conversion(
         self,
         start_date: datetime,
         end_date: datetime,
@@ -325,7 +330,7 @@ class MetricsService:
             end_date,
         )
 
-        result = self._get_cached_or_compute(
+        result = await self._get_cached_or_compute(
             cache_key,
             settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_time_to_conversion,
@@ -345,7 +350,7 @@ class MetricsService:
     # PERFORMANCE ANALYTICS
     # =============================================================================
 
-    def get_response_time_stats(
+    async def get_human_response_time_stats(
         self,
         start_date: datetime,
         end_date: datetime,
@@ -376,7 +381,7 @@ class MetricsService:
             user_id=user_id,
         )
 
-        result = self._get_cached_or_compute(
+        result = await self._get_cached_or_compute(
             cache_key,
             settings.ANALYTICS_CACHE_TTL_REALTIME,
             self.analytics.get_human_response_time_stats,
@@ -394,7 +399,7 @@ class MetricsService:
             "response_time": result,
         }
 
-    def get_message_volume(
+    async def get_message_volume(
         self,
         start_date: datetime,
         end_date: datetime,
@@ -427,7 +432,7 @@ class MetricsService:
             granularity=granularity,
         )
 
-        result = self._get_cached_or_compute(
+        result = await self._get_cached_or_compute(
             cache_key,
             settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_message_volume,
@@ -449,7 +454,7 @@ class MetricsService:
     # BOT PERFORMANCE
     # =============================================================================
 
-    def get_bot_autonomy_rate(
+    async def get_bot_autonomy_rate(
         self,
         start_date: datetime,
         end_date: datetime,
@@ -476,7 +481,7 @@ class MetricsService:
             end_date,
         )
 
-        result = self._get_cached_or_compute(
+        result = await self._get_cached_or_compute(
             cache_key,
             settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_bot_autonomy_rate,
@@ -495,7 +500,7 @@ class MetricsService:
     # =============================================================================    # PERFORMANCE REPORTS ( - L1)
     # =============================================================================
 
-    def get_bot_response_time(
+    async def get_bot_response_time(
         self,
         start_date: datetime,
         end_date: datetime,
@@ -525,7 +530,7 @@ class MetricsService:
             end_date,
         )
 
-        result = self._get_cached_or_compute(
+        result = await self._get_cached_or_compute(
             cache_key,
             settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_bot_llm_latency_stats,
@@ -541,7 +546,7 @@ class MetricsService:
             "bot_response_time": result,
         }
 
-    def get_handoff_rate(
+    async def get_handoff_rate(
         self,
         start_date: datetime,
         end_date: datetime,
@@ -569,7 +574,7 @@ class MetricsService:
             end_date,
         )
 
-        result = self._get_cached_or_compute(
+        result = await self._get_cached_or_compute(
             cache_key,
             settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_handoff_rate_stats,
@@ -585,7 +590,7 @@ class MetricsService:
             "handoff_stats": result,
         }
 
-    def get_peak_hours(
+    async def get_peak_hours(
         self,
         start_date: datetime,
         end_date: datetime,
@@ -610,7 +615,7 @@ class MetricsService:
             end_date,
         )
 
-        result = self._get_cached_or_compute(
+        result = await self._get_cached_or_compute(
             cache_key,
             settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_peak_hours_stats,
@@ -626,7 +631,7 @@ class MetricsService:
             "peak_hours": result,
         }
 
-    def get_conversations_by_status(
+    async def get_conversations_by_status(
         self,
         start_date: datetime,
         end_date: datetime,
@@ -651,7 +656,7 @@ class MetricsService:
             end_date,
         )
 
-        result = self._get_cached_or_compute(
+        result = await self._get_cached_or_compute(
             cache_key,
             settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_conversations_by_status,
@@ -667,7 +672,7 @@ class MetricsService:
             "status_distribution": result,
         }
 
-    def get_performance_report(
+    async def get_performance_report(
         self,
         start_date: datetime,
         end_date: datetime,
@@ -695,11 +700,11 @@ class MetricsService:
             end_date,
         )
 
-        def _compute():
-            bot_response = self.get_bot_response_time(start_date, end_date)
-            handoff = self.get_handoff_rate(start_date, end_date)
-            peak = self.get_peak_hours(start_date, end_date)
-            status_dist = self.get_conversations_by_status(start_date, end_date)
+        async def _compute():
+            bot_response = await self.get_bot_response_time(start_date, end_date)
+            handoff = await self.get_handoff_rate(start_date, end_date)
+            peak = await self.get_peak_hours(start_date, end_date)
+            status_dist = await self.get_conversations_by_status(start_date, end_date)
 
             return {
                 "period": {
@@ -712,7 +717,7 @@ class MetricsService:
                 "status_distribution": status_dist["status_distribution"],
             }
 
-        return self._get_cached_or_compute(
+        return await self._get_cached_or_compute(
             cache_key,
             settings.ANALYTICS_CACHE_TTL_REPORTS,
             _compute,
@@ -722,7 +727,7 @@ class MetricsService:
     # CONVERSION REPORTS EXTENDED ( - L2)
     # =============================================================================
 
-    def get_time_to_conversion_extended(
+    async def get_time_to_conversion_extended(
         self,
         start_date: datetime,
         end_date: datetime,
@@ -752,7 +757,7 @@ class MetricsService:
             end_date,
         )
 
-        result = self._get_cached_or_compute(
+        result = await self._get_cached_or_compute(
             cache_key,
             settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_time_to_conversion_extended,
@@ -768,7 +773,7 @@ class MetricsService:
             "time_stats": result,
         }
 
-    def get_conversion_by_source(
+    async def get_conversion_by_source(
         self,
         start_date: datetime,
         end_date: datetime,
@@ -798,7 +803,7 @@ class MetricsService:
             end_date,
         )
 
-        result = self._get_cached_or_compute(
+        result = await self._get_cached_or_compute(
             cache_key,
             settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_conversion_by_source,
@@ -814,7 +819,7 @@ class MetricsService:
             "sources": result,
         }
 
-    def get_lost_leads_analysis(
+    async def get_lost_leads_analysis(
         self,
         start_date: datetime,
         end_date: datetime,
@@ -840,7 +845,7 @@ class MetricsService:
             end_date,
         )
 
-        result = self._get_cached_or_compute(
+        result = await self._get_cached_or_compute(
             cache_key,
             settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_lost_leads_analysis,
@@ -856,7 +861,7 @@ class MetricsService:
             "lost_leads": result,
         }
 
-    def get_conversion_trend(
+    async def get_conversion_trend(
         self,
         start_date: datetime,
         end_date: datetime,
@@ -889,7 +894,7 @@ class MetricsService:
             granularity=granularity,
         )
 
-        result = self._get_cached_or_compute(
+        result = await self._get_cached_or_compute(
             cache_key,
             settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_conversion_trend,
@@ -907,7 +912,7 @@ class MetricsService:
             "trend": result,
         }
 
-    def get_conversion_report_extended(
+    async def get_conversion_report_extended(
         self,
         start_date: datetime,
         end_date: datetime,
@@ -935,11 +940,11 @@ class MetricsService:
             end_date,
         )
 
-        def _compute():
-            time_conv = self.get_time_to_conversion_extended(start_date, end_date)
-            by_source = self.get_conversion_by_source(start_date, end_date)
-            lost = self.get_lost_leads_analysis(start_date, end_date)
-            trend = self.get_conversion_trend(start_date, end_date, granularity="day")
+        async def _compute():
+            time_conv = await self.get_time_to_conversion_extended(start_date, end_date)
+            by_source = await self.get_conversion_by_source(start_date, end_date)
+            lost = await self.get_lost_leads_analysis(start_date, end_date)
+            trend = await self.get_conversion_trend(start_date, end_date, granularity="day")
 
             return {
                 "period": {
@@ -952,7 +957,7 @@ class MetricsService:
                 "trend_daily": trend["trend"],
             }
 
-        return self._get_cached_or_compute(
+        return await self._get_cached_or_compute(
             cache_key,
             settings.ANALYTICS_CACHE_TTL_REPORTS,
             _compute,
@@ -962,7 +967,7 @@ class MetricsService:
     # L3: CONVERSATION ANALYSIS METHODS
     # =============================================================================
 
-    def get_activity_heatmap(
+    async def get_activity_heatmap(
         self,
         start_date: datetime,
         end_date: datetime,
@@ -987,7 +992,7 @@ class MetricsService:
             end_date,
         )
 
-        result = self._get_cached_or_compute(
+        result = await self._get_cached_or_compute(
             cache_key,
             settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_message_frequency_by_hour,
@@ -1003,7 +1008,7 @@ class MetricsService:
             "heatmap": result,
         }
 
-    def get_keyword_frequency(
+    async def get_keyword_frequency(
         self,
         start_date: datetime,
         end_date: datetime,
@@ -1030,7 +1035,7 @@ class MetricsService:
             limit=limit,
         )
 
-        result = self._get_cached_or_compute(
+        result = await self._get_cached_or_compute(
             cache_key,
             settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_keyword_frequency,
@@ -1047,7 +1052,7 @@ class MetricsService:
             "keywords": result,
         }
 
-    def get_sentiment_distribution(
+    async def get_sentiment_distribution(
         self,
         start_date: datetime,
         end_date: datetime,
@@ -1074,7 +1079,7 @@ class MetricsService:
             end_date,
         )
 
-        result = self._get_cached_or_compute(
+        result = await self._get_cached_or_compute(
             cache_key,
             settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_message_sentiment_distribution,
@@ -1090,7 +1095,7 @@ class MetricsService:
             "sentiment": result,
         }
 
-    def get_topic_distribution(
+    async def get_topic_distribution(
         self,
         start_date: datetime,
         end_date: datetime,
@@ -1115,7 +1120,7 @@ class MetricsService:
             end_date,
         )
 
-        result = self._get_cached_or_compute(
+        result = await self._get_cached_or_compute(
             cache_key,
             settings.ANALYTICS_CACHE_TTL_METRICS,
             self.analytics.get_conversation_topics,
@@ -1131,7 +1136,7 @@ class MetricsService:
             "topics": result,
         }
 
-    def get_conversation_analysis_report(
+    async def get_conversation_analysis_report(
         self,
         start_date: datetime,
         end_date: datetime,
@@ -1159,11 +1164,11 @@ class MetricsService:
             end_date,
         )
 
-        def _compute():
-            heatmap = self.get_activity_heatmap(start_date, end_date)
-            keywords = self.get_keyword_frequency(start_date, end_date, limit=50)
-            sentiment = self.get_sentiment_distribution(start_date, end_date)
-            topics = self.get_topic_distribution(start_date, end_date)
+        async def _compute():
+            heatmap = await self.get_activity_heatmap(start_date, end_date)
+            keywords = await self.get_keyword_frequency(start_date, end_date, limit=50)
+            sentiment = await self.get_sentiment_distribution(start_date, end_date)
+            topics = await self.get_topic_distribution(start_date, end_date)
 
             return {
                 "period_start": start_date.isoformat(),
@@ -1174,7 +1179,7 @@ class MetricsService:
                 "topic_distribution": topics["topics"],
             }
 
-        return self._get_cached_or_compute(
+        return await self._get_cached_or_compute(
             cache_key,
             settings.ANALYTICS_CACHE_TTL_REPORTS,
             _compute,
@@ -1184,7 +1189,7 @@ class MetricsService:
     # L4: REAL-TIME DASHBOARD METHODS
     # =============================================================================
 
-    def get_realtime_dashboard(self) -> dict[str, Any]:
+    async def get_realtime_dashboard(self) -> dict[str, Any]:
         """
         Dashboard completo em tempo real.
 
@@ -1205,7 +1210,7 @@ class MetricsService:
 
         cache_key = "metrics:realtime_dashboard"
 
-        def _compute():
+        async def _compute():
             # 1. Sumário em tempo real
             summary = self.analytics.get_realtime_summary()
 
@@ -1232,7 +1237,7 @@ class MetricsService:
 
         # Cache de 30 segundos (near-real-time)
         cache_ttl_realtime = 30
-        return self._get_cached_or_compute(
+        return await self._get_cached_or_compute(
             cache_key,
             cache_ttl_realtime,
             _compute,
@@ -1283,3 +1288,4 @@ class MetricsService:
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("[ERROR] Failed to get cache stats: %s", e)
             return {}
+
