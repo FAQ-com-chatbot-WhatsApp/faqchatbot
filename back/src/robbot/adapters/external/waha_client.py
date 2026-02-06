@@ -603,8 +603,11 @@ class WAHAClient:
             await self.start_typing(session, chat_id)
 
             # Calculate human-like delay based on message length
-            # Base: 30-60s, +0.1s per character (simulate reading/typing)
-            base_delay = random.uniform(30, 60)
+            # Base: from settings, +0.1s per character (simulate reading/typing)
+            base_delay = random.uniform(
+                settings.WAHA_MIN_DELAY_SECONDS,
+                settings.WAHA_MAX_DELAY_SECONDS
+            )
             typing_delay = len(text) * 0.1
             total_delay = min(base_delay + typing_delay, 120)  # Max 2min
 
