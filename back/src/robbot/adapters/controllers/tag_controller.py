@@ -6,11 +6,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
-from robbot.adapters.repositories.conversation_repository import ConversationRepository
-from robbot.adapters.repositories.conversation_tag_repository import ConversationTagRepository
+from robbot.infra.persistence.repositories.conversation_repository import ConversationRepository
+from robbot.infra.persistence.repositories.conversation_tag_repository import ConversationTagRepository
 from robbot.api.v1.dependencies import get_current_user, get_db
-from robbot.domain.enums import Role
-from robbot.infra.db.models.user_model import UserModel
+from robbot.domain.shared.enums import Role
+from robbot.infra.persistence.models.user_model import UserModel
 from robbot.services.tag_service import TagService
 
 router = APIRouter()
@@ -242,3 +242,4 @@ def get_conversation_tags(
         )
         for tag in tags
     ]
+
