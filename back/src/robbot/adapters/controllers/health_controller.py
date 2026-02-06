@@ -10,7 +10,7 @@ router = APIRouter()
 
 @router.get("/debug/messages")
 def debug_messages(db: Session = Depends(get_db)):
-    from robbot.infra.db.models.conversation_message_model import ConversationMessageModel
+    from robbot.infra.persistence.models.conversation_message_model import ConversationMessageModel
 
     msgs = db.query(ConversationMessageModel).all()
     return [{"id": m.id, "body": m.body, "created_at": str(m.created_at)} for m in msgs]
@@ -27,3 +27,4 @@ async def health_check(response: Response, db: Session = Depends(get_db)):
     overall_ok = all(component.get("ok") for component in result.components.values())
     response.status_code = status.HTTP_200_OK if overall_ok else status.HTTP_503_SERVICE_UNAVAILABLE
     return result
+
