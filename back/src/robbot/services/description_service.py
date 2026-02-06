@@ -5,7 +5,7 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from robbot.adapters.repositories.message_repository import MessageRepository
+from robbot.infra.persistence.repositories.conversation_message_repository import ConversationMessageRepository
 from robbot.core.custom_exceptions import NotFoundException
 from robbot.services.vision_service import get_vision_service
 
@@ -36,7 +36,7 @@ class DescriptionService:
     def __init__(self, db: Session):
         """Initialize description service with BLIP-2."""
         self.db = db
-        self.message_repo = MessageRepository(db)
+        self.message_repo = ConversationMessageRepository(db)
         logger.info("[SUCCESS] DescriptionService initialized (BLIP-2 local, no cost)")
 
     def generate_description(self, message_id: UUID, use_vision: bool = True) -> dict[str, str | None]:
@@ -225,3 +225,4 @@ class DescriptionService:
         logger.info("[SUCCESS] Basic metadata generated: title='%s...', %s tags", title[:30], len(base_tags))
 
         return {"generated_title": title, "generated_description": description, "suggested_tags": tags}
+
