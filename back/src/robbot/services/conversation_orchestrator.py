@@ -59,6 +59,7 @@ from robbot.services.context_validator import (
 from robbot.services.handoff_service import HandoffService
 from robbot.services.intent_detector import IntentDetector
 from robbot.services.message_processor import MessageProcessor
+from robbot.services.persistent_memory import PersistentMemory
 from robbot.services.text_sanitizer import enforce_whatsapp_style
 from robbot.services.transcription_service import TranscriptionService
 
@@ -85,6 +86,7 @@ class ConversationOrchestrator:
         self.transcription_service = TranscriptionService()
         self.vector_store = ChromaVectorStore()
         self.answered_questions_memory = AnsweredQuestionsMemory()  # Memory for answered questions
+        self.persistent_memory = PersistentMemory()  # Redis-based persistent memory
 
         logger.info("[SUCCESS] ConversationOrchestrator initialized")
 
@@ -274,6 +276,35 @@ class ConversationOrchestrator:
                 )
 
                 response_text = self._normalize_response_text(response_data["response"])
+
+                # Check for handoff triggers BEFORE sending response
+                logger.info(
+                    "[ORCHESTRATOR] About to check handoff triggers: intent=%s, score=%s, msg='%s'",
+                    intent, conversation.lead.maturity_score if conversation.lead else 0, message_text[:50]
+                )
+                handoff_triggered = await self._check_handoff_triggers(
+                    conversation=conversation,
+                    intent=intent,
+                    message_text=message_text,
+                    user_score=conversation.lead.maturity_score if conversation.lead else 0,
+                )
+
+                if handoff_triggered:
+                    # Replace response with handoff message
+                    response_text = await self._handle_handoff(session, conversation, conversation.lead.maturity_score if conversation.lead else 0)
+                    # Send and return early
+                    sent = await self._send_response_via_waha(chat_id, response_text, session_name)
+                    await message_processor.save_outbound_message(
+                        session, conversation.id, response_text, to_phone=conversation.phone_number
+                    )
+                    session.commit()
+                    return {
+                        "conversation_id": conversation.id,
+                        "response_sent": sent,
+                        "response_text": response_text,
+                        "handoff_triggered": True,
+                        "status": conversation.status.value,
+                    }
 
                 # DEBUG: Log response type and value
                 logger.debug(
@@ -568,6 +599,17 @@ class ConversationOrchestrator:
         Raises:
             LLMError: If Gemini fails after retries
         """
+        # Get memory data
+        questions_asked = await self.persistent_memory.get_all_questions(conversation.id)
+        conversation_facts = await self.persistent_memory.get_all_facts(conversation.id)
+        
+        # Build conversation summary from facts
+        summary_parts = []
+        if conversation_facts:
+            for key, value in conversation_facts.items():
+                summary_parts.append(f"{key}: {value}")
+        conversation_summary = "; ".join(summary_parts) if summary_parts else "No facts recorded yet"
+        
         prompt = self.prompt_templates.format_response_prompt(
             user_message=message_text,
             intent=intent,
@@ -577,6 +619,8 @@ class ConversationOrchestrator:
             maturity_score=conversation.lead.maturity_score if conversation.lead else 0,
             lead_status=conversation.lead.status.value if conversation.lead else "NEW",
             last_interaction="Agora",
+            questions_asked=questions_asked,  # Add memory
+            conversation_summary=conversation_summary,  # Add facts
         )
 
         # DEBUG: Log do prompt completo (primeiros 800 caracteres)
@@ -585,6 +629,19 @@ class ConversationOrchestrator:
         response_data = self.gemini_client.generate_response(prompt)
 
         logger.info("[SUCCESS] Response generated (%s tokens)", response_data["tokens_used"])
+        
+        # Extract questions from response and save to memory
+        # (simple heuristic: lines ending with '?')
+        response_text = str(response_data.get("response", ""))
+        for line in response_text.split("\n"):
+            line = line.strip()
+            if line.endswith("?"):
+                await self.persistent_memory.add_question(conversation.id, line)
+                logger.debug("[MEMORY] Saved question: %s", line)
+        
+        # Save key facts if name was extracted
+        if conversation.lead and conversation.lead.name:
+            await self.persistent_memory.save_fact(conversation.id, "patient_name", conversation.lead.name)
 
         return response_data
 
@@ -722,6 +779,78 @@ class ConversationOrchestrator:
         except Exception as e:
             logger.warning("[WARNING] Failed to log LLM interaction: %s", e)
             raise DatabaseError(f"Failed to log LLM interaction: {e}") from e
+
+    async def _check_handoff_triggers(
+        self, conversation: ConversationModel, intent: str, message_text: str, user_score: int
+    ) -> bool:
+        """
+        Check if handoff should be triggered based on multiple criteria.
+
+        Args:
+            conversation: Current conversation
+            intent: Detected intent
+            message_text: User message
+            user_score: Maturity score
+
+        Returns:
+            True if handoff should be triggered
+        """
+        logger.debug(
+            "[HANDOFF_CHECK] Checking triggers: intent=%s, score=%s, message='%s'",
+            intent, user_score, message_text[:50]
+        )
+        
+        # 1. Check for scheduling intent (score > 60 in NEED_PAYOFF phase)
+        if intent == "SCHEDULING" and user_score > 60:
+            await self.persistent_memory.save_fact(conversation.id, "handoff_reason", "scheduling_ready")
+            logger.info("[HANDOFF_TRIGGER] Scheduling intent detected with high score")
+            return True
+
+        # 2. Check for payment-related questions (not in scope)
+        import re
+        payment_keywords = [
+            "parcelar", "parcela", "parcelas", "cartão", "pix", "boleto", "pagamento",
+            "adiantado", "entrada", "vezes", "pagar em", "dividir", "quanto custa"
+        ]
+        # Check basic keywords
+        payment_found = [kw for kw in payment_keywords if kw in message_text.lower()]
+        
+        # Also check for patterns like "3x", "5 vezes", "pagar em X"
+        payment_patterns = [
+            r'\d+x',  # 3x, 5x, etc
+            r'\d+\s*vezes?',  # 3 vezes, 5vezes, etc
+            r'pagar\s+em\s+\d+',  # pagar em 3, pagar em 5, etc
+            r'dividir\s+em\s+\d+',  # dividir em 3, dividir em 5, etc
+        ]
+        pattern_matches = []
+        for pattern in payment_patterns:
+            if re.search(pattern, message_text.lower()):
+                pattern_matches.append(f"pattern:{pattern}")
+        
+        if payment_found or pattern_matches:
+            logger.debug("[HANDOFF_CHECK] Payment keywords found: %s, patterns: %s", payment_found, pattern_matches)
+            if await self.persistent_memory.should_handoff(conversation.id, "payment_question"):
+                logger.info("[HANDOFF_TRIGGER] Payment question detected")
+                return True
+
+        # 3. Check for availability/calendar questions (needs human)
+        calendar_keywords = ["disponível", "horário", "agenda", "marcar", "agendar", "data", "dia"]
+        calendar_found = [kw for kw in calendar_keywords if kw in message_text.lower()]
+        if intent == "SCHEDULING" or calendar_found:
+            logger.debug("[HANDOFF_CHECK] Calendar keywords found: %s (intent=%s)", calendar_found, intent)
+            if "disponível" in message_text.lower() or "horário" in message_text.lower():
+                if await self.persistent_memory.should_handoff(conversation.id, "calendar_access"):
+                    logger.info("[HANDOFF_TRIGGER] Calendar access required")
+                    return True
+
+        # 4. High maturity score (> 75)
+        if user_score > 75:
+            if await self.persistent_memory.should_handoff(conversation.id, "high_score"):
+                logger.info("[HANDOFF_TRIGGER] High maturity score: %s", user_score)
+                return True
+
+        logger.debug("[HANDOFF_CHECK] No triggers matched")
+        return False
 
     async def _generate_fallback_response(self, error: str) -> str:
         """
