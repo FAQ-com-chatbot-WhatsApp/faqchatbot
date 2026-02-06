@@ -101,7 +101,7 @@ class Settings(BaseSettings):
     CHROMA_COLLECTION_NAME: str = Field(default="conversations")
 
     # Go - Localização Fixa
-    CLINIC_NAME: str = Field(default="Go")
+    CLINIC_NAME: str = Field(default="Clínica Go")
     CLINIC_ADDRESS: str = Field(default="Av. São Miguel, 1000 - sala 102 - Centro, Dois Irmãos - RS, 93950-000")
     CLINIC_LATITUDE: float = Field(default=-29.5838212)
     CLINIC_LONGITUDE: float = Field(default=-51.0869905)
