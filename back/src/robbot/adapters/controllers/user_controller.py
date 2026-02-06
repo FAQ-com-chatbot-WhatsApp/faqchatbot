@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from robbot.api.v1.dependencies import get_current_user, get_db, require_role
 from robbot.core.custom_exceptions import NotFoundException
-from robbot.infra.db.models.user_model import UserModel
+from robbot.infra.persistence.models.user_model import UserModel
 from robbot.schemas.auth import BlockUserRequest, UnblockUserRequest
 from robbot.schemas.user import MessageResponse, UserList, UserOut, UserUpdate
 from robbot.services.user_service import UserService
@@ -128,3 +128,4 @@ def unblock_user(
         return service.unblock_user(user_id, reason=(payload.reason if payload else None))
     except NotFoundException as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
