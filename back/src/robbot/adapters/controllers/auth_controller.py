@@ -12,7 +12,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from robbot.adapters.repositories.auth_session_repository import AuthSessionRepository
+from robbot.infra.persistence.repositories.auth_session_repository import AuthSessionRepository
 from robbot.api.v1.dependencies import get_current_user, get_db
 from robbot.config.settings import get_settings
 from robbot.core.custom_exceptions import AuthException
@@ -23,7 +23,7 @@ from robbot.core.rate_limiting import (
     RATE_LIMIT_REFRESH,
     RATE_LIMIT_REGISTER,
 )
-from robbot.infra.db.models.user_model import UserModel
+from robbot.infra.persistence.models.user_model import UserModel
 from robbot.schemas.auth import (
     AuthSessionResponse,
     ChangePasswordRequest,
@@ -100,7 +100,7 @@ async def test_create_verified_user(payload: SignupRequest, db: Session = Depend
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     # Mark email as verified
-    from robbot.adapters.repositories.credential_repository import CredentialRepository
+    from robbot.infra.persistence.repositories.credential_repository import CredentialRepository
 
     cred_repo = CredentialRepository(db)
     cred = cred_repo.get_by_user_id(user.id)
@@ -340,7 +340,7 @@ def read_me(current_user: UserModel = Depends(get_current_user), db: Session = D
     Retorna AuthSessionResponse (dados relacionados à autenticação).
     Para dados de perfil do usuário, use GET /users/me.
     """
-    from robbot.adapters.repositories.credential_repository import CredentialRepository
+    from robbot.infra.persistence.repositories.credential_repository import CredentialRepository
 
     credential_repo = CredentialRepository(db)
     session_repo = AuthSessionRepository(db)
@@ -758,3 +758,4 @@ def mfa_login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(exc),
         ) from exc
+
