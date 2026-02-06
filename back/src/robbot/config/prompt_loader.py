@@ -93,6 +93,8 @@ class PromptLoader:
         user_message: str,
         conversation_history: str,
         patient_info: str = "",
+        questions_asked: list[str] | None = None,
+        conversation_summary: str = "",
     ) -> str:
         """
         Format response generation prompt.
@@ -101,15 +103,23 @@ class PromptLoader:
             user_message: Current user message
             conversation_history: Previous messages
             patient_info: Patient context (name, status, etc.)
+            questions_asked: List of questions already asked
+            conversation_summary: Summary of known facts
 
         Returns:
             Formatted prompt ready for LLM
         """
         template = self.get_prompt("response_generation")
+        
+        # Format questions_asked as string
+        questions_str = ", ".join(questions_asked) if questions_asked else "None"
+        
         return template.format(
             user_message=user_message,
             history=conversation_history,
             patient_info=patient_info,
+            questions_asked=questions_str,
+            conversation_summary=conversation_summary or "No conversation summary yet",
         )
 
     def format_urgency_detection_prompt(self, message: str) -> str:
