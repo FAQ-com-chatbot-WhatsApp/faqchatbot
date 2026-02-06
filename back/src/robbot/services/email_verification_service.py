@@ -12,8 +12,8 @@ from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
-from robbot.adapters.repositories.credential_repository import CredentialRepository
-from robbot.adapters.repositories.user_repository import UserRepository
+from robbot.infra.persistence.repositories.credential_repository import CredentialRepository
+from robbot.infra.persistence.repositories.user_repository import UserRepository
 from robbot.config.settings import settings
 from robbot.core.custom_exceptions import AuthException
 
@@ -138,3 +138,4 @@ class EmailVerificationService:
         if not credential:
             return False
         return credential.email_verified
+
