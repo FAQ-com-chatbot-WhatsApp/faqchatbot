@@ -14,9 +14,9 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from robbot.adapters.repositories.auth_session_repository import AuthSessionRepository
-from robbot.adapters.repositories.token_repository import TokenRepository
-from robbot.adapters.repositories.user_repository import UserRepository
+from robbot.infra.persistence.repositories.auth_session_repository import AuthSessionRepository
+from robbot.infra.persistence.repositories.token_repository import TokenRepository
+from robbot.infra.persistence.repositories.user_repository import UserRepository
 from robbot.common.utils import send_email
 from robbot.config.settings import settings
 from robbot.core import security
@@ -176,7 +176,7 @@ class AuthService:
 
         # pylint: disable=import-outside-toplevel
         # Justification: Avoid circular import dependency between repositories
-        from robbot.adapters.repositories.credential_repository import CredentialRepository
+        from robbot.infra.persistence.repositories.credential_repository import CredentialRepository
 
         credential_repo = CredentialRepository(self.repo.db)
         credential = credential_repo.get_by_user_id(user.id)
@@ -548,3 +548,4 @@ class AuthService:
         )
 
         return Token(**tokens, user=user)
+
