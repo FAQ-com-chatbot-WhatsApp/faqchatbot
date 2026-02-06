@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from robbot.api.v1.dependencies import get_current_user, get_db
 from robbot.common.utils import filter_none_values
 from robbot.schemas.topic import DeletedResponse, TopicCreate, TopicList, TopicOut, TopicUpdate
-from robbot.services.playbook_service import PlaybookService
+from robbot.services.ai.context_service import ContextService
 
 router = APIRouter()
 
@@ -20,12 +20,12 @@ def create_topic(
     """
     Create a new topic.
 
-    Topics are generic containers for organizing playbooks by subject/context.
+    Topics are generic containers for organizing contexts by subject/context.
     Examples: "Botox", "Preenchimento Labial", "Clareamento Dental".
 
     Requires authentication.
     """
-    service = PlaybookService(db)
+    service = ContextService(db)
     created = service.create_topic(
         name=payload.name,
         description=payload.description,
@@ -42,7 +42,7 @@ def get_topic(
     current_user: dict = Depends(get_current_user),
 ):
     """Retrieve topic by ID."""
-    service = PlaybookService(db)
+    service = ContextService(db)
     topic = service.get_topic(topic_id)
     if not topic:
         raise HTTPException(status_code=404, detail=f"Topic {topic_id} not found")
@@ -65,7 +65,7 @@ def list_topics(
     - skip: Pagination offset
     - limit: Max results (default 100)
     """
-    service = PlaybookService(db)
+    service = ContextService(db)
     topics = service.list_topics(active_only=active_only, skip=skip, limit=limit)
     return TopicList(topics=[TopicOut.model_validate(t) for t in topics], total=len(topics))
 
@@ -82,7 +82,7 @@ def update_topic(
 
     Only provided fields will be updated.
     """
-    service = PlaybookService(db)
+    service = ContextService(db)
 
     # Build update dict (only non-None values)
     update_data = filter_none_values(payload)
@@ -103,11 +103,12 @@ def delete_topic(
     """
     Delete topic.
 
-    Cascades deletion to all associated playbooks and steps.
+    Cascades deletion to all associated contexts and items.
     """
-    service = PlaybookService(db)
+    service = ContextService(db)
     success = service.delete_topic(topic_id)
     if not success:
         raise HTTPException(status_code=404, detail=f"Topic {topic_id} not found")
 
     return DeletedResponse(message="Topic deleted successfully", deleted_id=topic_id)
+
