@@ -11,12 +11,12 @@ import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
 
-from robbot.adapters.external.waha_client import WAHAClient
-from robbot.adapters.repositories.conversation_message_repository import ConversationMessageRepository
-from robbot.adapters.repositories.conversation_repository import ConversationRepository
+from robbot.infra.integrations.waha.waha_client import WAHAClient
+from robbot.infra.persistence.repositories.conversation_message_repository import ConversationMessageRepository
+from robbot.infra.persistence.repositories.conversation_repository import ConversationRepository
 from robbot.core.custom_exceptions import DatabaseError, JobError, WAHAError
-from robbot.domain.enums import ConversationStatus, MessageDirection
-from robbot.infra.db.models.conversation_message_model import ConversationMessageModel as ConversationMessage
+from robbot.domain.shared.enums import ConversationStatus, MessageDirection
+from robbot.infra.persistence.models.conversation_message_model import ConversationMessageModel as ConversationMessage
 from robbot.infra.db.session import SessionLocal
 
 logger = logging.getLogger(__name__)
@@ -217,3 +217,4 @@ def run_reengagement_job():
     """
     job = ReEngagementJob()
     return job.execute()
+
