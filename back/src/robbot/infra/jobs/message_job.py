@@ -8,7 +8,7 @@ import logging
 import time
 from typing import Any
 
-from robbot.adapters.repositories.conversation_message_repository import (
+from robbot.infra.persistence.repositories.conversation_message_repository import (
     ConversationMessageRepository,
 )
 from robbot.config.settings import settings
@@ -173,7 +173,7 @@ class MessageProcessingJob(BaseJob):
         Processar mensagem inbound com ConversationOrchestrator.
         """
         try:
-            from robbot.services.conversation_orchestrator import get_conversation_orchestrator
+            from robbot.services.bot.conversation_orchestrator import get_conversation_orchestrator
 
             orchestrator = get_conversation_orchestrator()
 
@@ -236,11 +236,11 @@ class MessageProcessingJob(BaseJob):
     def _persist_outbound_message(self) -> dict[str, Any]:
         """Persistir mensagem outbound."""
         try:
-            from robbot.services.conversation_orchestrator import enforce_whatsapp_style
+            from robbot.services.bot.conversation_orchestrator import enforce_whatsapp_style
 
             with get_sync_session() as db:
                 conv_msg_repo = ConversationMessageRepository(db)
-                from robbot.infra.db.models import MessageModel
+                from robbot.infra.persistence.models import MessageModel
 
                 content = self.message_data.get("text") or self.message_data.get("body")
                 content = enforce_whatsapp_style(content)
@@ -303,3 +303,4 @@ class MessageBatchProcessingJob(BaseJob):
             "failed": failed,
             "total": len(self.messages),
         }
+
