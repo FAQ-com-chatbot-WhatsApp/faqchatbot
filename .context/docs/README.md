@@ -25,7 +25,7 @@ These foundational documents provide essential context for anyone working on the
 
 ---
 
-## 2. Agent Playbooks
+## 2. Agent Personas
 
 Specialized roles for AI development agents working on this repository.
 

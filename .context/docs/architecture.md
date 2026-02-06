@@ -32,10 +32,20 @@ The backend is built with **FastAPI** and implements a hexagonal-inspired layout
 | :--- | :--- | :--- |
 | **API / Routers** | `src/robbot/api/v1` | Entry points, path routing, and HTTP status codes. |
 | **Controllers** | `src/robbot/adapters/controllers` | Request/Response orchestration, input validation (Pydantic), and calling services. |
-| **Services** | `src/robbot/services` | **Core Business Logic**. Where playbooks are executed, and state transitions are managed. |
-| **Repositories** | `src/robbot/adapters/repositories` | Data access abstraction. Maps SQL models to the domain. |
-| **Domain / Models** | `src/robbot/domain`, `src/robbot/infra/db/models` | Core entities and database schema definitions (SQLAlchemy). |
-| **Infrastructure** | `src/robbot/infra` | External service clients (Email, WAHA, LLMs), DI container setup, and background jobs. |
+| **Services** | `src/robbot/services/` | **Core Business Logic Coordinator**. Organized by domain context: |
+| ↳ Bot | `services/bot/` | Conversation orchestration, pipeline, and state management. |
+| ↳ Leads | `services/leads/` | Lead management, scoring, and conversion logic. |
+| ↳ AI | `services/ai/` | Persistent memory, intent detection, context building. |
+| ↳ Communication | `services/communication/` | Transcription, text sanitization, message processing. |
+| ↳ Handoff | `services/handoff/` | Human-bot transition management. |
+| **Domain** | `src/robbot/domain/` | **Rich Domain Entities & Value Objects**: |
+| ↳ Leads | `domain/leads/` | Lead entity, LeadMapper, status rules. |
+| ↳ Conversations | `domain/conversations/` | Conversation entity, ConversationMapper. |
+| ↳ Shared | `domain/shared/` | Enums, Value Objects (LeadScore, PhoneNumber, SpinPhase). |
+| **Repositories** | `src/robbot/infra/persistence/repositories/` | Data access abstraction. Maps SQL models to domain. |
+| **Infrastructure** | `src/robbot/infra/` | External integrations and persistence: |
+| ↳ Persistence | `infra/persistence/models/` | SQLAlchemy database models. |
+| ↳ Integrations | `infra/integrations/` | WAHA, LLM clients, Vector store (Chroma). |
 
 ### Dependency Injection (DI)
 The backend uses a central container to manage dependencies. This allows for:

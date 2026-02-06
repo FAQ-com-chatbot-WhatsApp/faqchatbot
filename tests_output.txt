@@ -1,0 +1,828 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.2, pytest-9.0.2, pluggy-1.6.0 -- D:\_projects\clinica_go\back\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\_projects\clinica_go\back
+configfile: pytest.ini
+plugins: anyio-4.12.1, langsmith-0.6.8, asyncio-1.3.0, cov-7.0.0, mock-3.15.1, xdist-3.8.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 126 items
+
+back\tests\unit\services\test_auth_service.py::test_signup_creates_user_and_credential PASSED [  0%]
+back\tests\unit\services\test_auth_service.py::test_authenticate_user_success PASSED [  1%]
+back\tests\unit\services\test_auth_service.py::test_refresh_rotation_revokes_used_token PASSED [  2%]
+back\tests\unit\services\test_auth_service.py::test_signup_duplicate_email_error PASSED [  3%]
+back\tests\unit\services\test_auth_service.py::test_signup_weak_password_error PASSED [  3%]
+back\tests\unit\services\test_auth_service.py::test_authenticate_user_wrong_password PASSED [  4%]
+back\tests\unit\services\test_auth_service.py::test_authenticate_user_nonexistent_user PASSED [  5%]
+back\tests\unit\services\test_auth_service.py::test_authenticate_user_email_not_verified PASSED [  6%]
+back\tests\unit\services\test_auth_service.py::test_refresh_with_revoked_token PASSED [  7%]
+back\tests\unit\services\test_auth_service.py::test_refresh_with_expired_token PASSED [  7%]
+back\tests\unit\services\test_auth_service.py::test_refresh_with_invalid_jti PASSED [  8%]
+back\tests\unit\services\test_auth_service.py::test_device_name_extracted_and_stored_on_login PASSED [  9%]
+back\tests\unit\services\test_auth_service.py::test_audit_log_on_successful_login PASSED [ 10%]
+back\tests\unit\services\test_conversation_service.py::test_get_or_create_new_conversation PASSED [ 11%]
+back\tests\unit\services\test_conversation_service.py::test_get_or_create_existing_conversation PASSED [ 11%]
+back\tests\unit\services\test_conversation_service.py::test_update_status PASSED [ 12%]
+back\tests\unit\services\test_conversation_service.py::test_escalation_service PASSED [ 13%]
+back\tests\unit\services\test_conversation_service.py::test_close_conversation PASSED [ 14%]
+back\tests\unit\services\test_conversation_service.py::test_list_active_conversations PASSED [ 15%]
+back\tests\unit\services\test_conversation_service.py::test_list_with_filters PASSED [ 15%]
+back\tests\unit\services\test_conversation_service_di.py::TestConversationServiceCreation::test_conversation_service_accepts_session_di PASSED [ 16%]
+back\tests\unit\services\test_conversation_service_di.py::TestConversationServiceCreation::test_create_conversation FAILED [ 17%]
+back\tests\unit\services\test_conversation_service_di.py::TestConversationServiceCreation::test_get_conversation FAILED [ 18%]
+back\tests\unit\services\test_conversation_service_di.py::TestConversationServiceCreation::test_get_conversation_not_found FAILED [ 19%]
+back\tests\unit\services\test_conversation_service_di.py::TestConversationServiceStatus::test_close_conversation FAILED [ 19%]
+back\tests\unit\services\test_conversation_service_di.py::TestConversationServiceStatus::test_reopen_conversation FAILED [ 20%]
+back\tests\unit\services\test_conversation_service_di.py::TestConversationServiceSessionInjection::test_service_stores_session PASSED [ 21%]
+back\tests\unit\services\test_conversation_service_di.py::TestConversationServiceSessionInjection::test_multiple_services_can_share_session PASSED [ 22%]
+back\tests\unit\services\test_conversation_service_di.py::TestConversationServiceSessionInjection::test_services_can_use_different_sessions PASSED [ 23%]
+back\tests\unit\services\test_conversation_service_di.py::TestConversationServiceIntegration::test_conversation_lifecycle FAILED [ 23%]
+back\tests\unit\services\test_conversation_service_di.py::TestConversationServiceErrorHandling::test_service_raises_on_none_session FAILED [ 24%]
+back\tests\unit\services\test_conversation_service_di.py::TestConversationServiceErrorHandling::test_service_handles_db_errors FAILED [ 25%]
+back\tests\unit\services\test_credential_service.py::test_set_and_verify_password PASSED [ 26%]
+back\tests\unit\services\test_credential_service.py::test_change_password PASSED [ 26%]
+back\tests\unit\services\test_email_verification.py::test_signup_creates_unverified_user PASSED [ 27%]
+back\tests\unit\services\test_email_verification.py::test_login_blocked_for_unverified_email PASSED [ 28%]
+back\tests\unit\services\test_email_verification.py::test_verify_email_success PASSED [ 29%]
+back\tests\unit\services\test_email_verification.py::test_login_allowed_after_verification FAILED [ 30%]
+back\tests\unit\services\test_email_verification.py::test_verify_email_invalid_token PASSED [ 30%]
+back\tests\unit\services\test_email_verification.py::test_verify_email_already_verified PASSED [ 31%]
+back\tests\unit\services\test_email_verification.py::test_resend_verification_email PASSED [ 32%]
+back\tests\unit\services\test_email_verification.py::test_resend_email_already_verified PASSED [ 33%]
+back\tests\unit\services\test_idle_timeout.py::test_idle_timeout_revokes_inactive_session FAILED [ 34%]
+back\tests\unit\services\test_idle_timeout.py::test_idle_timeout_allows_recent_session FAILED [ 34%]
+back\tests\unit\services\test_idle_timeout.py::test_idle_timeout_uses_created_at_if_no_last_used FAILED [ 35%]
+back\tests\unit\services\test_idle_timeout.py::test_idle_timeout_boundary_exactly_30_days FAILED [ 36%]
+back\tests\unit\services\test_idle_timeout.py::test_idle_timeout_message_clear FAILED [ 37%]
+back\tests\unit\services\test_lead_service.py::test_create_lead_from_conversation PASSED [ 38%]
+back\tests\unit\services\test_lead_service.py::test_create_lead_duplicate_phone_returns_existing PASSED [ 38%]
+back\tests\unit\services\test_lead_service.py::test_update_maturity_score_clamping PASSED [ 39%]
+back\tests\unit\services\test_lead_service.py::test_status_transitions_via_service PASSED [ 40%]
+back\tests\unit\services\test_lead_service.py::test_assign_lead_to_user PASSED [ 41%]
+back\tests\unit\services\test_lead_service.py::test_convert_lead PASSED  [ 42%]
+back\tests\unit\services\test_lead_service.py::test_mark_lead_lost PASSED [ 42%]
+back\tests\unit\services\test_lead_service.py::test_soft_delete_and_restore PASSED [ 43%]
+back\tests\unit\services\test_lead_service.py::test_list_leads_filtering PASSED [ 44%]
+back\tests\unit\services\test_lead_service.py::test_auto_assign_logic PASSED [ 45%]
+back\tests\unit\services\test_lead_service_di.py::TestLeadServiceCreation::test_lead_service_accepts_session_di PASSED [ 46%]
+back\tests\unit\services\test_lead_service_di.py::TestLeadServiceCreation::test_create_from_conversation FAILED [ 46%]
+back\tests\unit\services\test_lead_service_di.py::TestLeadServiceCreation::test_create_from_conversation_already_exists FAILED [ 47%]
+back\tests\unit\services\test_lead_service_di.py::TestLeadServiceMaturityUpdate::test_update_maturity_valid_score FAILED [ 48%]
+back\tests\unit\services\test_lead_service_di.py::TestLeadServiceMaturityUpdate::test_update_maturity_invalid_score_too_high FAILED [ 49%]
+back\tests\unit\services\test_lead_service_di.py::TestLeadServiceMaturityUpdate::test_update_maturity_invalid_score_negative FAILED [ 50%]
+back\tests\unit\services\test_lead_service_di.py::TestLeadServiceMaturityUpdate::test_update_maturity_lead_not_found FAILED [ 50%]
+back\tests\unit\services\test_lead_service_di.py::TestLeadServiceSessionInjection::test_service_has_session_attribute PASSED [ 51%]
+back\tests\unit\services\test_lead_service_di.py::TestLeadServiceSessionInjection::test_multiple_services_can_share_session PASSED [ 52%]
+back\tests\unit\services\test_lead_service_di.py::TestLeadServiceSessionInjection::test_services_can_use_different_sessions PASSED [ 53%]
+back\tests\unit\services\test_lead_service_di.py::TestLeadServiceIntegration::test_lead_lifecycle FAILED [ 53%]
+back\tests\unit\services\test_lead_service_di.py::TestLeadServiceErrorHandling::test_service_raises_on_invalid_session FAILED [ 54%]
+back\tests\unit\services\test_lead_service_di.py::TestLeadServiceErrorHandling::test_service_handles_database_errors FAILED [ 55%]
+back\tests\unit\services\test_logout_password_change.py::test_logout_revokes_tokens_and_session FAILED [ 56%]
+back\tests\unit\services\test_logout_password_change.py::test_change_password_updates_credential_and_revokes_sessions FAILED [ 57%]
+back\tests\unit\services\test_mfa.py::test_setup_mfa_and_verify_totp PASSED [ 57%]
+back\tests\unit\services\test_mfa.py::test_backup_code_consumption FAILED [ 58%]
+back\tests\unit\services\test_notification_service.py::test_create_notification PASSED [ 59%]
+back\tests\unit\services\test_notification_service.py::test_create_notification_different_types PASSED [ 60%]
+back\tests\unit\services\test_notification_service.py::test_create_multiple_notifications_for_user PASSED [ 61%]
+back\tests\unit\services\test_notification_service.py::test_mark_notification_as_read PASSED [ 61%]
+back\tests\unit\services\test_notification_service.py::test_mark_nonexistent_notification_as_read PASSED [ 62%]
+back\tests\unit\services\test_notification_service.py::test_mark_already_read_notification PASSED [ 63%]
+back\tests\unit\services\test_notification_service.py::test_get_user_notifications_all PASSED [ 64%]
+back\tests\unit\services\test_notification_service.py::test_get_user_notifications_unread_only FAILED [ 65%]
+back\tests\unit\services\test_notification_service.py::test_get_user_notifications_with_limit PASSED [ 65%]
+back\tests\unit\services\test_notification_service.py::test_get_notifications_for_different_users PASSED [ 66%]
+back\tests\unit\services\test_notification_service.py::test_get_notifications_empty_result PASSED [ 67%]
+back\tests\unit\services\test_notification_service.py::test_count_unread_notifications FAILED [ 68%]
+back\tests\unit\services\test_notification_service.py::test_count_unread_zero PASSED [ 69%]
+back\tests\unit\services\test_notification_service.py::test_count_unread_no_notifications PASSED [ 69%]
+back\tests\unit\services\test_notification_service.py::test_notify_new_lead PASSED [ 70%]
+back\tests\unit\services\test_notification_service.py::test_notify_urgent_message PASSED [ 71%]
+back\tests\unit\services\test_notification_service.py::test_notify_transfer_received PASSED [ 72%]
+back\tests\unit\services\test_notification_service.py::test_create_notification_with_long_message PASSED [ 73%]
+back\tests\unit\services\test_notification_service.py::test_create_notification_empty_title PASSED [ 73%]
+back\tests\unit\services\test_notification_service.py::test_notification_ordering PASSED [ 74%]
+back\tests\unit\services\test_password_reset_sessions.py::test_reset_password_revokes_sessions FAILED [ 75%]
+back\tests\unit\services\test_queue_service.py::test_enqueue_message_processing PASSED [ 76%]
+back\tests\unit\services\test_queue_service.py::test_enqueue_message_processing_without_conversation PASSED [ 76%]
+back\tests\unit\services\test_queue_service.py::test_enqueue_ai_processing PASSED [ 77%]
+back\tests\unit\services\test_queue_service.py::test_enqueue_escalation PASSED [ 78%]
+back\tests\unit\services\test_queue_service.py::test_enqueue_escalation_without_user_name PASSED [ 79%]
+back\tests\unit\services\test_queue_service.py::test_get_job_status_queued PASSED [ 80%]
+back\tests\unit\services\test_queue_service.py::test_get_job_status_finished PASSED [ 80%]
+back\tests\unit\services\test_queue_service.py::test_get_job_status_failed PASSED [ 81%]
+back\tests\unit\services\test_queue_service.py::test_get_job_status_not_found PASSED [ 82%]
+back\tests\unit\services\test_queue_service.py::test_get_queue_stats PASSED [ 83%]
+back\tests\unit\services\test_queue_service.py::test_get_failed_jobs PASSED [ 84%]
+back\tests\unit\services\test_queue_service.py::test_get_failed_jobs_with_limit PASSED [ 84%]
+back\tests\unit\services\test_queue_service.py::test_get_failed_jobs_empty PASSED [ 85%]
+back\tests\unit\services\test_queue_service.py::test_retry_job_success PASSED [ 86%]
+back\tests\unit\services\test_queue_service.py::test_retry_job_not_found PASSED [ 87%]
+back\tests\unit\services\test_queue_service.py::test_retry_job_error_handling PASSED [ 88%]
+back\tests\unit\services\test_queue_service.py::test_health_check PASSED [ 88%]
+back\tests\unit\services\test_queue_service.py::test_enqueue_multiple_jobs_different_queues PASSED [ 89%]
+back\tests\unit\services\test_queue_service.py::test_get_job_status_with_none_timestamps PASSED [ 90%]
+back\tests\unit\services\test_session_cleanup_job.py::test_cleanup_deletes_old_expired_sessions PASSED [ 91%]
+back\tests\unit\services\test_session_cleanup_job.py::test_cleanup_does_not_delete_recent_sessions PASSED [ 92%]
+back\tests\unit\services\test_session_cleanup_job.py::test_cleanup_with_custom_retention PASSED [ 92%]
+back\tests\unit\services\test_session_cleanup_job.py::test_cleanup_handles_empty_table PASSED [ 93%]
+back\tests\unit\services\test_session_cleanup_job.py::test_cleanup_returns_deleted_count PASSED [ 94%]
+back\tests\unit\services\test_session_management.py::test_list_all_sessions_for_user PASSED [ 95%]
+back\tests\unit\services\test_session_management.py::test_revoke_session_by_id PASSED [ 96%]
+back\tests\unit\services\test_session_management.py::test_revoke_session_by_id_wrong_user PASSED [ 96%]
+back\tests\unit\services\test_session_management.py::test_revoke_all_sessions_for_user FAILED [ 97%]
+back\tests\unit\services\test_session_management.py::test_get_active_sessions_excludes_expired_and_revoked FAILED [ 98%]
+back\tests\unit\services\test_user_block_unblock.py::test_block_user_revokes_sessions_and_sets_inactive FAILED [ 99%]
+back\tests\unit\services\test_user_block_unblock.py::test_unblock_user_sets_active FAILED [100%]
+
+================================== FAILURES ===================================
+__________ TestConversationServiceCreation.test_create_conversation ___________
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1384: in patched
+    with self.decoration_helper(patched,
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1366: in decoration_helper
+    arg = exit_stack.enter_context(patching)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:526: in enter_context
+    result = _enter(cm)
+             ^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1439: in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\pkgutil.py:528: in resolve_name
+    result = getattr(result, p)
+             ^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'robbot.services' has no attribute 'conversation_service'. Did you mean: 'ConversationService'?
+____________ TestConversationServiceCreation.test_get_conversation ____________
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1384: in patched
+    with self.decoration_helper(patched,
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1366: in decoration_helper
+    arg = exit_stack.enter_context(patching)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:526: in enter_context
+    result = _enter(cm)
+             ^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1439: in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\pkgutil.py:528: in resolve_name
+    result = getattr(result, p)
+             ^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'robbot.services' has no attribute 'conversation_service'. Did you mean: 'ConversationService'?
+_______ TestConversationServiceCreation.test_get_conversation_not_found _______
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1384: in patched
+    with self.decoration_helper(patched,
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1366: in decoration_helper
+    arg = exit_stack.enter_context(patching)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:526: in enter_context
+    result = _enter(cm)
+             ^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1439: in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\pkgutil.py:528: in resolve_name
+    result = getattr(result, p)
+             ^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'robbot.services' has no attribute 'conversation_service'. Did you mean: 'ConversationService'?
+____________ TestConversationServiceStatus.test_close_conversation ____________
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1384: in patched
+    with self.decoration_helper(patched,
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1366: in decoration_helper
+    arg = exit_stack.enter_context(patching)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:526: in enter_context
+    result = _enter(cm)
+             ^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1439: in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\pkgutil.py:528: in resolve_name
+    result = getattr(result, p)
+             ^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'robbot.services' has no attribute 'conversation_service'. Did you mean: 'ConversationService'?
+___________ TestConversationServiceStatus.test_reopen_conversation ____________
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1384: in patched
+    with self.decoration_helper(patched,
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1366: in decoration_helper
+    arg = exit_stack.enter_context(patching)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:526: in enter_context
+    result = _enter(cm)
+             ^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1439: in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\pkgutil.py:528: in resolve_name
+    result = getattr(result, p)
+             ^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'robbot.services' has no attribute 'conversation_service'. Did you mean: 'ConversationService'?
+_______ TestConversationServiceIntegration.test_conversation_lifecycle ________
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1384: in patched
+    with self.decoration_helper(patched,
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1366: in decoration_helper
+    arg = exit_stack.enter_context(patching)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:526: in enter_context
+    result = _enter(cm)
+             ^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1439: in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\pkgutil.py:528: in resolve_name
+    result = getattr(result, p)
+             ^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'robbot.services' has no attribute 'conversation_service'. Did you mean: 'ConversationService'?
+__ TestConversationServiceErrorHandling.test_service_raises_on_none_session ___
+back\tests\unit\services\test_conversation_service_di.py:240: in test_service_raises_on_none_session
+    with pytest.raises(AttributeError):
+E   Failed: DID NOT RAISE <class 'AttributeError'>
+_____ TestConversationServiceErrorHandling.test_service_handles_db_errors _____
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1384: in patched
+    with self.decoration_helper(patched,
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1366: in decoration_helper
+    arg = exit_stack.enter_context(patching)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:526: in enter_context
+    result = _enter(cm)
+             ^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1439: in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\pkgutil.py:528: in resolve_name
+    result = getattr(result, p)
+             ^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'robbot.services' has no attribute 'conversation_service'. Did you mean: 'ConversationService'?
+____________________ test_login_allowed_after_verification ____________________
+back\tests\unit\services\test_email_verification.py:193: in test_login_allowed_after_verification
+    token_result = auth_service.authenticate_user(
+back\src\robbot\services\auth_services.py:215: in authenticate_user
+    tokens = security.create_access_refresh_tokens(str(user.id), refresh_expiry)
+                                                       ^^^^^^^
+back\.venv\Lib\site-packages\sqlalchemy\orm\attributes.py:569: in __get__
+    return self.impl.get(state, dict_)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+back\.venv\Lib\site-packages\sqlalchemy\orm\attributes.py:1096: in get
+    value = self._fire_loader_callables(state, key, passive)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+back\.venv\Lib\site-packages\sqlalchemy\orm\attributes.py:1126: in _fire_loader_callables
+    return state._load_expired(state, passive)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+back\.venv\Lib\site-packages\sqlalchemy\orm\state.py:828: in _load_expired
+    self.manager.expired_attribute_loader(self, toload, passive)
+back\.venv\Lib\site-packages\sqlalchemy\orm\loading.py:1674: in load_scalar_attributes
+    result = load_on_ident(
+back\.venv\Lib\site-packages\sqlalchemy\orm\loading.py:510: in load_on_ident
+    return load_on_pk_identity(
+back\.venv\Lib\site-packages\sqlalchemy\orm\loading.py:695: in load_on_pk_identity
+    session.execute(
+back\.venv\Lib\site-packages\sqlalchemy\orm\session.py:2351: in execute
+    return self._execute_internal(
+back\.venv\Lib\site-packages\sqlalchemy\orm\session.py:2239: in _execute_internal
+    conn = self._connection_for_bind(bind)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+back\.venv\Lib\site-packages\sqlalchemy\orm\session.py:2108: in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<string>:2: in _connection_for_bind
+    ???
+back\.venv\Lib\site-packages\sqlalchemy\orm\state_changes.py:101: in _go
+    self._raise_for_prerequisite_state(fn.__name__, current_state)
+back\.venv\Lib\site-packages\sqlalchemy\orm\session.py:971: in _raise_for_prerequisite_state
+    raise sa_exc.PendingRollbackError(
+E   sqlalchemy.exc.PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) table audit_logs has no column named ip_address
+E   [SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+E   [parameters: (1, 'login_success', 'User', '1', None, '{"email": "test@example.com"}', None)]
+E   (Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a)
+------------------------------ Captured log call ------------------------------
+WARNING  robbot.services.auth_services:auth_services.py:209 Audit log failed for login_success
+_________________ test_idle_timeout_revokes_inactive_session __________________
+back\tests\unit\services\test_idle_timeout.py:35: in test_idle_timeout_revokes_inactive_session
+    auth_service_mock.session_repo.get_by_jti.return_value = old_session
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'method' object has no attribute 'return_value'
+___________________ test_idle_timeout_allows_recent_session ___________________
+back\tests\unit\services\test_idle_timeout.py:65: in test_idle_timeout_allows_recent_session
+    auth_service_mock.session_repo.get_by_jti.return_value = recent_session
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'method' object has no attribute 'return_value'
+______________ test_idle_timeout_uses_created_at_if_no_last_used ______________
+back\tests\unit\services\test_idle_timeout.py:95: in test_idle_timeout_uses_created_at_if_no_last_used
+    auth_service_mock.session_repo.get_by_jti.return_value = session_no_last_used
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'method' object has no attribute 'return_value'
+_________________ test_idle_timeout_boundary_exactly_30_days __________________
+back\tests\unit\services\test_idle_timeout.py:118: in test_idle_timeout_boundary_exactly_30_days
+    auth_service_mock.session_repo.get_by_jti.return_value = boundary_session
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'method' object has no attribute 'return_value'
+_______________________ test_idle_timeout_message_clear _______________________
+back\tests\unit\services\test_idle_timeout.py:142: in test_idle_timeout_message_clear
+    auth_service_mock.session_repo.get_by_jti.return_value = old_session
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'method' object has no attribute 'return_value'
+____________ TestLeadServiceCreation.test_create_from_conversation ____________
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1384: in patched
+    with self.decoration_helper(patched,
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1366: in decoration_helper
+    arg = exit_stack.enter_context(patching)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:526: in enter_context
+    result = _enter(cm)
+             ^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1439: in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\pkgutil.py:528: in resolve_name
+    result = getattr(result, p)
+             ^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'robbot.services' has no attribute 'lead_service'. Did you mean: 'LeadService'?
+____ TestLeadServiceCreation.test_create_from_conversation_already_exists _____
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1384: in patched
+    with self.decoration_helper(patched,
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1366: in decoration_helper
+    arg = exit_stack.enter_context(patching)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:526: in enter_context
+    result = _enter(cm)
+             ^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1439: in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\pkgutil.py:528: in resolve_name
+    result = getattr(result, p)
+             ^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'robbot.services' has no attribute 'lead_service'. Did you mean: 'LeadService'?
+_______ TestLeadServiceMaturityUpdate.test_update_maturity_valid_score ________
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1384: in patched
+    with self.decoration_helper(patched,
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1366: in decoration_helper
+    arg = exit_stack.enter_context(patching)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:526: in enter_context
+    result = _enter(cm)
+             ^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1439: in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\pkgutil.py:528: in resolve_name
+    result = getattr(result, p)
+             ^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'robbot.services' has no attribute 'lead_service'. Did you mean: 'LeadService'?
+__ TestLeadServiceMaturityUpdate.test_update_maturity_invalid_score_too_high __
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1384: in patched
+    with self.decoration_helper(patched,
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1366: in decoration_helper
+    arg = exit_stack.enter_context(patching)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:526: in enter_context
+    result = _enter(cm)
+             ^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1439: in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\pkgutil.py:528: in resolve_name
+    result = getattr(result, p)
+             ^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'robbot.services' has no attribute 'lead_service'. Did you mean: 'LeadService'?
+__ TestLeadServiceMaturityUpdate.test_update_maturity_invalid_score_negative __
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1384: in patched
+    with self.decoration_helper(patched,
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1366: in decoration_helper
+    arg = exit_stack.enter_context(patching)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:526: in enter_context
+    result = _enter(cm)
+             ^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1439: in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\pkgutil.py:528: in resolve_name
+    result = getattr(result, p)
+             ^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'robbot.services' has no attribute 'lead_service'. Did you mean: 'LeadService'?
+______ TestLeadServiceMaturityUpdate.test_update_maturity_lead_not_found ______
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1384: in patched
+    with self.decoration_helper(patched,
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1366: in decoration_helper
+    arg = exit_stack.enter_context(patching)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:526: in enter_context
+    result = _enter(cm)
+             ^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1439: in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\pkgutil.py:528: in resolve_name
+    result = getattr(result, p)
+             ^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'robbot.services' has no attribute 'lead_service'. Did you mean: 'LeadService'?
+_______________ TestLeadServiceIntegration.test_lead_lifecycle ________________
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1384: in patched
+    with self.decoration_helper(patched,
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1366: in decoration_helper
+    arg = exit_stack.enter_context(patching)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:526: in enter_context
+    result = _enter(cm)
+             ^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1439: in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\pkgutil.py:528: in resolve_name
+    result = getattr(result, p)
+             ^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'robbot.services' has no attribute 'lead_service'. Did you mean: 'LeadService'?
+_____ TestLeadServiceErrorHandling.test_service_raises_on_invalid_session _____
+back\tests\unit\services\test_lead_service_di.py:216: in test_service_raises_on_invalid_session
+    with pytest.raises(AttributeError):
+E   Failed: DID NOT RAISE <class 'AttributeError'>
+______ TestLeadServiceErrorHandling.test_service_handles_database_errors ______
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1384: in patched
+    with self.decoration_helper(patched,
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1366: in decoration_helper
+    arg = exit_stack.enter_context(patching)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:526: in enter_context
+    result = _enter(cm)
+             ^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\unittest\mock.py:1439: in __enter__
+    self.target = self.getter()
+                  ^^^^^^^^^^^^^
+C:\Users\EdyoCamposSeveroNeto\AppData\Local\Programs\Python\Python312\Lib\pkgutil.py:528: in resolve_name
+    result = getattr(result, p)
+             ^^^^^^^^^^^^^^^^^^
+E   AttributeError: module 'robbot.services' has no attribute 'lead_service'. Did you mean: 'LeadService'?
+___________________ test_logout_revokes_tokens_and_session ____________________
+back\tests\unit\services\test_logout_password_change.py:45: in test_logout_revokes_tokens_and_session
+    token = svc.authenticate_user(payload.email, payload.password)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+back\src\robbot\services\auth_services.py:215: in authenticate_user
+    tokens = security.create_access_refresh_tokens(str(user.id), refresh_expiry)
+                                                       ^^^^^^^
+back\.venv\Lib\site-packages\sqlalchemy\orm\attributes.py:569: in __get__
+    return self.impl.get(state, dict_)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+back\.venv\Lib\site-packages\sqlalchemy\orm\attributes.py:1096: in get
+    value = self._fire_loader_callables(state, key, passive)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+back\.venv\Lib\site-packages\sqlalchemy\orm\attributes.py:1126: in _fire_loader_callables
+    return state._load_expired(state, passive)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+back\.venv\Lib\site-packages\sqlalchemy\orm\state.py:828: in _load_expired
+    self.manager.expired_attribute_loader(self, toload, passive)
+back\.venv\Lib\site-packages\sqlalchemy\orm\loading.py:1674: in load_scalar_attributes
+    result = load_on_ident(
+back\.venv\Lib\site-packages\sqlalchemy\orm\loading.py:510: in load_on_ident
+    return load_on_pk_identity(
+back\.venv\Lib\site-packages\sqlalchemy\orm\loading.py:695: in load_on_pk_identity
+    session.execute(
+back\.venv\Lib\site-packages\sqlalchemy\orm\session.py:2351: in execute
+    return self._execute_internal(
+back\.venv\Lib\site-packages\sqlalchemy\orm\session.py:2239: in _execute_internal
+    conn = self._connection_for_bind(bind)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+back\.venv\Lib\site-packages\sqlalchemy\orm\session.py:2108: in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<string>:2: in _connection_for_bind
+    ???
+back\.venv\Lib\site-packages\sqlalchemy\orm\state_changes.py:101: in _go
+    self._raise_for_prerequisite_state(fn.__name__, current_state)
+back\.venv\Lib\site-packages\sqlalchemy\orm\session.py:971: in _raise_for_prerequisite_state
+    raise sa_exc.PendingRollbackError(
+E   sqlalchemy.exc.PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+E   [SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+E   [parameters: (1, 'login_success', 'User', '1', None, '{"email": "logout@example.com"}', None)]
+E   (Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a)
+------------------------------ Captured log call ------------------------------
+WARNING  robbot.services.auth_services:auth_services.py:209 Audit log failed for login_success
+________ test_change_password_updates_credential_and_revokes_sessions _________
+back\tests\unit\services\test_logout_password_change.py:102: in test_change_password_updates_credential_and_revokes_sessions
+    assert cred_svc.verify_password(user.id, "NewPass456!") is True
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+back\src\robbot\services\credential_service.py:41: in verify_password
+    cred = self.repo.get_by_user_id(user_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+back\src\robbot\infra\persistence\repositories\credential_repository.py:23: in get_by_user_id
+    return self.db.query(CredentialModel).filter(CredentialModel.user_id == user_id).first()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+back\.venv\Lib\site-packages\sqlalchemy\orm\query.py:2759: in first
+    return self.limit(1)._iter().first()  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^
+back\.venv\Lib\site-packages\sqlalchemy\orm\query.py:2857: in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+back\.venv\Lib\site-packages\sqlalchemy\orm\session.py:2351: in execute
+    return self._execute_internal(
+back\.venv\Lib\site-packages\sqlalchemy\orm\session.py:2239: in _execute_internal
+    conn = self._connection_for_bind(bind)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+back\.venv\Lib\site-packages\sqlalchemy\orm\session.py:2108: in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<string>:2: in _connection_for_bind
+    ???
+back\.venv\Lib\site-packages\sqlalchemy\orm\state_changes.py:101: in _go
+    self._raise_for_prerequisite_state(fn.__name__, current_state)
+back\.venv\Lib\site-packages\sqlalchemy\orm\session.py:971: in _raise_for_prerequisite_state
+    raise sa_exc.PendingRollbackError(
+E   sqlalchemy.exc.PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+E   [SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+E   [parameters: (1, 'password_change', 'User', '1', None, None, None)]
+E   (Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a)
+------------------------------ Captured log call ------------------------------
+WARNING  robbot.services.auth_services:auth_services.py:460 Audit log failed for password_change
+________________________ test_backup_code_consumption _________________________
+back\tests\unit\services\test_mfa.py:114: in test_backup_code_consumption
+    mfa_service.verify_backup_code(user.id, first_code)
+back\src\robbot\services\mfa_service.py:90: in verify_backup_code
+    if pbkdf2_sha256.verify(code, h) or bcrypt.verify(code, h):
+                                        ^^^^^^^^^^^^^^^^^^^^^^
+back\.venv\Lib\site-packages\passlib\utils\handlers.py:788: in verify
+    self = cls.from_string(hash, **context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+back\.venv\Lib\site-packages\passlib\handlers\bcrypt.py:170: in from_string
+    ident, tail = cls._parse_ident(hash)
+                  ^^^^^^^^^^^^^^^^^^^^^^
+back\.venv\Lib\site-packages\passlib\utils\handlers.py:1206: in _parse_ident
+    raise exc.InvalidHashError(cls)
+E   ValueError: not a valid bcrypt hash
+___________________ test_get_user_notifications_unread_only ___________________
+back\tests\unit\services\test_notification_service.py:174: in test_get_user_notifications_unread_only
+    assert len(notifications) == 3
+E   assert 0 == 3
+E    +  where 0 = len([])
+_______________________ test_count_unread_notifications _______________________
+back\tests\unit\services\test_notification_service.py:246: in test_count_unread_notifications
+    assert unread_count == 3
+E   assert 0 == 3
+____________________ test_reset_password_revokes_sessions _____________________
+back\tests\unit\services\test_password_reset_sessions.py:63: in test_reset_password_revokes_sessions
+    sess = db_session.query(AuthSessionModel).filter(AuthSessionModel.user_id == user.id).all()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+back\.venv\Lib\site-packages\sqlalchemy\orm\query.py:2704: in all
+    return self._iter().all()  # type: ignore
+           ^^^^^^^^^^^^
+back\.venv\Lib\site-packages\sqlalchemy\orm\query.py:2857: in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+back\.venv\Lib\site-packages\sqlalchemy\orm\session.py:2351: in execute
+    return self._execute_internal(
+back\.venv\Lib\site-packages\sqlalchemy\orm\session.py:2239: in _execute_internal
+    conn = self._connection_for_bind(bind)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+back\.venv\Lib\site-packages\sqlalchemy\orm\session.py:2108: in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<string>:2: in _connection_for_bind
+    ???
+back\.venv\Lib\site-packages\sqlalchemy\orm\state_changes.py:101: in _go
+    self._raise_for_prerequisite_state(fn.__name__, current_state)
+back\.venv\Lib\site-packages\sqlalchemy\orm\session.py:971: in _raise_for_prerequisite_state
+    raise sa_exc.PendingRollbackError(
+E   sqlalchemy.exc.PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+E   [SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+E   [parameters: (1, 'password_reset', 'User', '1', None, None, None)]
+E   (Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a)
+---------------------------- Captured stderr call -----------------------------
+D:\_projects\clinica_go\back\.venv\Lib\site-packages\jwt\api_jwt.py:153: InsecureKeyLengthWarning: The HMAC key is 9 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
+  return self._jws.encode(
+D:\_projects\clinica_go\back\.venv\Lib\site-packages\jwt\api_jwt.py:371: InsecureKeyLengthWarning: The HMAC key is 9 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
+  decoded = self.decode_complete(
+------------------------------ Captured log call ------------------------------
+WARNING  robbot.services.auth_services:auth_services.py:425 Audit log failed for password_reset
+______________________ test_revoke_all_sessions_for_user ______________________
+back\tests\unit\services\test_session_management.py:223: in test_revoke_all_sessions_for_user
+    assert count == 3
+E   assert 0 == 3
+____________ test_get_active_sessions_excludes_expired_and_revoked ____________
+back\tests\unit\services\test_session_management.py:270: in test_get_active_sessions_excludes_expired_and_revoked
+    assert len(active_sessions) == 1
+E   assert 0 == 1
+E    +  where 0 = len([])
+_____________ test_block_user_revokes_sessions_and_sets_inactive ______________
+back\tests\unit\services\test_user_block_unblock.py:65: in test_block_user_revokes_sessions_and_sets_inactive
+    out = service.block_user(user.id, reason="policy_violation")
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+back\src\robbot\services\user_service.py:81: in block_user
+    return UserOut.model_validate(user)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   pydantic_core._pydantic_core.ValidationError: 5 validation errors for UserOut
+E   id
+E     Error extracting attribute: PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+E   [SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+E   [parameters: (1, 'user_block', 'User', '1', '{"is_active": true}', '{"is_active": false, "reason": "policy_violation"}', None)]
+E   (Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a) [type=get_attribute_error, input_value=<robbot.infra.persistence...t at 0x0000020AADAD0BC0>, input_type=UserModel]
+E       For further information visit https://errors.pydantic.dev/2.12/v/get_attribute_error
+E   email
+E     Error extracting attribute: PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+E   [SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+E   [parameters: (1, 'user_block', 'User', '1', '{"is_active": true}', '{"is_active": false, "reason": "policy_violation"}', None)]
+E   (Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a) [type=get_attribute_error, input_value=<robbot.infra.persistence...t at 0x0000020AADAD0BC0>, input_type=UserModel]
+E       For further information visit https://errors.pydantic.dev/2.12/v/get_attribute_error
+E   full_name
+E     Error extracting attribute: PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+E   [SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+E   [parameters: (1, 'user_block', 'User', '1', '{"is_active": true}', '{"is_active": false, "reason": "policy_violation"}', None)]
+E   (Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a) [type=get_attribute_error, input_value=<robbot.infra.persistence...t at 0x0000020AADAD0BC0>, input_type=UserModel]
+E       For further information visit https://errors.pydantic.dev/2.12/v/get_attribute_error
+E   role
+E     Error extracting attribute: PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+E   [SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+E   [parameters: (1, 'user_block', 'User', '1', '{"is_active": true}', '{"is_active": false, "reason": "policy_violation"}', None)]
+E   (Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a) [type=get_attribute_error, input_value=<robbot.infra.persistence...t at 0x0000020AADAD0BC0>, input_type=UserModel]
+E       For further information visit https://errors.pydantic.dev/2.12/v/get_attribute_error
+E   is_active
+E     Error extracting attribute: PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+E   [SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+E   [parameters: (1, 'user_block', 'User', '1', '{"is_active": true}', '{"is_active": false, "reason": "policy_violation"}', None)]
+E   (Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a) [type=get_attribute_error, input_value=<robbot.infra.persistence...t at 0x0000020AADAD0BC0>, input_type=UserModel]
+E       For further information visit https://errors.pydantic.dev/2.12/v/get_attribute_error
+________________________ test_unblock_user_sets_active ________________________
+back\tests\unit\services\test_user_block_unblock.py:76: in test_unblock_user_sets_active
+    service.block_user(user.id, reason="policy_violation")
+back\src\robbot\services\user_service.py:81: in block_user
+    return UserOut.model_validate(user)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   pydantic_core._pydantic_core.ValidationError: 5 validation errors for UserOut
+E   id
+E     Error extracting attribute: PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+E   [SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+E   [parameters: (1, 'user_block', 'User', '1', '{"is_active": true}', '{"is_active": false, "reason": "policy_violation"}', None)]
+E   (Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a) [type=get_attribute_error, input_value=<robbot.infra.persistence...t at 0x0000020AADB2C650>, input_type=UserModel]
+E       For further information visit https://errors.pydantic.dev/2.12/v/get_attribute_error
+E   email
+E     Error extracting attribute: PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+E   [SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+E   [parameters: (1, 'user_block', 'User', '1', '{"is_active": true}', '{"is_active": false, "reason": "policy_violation"}', None)]
+E   (Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a) [type=get_attribute_error, input_value=<robbot.infra.persistence...t at 0x0000020AADB2C650>, input_type=UserModel]
+E       For further information visit https://errors.pydantic.dev/2.12/v/get_attribute_error
+E   full_name
+E     Error extracting attribute: PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+E   [SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+E   [parameters: (1, 'user_block', 'User', '1', '{"is_active": true}', '{"is_active": false, "reason": "policy_violation"}', None)]
+E   (Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a) [type=get_attribute_error, input_value=<robbot.infra.persistence...t at 0x0000020AADB2C650>, input_type=UserModel]
+E       For further information visit https://errors.pydantic.dev/2.12/v/get_attribute_error
+E   role
+E     Error extracting attribute: PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+E   [SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+E   [parameters: (1, 'user_block', 'User', '1', '{"is_active": true}', '{"is_active": false, "reason": "policy_violation"}', None)]
+E   (Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a) [type=get_attribute_error, input_value=<robbot.infra.persistence...t at 0x0000020AADB2C650>, input_type=UserModel]
+E       For further information visit https://errors.pydantic.dev/2.12/v/get_attribute_error
+E   is_active
+E     Error extracting attribute: PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+E   [SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+E   [parameters: (1, 'user_block', 'User', '1', '{"is_active": true}', '{"is_active": false, "reason": "policy_violation"}', None)]
+E   (Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a) [type=get_attribute_error, input_value=<robbot.infra.persistence...t at 0x0000020AADB2C650>, input_type=UserModel]
+E       For further information visit https://errors.pydantic.dev/2.12/v/get_attribute_error
+=========================== short test summary info ===========================
+FAILED back\tests\unit\services\test_conversation_service_di.py::TestConversationServiceCreation::test_create_conversation - AttributeError: module 'robbot.services' has no attribute 'conversation_service'. Did you mean: 'ConversationService'?
+FAILED back\tests\unit\services\test_conversation_service_di.py::TestConversationServiceCreation::test_get_conversation - AttributeError: module 'robbot.services' has no attribute 'conversation_service'. Did you mean: 'ConversationService'?
+FAILED back\tests\unit\services\test_conversation_service_di.py::TestConversationServiceCreation::test_get_conversation_not_found - AttributeError: module 'robbot.services' has no attribute 'conversation_service'. Did you mean: 'ConversationService'?
+FAILED back\tests\unit\services\test_conversation_service_di.py::TestConversationServiceStatus::test_close_conversation - AttributeError: module 'robbot.services' has no attribute 'conversation_service'. Did you mean: 'ConversationService'?
+FAILED back\tests\unit\services\test_conversation_service_di.py::TestConversationServiceStatus::test_reopen_conversation - AttributeError: module 'robbot.services' has no attribute 'conversation_service'. Did you mean: 'ConversationService'?
+FAILED back\tests\unit\services\test_conversation_service_di.py::TestConversationServiceIntegration::test_conversation_lifecycle - AttributeError: module 'robbot.services' has no attribute 'conversation_service'. Did you mean: 'ConversationService'?
+FAILED back\tests\unit\services\test_conversation_service_di.py::TestConversationServiceErrorHandling::test_service_raises_on_none_session - Failed: DID NOT RAISE <class 'AttributeError'>
+FAILED back\tests\unit\services\test_conversation_service_di.py::TestConversationServiceErrorHandling::test_service_handles_db_errors - AttributeError: module 'robbot.services' has no attribute 'conversation_service'. Did you mean: 'ConversationService'?
+FAILED back\tests\unit\services\test_email_verification.py::test_login_allowed_after_verification - sqlalchemy.exc.PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) table audit_logs has no column named ip_address
+[SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+[parameters: (1, 'login_success', 'User', '1', None, '{"email": "test@example.com"}', None)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a)
+FAILED back\tests\unit\services\test_idle_timeout.py::test_idle_timeout_revokes_inactive_session - AttributeError: 'method' object has no attribute 'return_value'
+FAILED back\tests\unit\services\test_idle_timeout.py::test_idle_timeout_allows_recent_session - AttributeError: 'method' object has no attribute 'return_value'
+FAILED back\tests\unit\services\test_idle_timeout.py::test_idle_timeout_uses_created_at_if_no_last_used - AttributeError: 'method' object has no attribute 'return_value'
+FAILED back\tests\unit\services\test_idle_timeout.py::test_idle_timeout_boundary_exactly_30_days - AttributeError: 'method' object has no attribute 'return_value'
+FAILED back\tests\unit\services\test_idle_timeout.py::test_idle_timeout_message_clear - AttributeError: 'method' object has no attribute 'return_value'
+FAILED back\tests\unit\services\test_lead_service_di.py::TestLeadServiceCreation::test_create_from_conversation - AttributeError: module 'robbot.services' has no attribute 'lead_service'. Did you mean: 'LeadService'?
+FAILED back\tests\unit\services\test_lead_service_di.py::TestLeadServiceCreation::test_create_from_conversation_already_exists - AttributeError: module 'robbot.services' has no attribute 'lead_service'. Did you mean: 'LeadService'?
+FAILED back\tests\unit\services\test_lead_service_di.py::TestLeadServiceMaturityUpdate::test_update_maturity_valid_score - AttributeError: module 'robbot.services' has no attribute 'lead_service'. Did you mean: 'LeadService'?
+FAILED back\tests\unit\services\test_lead_service_di.py::TestLeadServiceMaturityUpdate::test_update_maturity_invalid_score_too_high - AttributeError: module 'robbot.services' has no attribute 'lead_service'. Did you mean: 'LeadService'?
+FAILED back\tests\unit\services\test_lead_service_di.py::TestLeadServiceMaturityUpdate::test_update_maturity_invalid_score_negative - AttributeError: module 'robbot.services' has no attribute 'lead_service'. Did you mean: 'LeadService'?
+FAILED back\tests\unit\services\test_lead_service_di.py::TestLeadServiceMaturityUpdate::test_update_maturity_lead_not_found - AttributeError: module 'robbot.services' has no attribute 'lead_service'. Did you mean: 'LeadService'?
+FAILED back\tests\unit\services\test_lead_service_di.py::TestLeadServiceIntegration::test_lead_lifecycle - AttributeError: module 'robbot.services' has no attribute 'lead_service'. Did you mean: 'LeadService'?
+FAILED back\tests\unit\services\test_lead_service_di.py::TestLeadServiceErrorHandling::test_service_raises_on_invalid_session - Failed: DID NOT RAISE <class 'AttributeError'>
+FAILED back\tests\unit\services\test_lead_service_di.py::TestLeadServiceErrorHandling::test_service_handles_database_errors - AttributeError: module 'robbot.services' has no attribute 'lead_service'. Did you mean: 'LeadService'?
+FAILED back\tests\unit\services\test_logout_password_change.py::test_logout_revokes_tokens_and_session - sqlalchemy.exc.PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+[SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+[parameters: (1, 'login_success', 'User', '1', None, '{"email": "logout@example.com"}', None)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a)
+FAILED back\tests\unit\services\test_logout_password_change.py::test_change_password_updates_credential_and_revokes_sessions - sqlalchemy.exc.PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+[SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+[parameters: (1, 'password_change', 'User', '1', None, None, None)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a)
+FAILED back\tests\unit\services\test_mfa.py::test_backup_code_consumption - ValueError: not a valid bcrypt hash
+FAILED back\tests\unit\services\test_notification_service.py::test_get_user_notifications_unread_only - assert 0 == 3
+ +  where 0 = len([])
+FAILED back\tests\unit\services\test_notification_service.py::test_count_unread_notifications - assert 0 == 3
+FAILED back\tests\unit\services\test_password_reset_sessions.py::test_reset_password_revokes_sessions - sqlalchemy.exc.PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+[SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+[parameters: (1, 'password_reset', 'User', '1', None, None, None)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a)
+FAILED back\tests\unit\services\test_session_management.py::test_revoke_all_sessions_for_user - assert 0 == 3
+FAILED back\tests\unit\services\test_session_management.py::test_get_active_sessions_excludes_expired_and_revoked - assert 0 == 1
+ +  where 0 = len([])
+FAILED back\tests\unit\services\test_user_block_unblock.py::test_block_user_revokes_sessions_and_sets_inactive - pydantic_core._pydantic_core.ValidationError: 5 validation errors for UserOut
+id
+  Error extracting attribute: PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+[SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+[parameters: (1, 'user_block', 'User', '1', '{"is_active": true}', '{"is_active": false, "reason": "policy_violation"}', None)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a) [type=get_attribute_error, input_value=<robbot.infra.persistence...t at 0x0000020AADAD0BC0>, input_type=UserModel]
+    For further information visit https://errors.pydantic.dev/2.12/v/get_attribute_error
+email
+  Error extracting attribute: PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+[SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+[parameters: (1, 'user_block', 'User', '1', '{"is_active": true}', '{"is_active": false, "reason": "policy_violation"}', None)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a) [type=get_attribute_error, input_value=<robbot.infra.persistence...t at 0x0000020AADAD0BC0>, input_type=UserModel]
+    For further information visit https://errors.pydantic.dev/2.12/v/get_attribute_error
+full_name
+  Error extracting attribute: PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+[SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+[parameters: (1, 'user_block', 'User', '1', '{"is_active": true}', '{"is_active": false, "reason": "policy_violation"}', None)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a) [type=get_attribute_error, input_value=<robbot.infra.persistence...t at 0x0000020AADAD0BC0>, input_type=UserModel]
+    For further information visit https://errors.pydantic.dev/2.12/v/get_attribute_error
+role
+  Error extracting attribute: PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+[SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+[parameters: (1, 'user_block', 'User', '1', '{"is_active": true}', '{"is_active": false, "reason": "policy_violation"}', None)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a) [type=get_attribute_error, input_value=<robbot.infra.persistence...t at 0x0000020AADAD0BC0>, input_type=UserModel]
+    For further information visit https://errors.pydantic.dev/2.12/v/get_attribute_error
+is_active
+  Error extracting attribute: PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+[SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+[parameters: (1, 'user_block', 'User', '1', '{"is_active": true}', '{"is_active": false, "reason": "policy_violation"}', None)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a) [type=get_attribute_error, input_value=<robbot.infra.persistence...t at 0x0000020AADAD0BC0>, input_type=UserModel]
+    For further information visit https://errors.pydantic.dev/2.12/v/get_attribute_error
+FAILED back\tests\unit\services\test_user_block_unblock.py::test_unblock_user_sets_active - pydantic_core._pydantic_core.ValidationError: 5 validation errors for UserOut
+id
+  Error extracting attribute: PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+[SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+[parameters: (1, 'user_block', 'User', '1', '{"is_active": true}', '{"is_active": false, "reason": "policy_violation"}', None)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a) [type=get_attribute_error, input_value=<robbot.infra.persistence...t at 0x0000020AADB2C650>, input_type=UserModel]
+    For further information visit https://errors.pydantic.dev/2.12/v/get_attribute_error
+email
+  Error extracting attribute: PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+[SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+[parameters: (1, 'user_block', 'User', '1', '{"is_active": true}', '{"is_active": false, "reason": "policy_violation"}', None)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a) [type=get_attribute_error, input_value=<robbot.infra.persistence...t at 0x0000020AADB2C650>, input_type=UserModel]
+    For further information visit https://errors.pydantic.dev/2.12/v/get_attribute_error
+full_name
+  Error extracting attribute: PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+[SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+[parameters: (1, 'user_block', 'User', '1', '{"is_active": true}', '{"is_active": false, "reason": "policy_violation"}', None)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a) [type=get_attribute_error, input_value=<robbot.infra.persistence...t at 0x0000020AADB2C650>, input_type=UserModel]
+    For further information visit https://errors.pydantic.dev/2.12/v/get_attribute_error
+role
+  Error extracting attribute: PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+[SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+[parameters: (1, 'user_block', 'User', '1', '{"is_active": true}', '{"is_active": false, "reason": "policy_violation"}', None)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a) [type=get_attribute_error, input_value=<robbot.infra.persistence...t at 0x0000020AADB2C650>, input_type=UserModel]
+    For further information visit https://errors.pydantic.dev/2.12/v/get_attribute_error
+is_active
+  Error extracting attribute: PendingRollbackError: This Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (sqlite3.OperationalError) no such table: audit_logs
+[SQL: INSERT INTO audit_logs (user_id, action, entity_type, entity_id, old_value, new_value, ip_address) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id, created_at]
+[parameters: (1, 'user_block', 'User', '1', '{"is_active": true}', '{"is_active": false, "reason": "policy_violation"}', None)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8) (Background on this error at: https://sqlalche.me/e/20/7s2a) [type=get_attribute_error, input_value=<robbot.infra.persistence...t at 0x0000020AADB2C650>, input_type=UserModel]
+    For further information visit https://errors.pydantic.dev/2.12/v/get_attribute_error
+======================= 33 failed, 93 passed in 37.23s ========================

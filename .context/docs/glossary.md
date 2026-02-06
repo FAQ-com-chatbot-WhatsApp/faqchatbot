@@ -17,7 +17,8 @@ This document defines the key domain terms, technical concepts, and architectura
 | :--- | :--- |
 | **Lead** | A potential customer or patient who has initiated contact via a messaging channel (e.g., WhatsApp). |
 | **Conversation** | The ongoing interaction history between a Lead and the system (or a human agent). |
-| **Playbook** | A predefined, structured sequence of steps or rules that the AI follows to interact with a lead (e.g., qualification, scheduling). |
+| **Context** | A predefined, structured sequence of items (content) or rules that the AI follows to interact with a lead (e.g., qualification, scheduling). Replaces the previous "Playbook" terminology. |
+| **Content** | Individual items stored in the knowledge base (text, media, location) used by contexts to interact with leads. |
 | **Lead Maturity** | A status or score indicating how close a lead is to conversion (e.g., "COLD", "WARM", "HOT"). |
 | **Handoff** | The process of transferring a conversation from an automated AI agent to a human agent. |
 | **Escalation** | A specific type of handoff triggered when the AI detects an intent it cannot handle or a direct request for human assistance. |

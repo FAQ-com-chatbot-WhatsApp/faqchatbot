@@ -3,12 +3,14 @@
 This directory contains plans for coordinating work across documentation and playbooks.
 
 ## Plan Queue
-1. [Cleanup Legacy Auth](./cleanup-legacy-auth.md)
-2. [Context Setup Plan](./context-setup-plan.md)
-3. [Fix Waha Message Polling](./fix-waha-message-polling.md)
-4. [Frontend Design System Usage Audit And Refactor](./frontend-design-system-usage-audit-and-refactor.md)
-5. [Test Cases Documentation Rewrite](./test-cases-documentation-rewrite.md)
-6. [Test Validation Execution](./test-validation-execution.md)
+1. [Architectural Reorganization Plan](./architectural-reorganization-plan.md)
+2. [Backend Refactoring Execution Plan](./backend-refactoring-execution-plan.md)
+3. [Cleanup Legacy Auth](./cleanup-legacy-auth.md)
+4. [Context Setup Plan](./context-setup-plan.md)
+5. [Fix Waha Message Polling](./fix-waha-message-polling.md)
+6. [Frontend Design System Usage Audit And Refactor](./frontend-design-system-usage-audit-and-refactor.md)
+7. [Test Cases Documentation Rewrite](./test-cases-documentation-rewrite.md)
+8. [Test Validation Execution](./test-validation-execution.md)
 
 ## How To Create Or Update Plans
 - Run "ai-context plan <name>" to scaffold a new plan template.

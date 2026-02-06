@@ -1,4 +1,4 @@
-# Feature Developer Agent Playbook: Full-Stack Implementation Guide
+# AI Agent Personnel Guide: Full-Stack Implementation Manual
 
 The purpose of this playbook is to guide the feature developer agent through the creation and modification of functionality across the `go` application, ensuring strict adherence to the established clean architecture, Dependency Injection (DI) principles, and coding conventions for both the Python backend and the Next.js frontend.
 

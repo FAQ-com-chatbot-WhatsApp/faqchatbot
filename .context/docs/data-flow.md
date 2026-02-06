@@ -13,7 +13,7 @@ The backend follows a classic layered structure where dependencies flow inward: 
 | Layer | Directories | Responsibilities | Key Components |
 | :--- | :--- | :--- | :--- |
 | **API/Presentation** | `back/src/robbot/api` | Handles HTTP routing, request parsing, input validation (using Pydantic Schemas), and delegating tasks to the Service layer. | API Routers, Controllers (`user_controller.py`, `dashboard_controller.py`) |
-| **Business/Service** | `back/src/robbot/services` | Contains core business logic, orchestrates complex workflows, manages transactional boundaries, and enforces business rules. | `ConversationService`, `LeadService`, `OrchestratorService` |
+| **Business/Service** | `back/src/robbot/services` | Contains core business logic, orchestrates complex workflows, manages transactional boundaries, and enforces business rules. | `ConversationService`, `LeadService`, `ConversationOrchestrator` |
 | **Data/Repository** | `back/src/robbot/adapters/repositories` | Abstracts data persistence operations (CRUD), translating between Domain Models and Infrastructure Models. | `ConversationRepository`, `UserRepository`, `AnalyticsRepository` |
 | **Domain/Models** | `back/src/robbot/domain` | Defines core business entities (e.g., `Conversation`, `Lead`) and their rules, independent of persistence technology. | Domain Models, Value Objects |
 | **Infrastructure** | `back/src/robbot/infra` | Contains concrete implementations for external concerns: Database Models, Job Runners, and configuration files. | Database Models (`db/models`), `BaseJob` |
@@ -56,13 +56,11 @@ The **Orchestrator Service** (`orchestrator_service.py`) is the central brain fo
 | Step | Component | Action | Dependencies/Outputs |
 | :--- | :--- | :--- | :--- |
 | **1. Ingestion** | `WAHA Controller` | Receives raw webhook, sanitizes, and prepares initial message DTO. | Calls `OrchestratorService` |
-| **2. Context Retrieval** | `Orchestrator Service` | Queries `ConversationService` and `LeadService` to fetch the current state, history, and associated lead profile from the database. | `ConversationRepository`, `LeadRepository` |
-| **3. Decision Tree** | `Orchestrator Service` | Based on configuration, current conversation state (e.g., `ESCALATED`, `ACTIVE`), and message content: | Routes to Step 4, 5, or 6 |
-| **4. AI Processing** | `NLPService` / `VisionService` | If routed to AI, services interact with the external LLM provider (e.g., Gemini) for intent classification, response generation, or media analysis. | External API Calls, Configuration |
-| **5. Playbook Execution** | `PlaybookService` | If routed to a structured flow, the service executes steps defined in the active playbook, potentially sending templated responses or updating state. | `PlaybookRepository` |
-| **6. Handoff/Escalation** | `HandoffController` | If AI fails, or based on specific keywords/intent, the conversation status is updated, and the conversation is queued for a human agent. | Updates via `ConversationService` |
-| **7. State Persistence** | `Conversation Service` / `Lead Service` | Updates database models (new message, lead maturity change, conversation status change) within a transactional boundary. | Repositories (ensuring ACID compliance) |
-| **8. Outbound Delivery** | `WAHA Service` | Takes the final system response DTO, formats it for the external messaging API, and handles transmission. | External API Call (Messaging Platform) |
+| **2. Context Retrieval** | `ConversationService` | Fetches/Creates rich domain entities (`Lead`, `Conversation`) with full history. | `ConversationRepository`, `LeadRepository` |
+| **3. Analysis Pipeline** | `ConversationPipeline` | Handles media, builds context, detects intent and urgency, and updates domain state (scoring). | `TranscriptionService`, `LLMClient`, `Chroma` |
+| **4. Response Generation** | `OrchestratorService` | Uses LLM to generate response based on enriched context and SPIN methodology. | `LLMClient`, `PersistentMemory` |
+| **5. Handoff Check** | `Domain Rules` | Business logic inside `Conversation` and `Lead` entities decides if human intervention is needed. | `entities.py` logic |
+| **6. Dispatch & Log** | `ResponseDispatcher` | Delivers message via WAHA, logs interaction, and writes LLM audit trails. | `WAHAClient`, `AnalyticsRepository` |
 
 ### State Management
 

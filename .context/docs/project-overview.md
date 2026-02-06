@@ -13,7 +13,7 @@ Clinica Go is a sophisticated clinical or customer relationship management (CRM)
 **Key Objectives:**
 
 *   **Conversational AI:** Implement advanced features for automated lead qualification and communication via external platforms like WhatsApp (WAHA).
-*   **Workflow Automation:** Orchestrate complex conversation flows (Playbooks) and manage lead handoffs and escalations (e.g., `PlaybookService`, `HandoffController`).
+*   **Workflow Automation:** Orchestrate complex conversation flows (Contexts) and manage lead handoffs and escalations (e.g., `ContextService`, `HandoffController`).
 *   **Data and Analytics:** Offer real-time dashboards, performance reports, and conversion metrics for administrators and agents (e.g., `AnalyticsRepository`, `DashboardController`).
 *   **Security:** Ensure secure access via robust authentication, Multi-Factor Authentication (MFA), and comprehensive audit logging (e.g., `AuthService`, `MfaService`, `AuditLogRepository`).
 
@@ -102,7 +102,7 @@ The `styleguide` is central to frontend development, serving as a living documen
 
 | Functionality Area | Description | Key Modules/Components |
 | :--- | :--- | :--- |
-| **Conversation Orchestration** | Manages the complex, multi-step flow of customer interactions, utilizing AI tools and playbooks. | `MessagePipeline`, `IntentDetector`, `ResponseGenerator`, `PlaybookOrchestrationMixin` |
+| **Conversation Orchestration** | Manages the complex, multi-step flow of customer interactions, utilizing AI tools and contexts. | `MessagePipeline`, `IntentDetector`, `ResponseGenerator`, `ContextOrchestrationMixin` |
 | **Lead Management** | Handling lead assignment, qualification, and status changes. | `LeadService`, `LeadController`, `LeadModel` |
 | **Authentication & Users** | User signup, sign-in, session management, MFA, and user blocking/roles. | `AuthService`, `MfaService`, `UserController`, `BlockUserRequest` |
 | **External Integration** | Interface with external messaging platforms, specifically WhatsApp (WAHA). | `WAHAService`, `WahaController` |
