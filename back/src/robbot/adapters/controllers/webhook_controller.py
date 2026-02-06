@@ -5,7 +5,7 @@ import logging
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
 
-from robbot.adapters.repositories.webhook_log_repository import WebhookLogRepository
+from robbot.infra.persistence.repositories.webhook_log_repository import WebhookLogRepository
 from robbot.api.v1.dependencies import get_db
 from robbot.config.settings import get_settings
 from robbot.core.custom_exceptions import ExternalServiceError, QueueError
@@ -210,3 +210,4 @@ async def get_webhook_logs(
     """
     logs = repo.get_unprocessed(limit=limit, event_type=event_type)
     return [WebhookLogOut.model_validate(log) for log in logs]
+
