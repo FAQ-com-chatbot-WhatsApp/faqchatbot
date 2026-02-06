@@ -15,9 +15,9 @@ logger = logging.getLogger(__name__)
 
 # Gemini models ordered by preference (speed, quota availability, capability)
 GEMINI_FALLBACK_MODELS = [
-    "gemini-1.5-pro",  # Pro model, most stable
-    "gemini-1.5-flash",  # Flash, faster but may have quota issues
-    "gemini-pro",  # Legacy, fallback option
+    "gemini-1.5-pro",               # Pro model, most stable
+    "gemini-1.5-flash",             # Flash, faster but may have quota issues
+    "gemini-pro",                   # Legacy, fallback option
 ]
 
 
@@ -98,7 +98,9 @@ class GeminiProvider(LLMProvider):
         effective_max = max_tokens if max_tokens is not None else self._default_max_tokens
 
         # Build list of models to try: primary + fallbacks
-        models_to_try = [self._primary_model] + [m for m in GEMINI_FALLBACK_MODELS if m != self._primary_model]
+        models_to_try = [self._primary_model] + [
+            m for m in GEMINI_FALLBACK_MODELS if m != self._primary_model
+        ]
         last_error = None
 
         for model_name in models_to_try:
@@ -119,11 +121,11 @@ class GeminiProvider(LLMProvider):
                     self._client.max_output_tokens = effective_max
 
                 response = self._client.invoke(prompt)
-
+                
                 # Log success if using fallback
                 if model_name != self._primary_model:
                     logger.info("[SUCCESS] Response generated with fallback model: %s", model_name)
-
+                
                 return response.content
 
             except Exception as e:
