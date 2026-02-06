@@ -154,7 +154,7 @@ async def mark_notification_as_read(
 
     try:
         # Buscar notificação usando o modelo importado
-        from robbot.infra.db.models.notification_model import NotificationModel
+        from robbot.infra.persistence.models.notification_model import NotificationModel
 
         notification = db.query(NotificationModel).filter_by(id=notification_id).first()
 
@@ -191,3 +191,4 @@ async def mark_notification_as_read(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to mark notification as read: {str(e)}",
         ) from e
+
