@@ -7,8 +7,8 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
 from robbot.api.v1.dependencies import get_current_user, get_db
-from robbot.domain.enums import Role
-from robbot.infra.db.models.user_model import UserModel
+from robbot.domain.shared.enums import Role
+from robbot.infra.persistence.models.user_model import UserModel
 from robbot.services.audit_service import AuditService
 
 router = APIRouter()
@@ -119,3 +119,4 @@ def get_entity_audit_trail(
         )
         for log in logs
     ]
+
