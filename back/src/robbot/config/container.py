@@ -9,8 +9,8 @@ Resolves Issue #1: Rampant Singleton Anti-Pattern
 
 import redis
 
-from robbot.adapters.external.chroma_vector_store import ChromaVectorStore
-from robbot.adapters.external.gemini_llm_provider import GeminiLLMProvider
+from robbot.infra.integrations.vector_store.chroma_vector_store import ChromaVectorStore
+from robbot.infra.integrations.llm.llm_client import get_llm_client
 from robbot.adapters.external.waha_integration import WAHAIntegration
 from robbot.config.prompt_loader import PromptLoader
 from robbot.config.settings import Settings
@@ -56,15 +56,12 @@ class DIContainer:
 
         # Initialize service implementations (via interfaces)
         # In dev/test we may skip LLM if API key is unavailable
-        if not self.settings.GOOGLE_API_KEY or self.settings.GOOGLE_API_KEY.lower() == "skip":
+        if (not self.settings.GOOGLE_API_KEY or self.settings.GOOGLE_API_KEY.lower() == "skip") and \
+           (not self.settings.GROQ_API_KEY or self.settings.GROQ_API_KEY.lower() == "skip"):
             self._llm = None
         else:
-            self._llm = GeminiLLMProvider(
-                api_key=self.settings.GOOGLE_API_KEY,
-                model=self.settings.GEMINI_MODEL,
-                temperature=self.settings.GEMINI_TEMPERATURE,
-                max_tokens=self.settings.GEMINI_MAX_TOKENS,
-            )
+            # LLMClient handles internal provider registration and fallback
+            self._llm = get_llm_client()
 
         self._vector_store = ChromaVectorStore(
             collection_name=self.settings.CHROMA_COLLECTION_NAME,
@@ -187,3 +184,4 @@ async def shutdown_container() -> None:
     if _container:
         await _container.shutdown()
         _container = None
+
