@@ -2,9 +2,9 @@ from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
-from robbot.adapters.external.waha_client import get_waha_client
-from robbot.adapters.repositories.auth_session_repository import AuthSessionRepository
-from robbot.adapters.repositories.health_repository import HealthRepository
+from robbot.infra.integrations.waha.waha_client import get_waha_client
+from robbot.infra.persistence.repositories.auth_session_repository import AuthSessionRepository
+from robbot.infra.persistence.repositories.health_repository import HealthRepository
 from robbot.core.custom_exceptions import ExternalServiceError
 from robbot.schemas.health import HealthOut
 from robbot.services.queue_service import get_queue_service
@@ -88,3 +88,4 @@ class HealthService:
             active_sessions=active_sessions,
             timestamp=now,
         )
+
