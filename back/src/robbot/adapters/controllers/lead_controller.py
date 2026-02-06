@@ -7,9 +7,9 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from sqlalchemy.orm import Session
 
 from robbot.api.v1.dependencies import get_current_user, get_db
-from robbot.domain.enums import LeadStatus
-from robbot.infra.db.models.user_model import UserModel
-from robbot.services.lead_service import LeadService
+from robbot.domain.shared.enums import LeadStatus
+from robbot.infra.persistence.models.user_model import UserModel
+from robbot.services.leads.lead_service import LeadService
 
 router = APIRouter()
 # ===== SCHEMAS =====
@@ -411,3 +411,4 @@ def restore_lead(
     except Exception as e:  # noqa: BLE001 (blind exception)
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to restore lead: {str(e)}") from e
+
