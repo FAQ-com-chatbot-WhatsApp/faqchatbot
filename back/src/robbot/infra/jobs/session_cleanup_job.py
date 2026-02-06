@@ -7,7 +7,7 @@ and maintain optimal query performance.
 import logging
 from datetime import UTC, datetime, timedelta
 
-from robbot.adapters.repositories.auth_session_repository import AuthSessionRepository
+from robbot.infra.persistence.repositories.auth_session_repository import AuthSessionRepository
 from robbot.infra.db.session import get_sync_session
 from robbot.infra.jobs.base_job import BaseJob
 
@@ -92,3 +92,4 @@ def run_session_cleanup(retention_days: int = 30) -> None:
     """
     job = SessionCleanupJob(retention_days=retention_days)
     job.run()
+
