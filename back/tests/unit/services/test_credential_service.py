@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from robbot.infra.db.models.credential_model import CredentialModel
+from robbot.infra.persistence.models.credential_model import CredentialModel
 from robbot.services.credential_service import CredentialService
 
 
@@ -41,3 +41,4 @@ def test_change_password(db_session):
 
     # verify new
     assert svc.verify_password(user_id, "NewPass456!") is True
+

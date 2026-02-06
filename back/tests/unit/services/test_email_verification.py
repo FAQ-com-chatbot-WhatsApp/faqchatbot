@@ -8,15 +8,21 @@ FASE 4: Tests for email verification workflow:
 """
 
 import pytest
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from robbot.adapters.repositories.credential_repository import CredentialRepository
+from robbot.infra.persistence.repositories.credential_repository import CredentialRepository
 from robbot.config.settings import settings
 from robbot.core.custom_exceptions import AuthException
 from robbot.schemas.auth import SignupRequest
 from robbot.services.auth_services import AuthService
 from robbot.services.email_verification_service import EmailVerificationService
+
+from robbot.infra.persistence.models.user_model import UserModel
+from robbot.infra.persistence.models.credential_model import CredentialModel
+from robbot.infra.persistence.models.auth_session_model import AuthSessionModel
+from robbot.infra.persistence.models.revoked_token_model import RevokedTokenModel
+from robbot.infra.persistence.models.audit_log_model import AuditLogModel
 
 
 @pytest.fixture
@@ -24,90 +30,12 @@ def db_session_instance():
     """Create in-memory SQLite database for testing."""
     engine = create_engine("sqlite:///:memory:")
 
-    # Create tables manually
-    with engine.connect() as conn:
-        conn.execute(
-            text("""
-            CREATE TABLE users (
-                id INTEGER PRIMARY KEY,
-                email VARCHAR(255) UNIQUE NOT NULL,
-                full_name VARCHAR(255),
-                is_active BOOLEAN DEFAULT 1 NOT NULL,
-                role VARCHAR(50) DEFAULT 'user' NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-        )
-
-        conn.execute(
-            text("""
-            CREATE TABLE credentials (
-                id INTEGER PRIMARY KEY,
-                user_id INTEGER UNIQUE NOT NULL,
-                hashed_password VARCHAR(255) NOT NULL,
-                password_changed_at TIMESTAMP,
-                email_verified BOOLEAN DEFAULT 0 NOT NULL,
-                email_verification_token VARCHAR(255),
-                email_verification_sent_at TIMESTAMP,
-                reset_token VARCHAR(255),
-                reset_token_expires_at TIMESTAMP,
-                reset_token_used BOOLEAN DEFAULT 0,
-                mfa_enabled BOOLEAN DEFAULT 0 NOT NULL,
-                mfa_secret VARCHAR(255),
-                backup_codes TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-            )
-        """)
-        )
-
-        conn.execute(
-            text("""
-            CREATE TABLE auth_sessions (
-                id INTEGER PRIMARY KEY,
-                user_id INTEGER NOT NULL,
-                refresh_token_jti VARCHAR(255) UNIQUE NOT NULL,
-                device_name VARCHAR(255),
-                ip_address VARCHAR(45) NOT NULL,
-                user_agent TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-                last_used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-                expires_at TIMESTAMP NOT NULL,
-                is_revoked BOOLEAN DEFAULT 0 NOT NULL,
-                revoked_at TIMESTAMP,
-                revocation_reason VARCHAR(255),
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-            )
-        """)
-        )
-
-        conn.execute(
-            text("""
-            CREATE TABLE revoked_tokens (
-                id INTEGER PRIMARY KEY,
-                token VARCHAR(512) UNIQUE NOT NULL,
-                revoked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
-            )
-        """)
-        )
-
-        conn.execute(
-            text("""
-            CREATE TABLE audit_logs (
-                id INTEGER PRIMARY KEY,
-                action VARCHAR(100) NOT NULL,
-                entity_type VARCHAR(50),
-                entity_id VARCHAR(50),
-                user_id INTEGER,
-                old_value TEXT,
-                new_value TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
-            )
-        """)
-        )
-
-        conn.commit()
+    # Create tables using SQLAlchemy Metadata
+    UserModel.__table__.create(bind=engine)
+    CredentialModel.__table__.create(bind=engine)
+    AuthSessionModel.__table__.create(bind=engine)
+    RevokedTokenModel.__table__.create(bind=engine)
+    AuditLogModel.__table__.create(bind=engine)
 
     session_factory = sessionmaker(bind=engine)
     session = session_factory()

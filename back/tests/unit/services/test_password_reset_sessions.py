@@ -5,9 +5,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from robbot.core import security
-from robbot.infra.db.models.auth_session_model import AuthSessionModel
-from robbot.infra.db.models.credential_model import CredentialModel
-from robbot.infra.db.models.user_model import UserModel
+from robbot.infra.persistence.models.audit_log_model import AuditLogModel
+from robbot.infra.persistence.models.auth_session_model import AuthSessionModel
+from robbot.infra.persistence.models.credential_model import CredentialModel
+from robbot.infra.persistence.models.user_model import UserModel
 from robbot.schemas.user import UserCreate
 from robbot.services.auth_services import AuthService
 
@@ -19,6 +20,7 @@ def db_session_instance():
     UserModel.__table__.create(bind=engine)
     CredentialModel.__table__.create(bind=engine)
     AuthSessionModel.__table__.create(bind=engine)
+    AuditLogModel.__table__.create(bind=engine)
     session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
     session = session_local()
     try:
@@ -62,3 +64,4 @@ def test_reset_password_revokes_sessions(db_session):
     # Reload sessions and assert revoked
     sess = db_session.query(AuthSessionModel).filter(AuthSessionModel.user_id == user.id).all()
     assert all(s.is_revoked for s in sess)
+

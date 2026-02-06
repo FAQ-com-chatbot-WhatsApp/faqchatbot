@@ -19,7 +19,10 @@ def auth_service_mock():
     """Create AuthService with mocked database session."""
     # AuthService constructor only accepts db parameter
     # It internally creates all repositories and services
-    return AuthService(db=MagicMock(spec=SQLSession))
+    svc = AuthService(db=MagicMock(spec=SQLSession))
+    svc.session_repo = MagicMock()
+    svc.token_repo = MagicMock()
+    return svc
 
 
 def test_idle_timeout_revokes_inactive_session(auth_service_mock):

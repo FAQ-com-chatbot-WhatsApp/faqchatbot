@@ -11,8 +11,8 @@ import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-from robbot.adapters.repositories.auth_session_repository import AuthSessionRepository
-from robbot.infra.db.models.user_model import UserModel
+from robbot.infra.persistence.repositories.auth_session_repository import AuthSessionRepository
+from robbot.infra.persistence.models.user_model import UserModel
 from robbot.infra.jobs.session_cleanup_job import SessionCleanupJob
 
 
@@ -219,3 +219,4 @@ def test_cleanup_returns_deleted_count(db_session, test_user, mock_sync_session)
     # Verify all were deleted
     all_sessions = repo.get_all_by_user_id(test_user.id)
     assert len(all_sessions) == 0
+

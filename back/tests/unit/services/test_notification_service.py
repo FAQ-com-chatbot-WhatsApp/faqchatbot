@@ -9,7 +9,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from robbot.core.custom_exceptions import NotFoundException
-from robbot.infra.db.models.notification_model import NotificationModel
+from robbot.infra.persistence.models.notification_model import NotificationModel
 from robbot.services.notification_service import NotificationService
 
 
@@ -373,3 +373,4 @@ def test_notification_ordering(notification_service):
 
     # Most recent should be first (if ordering is implemented)
     # This assumes the service/repository implements DESC ordering
+

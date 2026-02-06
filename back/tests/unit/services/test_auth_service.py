@@ -7,14 +7,14 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from robbot.adapters.repositories.credential_repository import CredentialRepository
+from robbot.infra.persistence.repositories.credential_repository import CredentialRepository
 from robbot.core import security
 from robbot.core.custom_exceptions import AuthException
-from robbot.infra.db.models.audit_log_model import AuditLogModel
-from robbot.infra.db.models.auth_session_model import AuthSessionModel
-from robbot.infra.db.models.credential_model import CredentialModel
-from robbot.infra.db.models.revoked_token_model import RevokedTokenModel
-from robbot.infra.db.models.user_model import UserModel
+from robbot.infra.persistence.models.audit_log_model import AuditLogModel
+from robbot.infra.persistence.models.auth_session_model import AuthSessionModel
+from robbot.infra.persistence.models.credential_model import CredentialModel
+from robbot.infra.persistence.models.revoked_token_model import RevokedTokenModel
+from robbot.infra.persistence.models.user_model import UserModel
 from robbot.schemas.user import UserCreate
 from robbot.services.auth_services import AuthService
 
@@ -59,7 +59,7 @@ def test_authenticate_user_success(db_session):
     user = svc.signup(payload)
 
     # Mark email as verified for login tests
-    from robbot.adapters.repositories.credential_repository import CredentialRepository
+    from robbot.infra.persistence.repositories.credential_repository import CredentialRepository
 
     cred_repo = CredentialRepository(db_session)
     cred = cred_repo.get_by_user_id(user.id)
@@ -78,7 +78,7 @@ def test_refresh_rotation_revokes_used_token(db_session):
     user = svc.signup(payload)
 
     # Mark email as verified for login tests
-    from robbot.adapters.repositories.credential_repository import CredentialRepository
+    from robbot.infra.persistence.repositories.credential_repository import CredentialRepository
 
     cred_repo = CredentialRepository(db_session)
     cred = cred_repo.get_by_user_id(user.id)
@@ -219,3 +219,4 @@ def test_audit_log_on_successful_login(db_session):
     assert len(audit_logs) == 1
     assert audit_logs[0].action == "login_success"
     assert audit_logs[0].entity_id == str(user.id)
+

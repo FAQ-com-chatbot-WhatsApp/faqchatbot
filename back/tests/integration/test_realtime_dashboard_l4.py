@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from robbot.adapters.repositories.analytics_repository import AnalyticsRepository
+from robbot.infra.persistence.repositories.analytics_repository import AnalyticsRepository
 
 
 @pytest.fixture
@@ -199,3 +199,4 @@ def test_performance_alerts_overflow(analytics_repo, mock_db_session):
     # Valores extremos devem ser retornados sem falhas
     assert isinstance(result["high_latency_avg_ms"], float)
     assert result["error_rate"] >= 0.0 and result["error_rate"] <= 100.0
+

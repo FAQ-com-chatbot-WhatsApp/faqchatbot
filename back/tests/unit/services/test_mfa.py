@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
-from robbot.adapters.repositories.credential_repository import CredentialRepository
+from robbot.infra.persistence.repositories.credential_repository import CredentialRepository
 from robbot.core.custom_exceptions import AuthException
 from robbot.schemas.auth import SignupRequest
 from robbot.services.auth_services import AuthService
@@ -117,3 +117,4 @@ def test_backup_code_consumption(db_session):
     cred = cred_repo.get_by_user_id(user.id)
     remaining = json.loads(cred.backup_codes)
     assert len(remaining) == 9
+

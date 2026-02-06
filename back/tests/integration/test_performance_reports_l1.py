@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from robbot.adapters.repositories.analytics_repository import AnalyticsRepository
+from robbot.infra.persistence.repositories.analytics_repository import AnalyticsRepository
 
 
 class TestPerformanceReportsL1:
@@ -147,3 +147,4 @@ class TestPerformanceReportsL1:
         assert result["handoff_required"] == 30
         assert result["handoff_rate"] == 30.0
         assert result["auto_resolution_rate"] == 70.0
+

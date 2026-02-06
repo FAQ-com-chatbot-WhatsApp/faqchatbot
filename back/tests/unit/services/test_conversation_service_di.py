@@ -11,10 +11,10 @@ import pytest
 from sqlalchemy.orm import Session
 
 from robbot.core.custom_exceptions import DatabaseError, NotFoundException
-from robbot.domain.enums import ConversationStatus
-from robbot.infra.db.models.conversation_model import ConversationModel
-from robbot.infra.db.models.lead_model import LeadModel
-from robbot.services.conversation_service import ConversationService
+from robbot.domain.shared.enums import ConversationStatus
+from robbot.infra.persistence.models.conversation_model import ConversationModel
+from robbot.infra.persistence.models.lead_model import LeadModel
+from robbot.services.bot.conversation_service import ConversationService
 
 
 @pytest.fixture
@@ -60,7 +60,7 @@ class TestConversationServiceCreation:
         service = ConversationService(db=mock_session)
         assert service.db == mock_session
 
-    @patch("robbot.services.conversation_service.ConversationRepository")
+    @patch("robbot.services.bot.conversation_service.ConversationRepository")
     def test_create_conversation(
         self,
         mock_repo_class,
@@ -83,7 +83,7 @@ class TestConversationServiceCreation:
         assert result.id == "conv-123"
         mock_repo.create.assert_called_once()
 
-    @patch("robbot.services.conversation_service.ConversationRepository")
+    @patch("robbot.services.bot.conversation_service.ConversationRepository")
     def test_get_conversation(
         self,
         mock_repo_class,
@@ -101,7 +101,7 @@ class TestConversationServiceCreation:
         assert result.id == "conv-123"
         mock_repo.get_by_id.assert_called_once_with("conv-123")
 
-    @patch("robbot.services.conversation_service.ConversationRepository")
+    @patch("robbot.services.bot.conversation_service.ConversationRepository")
     def test_get_conversation_not_found(
         self,
         mock_repo_class,
@@ -120,7 +120,7 @@ class TestConversationServiceCreation:
 class TestConversationServiceStatus:
     """Test conversation status transitions."""
 
-    @patch("robbot.services.conversation_service.ConversationRepository")
+    @patch("robbot.services.bot.conversation_service.ConversationRepository")
     def test_close_conversation(
         self,
         mock_repo_class,
@@ -140,7 +140,7 @@ class TestConversationServiceStatus:
         assert result is not None
         mock_repo.update.assert_called_once()
 
-    @patch("robbot.services.conversation_service.ConversationRepository")
+    @patch("robbot.services.bot.conversation_service.ConversationRepository")
     def test_reopen_conversation(
         self,
         mock_repo_class,
@@ -193,7 +193,7 @@ class TestConversationServiceSessionInjection:
 class TestConversationServiceIntegration:
     """Integration tests for conversation service."""
 
-    @patch("robbot.services.conversation_service.ConversationRepository")
+    @patch("robbot.services.bot.conversation_service.ConversationRepository")
     def test_conversation_lifecycle(
         self,
         mock_repo_class,
@@ -240,7 +240,7 @@ class TestConversationServiceErrorHandling:
         with pytest.raises(AttributeError):
             ConversationService(db=None)  # type: ignore
 
-    @patch("robbot.services.conversation_service.ConversationRepository")
+    @patch("robbot.services.bot.conversation_service.ConversationRepository")
     def test_service_handles_db_errors(
         self,
         mock_repo_class,
@@ -259,3 +259,4 @@ class TestConversationServiceErrorHandling:
                 phone_number="+5511999999999",
                 lead=mock_lead_model,
             )
+

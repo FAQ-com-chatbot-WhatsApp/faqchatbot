@@ -2,10 +2,11 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from robbot.infra.db.models.auth_session_model import AuthSessionModel
-from robbot.infra.db.models.credential_model import CredentialModel
-from robbot.infra.db.models.revoked_token_model import RevokedTokenModel
-from robbot.infra.db.models.user_model import UserModel
+from robbot.infra.persistence.models.audit_log_model import AuditLogModel
+from robbot.infra.persistence.models.auth_session_model import AuthSessionModel
+from robbot.infra.persistence.models.credential_model import CredentialModel
+from robbot.infra.persistence.models.revoked_token_model import RevokedTokenModel
+from robbot.infra.persistence.models.user_model import UserModel
 from robbot.schemas.user import UserCreate
 from robbot.services.auth_services import AuthService
 from robbot.services.credential_service import CredentialService
@@ -20,6 +21,7 @@ def db_session_instance():
     CredentialModel.__table__.create(bind=engine)
     RevokedTokenModel.__table__.create(bind=engine)
     AuthSessionModel.__table__.create(bind=engine)
+    AuditLogModel.__table__.create(bind=engine)
     session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
     session = session_local()
     try:
@@ -34,7 +36,7 @@ def test_logout_revokes_tokens_and_session(db_session):
     user = svc.signup(payload)
 
     # Mark email as verified for login tests
-    from robbot.adapters.repositories.credential_repository import CredentialRepository
+    from robbot.infra.persistence.repositories.credential_repository import CredentialRepository
 
     cred_repo = CredentialRepository(db_session)
     cred = cred_repo.get_by_user_id(user.id)
@@ -106,3 +108,4 @@ def test_change_password_updates_credential_and_revokes_sessions(db_session):
     sess = db_session.query(AuthSessionModel).filter(AuthSessionModel.user_id == user.id).all()
     assert len(sess) == 2
     assert all(s.is_revoked for s in sess)
+

@@ -13,9 +13,9 @@ import pytest
 from sqlalchemy.orm import Session
 
 from robbot.core.custom_exceptions import BusinessRuleError, NotFoundException
-from robbot.domain.enums import LeadStatus
-from robbot.infra.db.models.lead_model import LeadModel
-from robbot.services.lead_service import LeadService
+from robbot.domain.shared.enums import LeadStatus
+from robbot.infra.persistence.models.lead_model import LeadModel
+from robbot.services.leads.lead_service import LeadService
 
 
 @pytest.fixture
@@ -53,7 +53,7 @@ class TestLeadServiceCreation:
         assert service.db == mock_session
         assert service.db is not None
 
-    @patch("robbot.services.lead_service.LeadRepository")
+    @patch("robbot.services.leads.lead_service.LeadRepository")
     def test_create_from_conversation(self, mock_repo_class, lead_service: LeadService, mock_lead_model: LeadModel):
         """Test creating lead from conversation."""
         mock_repo = MagicMock()
@@ -73,7 +73,7 @@ class TestLeadServiceCreation:
         assert result.phone_number == "+5511999999999"
         mock_repo.create.assert_called_once()
 
-    @patch("robbot.services.lead_service.LeadRepository")
+    @patch("robbot.services.leads.lead_service.LeadRepository")
     def test_create_from_conversation_already_exists(
         self, mock_repo_class, lead_service: LeadService, mock_lead_model: LeadModel
     ):
@@ -96,7 +96,7 @@ class TestLeadServiceCreation:
 class TestLeadServiceMaturityUpdate:
     """Test lead maturity score updates."""
 
-    @patch("robbot.services.lead_service.LeadRepository")
+    @patch("robbot.services.leads.lead_service.LeadRepository")
     def test_update_maturity_valid_score(self, mock_repo_class, lead_service: LeadService, mock_lead_model: LeadModel):
         """Test updating lead maturity with valid score."""
         mock_repo = MagicMock()
@@ -113,7 +113,7 @@ class TestLeadServiceMaturityUpdate:
         assert result is not None
         mock_repo.update.assert_called_once()
 
-    @patch("robbot.services.lead_service.LeadRepository")
+    @patch("robbot.services.leads.lead_service.LeadRepository")
     def test_update_maturity_invalid_score_too_high(self, mock_repo_class, lead_service: LeadService):
         """Test that invalid score (>100) raises error."""
         mock_repo = MagicMock()
@@ -123,7 +123,7 @@ class TestLeadServiceMaturityUpdate:
         with pytest.raises(BusinessRuleError):
             lead_service.update_maturity(lead_id="lead-123", new_score=150)
 
-    @patch("robbot.services.lead_service.LeadRepository")
+    @patch("robbot.services.leads.lead_service.LeadRepository")
     def test_update_maturity_invalid_score_negative(self, mock_repo_class, lead_service: LeadService):
         """Test that invalid score (<0) raises error."""
         mock_repo = MagicMock()
@@ -133,7 +133,7 @@ class TestLeadServiceMaturityUpdate:
         with pytest.raises(BusinessRuleError):
             lead_service.update_maturity(lead_id="lead-123", new_score=-10)
 
-    @patch("robbot.services.lead_service.LeadRepository")
+    @patch("robbot.services.leads.lead_service.LeadRepository")
     def test_update_maturity_lead_not_found(self, mock_repo_class, lead_service: LeadService):
         """Test that updating non-existent lead raises error."""
         mock_repo = MagicMock()
@@ -177,7 +177,7 @@ class TestLeadServiceSessionInjection:
 class TestLeadServiceIntegration:
     """Integration-like tests with mocked database."""
 
-    @patch("robbot.services.lead_service.LeadRepository")
+    @patch("robbot.services.leads.lead_service.LeadRepository")
     def test_lead_lifecycle(self, mock_repo_class, lead_service: LeadService, mock_lead_model: LeadModel):
         """Test complete lead lifecycle: create -> update maturity -> transition status."""
         mock_repo = MagicMock()
@@ -216,7 +216,7 @@ class TestLeadServiceErrorHandling:
         with pytest.raises(AttributeError):
             LeadService(db=None)  # type: ignore
 
-    @patch("robbot.services.lead_service.LeadRepository")
+    @patch("robbot.services.leads.lead_service.LeadRepository")
     def test_service_handles_database_errors(self, mock_repo_class, lead_service: LeadService):
         """Test that service handles database errors gracefully."""
         mock_repo = MagicMock()
@@ -229,3 +229,4 @@ class TestLeadServiceErrorHandling:
                 phone_number="+5511999999999",
                 name="João Silva",
             )
+

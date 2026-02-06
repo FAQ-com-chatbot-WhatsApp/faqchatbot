@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from robbot.adapters.repositories.analytics_repository import AnalyticsRepository
+from robbot.infra.persistence.repositories.analytics_repository import AnalyticsRepository
 
 
 class TestConversionReportsL2:
@@ -159,3 +159,4 @@ class TestConversionReportsL2:
         # Testa month
         result_month = analytics_repo.get_conversion_trend(start_date, end_date, "month")
         assert isinstance(result_month, list)
+

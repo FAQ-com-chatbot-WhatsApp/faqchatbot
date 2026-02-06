@@ -2,9 +2,10 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from robbot.adapters.repositories.user_repository import UserRepository
-from robbot.infra.db.models.auth_session_model import AuthSessionModel
-from robbot.infra.db.models.user_model import UserModel
+from robbot.infra.persistence.repositories.user_repository import UserRepository
+from robbot.infra.persistence.models.audit_log_model import AuditLogModel
+from robbot.infra.persistence.models.auth_session_model import AuthSessionModel
+from robbot.infra.persistence.models.user_model import UserModel
 from robbot.schemas.user import UserCreate
 from robbot.services.user_service import UserService
 
@@ -15,6 +16,7 @@ def db_session_instance():
     # Minimal tables for this test
     UserModel.__table__.create(bind=engine)
     AuthSessionModel.__table__.create(bind=engine)
+    AuditLogModel.__table__.create(bind=engine)
     session_local = sessionmaker(bind=engine, autocommit=False, autoflush=False)
     session = session_local()
     try:
@@ -77,3 +79,4 @@ def test_unblock_user_sets_active(db_session):
 
     out = service.unblock_user(user.id, reason="appeal_accepted")
     assert out.is_active is True
+
