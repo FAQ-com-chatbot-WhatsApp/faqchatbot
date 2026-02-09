@@ -14,7 +14,7 @@ import httpx
 
 from robbot.config.settings import settings
 from robbot.core.custom_exceptions import WAHAError
-from robbot.services.communication.text_sanitizer import enforce_whatsapp_style
+from robbot.core.text_sanitizer import enforce_whatsapp_style
 
 logger = logging.getLogger(__name__)
 
