@@ -50,7 +50,7 @@ from robbot.schemas.metrics_schemas import (
     TimeToConversionExtendedResponse,
 )
 from robbot.services.analytics.metrics_service import MetricsService
-from robbot.services.export_service import ExportService
+from robbot.services.infrastructure.export_service import ExportService
 
 settings = get_settings()
 router = APIRouter()
