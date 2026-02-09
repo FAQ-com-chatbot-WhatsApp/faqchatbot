@@ -18,7 +18,7 @@ from robbot.schemas.content import (
     ContentUpdateMedia,
     ContentUpdateText,
 )
-from robbot.services.content_service import ContentService
+from robbot.services.content.content_service import ContentService
 
 router = APIRouter()
 
@@ -123,7 +123,7 @@ def generate_description(
 
     Requires authentication.
     """
-    from robbot.services.description_service import DescriptionService
+    from robbot.services.content.description_service import DescriptionService
 
     service = DescriptionService(db)
     result = service.generate_description(str(content_id), use_gemini_vision)
