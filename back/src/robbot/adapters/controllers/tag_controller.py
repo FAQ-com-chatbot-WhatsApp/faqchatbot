@@ -11,7 +11,7 @@ from robbot.infra.persistence.repositories.conversation_tag_repository import Co
 from robbot.api.v1.dependencies import get_current_user, get_db
 from robbot.domain.shared.enums import Role
 from robbot.infra.persistence.models.user_model import UserModel
-from robbot.services.tag_service import TagService
+from robbot.services.communication.tag_service import TagService
 
 router = APIRouter()
 # ===== SCHEMAS =====
