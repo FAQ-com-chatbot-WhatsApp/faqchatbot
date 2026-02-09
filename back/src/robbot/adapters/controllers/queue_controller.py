@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from robbot.api.v1.dependencies import get_current_user, get_db
-from robbot.services.queue_service import get_queue_service
+from robbot.services.infrastructure.queue_service import get_queue_service
 
 logger = logging.getLogger(__name__)
 
