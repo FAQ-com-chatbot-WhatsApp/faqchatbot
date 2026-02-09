@@ -27,10 +27,8 @@ class TranscriptionService:
         """Initialize Faster-Whisper model (lazy loading)."""
         self.model = None
         # Faster-Whisper models: tiny, base, small, medium, large, large-v2, large-v3
-        # Ignore OpenAI API model names like "whisper-1"
-        whisper_config = getattr(settings, "WHISPER_MODEL", "base")
-        valid_models = ["tiny", "base", "small", "medium", "large", "large-v2", "large-v3"]
-        self.model_size = whisper_config if whisper_config in valid_models else "base"
+        # Using 'base' model (good balance between speed and accuracy)
+        self.model_size = "base"
         logger.info("[SUCCESS] TranscriptionService initialized (model=%s, local inference)", self.model_size)
 
     def _load_model(self):
