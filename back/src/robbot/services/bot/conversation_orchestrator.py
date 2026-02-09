@@ -22,7 +22,7 @@ from robbot.services.bot.conversation_service import ConversationService
 from robbot.services.bot.conversation_pipeline import ConversationPipeline, PipelineState
 from robbot.services.bot.response_dispatcher import ResponseDispatcher
 from robbot.services.ai.persistent_memory import PersistentMemory
-from robbot.services.communication.text_sanitizer import enforce_whatsapp_style
+from robbot.core.text_sanitizer import enforce_whatsapp_style
 from robbot.services.communication.transcription_service import TranscriptionService
 
 logger = logging.getLogger(__name__)
@@ -205,4 +205,19 @@ class ConversationOrchestrator:
     def _normalize_response_text(self, text: Any) -> str:
         # Reuse existing logic but simplified
         return enforce_whatsapp_style(str(text), max_paragraphs=2)
+
+
+# =========================================================================
+# Factory
+# =========================================================================
+
+_orchestrator = None
+
+
+def get_conversation_orchestrator() -> ConversationOrchestrator:
+    """Singleton factory for ConversationOrchestrator."""
+    global _orchestrator
+    if _orchestrator is None:
+        _orchestrator = ConversationOrchestrator()
+    return _orchestrator
 
