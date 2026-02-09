@@ -8,7 +8,7 @@ from rq import get_current_job
 
 from robbot.config.settings import get_settings
 from robbot.infra.redis.client import get_redis_client
-from robbot.services.queue_service import get_queue_service
+from robbot.services.infrastructure.queue_service import get_queue_service
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
