@@ -216,12 +216,9 @@ services:
       AUTOSCALER_SCALE_DOWN_THRESHOLD: ${AUTOSCALER_SCALE_DOWN_THRESHOLD:-0}
       AUTOSCALER_IDLE_TIME_THRESHOLD: ${AUTOSCALER_IDLE_TIME_THRESHOLD:-300}
 
-
-
     # Volumes para persistência
     volumes:
       - chroma_data:/app/data/chroma
-     # - ./src:/app/src # Hot-reload em desenvolvimento
 
     depends_on:
       db:
@@ -273,10 +270,6 @@ services:
       SERVICE_NAME: "polling-worker"
       LOG_COLOR: "true"
       WAHA_POLLING_INTERVAL: ${WAHA_POLLING_INTERVAL:-10}
-
-    # DESENVOLVIMENTO: Volume bind permite hot-reload
-    volumes:
-      - ./src:/app/src
 
     command: python -m robbot.workers.polling_worker
 
