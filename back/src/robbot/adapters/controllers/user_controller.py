@@ -8,7 +8,7 @@ from robbot.core.custom_exceptions import NotFoundException
 from robbot.infra.persistence.models.user_model import UserModel
 from robbot.schemas.auth import BlockUserRequest, UnblockUserRequest
 from robbot.schemas.user import MessageResponse, UserList, UserOut, UserUpdate
-from robbot.services.user_service import UserService
+from robbot.services.auth.user_service import UserService
 
 router = APIRouter()
 
