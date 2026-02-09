@@ -39,7 +39,7 @@ from robbot.schemas.waha import (
     SessionStatus,
     SetPresenceRequest,
 )
-from robbot.services.waha_service import WAHAService
+from robbot.services.communication.waha_service import WAHAService
 
 router = APIRouter()
 
