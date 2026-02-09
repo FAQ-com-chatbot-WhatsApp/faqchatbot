@@ -46,7 +46,7 @@ def poll_waha_messages(**_kwargs):
         messages_processed = 0
         messages_skipped = 0
 
-        with httpx.Client(timeout=30.0) as client:
+        with httpx.Client(timeout=10.0) as client:
             chat_ids: list[str] = []
             allowed_senders: set[str] = set()  # LIDs e phones permitidos para validação
 
@@ -139,28 +139,40 @@ def poll_waha_messages(**_kwargs):
             # Processar cada chat
             for chat_id in chat_ids:
                 resolved_chat_id = chat_id
-                if chat_id.endswith("@c.us"):
+                
+                # Se já é um LID válido, não precisa resolver novamente
+                if chat_id.endswith("@lid"):
+                    logger.debug("[POLLING] Chat ID já é LID: %s", chat_id)
+                    resolved_chat_id = chat_id
+                elif chat_id.endswith("@c.us"):
+                    # Tentar resolver @c.us para @lid
                     phone = chat_id.split("@")[0]
                     lids_url = f"{settings.WAHA_URL}/api/{settings.WAHA_SESSION_NAME}/lids/pn/{phone}"
-                    lids_response = client.get(lids_url, headers=headers)
-                    if lids_response.status_code == 200:
-                        lid_payload = lids_response.json()
-                        resolved_chat_id = lid_payload.get("lid")
-                        if not resolved_chat_id:
+                    try:
+                        lids_response = client.get(lids_url, headers=headers)
+                        if lids_response.status_code == 200:
+                            lid_payload = lids_response.json()
+                            resolved_lid = lid_payload.get("lid")
+                            if resolved_lid:
+                                resolved_chat_id = resolved_lid
+                                logger.debug(
+                                    "[POLLING] Resolvido %s -> %s",
+                                    chat_id,
+                                    resolved_lid,
+                                )
+                            else:
+                                logger.debug(
+                                    "[POLLING] LID vazio para %s; usando chat_id original",
+                                    chat_id,
+                                )
+                        else:
                             logger.debug(
-                                "[POLLING] LID vazio para %s; ignorando chat",
+                                "[POLLING] LID não encontrado para %s (status=%s); usando chat_id original",
                                 chat_id,
-                                extra={"chat_id": chat_id},
+                                lids_response.status_code,
                             )
-                            continue
-                    else:
-                        logger.debug(
-                            "[POLLING] LID não encontrado para %s (status=%s)",
-                            chat_id,
-                            lids_response.status_code,
-                            extra={"chat_id": chat_id},
-                        )
-                        continue
+                    except Exception as e:
+                        logger.warning("[POLLING] Erro ao resolver LID para %s: %s", chat_id, e)
 
                 messages_url = f"{settings.WAHA_URL}/api/{settings.WAHA_SESSION_NAME}/chats/{resolved_chat_id}/messages"
                 params = {"limit": 10}
@@ -176,12 +188,20 @@ def poll_waha_messages(**_kwargs):
                     continue
 
                 if msg_response.status_code >= 500:
-                    logger.error(
-                        "[POLLING] WAHA retornou %s ao buscar mensagens: %s",
-                        msg_response.status_code,
-                        msg_response.text,
-                        extra={"status": msg_response.status_code, "chat_id": chat_id},
-                    )
+                    error_text = msg_response.text
+                    # Chat não encontrado é esperado (chat deletado/arquivado)
+                    if "chat not found" in error_text.lower() or "findchat" in error_text.lower():
+                        logger.debug(
+                            "[POLLING] Chat não encontrado no WAHA (deletado/arquivado): %s",
+                            resolved_chat_id,
+                        )
+                    else:
+                        logger.warning(
+                            "[POLLING] WAHA retornou %s ao buscar mensagens de %s: %s",
+                            msg_response.status_code,
+                            resolved_chat_id,
+                            error_text[:200],  # Limitar tamanho do log
+                        )
                     continue
 
                 msg_response.raise_for_status()
