@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from robbot.api.v1.dependencies import get_current_user, get_db
 from robbot.core.custom_exceptions import NotFoundException
-from robbot.services.notification_service import NotificationService
+from robbot.services.communication.notification_service import NotificationService
 
 router = APIRouter()
 
