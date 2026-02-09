@@ -33,19 +33,28 @@ The backend is built with **FastAPI** and implements a hexagonal-inspired layout
 | **API / Routers** | `src/robbot/api/v1` | Entry points, path routing, and HTTP status codes. |
 | **Controllers** | `src/robbot/adapters/controllers` | Request/Response orchestration, input validation (Pydantic), and calling services. |
 | **Services** | `src/robbot/services/` | **Core Business Logic Coordinator**. Organized by domain context: |
+| ↳ AI | `services/ai/` | Persistent memory, intent detection, context building, response generation. |
+| ↳ Analytics | `services/analytics/` | Metrics calculation, performance tracking, and reporting. |
+| ↳ Auth | `services/auth/` | Authentication, authorization, MFA, and session management. |
 | ↳ Bot | `services/bot/` | Conversation orchestration, pipeline, and state management. |
-| ↳ Leads | `services/leads/` | Lead management, scoring, and conversion logic. |
-| ↳ AI | `services/ai/` | Persistent memory, intent detection, context building. |
 | ↳ Communication | `services/communication/` | Transcription, text sanitization, message processing. |
-| ↳ Handoff | `services/handoff/` | Human-bot transition management. |
+| ↳ Content | `services/content/` | Content management, playbooks, and context items. |
+| ↳ Handoff | `services/handoff/` | Human-bot transition management and escalation. |
+| ↳ Infrastructure | `services/infrastructure/` | Queue management, worker coordination, and WAHA integration. |
+| ↳ Leads | `services/leads/` | Lead management, scoring, and conversion logic. |
 | **Domain** | `src/robbot/domain/` | **Rich Domain Entities & Value Objects**: |
 | ↳ Leads | `domain/leads/` | Lead entity, LeadMapper, status rules. |
 | ↳ Conversations | `domain/conversations/` | Conversation entity, ConversationMapper. |
 | ↳ Shared | `domain/shared/` | Enums, Value Objects (LeadScore, PhoneNumber, SpinPhase). |
 | **Repositories** | `src/robbot/infra/persistence/repositories/` | Data access abstraction. Maps SQL models to domain. |
 | **Infrastructure** | `src/robbot/infra/` | External integrations and persistence: |
-| ↳ Persistence | `infra/persistence/models/` | SQLAlchemy database models. |
-| ↳ Integrations | `infra/integrations/` | WAHA, LLM clients, Vector store (Chroma). |
+| ↳ Persistence | `infra/persistence/` | Repositories and database access layer. |
+| ↳ DB | `infra/db/` | Database configuration and session management. |
+| ↳ Integrations | `infra/integrations/` | WAHA, LLM clients, external API integrations. |
+| ↳ Jobs | `infra/jobs/` | Background job definitions and scheduling. |
+| ↳ Redis | `infra/redis/` | Redis client and caching layer. |
+| ↳ VectorDB | `infra/vectordb/` | Vector store (Chroma) for semantic search. |
+| ↳ Migrations | `infra/migrations/` | Database migration utilities. |
 
 ### Dependency Injection (DI)
 The backend uses a central container to manage dependencies. This allows for:
