@@ -10,9 +10,9 @@ class Settings(BaseSettings):
     """Core application configuration with sane defaults."""
 
     # Development Mode (filter messages by phone number)
-    DEV_MODE: bool = Field(default=False, description="Enable dev mode (only respond to DEV_PHONE_NUMBER)")
-    DEV_PHONE_NUMBER: str | None = Field(
-        default=None, description="Phone number to respond to in dev mode (e.g., 5511999999999)"
+    DEV_MODE: bool = Field(default=False, description="Enable dev mode (only respond to DEV_PHONE_NUMBERS)")
+    DEV_PHONE_NUMBERS: str | None = Field(
+        default=None, description="Phone numbers to respond to in dev mode (e.g., 5511999999999,5511888888888)"
     )
 
     # Use Postgres via Docker for local/dev. Provide connection via env.
@@ -71,10 +71,6 @@ class Settings(BaseSettings):
     LLM_PRIMARY_PROVIDER: str = Field(default="groq", description="Primary LLM provider (groq or gemini)")
     LLM_ENABLE_FALLBACK: bool = Field(default=True, description="Enable fallback to secondary provider")
     LLM_TIMEOUT: int = Field(default=60, description="LLM request timeout in seconds")
-
-    # OpenAI (Whisper for transcription)
-    OPENAI_API_KEY: str | None = Field(default=None)
-    WHISPER_MODEL: str = Field(default="whisper-1")
 
     # WAHA (WhatsApp HTTP API)
     WAHA_URL: str = Field(default="http://waha:3000")
@@ -148,18 +144,18 @@ class Settings(BaseSettings):
     @property
     def dev_phone_list(self) -> list[str]:
         """
-        Convert DEV_PHONE_NUMBER to list format for compatibility.
+        Convert DEV_PHONE_NUMBERS to list format for compatibility.
         
         Supports:
         - Single phone: "555198098876" → ["555198098876"]
         - Multiple phones: "555198098876,555191234567" → ["555198098876", "555191234567"]
         - Empty: None or "" → []
         """
-        if not self.DEV_PHONE_NUMBER:
+        if not self.DEV_PHONE_NUMBERS:
             return []
         
         # Split by comma and strip whitespace
-        phones = [p.strip() for p in str(self.DEV_PHONE_NUMBER).split(",") if p.strip()]
+        phones = [p.strip() for p in str(self.DEV_PHONE_NUMBERS).split(",") if p.strip()]
         return phones
 
 
