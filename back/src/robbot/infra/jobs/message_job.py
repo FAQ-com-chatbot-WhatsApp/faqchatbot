@@ -236,7 +236,7 @@ class MessageProcessingJob(BaseJob):
     def _persist_outbound_message(self) -> dict[str, Any]:
         """Persistir mensagem outbound."""
         try:
-            from robbot.services.bot.conversation_orchestrator import enforce_whatsapp_style
+            from robbot.core.text_sanitizer import enforce_whatsapp_style
 
             with get_sync_session() as db:
                 conv_msg_repo = ConversationMessageRepository(db)
