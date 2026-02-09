@@ -1,114 +1,64 @@
-# ==================================
-# Version Control
-# ==================================
-.git
-.gitignore
-.github/
-
-# ==================================
-# Python Cache/Artifacts
-# ==================================
+# Python cache
 __pycache__/
 *.py[cod]
 *$py.class
 *.pyc
-*.pyo
-*.pyd
-*.so
-*.egg-info
-*.egg
-build/
-dist/
 
-# ==================================
-# Virtual Environments
-# ==================================
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
 .venv/
-.env/
 venv/
 ENV/
 env/
 
-# ==================================
-# Tool Caches
-# ==================================
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-htmlcov/
-.tox/
-.coverage
-coverage.xml
-
-# ==================================
-# Environment/Config
-# ==================================
-.env
-.env.local
-.env.production
-.env.*.local
-*.local
-
-# ==================================
-# Logs
-# ==================================
-*.log
-logs/
-*.log.*
-
-# ==================================
-# Database
-# ==================================
-*.db
-*.sqlite
-*.sqlite3
-dump.rdb
-
-# ==================================
-# IDE
-# ==================================
+# IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
-# ==================================
-# OS
-# ==================================
-.DS_Store
-Thumbs.db
-*.bak
-*.tmp
-*.temp
+# Logs
+*.log
+logs/
 
-# ==================================
-# Documentation (not needed in container)
-# ==================================
-README.md
+# Git
+.git/
+.gitignore
+
+# Documentation
 docs/
 *.md
+README*
 
-# ==================================
-# Development Scripts
-# ==================================
-auto-commit.sh
-auto-commit.ps1
-
-# ==================================
-# Testing
-# ==================================
+# Tests
 tests/
-pytest.ini
+test_*.py
+*_test.py
 
-# ==================================
+# Development files
+.env.example
+.env.local
+*.bak
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
+
 # Docker
-# ==================================
-Dockerfile*
-docker-compose*.yml
 .dockerignore
+docker-compose*.yml
+Dockerfile*
 
-# ==================================
-# Railway
-# ==================================
-railway.json
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Misc
+*.swp
+*~
