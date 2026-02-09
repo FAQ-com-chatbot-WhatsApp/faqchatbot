@@ -13,7 +13,7 @@ import logging
 from typing import Any
 
 from robbot.core.custom_exceptions import ExternalServiceError, VectorDBError
-from robbot.services.context_tools import (
+from robbot.services.ai.context_tools import (
     CONTEXT_TOOLS_DECLARATIONS,
     execute_context_tool,
 )
