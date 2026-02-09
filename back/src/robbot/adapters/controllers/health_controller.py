@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from robbot.api.v1.dependencies import get_db
 from robbot.schemas.health import HealthOut
-from robbot.services.health_service import HealthService
+from robbot.services.infrastructure.health_service import HealthService
 
 router = APIRouter()
 
