@@ -20,7 +20,7 @@ from robbot.infra.db.session import get_sync_session
 from robbot.services.ai.answered_questions import AnsweredQuestionsMemory
 from robbot.services.bot.conversation_service import ConversationService
 from robbot.services.bot.conversation_pipeline import ConversationPipeline, PipelineState
-from robbot.services.response_dispatcher import ResponseDispatcher
+from robbot.services.bot.response_dispatcher import ResponseDispatcher
 from robbot.services.ai.persistent_memory import PersistentMemory
 from robbot.services.communication.text_sanitizer import enforce_whatsapp_style
 from robbot.services.communication.transcription_service import TranscriptionService
