@@ -143,7 +143,7 @@ class MessageProcessor:
             ConversationMessageModel: Mensagem salva com timestamp UTC
         """
         try:
-            from robbot.services.communication.text_sanitizer import enforce_whatsapp_style
+            from robbot.core.text_sanitizer import enforce_whatsapp_style
 
             text = enforce_whatsapp_style(text)
             repo = ConversationMessageRepository(session)
