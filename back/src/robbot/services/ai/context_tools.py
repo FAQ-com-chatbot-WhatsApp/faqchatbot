@@ -15,7 +15,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from robbot.services.bot.conversation_service import ConversationService
-from robbot.services.content_service import ContentService
+from robbot.services.content.content_service import ContentService
 from robbot.services.ai.context_service import ContextService
 
 logger = logging.getLogger(__name__)
