@@ -50,8 +50,7 @@ class SessionStatus(str, Enum):
 
 class LLMProvider(str, Enum):
     GEMINI = "GEMINI"
-    OPENAI = "OPENAI"
-    ANTHROPIC = "ANTHROPIC"
+    GROQ = "GROQ"
 
 
 class InteractionType(str, Enum):
