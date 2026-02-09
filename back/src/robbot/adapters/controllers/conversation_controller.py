@@ -206,7 +206,7 @@ def add_tags_to_conversation(
 ):
     """Add tags to a conversation by name (test compatibility)."""
     from robbot.infra.persistence.repositories.conversation_repository import ConversationRepository
-    from robbot.services.tag_service import TagService
+    from robbot.services.communication.tag_service import TagService
 
     conv_repo = ConversationRepository(db)
     conversation = conv_repo.get_by_id(conversation_id)
