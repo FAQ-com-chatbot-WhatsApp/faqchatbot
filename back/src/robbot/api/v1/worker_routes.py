@@ -11,7 +11,7 @@ from robbot.schemas.worker import (
     ScaleWorkersRequest,
     WorkerAnalytics,
 )
-from robbot.services.worker_analytics_service import WorkerAnalyticsService
+from robbot.services.infrastructure.worker_analytics_service import WorkerAnalyticsService
 
 logger = logging.getLogger(__name__)
 
