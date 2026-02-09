@@ -11,7 +11,7 @@ import redis
 
 from robbot.infra.integrations.vector_store.chroma_vector_store import ChromaVectorStore
 from robbot.infra.integrations.llm.llm_client import get_llm_client
-from robbot.adapters.external.waha_integration import WAHAIntegration
+from robbot.infra.integrations.waha.waha_integration import WAHAIntegration
 from robbot.config.prompt_loader import PromptLoader
 from robbot.config.settings import Settings
 from robbot.core.interfaces import LLMProvider, VectorStore, WAHAClientInterface
