@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from robbot.infra.persistence.models.credential_model import CredentialModel
-from robbot.services.credential_service import CredentialService
+from robbot.services.auth.credential_service import CredentialService
 
 
 @pytest.fixture()

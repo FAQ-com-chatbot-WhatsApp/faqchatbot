@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session as SQLSession
 
 from robbot.core.custom_exceptions import AuthException
 from robbot.schemas.token import Token
-from robbot.services.auth_services import AuthService
+from robbot.services.auth.auth_services import AuthService
 
 
 @pytest.fixture

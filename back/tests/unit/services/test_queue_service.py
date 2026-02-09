@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from robbot.core.custom_exceptions import QueueError
-from robbot.services.queue_service import QueueService
+from robbot.services.infrastructure.queue_service import QueueService
 
 
 @pytest.fixture()

@@ -10,8 +10,8 @@ from sqlalchemy.orm import sessionmaker
 from robbot.infra.persistence.repositories.credential_repository import CredentialRepository
 from robbot.core.custom_exceptions import AuthException
 from robbot.schemas.auth import SignupRequest
-from robbot.services.auth_services import AuthService
-from robbot.services.mfa_service import MfaService
+from robbot.services.auth.auth_services import AuthService
+from robbot.services.auth.mfa_service import MfaService
 
 
 @pytest.fixture

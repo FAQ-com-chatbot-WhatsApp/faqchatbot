@@ -10,7 +10,7 @@ from robbot.infra.persistence.models.auth_session_model import AuthSessionModel
 from robbot.infra.persistence.models.credential_model import CredentialModel
 from robbot.infra.persistence.models.user_model import UserModel
 from robbot.schemas.user import UserCreate
-from robbot.services.auth_services import AuthService
+from robbot.services.auth.auth_services import AuthService
 
 
 @pytest.fixture()

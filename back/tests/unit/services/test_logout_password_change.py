@@ -8,8 +8,8 @@ from robbot.infra.persistence.models.credential_model import CredentialModel
 from robbot.infra.persistence.models.revoked_token_model import RevokedTokenModel
 from robbot.infra.persistence.models.user_model import UserModel
 from robbot.schemas.user import UserCreate
-from robbot.services.auth_services import AuthService
-from robbot.services.credential_service import CredentialService
+from robbot.services.auth.auth_services import AuthService
+from robbot.services.auth.credential_service import CredentialService
 
 
 @pytest.fixture()

@@ -7,7 +7,7 @@ from robbot.infra.persistence.models.audit_log_model import AuditLogModel
 from robbot.infra.persistence.models.auth_session_model import AuthSessionModel
 from robbot.infra.persistence.models.user_model import UserModel
 from robbot.schemas.user import UserCreate
-from robbot.services.user_service import UserService
+from robbot.services.auth.user_service import UserService
 
 
 @pytest.fixture()

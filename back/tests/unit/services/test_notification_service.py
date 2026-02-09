@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 
 from robbot.core.custom_exceptions import NotFoundException
 from robbot.infra.persistence.models.notification_model import NotificationModel
-from robbot.services.notification_service import NotificationService
+from robbot.services.communication.notification_service import NotificationService
 
 
 @pytest.fixture()

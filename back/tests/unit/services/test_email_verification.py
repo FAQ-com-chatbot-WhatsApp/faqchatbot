@@ -15,8 +15,8 @@ from robbot.infra.persistence.repositories.credential_repository import Credenti
 from robbot.config.settings import settings
 from robbot.core.custom_exceptions import AuthException
 from robbot.schemas.auth import SignupRequest
-from robbot.services.auth_services import AuthService
-from robbot.services.email_verification_service import EmailVerificationService
+from robbot.services.auth.auth_services import AuthService
+from robbot.services.auth.email_verification_service import EmailVerificationService
 
 from robbot.infra.persistence.models.user_model import UserModel
 from robbot.infra.persistence.models.credential_model import CredentialModel

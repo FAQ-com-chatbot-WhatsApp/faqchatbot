@@ -20,7 +20,7 @@ from robbot.infra.persistence.models.conversation_model import ConversationModel
 from robbot.infra.persistence.models.lead_model import LeadModel
 from robbot.services.conversation_state_machine import ConversationStateMachine
 from robbot.services.message_pipeline import MessagePipeline
-from robbot.services.response_generator import ResponseGenerator
+from robbot.services.bot.response_generator import ResponseGenerator
 
 
 @pytest.fixture
