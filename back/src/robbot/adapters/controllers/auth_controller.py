@@ -42,7 +42,7 @@ from robbot.schemas.mfa import (
     MfaVerifyResponse,
 )
 from robbot.schemas.user import UserOut
-from robbot.services.auth_services import AuthService
+from robbot.services.auth.auth_services import AuthService
 
 router = APIRouter()
 settings = get_settings()
@@ -520,7 +520,7 @@ async def verify_email(token: str, db: Session = Depends(get_db)):
     Redireciona para a página de login (/signin) após sucesso.
     Em caso de erro, exibe mensagem amigável em português.
     """
-    from robbot.services.email_verification_service import EmailVerificationService
+    from robbot.services.auth.email_verification_service import EmailVerificationService
 
     service = EmailVerificationService(db)
     try:
@@ -560,7 +560,7 @@ async def resend_verification_email(payload: EmailResendRequest, db: Session = D
     Raises:
         HTTPException: Se usuário não encontrado, email já verificado, ou rate limited
     """
-    from robbot.services.email_verification_service import EmailVerificationService
+    from robbot.services.auth.email_verification_service import EmailVerificationService
 
     service = EmailVerificationService(db)
     try:
@@ -592,7 +592,7 @@ def setup_mfa(
     Raises:
         HTTPException: Se usuário não encontrado ou MFA já habilitado
     """
-    from robbot.services.mfa_service import MfaService
+    from robbot.services.auth.mfa_service import MfaService
 
     service = MfaService(db)
     try:
@@ -629,7 +629,7 @@ def verify_mfa_code(
     Raises:
         HTTPException: Se MFA não habilitado ou código inválido
     """
-    from robbot.services.mfa_service import MfaService
+    from robbot.services.auth.mfa_service import MfaService
 
     service = MfaService(db)
     try:
@@ -675,7 +675,7 @@ def disable_mfa(
     Raises:
         HTTPException: Se MFA não habilitado ou código inválido
     """
-    from robbot.services.mfa_service import MfaService
+    from robbot.services.auth.mfa_service import MfaService
 
     service = MfaService(db)
     try:
