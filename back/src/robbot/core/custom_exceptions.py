@@ -48,7 +48,7 @@ class QueueError(RobbotError):
 
 
 class LLMError(ExternalServiceError):
-    """Erros específicos de LLM (Gemini, OpenAI, etc)."""
+    """Erros específicos de LLM (Gemini, Groq, etc)."""
 
     def __init__(self, service: str = "LLM", message: str = "", original_error: Exception | None = None):
         super().__init__(service, message, original_error)
