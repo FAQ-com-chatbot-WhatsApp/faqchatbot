@@ -10,7 +10,7 @@ from robbot.api.v1.dependencies import get_db
 from robbot.config.settings import get_settings
 from robbot.core.custom_exceptions import ExternalServiceError, QueueError
 from robbot.schemas.waha import WebhookLogOut, WebhookPayload
-from robbot.services.queue_service import get_queue_service
+from robbot.services.infrastructure.queue_service import get_queue_service
 
 router = APIRouter()
 
