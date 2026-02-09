@@ -22,7 +22,7 @@ import subprocess
 import sys
 
 from robbot.core.logging_setup import configure_logging
-from robbot.services.worker_analytics_service import WorkerAnalyticsService
+from robbot.services.infrastructure.worker_analytics_service import WorkerAnalyticsService
 
 logger = logging.getLogger("autoscaler")
 
@@ -34,7 +34,7 @@ def execute_scaling(target_workers: int) -> bool:
         # Use 'up -d --no-recreate --scale worker=N' to ONLY scale worker service
         # --no-recreate prevents restarting other services (including autoscaler itself)
         cmd = [compose_bin, "up", "-d", "--no-recreate", "--scale", f"worker={target_workers}", "worker"]
-        cwd = "/app/back"
+        cwd = "/app"
 
         result = subprocess.run(
             cmd,
