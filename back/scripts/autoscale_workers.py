@@ -41,7 +41,7 @@ def execute_scaling(target_workers: int) -> bool:
             capture_output=True,
             text=True,
             timeout=60,
-            cwd=cwd,
+            cwd="/app/back"
         )
 
         if result.returncode == 0:
