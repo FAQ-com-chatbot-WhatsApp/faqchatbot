@@ -64,8 +64,13 @@ def poll_waha_messages(**_kwargs):
                     cycle_senders_checked.add(sender)
                     # O filter service fará a validação real abaixo silenciosamente
                 
-                # allowed_senders é passado como set dos LIDs/Phones alvo atuais para validação estrita
-                allowed_senders = set(target_chats) if settings.DEV_MODE else None
+                # DEV Mode: Sender filtering is handled at the STRATEGY level (target_chats).
+                # The strategy already resolves allowed phones → LIDs, so we only poll
+                # from those specific chats. Passing allowed_senders here would fail because
+                # WAHA returns senders in LID format (e.g. 24988337893388@lid) which can't
+                # match raw phone numbers (e.g. 555191628223).
+                # In PROD, no sender restriction is needed (all chats are polled).
+                allowed_senders = None
                 
                 if not message_filter.should_process(message, allowed_senders=allowed_senders):
                     messages_skipped += 1
@@ -106,13 +111,19 @@ def poll_waha_messages(**_kwargs):
                 except Exception as e:
                     logger.error("[POLLING] Falha ao enfileirar mensagem %s: %s", message.get("id"), e)
 
-        # Log Final do Ciclo (Apenas se houve atividade relevante ou em DEBUG)
+        # Log Final do Ciclo (Sempre para diagnóstico)
         if messages_processed > 0:
             logger.info(
                 "[POLLING] Ciclo concluído. Processadas: %d | Ignoradas: %d",
                 messages_processed,
                 messages_skipped
             )
+        elif messages_skipped > 0:
+            logger.debug(
+                "[POLLING] Ciclo sem novas mensagens. Ignoradas: %d (dedup/filtro)",
+                messages_skipped
+            )
+        # Se ambos são 0, nenhuma mensagem foi retornada pela API
             
         return {
             "status": "success",
