@@ -48,15 +48,19 @@ def poll_waha_messages(**_kwargs):
         # 3. Iterar Chats
         for chat_id in target_chats:
             # Busca mensagens (Já trata erros 404/422 internamente no service)
-            messages = metadata_service.get_messages_from_chat(chat_id, limit=10)
+            # Aumentado limit de 10 -> 50 para evitar perder mensagens se houver muito tráfego
+            messages = metadata_service.get_messages_from_chat(chat_id, limit=50)
             
             # Conjunto para evitar logs repetidos de validação por remetente neste ciclo específico
             cycle_senders_checked = set()
 
+            # 4. Iterate messages
+            # REMOVED reversed() and early break optimization to ensure reliability.
+            # We process all messages in the batch (limit=10) to guarantee no new message is skipped
+            # regardless of the API sort order (New->Old or Old->New).
+            # Performance impact is minimal for small limits.
             for message in messages:
-                # 4. Filtragem e Validação (Regras de Negócio)
-                # No DEV Mode, precisamos validar se o remetente REAL da mensagem é permitido
-                # (ex: mensagem em grupo ou comportamento anômalo)
+                # 4a. Filtragem e Validação (Regras de Negócio)
                 
                 # Otimização de Log: Só logar verificação uma vez por remetente por ciclo
                 sender = message.get("from")
@@ -64,16 +68,12 @@ def poll_waha_messages(**_kwargs):
                     cycle_senders_checked.add(sender)
                     # O filter service fará a validação real abaixo silenciosamente
                 
-                # DEV Mode: Sender filtering is handled at the STRATEGY level (target_chats).
-                # The strategy already resolves allowed phones → LIDs, so we only poll
-                # from those specific chats. Passing allowed_senders here would fail because
-                # WAHA returns senders in LID format (e.g. 24988337893388@lid) which can't
-                # match raw phone numbers (e.g. 555191628223).
-                # In PROD, no sender restriction is needed (all chats are polled).
+                # DEV Mode logic...
                 allowed_senders = None
                 
                 if not message_filter.should_process(message, allowed_senders=allowed_senders):
                     messages_skipped += 1
+                    # Removed early break to strictly process all messages
                     continue
 
                 # 5. Processamento (Enfileiramento)
