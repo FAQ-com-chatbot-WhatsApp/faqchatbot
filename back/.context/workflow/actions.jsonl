@@ -77,3 +77,7 @@
 {"timestamp":"2026-02-10T16:35:39.595Z","tool":"context","action":"fillSingle","status":"success","details":{"params":{"action":"fillSingle","repoPath":"d:\\_projects\\clinica_go\\back","filePath":"d:\\_projects\\clinica_go\\back\\.context\\plans\\sync-alembic-with-manual-schema.md"},"result":{"success":true}}}
 {"timestamp":"2026-02-10T16:36:05.992Z","tool":"context","action":"listToFill","status":"success","details":{"params":{"action":"listToFill","repoPath":"d:\\_projects\\clinica_go\\back","target":"all"},"result":{"success":true}}}
 {"timestamp":"2026-02-10T16:36:14.357Z","tool":"context","action":"fillSingle","status":"success","details":{"params":{"action":"fillSingle","repoPath":"d:\\_projects\\clinica_go\\back","filePath":"d:\\_projects\\clinica_go\\back\\.context\\docs\\database_drift.md"},"result":{"success":true}}}
+{"timestamp":"2026-02-10T17:05:56.823Z","tool":"skill","action":"list","status":"success","details":{"params":{"action":"list"},"result":{"success":true}}}
+{"timestamp":"2026-02-10T17:06:43.271Z","tool":"skill","action":"fill","status":"success","details":{"params":{"action":"fill","includeBuiltIn":true},"result":{"success":true}}}
+{"timestamp":"2026-02-10T17:06:55.495Z","tool":"skill","action":"list","status":"success","details":{"params":{"action":"list"},"result":{"success":true}}}
+{"timestamp":"2026-02-10T17:11:48.634Z","tool":"explore","action":"list","status":"success","details":{"params":{"action":"list","pattern":"middleware.*"},"result":{"success":true,"count":0}}}
