@@ -1,307 +1,125 @@
-"""Job para polling de mensagens do WAHA (substitui webhooks não-funcionais do WEBJS)."""
+"""Job de Polling do WAHA Refatorado (Clean Architecture)."""
 
-import json
 import logging
-
-import httpx
 from rq import get_current_job
 
 from robbot.config.settings import get_settings
-from robbot.infra.redis.client import get_redis_client
 from robbot.services.infrastructure.queue_service import get_queue_service
+from robbot.services.communication.polling_strategies import get_polling_strategy
+from robbot.services.communication.waha_metadata_service import WahaMetadataService
+from robbot.services.communication.message_filter_service import MessageFilterService
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-
 def poll_waha_messages(**_kwargs):
     """
-    Busca mensagens novas do WAHA via API e enfileira para processamento.
-
-    FALLBACK DE WEBHOOKS:
-    - Priorize webhooks (message/message.any) para capturar todas as mensagens
-    - Polling periódico via GET /api/{session}/chats como fallback
-    - Para contatos @c.us, tenta resolver LID via GET /api/{session}/lids/pn/{phoneNumber}
-
-    DEV_MODE:
-    - True: Processa APENAS mensagens de DEV_PHONE_NUMBERS (comma-separated)
-    - False: Processa mensagens de TODOS os números
-
-    Args:
-        **kwargs: Aceita argumentos adicionais do RQ (ex: timeout) mas não os utiliza
+    Job otimizado para buscar mensagens do WAHA.
+    
+    Arquitetura:
+    - Strategy Pattern: Define alvos (DEV=Lista Fixa + Cache, PROD=Todos os Chats)
+    - Metadata Service: Resolve LIDs com Cache Redis (Zero HTTP redundante)
+    - Message Filter: Centraliza validação de regras de negócio e deduplicação
     """
     job = get_current_job()
     job_id = job.id if job else "no-job"
 
-    logger.info(
-        "[POLLING] Iniciando busca de mensagens no WAHA",
-        extra={"job_id": job_id, "dev_mode": settings.DEV_MODE},
-    )
-
-    queue_service = get_queue_service()
-    redis_client = get_redis_client()
+    # Logger com contexto reduzido para evitar spam, foca no ciclo macro
+    # logger.debug("[POLLING] Iniciando ciclo...") 
 
     try:
-        headers = {"X-Api-Key": settings.WAHA_API_KEY}
+        # 1. Obter serviços e estratégias
+        metadata_service = WahaMetadataService()
+        strategy = get_polling_strategy()
+        message_filter = MessageFilterService()
+        queue_service = get_queue_service()
+
+        # 2. Definir alvos (Chats/LIDs)
+        target_chats = strategy.get_target_chats()
+        
+        if not target_chats:
+            if settings.DEV_MODE:
+                logger.warning("[POLLING] Sem alvos configurados ou resolvidos em DEV_MODE")
+            return
+
         messages_processed = 0
         messages_skipped = 0
 
-        with httpx.Client(timeout=10.0) as client:
-            chat_ids: list[str] = []
-            allowed_senders: set[str] = set()  # LIDs e phones permitidos para validação
+        # 3. Iterar Chats
+        for chat_id in target_chats:
+            # Busca mensagens (Já trata erros 404/422 internamente no service)
+            messages = metadata_service.get_messages_from_chat(chat_id, limit=10)
+            
+            # Conjunto para evitar logs repetidos de validação por remetente neste ciclo específico
+            cycle_senders_checked = set()
 
-            if settings.DEV_MODE and settings.dev_phone_list:
-                # Buscar LIDs para todos os números configurados
-                for target_phone in settings.dev_phone_list:
-                    allowed_senders.add(target_phone)  # Adicionar phone original
-                    normalized_phone = target_phone
-                    check_exists_url = (
-                        f"{settings.WAHA_URL}/api/contacts/check-exists"
-                        f"?session={settings.WAHA_SESSION_NAME}&phone={target_phone}"
-                    )
-                    check_exists_response = client.get(check_exists_url, headers=headers)
-                    if check_exists_response.status_code == 200:
-                        check_payload = check_exists_response.json()
-                        normalized_chat_id = check_payload.get("chatId")
-                        if normalized_chat_id:
-                            normalized_phone = normalized_chat_id.split("@")[0]
-                            allowed_senders.add(normalized_phone)  # Adicionar phone normalizado
-
-                    lids_url = f"{settings.WAHA_URL}/api/{settings.WAHA_SESSION_NAME}/lids/pn/{normalized_phone}"
-                    lids_response = client.get(lids_url, headers=headers)
-                    if lids_response.status_code == 200:
-                        lid_payload = lids_response.json()
-                        resolved_lid = lid_payload.get("lid")
-                        if resolved_lid:
-                            lid_number = resolved_lid.split("@")[0] if "@" in resolved_lid else resolved_lid
-                            chat_ids.append(resolved_lid)
-                            allowed_senders.add(lid_number)  # Adicionar LID sem @lid
-
-                            # CACHE o mapeamento: LID_NUMBER => PHONE para usar no webhook
-                            redis_client.setex(f"waha:dev_phone:{lid_number}", 86400, target_phone)
-                            logger.debug(
-                                "[POLLING] Cached LID mapping: %s -> %s",
-                                lid_number,
-                                target_phone,
-                            )
-                    else:
-                        logger.warning(
-                            "[POLLING] LID não encontrado para número %s (normalizado=%s); aguardando sincronização",
-                            target_phone,
-                            normalized_phone,
-                        )
-
-                logger.info("[POLLING][DEV MODE] allowed_senders configurados: %s", allowed_senders)
-
-                if not chat_ids:
-                    logger.warning(
-                        "[POLLING] Nenhum LID encontrado para DEV_PHONE_NUMBERS=%s",
-                        ", ".join(settings.dev_phone_list),
-                    )
-            else:
-                overview_url = f"{settings.WAHA_URL}/api/{settings.WAHA_SESSION_NAME}/chats/overview"
-                overview_params = {"limit": 200, "offset": 0}
-                overview_response = client.get(overview_url, headers=headers, params=overview_params)
-                if overview_response.status_code == 200:
-                    try:
-                        payload = json.loads(overview_response.text)
-                        chat_ids = [chat.get("id") for chat in payload if chat.get("id")]
-                    except json.JSONDecodeError:
-                        chat_ids = []
-                else:
-                    logger.warning(
-                        "[POLLING] Falha ao buscar chats/overview: %s",
-                        overview_response.text,
-                        extra={"status": overview_response.status_code},
-                    )
-
-                if not chat_ids:
-                    chats_url = f"{settings.WAHA_URL}/api/{settings.WAHA_SESSION_NAME}/chats"
-                    chats_params = {"limit": 200, "offset": 0}
-                    chats_response = client.get(chats_url, headers=headers, params=chats_params)
-                    if chats_response.status_code == 200:
-                        try:
-                            payload = json.loads(chats_response.text)
-                            chat_ids = [chat.get("id") for chat in payload if chat.get("id")]
-                        except json.JSONDecodeError:
-                            chat_ids = []
-                    else:
-                        logger.warning(
-                            "[POLLING] Falha ao buscar chats: %s",
-                            chats_response.text,
-                            extra={"status": chats_response.status_code},
-                        )
-
-            if not chat_ids:
-                logger.warning("[POLLING] Sem chats para processar")
-                return None
-
-            # Processar cada chat
-            for chat_id in chat_ids:
-                resolved_chat_id = chat_id
+            for message in messages:
+                # 4. Filtragem e Validação (Regras de Negócio)
+                # No DEV Mode, precisamos validar se o remetente REAL da mensagem é permitido
+                # (ex: mensagem em grupo ou comportamento anômalo)
                 
-                # Se já é um LID válido, não precisa resolver novamente
-                if chat_id.endswith("@lid"):
-                    logger.debug("[POLLING] Chat ID já é LID: %s", chat_id)
-                    resolved_chat_id = chat_id
-                elif chat_id.endswith("@c.us"):
-                    # Tentar resolver @c.us para @lid
-                    phone = chat_id.split("@")[0]
-                    lids_url = f"{settings.WAHA_URL}/api/{settings.WAHA_SESSION_NAME}/lids/pn/{phone}"
-                    try:
-                        lids_response = client.get(lids_url, headers=headers)
-                        if lids_response.status_code == 200:
-                            lid_payload = lids_response.json()
-                            resolved_lid = lid_payload.get("lid")
-                            if resolved_lid:
-                                resolved_chat_id = resolved_lid
-                                logger.debug(
-                                    "[POLLING] Resolvido %s -> %s",
-                                    chat_id,
-                                    resolved_lid,
-                                )
-                            else:
-                                logger.debug(
-                                    "[POLLING] LID vazio para %s; usando chat_id original",
-                                    chat_id,
-                                )
-                        else:
-                            logger.debug(
-                                "[POLLING] LID não encontrado para %s (status=%s); usando chat_id original",
-                                chat_id,
-                                lids_response.status_code,
-                            )
-                    except Exception as e:
-                        logger.warning("[POLLING] Erro ao resolver LID para %s: %s", chat_id, e)
-
-                messages_url = f"{settings.WAHA_URL}/api/{settings.WAHA_SESSION_NAME}/chats/{resolved_chat_id}/messages"
-                params = {"limit": 10}
-
-                msg_response = client.get(messages_url, headers=headers, params=params)
-
-                if msg_response.status_code == 422:
-                    logger.warning(
-                        "[POLLING] WAHA retornou 422 (sessão não pronta ou payload inválido): %s",
-                        msg_response.text,
-                        extra={"status": msg_response.status_code, "chat_id": chat_id},
-                    )
+                # Otimização de Log: Só logar verificação uma vez por remetente por ciclo
+                sender = message.get("from")
+                if settings.DEV_MODE and sender and sender not in cycle_senders_checked:
+                    cycle_senders_checked.add(sender)
+                    # O filter service fará a validação real abaixo silenciosamente
+                
+                # allowed_senders é passado como set dos LIDs/Phones alvo atuais para validação estrita
+                allowed_senders = set(target_chats) if settings.DEV_MODE else None
+                
+                if not message_filter.should_process(message, allowed_senders=allowed_senders):
+                    messages_skipped += 1
                     continue
 
-                if msg_response.status_code >= 500:
-                    error_text = msg_response.text
-                    # Chat não encontrado é esperado (chat deletado/arquivado)
-                    if "chat not found" in error_text.lower() or "findchat" in error_text.lower():
-                        logger.debug(
-                            "[POLLING] Chat não encontrado no WAHA (deletado/arquivado): %s",
-                            resolved_chat_id,
-                        )
-                    else:
-                        logger.warning(
-                            "[POLLING] WAHA retornou %s ao buscar mensagens de %s: %s",
-                            msg_response.status_code,
-                            resolved_chat_id,
-                            error_text[:200],  # Limitar tamanho do log
-                        )
-                    continue
-
-                msg_response.raise_for_status()
-                messages = msg_response.json()
-
-                # Processar apenas mensagens recebidas (não enviadas pelo bot)
-                for message in messages:
-                    if message.get("fromMe", True):  # Ignorar mensagens enviadas pelo bot
-                        continue
-
-                    # DEV MODE: Validar se o remetente está na lista autorizada
-                    if settings.DEV_MODE and allowed_senders:
-                        message_from = message.get("from", "")
-                        sender_phone = message_from.split("@")[0] if "@" in message_from else message_from
-                        logger.info(
-                            "[POLLING][DEV MODE] Verificando remetente: %s (original: %s)",
-                            sender_phone,
-                            message_from,
-                        )
-                        if sender_phone not in allowed_senders:
-                            logger.info(
-                                "[POLLING][DEV MODE] Mensagem ignorada - remetente não autorizado: %s (allowed: %s)",
-                                sender_phone,
-                                list(allowed_senders),
-                            )
-                            messages_skipped += 1
-                            continue
-
-                    # Verificar timestamp (processar mensagens recentes; confiar no dedupe por message_id)
-                    timestamp = message.get("timestamp", 0)
-
-                    ack = message.get("ack", 0)
-                    message_id = message.get("id")
-                    if message_id:
-                        redis_key = f"waha:processed:{message_id}"
-                        if redis_client.get(redis_key):
-                            messages_skipped += 1
-                            continue
-
-                    # Montar payload no formato esperado pelo webhook_controller
+                # 5. Processamento (Enfileiramento)
+                try:
                     message_data = {
-                        "id": message_id,
+                        "id": message.get("id"),
                         "from": message.get("from"),
                         "to": message.get("to"),
                         "body": message.get("body", ""),
-                        "timestamp": timestamp,
+                        "timestamp": message.get("timestamp", 0),
                         "hasMedia": message.get("hasMedia", False),
-                        "ack": ack,
+                        "ack": message.get("ack", 0),
                         "_data": message.get("_data", {}),
                     }
 
-                    # Enfileirar para processamento
-                    job_id = queue_service.enqueue_message_processing_debounced(
+                    # Enfileirar
+                    # Nota: Debounce poderia ser aplicado aqui ou no worker. 
+                    # Mantendo lógica original de debounce da fila.
+                    queue_id = queue_service.enqueue_message_processing_debounced(
                         message_data=message_data,
                         message_direction="inbound",
                     )
-
-                    if message_id:
-                        redis_client.set(redis_key, "1", ex=86400)
-
+                    
+                    # Marcar como processado no Redis para evitar reprocessamento (Deduplicação)
+                    message_filter.mark_as_processed(message_data["id"])
+                    
                     messages_processed += 1
-
                     logger.info(
-                        "[POLLING] Mensagem enfileirada: %s de %s",
-                        message.get("id"),
-                        message.get("from"),
-                        extra={
-                            "job_id": job_id,
-                            "chat_id": message.get("from"),
-                            "message_id": message.get("id"),
-                            "timestamp": timestamp,
-                        },
+                        "[POLLING] Msg processada: %s | Chat: %s | QID: %s", 
+                        message_data["id"], 
+                        message_data['from'], 
+                        queue_id
                     )
 
-        logger.info(
-            "[POLLING] Busca concluída - %d mensagens processadas, %d ignoradas",
-            messages_processed,
-            messages_skipped,
-            extra={
-                "processed": messages_processed,
-                "skipped": messages_skipped,
-                "dev_mode": settings.DEV_MODE,
-            },
-        )
+                except Exception as e:
+                    logger.error("[POLLING] Falha ao enfileirar mensagem %s: %s", message.get("id"), e)
 
+        # Log Final do Ciclo (Apenas se houve atividade relevante ou em DEBUG)
+        if messages_processed > 0:
+            logger.info(
+                "[POLLING] Ciclo concluído. Processadas: %d | Ignoradas: %d",
+                messages_processed,
+                messages_skipped
+            )
+            
         return {
             "status": "success",
-            "messages_processed": messages_processed,
-            "messages_skipped": messages_skipped,
+            "processed": messages_processed,
+            "skipped": messages_skipped
         }
 
-    except httpx.HTTPError as e:
-        logger.error(
-            "[POLLING] Erro HTTP ao buscar mensagens: %s",
-            e,
-            extra={"error": str(e)},
-            exc_info=True,
-        )
-        return {
-            "status": "error",
-            "reason": "http_error",
-            "error": str(e),
-        }
+    except Exception as e:
+        logger.error("[POLLING] Erro crítico no job: %s", e, exc_info=True)
+        return {"status": "error", "message": str(e)}
