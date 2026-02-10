@@ -1,3 +1,7 @@
+---
+status: completed
+generated: 2026-02-10
+---
 # Clínica Go - Frontend Documentation Index
 
 Welcome to the documentation for the Clínica Go frontend. This project is built with Next.js 14 (App Router) and follows a component-based architecture with a premium aesthetic and rich interactivity.

@@ -1,3 +1,7 @@
+---
+status: completed
+generated: 2026-02-10
+---
 # Testing Strategy
 
 The Clínica Go frontend focuses on maintaining a high-quality user experience and reliable clinical data management. Our testing strategy combines automated verification of core logic with visual consistency checks via our internal styleguide.

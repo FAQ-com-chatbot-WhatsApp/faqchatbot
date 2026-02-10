@@ -1,29 +1,19 @@
-# Q&A Index
+---
+slug: readme
+category: index
+generatedAt: 2026-02-10
+---
 
-Project type: **web-app**
+# Frontend Q&A Documentation
 
-Generated: 2026-02-10T16:00:12.897Z
+This directory contains frequently asked questions and detailed guides for specific frontend topics in the Clínica Go project.
 
-## Getting-started
+## Q&A Index
 
-- [How do I set up and run this project?](./getting-started.md)
-
-## Architecture
-
-- [How is the codebase organized?](./project-structure.md)
-- [How does routing work?](./routing.md)
-- [How does middleware work?](./middleware.md)
-
-## Features
-
-- [How does authentication work?](./authentication.md)
-- [What API endpoints are available?](./api-endpoints.md)
-
-## Operations
-
-- [How are errors handled?](./error-handling.md)
-- [How do background jobs work?](./background-jobs.md)
-
-## Testing
-
-- [How do I run and write tests?](./testing.md)
+- [API Endpoints](./api-endpoints.md): How the frontend consumes available backend APIs.
+- [Authentication](./authentication.md): How login and session management work.
+- [Error Handling](./error-handling.md): How we normalize and display errors.
+- [Getting Started](./getting-started.md): Fast-track guide for new frontend developers.
+- [Project Structure](./project-structure.md): Deep dive into the `src/` directory.
+- [Routing](./routing.md): How Next.js App Router is used.
+- [Testing](./testing.md): Practical guide to running and writing tests.

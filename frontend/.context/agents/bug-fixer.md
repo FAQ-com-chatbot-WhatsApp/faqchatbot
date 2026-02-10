@@ -1,3 +1,7 @@
+---
+status: completed
+generated: 2026-02-10
+---
 # Bug Fixer Agent Playbook
 
 ## Mission

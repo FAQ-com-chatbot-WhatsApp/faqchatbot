@@ -1,3 +1,7 @@
+---
+status: completed
+generated: 2026-02-10
+---
 # Agent Handbook
 
 This directory contains ready-to-customize playbooks for AI agents collaborating on the repository.

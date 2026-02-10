@@ -1,3 +1,7 @@
+---
+status: completed
+generated: 2026-02-10
+---
 # Security & Compliance Notes
 
 Maintaining the security and privacy of sensitive patient data is paramount for Clínica Go. This document outlines the security measures and compliance guardrails implemented within the frontend application.

@@ -1,3 +1,7 @@
+---
+status: completed
+generated: 2026-02-10
+---
 # Tooling & Productivity Guide
 
 The Clínica Go frontend project incorporates a curated set of tools and configurations designed to ensure code quality, design consistency, and a highly efficient developer experience.

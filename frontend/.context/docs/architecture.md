@@ -1,3 +1,7 @@
+---
+status: completed
+generated: 2026-02-10
+---
 # Architecture Notes
 
 The Clínica Go frontend is a modern web application built on the Next.js framework, designed for scalability, maintainability, and a premium user experience. It follows a component-based architecture with a strong emphasis on reusability, type safety, and clear separation of concerns.

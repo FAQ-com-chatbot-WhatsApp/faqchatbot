@@ -1,3 +1,7 @@
+---
+status: completed
+generated: 2026-02-10
+---
 # Development Workflow
 
 Development on the Clínica Go frontend is iterative and component-driven, prioritizing a premium aesthetic and rapid feature delivery. We leverage a living styleguide to ensure design consistency and allow for parallel development of UI components and application logic.

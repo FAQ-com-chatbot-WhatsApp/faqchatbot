@@ -1,3 +1,7 @@
+---
+status: completed
+generated: 2026-02-10
+---
 # Project Overview
 
 BotDB Frontend is the intelligent interface for the Clínica Go healthcare management platform. It provides a premium, responsive user experience for clinic staff to manage patient interactions, appointments, and dashboard analytics, seamlessly integrated with the backend AI orchestration layer.

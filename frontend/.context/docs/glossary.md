@@ -1,3 +1,7 @@
+---
+status: completed
+generated: 2026-02-10
+---
 # Glossary & Domain Concepts
 
 This document defines the key terms, domain entities, and type definitions used throughout the Clínica Go frontend.
