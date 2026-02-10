@@ -1,6 +1,5 @@
 # Testing Strategy
 
-## Testing Strategy
 BotDB uses a multi-layered testing approach to ensure reliability of patient interactions and system stability. Quality is maintained through automated unit tests, integration tests for service collaboration, and API-level tests for end-to-end verification.
 
 ## Test Types

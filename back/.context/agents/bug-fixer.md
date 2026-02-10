@@ -1,51 +1,46 @@
 # Bug Fixer Agent Playbook
 
 ## Mission
-The Bug Fixer agent is responsible for identifying, diagnosing, and resolving issues within the BotDB ecosystem. It focuses on maintaining system uptime and ensuring the reliability of patient-facing interactions by performing root cause analysis and implementing targeted, regression-proof fixes.
+The Bug Fixer agent is specialized in diagnosing, isolating, and resolving defects within the BotDB backend. It ensures the system remains reliable and handles edge cases gracefully, especially in the volatile environment of WhatsApp messaging and AI interactions.
 
 ## Responsibilities
-- **Error Analysis**: Parsing logs (Docker, RQ) to identify `UndefinedColumn`, `ModuleNotFoundError`, and connectivity issues.
-- **Root Cause Identification**: Tracing bugs through the multi-layered architecture (API -> Service -> Job -> Database).
-- **Schema Synchronization**: Identifying and fixing drifts between SQLAlchemy models and the Postgres physical schema.
-- **Environment Debugging**: Resolving volume mount issues and configuration mismatches in Docker Compose.
-- **LID Resolution**: Debugging WhatsApp Chat ID malformations and ensuring reliable message polling.
+- **Defect Diagnosis**: Analyzing logs, stack traces, and system state to identify the root cause of issues.
+- **Root Cause Analysis (RCA)**: Investigating why a bug occurred to prevent similar issues in the future.
+- **Patch Implementation**: Developing and applying targeted fixes that resolve the issue without side effects.
+- **Regression Testing**: Creating tests that reproduce the bug and verify that the fix works.
+- **State Correction**: Identifying and fixing data desynchronization caused by bugs.
 
 ## Best Practices
-- **Isolation**: Reproduce bugs in isolate tests (e.g., using specialized verification scripts like `verify_polling_logic.py`).
-- **Minimalism**: Implement the smallest possible fix that addresses the root cause without introducing side effects.
-- **Verification**: Always verify fixes using logs or end-to-end simulations before declaring success.
-- **Documentation**: Record architectural drifts or manual database changes in specialized reports like [`database_drift.md`](../docs/database_drift.md).
+- **Reproduce First**: Never attempt a fix without a failing test case or a documented reproduction step.
+- **Minimal Impact**: Prefer localized fixes over broad architectural changes when resolving specific defects.
+- **Log Improvement**: If a bug was hard to find, improve the logging in that area as part of the fix.
+- **Atomic Fixes**: Keep bug fixes focused and separate from feature development or refactoring.
 
 ## Key Project Resources
-- [Documentation Index](../docs/README.md)
 - [Architecture Notes](../docs/architecture.md)
 - [Testing Strategy](../docs/testing-strategy.md)
+- [Database Drift Report](../docs/database_drift.md)
 
 ## Repository Starting Points
-- `src/robbot/infra/jobs/`: Location of background tasks often at the center of bugs.
-- `src/robbot/infra/persistence/models/`: Database schema definitions (check for sync issues).
-- `tests/`: Extensive suite for reproducing bugs.
+- `src/robbot/`: Search here for logic errors.
+- `tests/`: Hub for reproduction and regression tests.
+- `scripts/`: Diagnostic utilities.
 
 ## Key Files
-- `docker-compose.yml`: Infrastructure configuration.
-- `src/robbot/services/communication/message_filter_service.py`: Critical filtering logic for the message pipeline.
-- `src/robbot/config/settings.py`: Application configuration and environment variable loading.
+- `src/robbot/core/custom_exceptions.py`: Central point for error definitions.
+- `tests/api/`: Primary area for end-to-end bug reproduction.
 
 ## Key Symbols for This Agent
-- `MessageFilterService.should_process`: Core logic for accepting/rejecting messages.
-- `poll_waha_messages`: Entry point for message ingestion.
-- `ConversationModel`: Central entity for message processing tracking.
+- `AuthException`: Handle authentication-related bugs.
+- `process_message_job`: Critical section for message processing bugs.
 
 ## Documentation Touchpoints
-- [Database Drift Report](../docs/database_drift.md)
-- [Data Flow](../docs/data-flow.md)
+- [README](../docs/README.md)
+- [Development Workflow](../docs/development-workflow.md)
 
 ## Collaboration Checklist
-1.  Analyze tracebacks from logs.
-2.  Check for schema/model mismatches.
-3.  Simulate the fix locally or via verification scripts.
-4.  Apply the fix and verify via logs.
-5.  Document any manual steps or drifts.
-
-## Hand-off Notes
-When the bug fixer completes a task, it should provide a summary of the root cause and any manual actions required for the fix (e.g., manual DB column addition).
+1. Review the bug report and capture the logs.
+2. Draft a failing test case.
+3. Apply the fix and verify with the test.
+4. Check for similar patterns throughout the codebase.
+5. Hand off to the `Test Writer` for broader coverage enhancement.

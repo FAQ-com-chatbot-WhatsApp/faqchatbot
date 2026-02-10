@@ -14,8 +14,11 @@ The following columns were manually added to the database to restore functionali
 ### Table `leads`
 - `deleted_at` (TIMESTAMP)
 
+## Resolution Plan
+A formal resolution plan has been created to synchronize Alembic with these manual changes and ensure clean migrations moving forward:
+- **Plan**: [Sync Alembic with Manual Schema Fixes](../plans/sync-alembic-with-manual-schema.md)
+
 ## Recommendation for Future
-The current database state works with the code, but Alembic might be confused about the schema state.
-1. **Do not** delete the columns manually added.
-2. Create a new migration using `alembic revision --autogenerate` *locally* with a properly connected environment to capture any other discrepancies, OR
-3. If `alembic` tries to add these columns again, modify the migration script to use `op.add_column(..., if_not_exists=True)` or wrap in a try/except block.
+1. **Always verify migrations**: Before merging changes that modify `models.py`, ensure the auto-generated migration script is checked against the target environment.
+2. **Avoid Manual Alterations**: Manual schema changes should be a last resort and immediately followed by an Alembic sync.
+3. **Use the Sync Plan**: Follow the [Sync Alembic with Manual Schema Fixes](../plans/sync-alembic-with-manual-schema.md) to formally resolve the current discrepancies.

@@ -1,7 +1,6 @@
 # Architecture Notes
 
-## Architecture Notes
-The BotDB system is designed as a modular service with a clear separation between infrastructure, domain logic, and API endpoints. It follows a Clean Architecture-inspired structure, where the core logic is isolated from external dependencies like WAHA (WhatsApp API), Redis, and Postgres.
+The BotDB system is designed as a modular service with a clear separation between infrastructure, domain logic, and API endpoints. It follows a **Clean Architecture** inspired structure, where the core logic is isolated from external dependencies like WAHA (WhatsApp API), Redis, and Postgres.
 
 ## System Architecture Overview
 The system is a distributed application composed of:

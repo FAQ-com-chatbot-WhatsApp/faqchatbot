@@ -1,6 +1,5 @@
 # Tooling & Productivity Guide
 
-## Tooling & Productivity Guide
 This guide provides the necessary information about the tools and automation scripts available in the BotDB repository to maximize developer efficiency.
 
 ## Required Tooling
