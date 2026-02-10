@@ -1,0 +1,14 @@
+{
+  "active": [
+    {
+      "slug": "fix-waha-polling-silent-drop",
+      "path": "plans/fix-waha-polling-silent-drop.md",
+      "title": "Corrigir Polling WAHA — Mensagens Silenciosamente Descartadas no DEV Mode",
+      "summary": "O polling WAHA busca mensagens com sucesso (HTTP 200) de 4 chats, mas NENHUMA mensagem é",
+      "linkedAt": "2026-02-10T13:51:16.598Z",
+      "status": "active"
+    }
+  ],
+  "completed": [],
+  "primary": "fix-waha-polling-silent-drop"
+}
