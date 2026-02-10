@@ -180,7 +180,21 @@ class QueueService:
         )
         return job_id
 
-
+    def health_check(self) -> dict[str, Any]:
+        """Verifica saúde do serviço de filas (conexão Redis)."""
+        try:
+            # Verifica conexão Redis
+            redis_client = get_redis_client()
+            if not redis_client.ping():
+                return {"status": "unhealthy", "error": "Redis ping failed"}
+            
+            # Opcional: Verificar tamanhos das filas (apenas para debug extra)
+            # q_len = len(self.queue_manager.queue_messages)
+            
+            return {"status": "healthy"}
+        except Exception as e:
+            logger.error("Queue health check failed: %s", e)
+            return {"status": "unhealthy", "error": str(e)}
 # Singleton global
 _queue_service: QueueService | None = None
 
