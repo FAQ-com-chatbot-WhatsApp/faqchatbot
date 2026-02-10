@@ -1,0 +1,300 @@
+worker-9  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+worker-9  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+worker-9  |     self._handle_dbapi_exception(
+worker-9  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2363, in _handle_dbapi_exception
+worker-7  | [SQL: SELECT conversations.id, conversations.chat_id, conversations.phone_number, conversations.name, conversations.status, conversations.escalation_reason, conversations.escalated_at, conversations.closed_at, conversations.is_urgent, conversations.meta_data, conversations.last_message_at, conversations.created_at, conversations.updated_at, leads_1.id AS id_1, leads_1.conversation_id, leads_1.name AS name_1, leads_1.phone_number AS phone_number_1, leads_1.email, leads_1.status AS status_1, leads_1.maturity_score, leads_1.notes, leads_1.assigned_to_user_id, leads_1.created_at AS created_at_1, leads_1.updated_at AS updated_at_1, leads_1.converted_at, leads_1.deleted_at 
+worker-7  | FROM conversations LEFT OUTER JOIN leads AS leads_1 ON conversations.id = leads_1.conversation_id 
+worker-7  | WHERE conversations.chat_id = %(chat_id_1)s]
+worker-7  | [parameters: {'chat_id_1': '189485451100193@lid'}]
+worker-7  | (Background on this error at: https://sqlalche.me/e/20/f405)
+worker-7  | 
+worker-7  | The above exception was the direct cause of the following exception:
+worker-7  | 
+worker-7  | Traceback (most recent call last):
+worker-7  |   File "/usr/local/lib/python3.11/site-packages/rq/worker.py", line 1439, in perform_job
+worker-7  |     return_value = job.perform()
+worker-7  |                    ^^^^^^^^^^^^^
+worker-7  |   File "/usr/local/lib/python3.11/site-packages/rq/job.py", line 1318, in perform
+worker-7  |     self._result = self._execute()
+worker-7  |                    ^^^^^^^^^^^^^^^
+worker-7  |   File "/usr/local/lib/python3.11/site-packages/rq/job.py", line 1376, in _execute
+worker-7  |     result = self.func(*self.args, **self.kwargs)
+worker-7  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+worker-7  |   File "/app/src/robbot/infra/jobs/message_job.py", line 40, in process_message_job
+worker-7  |     return job.run()
+worker-7  |            ^^^^^^^^^
+worker-7  |   File "/app/src/robbot/infra/jobs/base_job.py", line 147, in run
+worker-7  |     return self._handle_retryable_error(e)
+worker-7  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+worker-7  |   File "/app/src/robbot/infra/jobs/base_job.py", line 167, in _handle_retryable_error
+worker-7  |     raise error
+worker-7  |   File "/app/src/robbot/infra/jobs/base_job.py", line 134, in run
+worker-7  |     result = self.execute()
+worker-7  |              ^^^^^^^^^^^^^^
+worker-7  |   File "/app/src/robbot/infra/jobs/message_job.py", line 167, in execute
+worker-7  |     return self._process_inbound_message()
+worker-7  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+worker-7  |   File "/app/src/robbot/infra/jobs/message_job.py", line 234, in _process_inbound_message
+worker-7  |     raise JobRetryableError(f"Failed to process message: {e}") from e
+worker-7  | robbot.infra.jobs.base_job.JobRetryableError: Failed to process message: Failed to process message: (psycopg2.errors.UndefinedColumn) column conversations.closed_at does not exist
+worker-7  | LINE 1: ...ns.escalation_reason, conversations.escalated_at, conversati...
+worker-7  |                                                              ^
+worker-7  | 
+worker-7  | [SQL: SELECT conversations.id, conversations.chat_id, conversations.phone_number, conversations.name, conversations.status, conversations.escalation_reason, conversations.escalated_at, conversations.closed_at, conversations.is_urgent, conversations.meta_data, conversations.last_message_at, conversations.created_at, conversations.updated_at, leads_1.id AS id_1, leads_1.conversation_id, leads_1.name AS name_1, leads_1.phone_number AS phone_number_1, leads_1.email, leads_1.status AS status_1, leads_1.maturity_score, leads_1.notes, leads_1.assigned_to_user_id, leads_1.created_at AS created_at_1, leads_1.updated_at AS updated_at_1, leads_1.converted_at, leads_1.deleted_at 
+worker-7  | FROM conversations LEFT OUTER JOIN leads AS leads_1 ON conversations.id = leads_1.conversation_id 
+worker-7  | WHERE conversations.chat_id = %(chat_id_1)s]
+worker-7  | [parameters: {'chat_id_1': '189485451100193@lid'}]
+worker-7  | (Background on this error at: https://sqlalche.me/e/20/f405)
+worker-7  | 
+worker-7  | [90m[11:49:54.248][0m [33mWARNING[0m [2m(1)[0m: Worker worker-7d7988bfb6da-1-1770734709: moving job 176664d2-cc3d-4f57-a64a-f6eaefe0587d to FailedJobRegistry (Work-horse terminated unexpectedly; waitpid returned 256; )
+worker-7  | [90m[11:49:54.249][0m [33mWARNING[0m [2m(1)[0m: Work horse killed for job 176664d2-cc3d-4f57-a64a-f6eaefe0587d: retpid=152, ret_val=256
+worker-7  | [90m[11:50:25.923][0m [32mINFO[0m [2m(1)[0m: messages: robbot.infra.jobs.message_polling_job.poll_waha_messages() (waha-polling-1770735025)
+worker-7  | [90m[11:50:40.455][0m [36mDEBUG[0m [2m(190)[0m: registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+worker-7  | [90m[11:50:40.458][0m [36mDEBUG[0m [2m(190)[0m: registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+worker-7  | [90m[11:50:40.467][0m [32mINFO[0m [2m(190)[0m: [POLLING] Using DEV Strategy (Restricted Senders)
+worker-7  | [90m[11:50:40.467][0m [32mINFO[0m [2m(190)[0m: QueueService inicializado
+worker-7  | [90m[11:50:40.491][0m [36mDEBUG[0m [2m(190)[0m: [FILTER] Rejeitada (já processada): msg_id=false_24988337893388@lid_3EB0715A092D49507591
+worker-7  | [90m[11:50:40.508][0m [36mDEBUG[0m [2m(190)[0m: [FILTER] Rejeitada (já processada): msg_id=false_189485451100193@lid_3EB05BFADEA828C1F993
+worker-7  | [90m[11:50:40.560][0m [36mDEBUG[0m [2m(190)[0m: [FILTER] Rejeitada (já processada): msg_id=false_180342120013859@lid_A563F0E08E3BAC3408871161FB3A06E9
+worker-7  | [90m[11:50:40.561][0m [36mDEBUG[0m [2m(190)[0m: [FILTER] Rejeitada (já processada): msg_id=false_180342120013859@lid_3EB00F61779794651424
+worker-7  | [90m[11:50:40.567][0m [36mDEBUG[0m [2m(190)[0m: [POLLING] Ciclo sem novas mensagens. Ignoradas: 4 (dedup/filtro)
+worker-7  | [90m[11:50:40.591][0m [32mINFO[0m [2m(190)[0m: Successfully completed robbot.infra.jobs.message_polling_job.poll_waha_messages() job in 0:00:14.635284s on worker worker-7d7988bfb6da-1-1770734709
+worker-7  | [90m[11:50:40.591][0m [32mINFO[0m [2m(190)[0m: messages: Job OK (waha-polling-1770735025)
+worker-7  | [90m[11:50:40.592][0m [32mINFO[0m [2m(190)[0m: Result is kept for 500 seconds
+worker-7  | [90m[11:51:41.997][0m [32mINFO[0m [2m(1)[0m: messages: robbot.infra.jobs.message_polling_job.poll_waha_messages() (waha-polling-1770735101)
+worker-7  | [90m[11:51:54.955][0m [36mDEBUG[0m [2m(224)[0m: registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+worker-7  | [90m[11:51:54.958][0m [36mDEBUG[0m [2m(224)[0m: registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+worker-7  | [90m[11:51:54.967][0m [32mINFO[0m [2m(224)[0m: [POLLING] Using DEV Strategy (Restricted Senders)
+worker-7  | [90m[11:51:54.968][0m [32mINFO[0m [2m(224)[0m: QueueService inicializado
+worker-7  | [90m[11:51:54.988][0m [36mDEBUG[0m [2m(224)[0m: [FILTER] Rejeitada (já processada): msg_id=false_24988337893388@lid_3EB0715A092D49507591
+worker-7  | [90m[11:51:55.005][0m [36mDEBUG[0m [2m(224)[0m: [FILTER] Rejeitada (já processada): msg_id=false_189485451100193@lid_3EB05BFADEA828C1F993
+worker-7  | [90m[11:51:55.087][0m [36mDEBUG[0m [2m(224)[0m: [FILTER] Rejeitada (já processada): msg_id=false_180342120013859@lid_A563F0E08E3BAC3408871161FB3A06E9
+worker-7  | [90m[11:51:55.089][0m [36mDEBUG[0m [2m(224)[0m: [FILTER] Rejeitada (já processada): msg_id=false_180342120013859@lid_3EB00F61779794651424
+worker-7  | [90m[11:51:55.090][0m [36mDEBUG[0m [2m(224)[0m: [POLLING] Ciclo sem novas mensagens. Ignoradas: 4 (dedup/filtro)
+worker-7  | [90m[11:51:55.118][0m [32mINFO[0m [2m(224)[0m: Successfully completed robbot.infra.jobs.message_polling_job.poll_waha_messages() job in 0:00:13.085056s on worker worker-7d7988bfb6da-1-1770734709
+worker-7  | [90m[11:51:55.118][0m [32mINFO[0m [2m(224)[0m: messages: Job OK (waha-polling-1770735101)
+worker-7  | [90m[11:51:55.118][0m [32mINFO[0m [2m(224)[0m: Result is kept for 500 seconds
+worker-7  | [90m[11:52:56.040][0m [32mINFO[0m [2m(1)[0m: messages: robbot.infra.jobs.message_polling_job.poll_waha_messages() (waha-polling-1770735176)
+worker-7  | [90m[11:53:10.753][0m [36mDEBUG[0m [2m(251)[0m: registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+worker-7  | [90m[11:53:10.757][0m [36mDEBUG[0m [2m(251)[0m: registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+worker-7  | [90m[11:53:10.770][0m [32mINFO[0m [2m(251)[0m: [POLLING] Using DEV Strategy (Restricted Senders)
+worker-7  | [90m[11:53:10.770][0m [32mINFO[0m [2m(251)[0m: QueueService inicializado
+worker-7  | [90m[11:53:10.803][0m [36mDEBUG[0m [2m(251)[0m: [FILTER] Rejeitada (já processada): msg_id=false_24988337893388@lid_3EB0715A092D49507591
+worker-7  | [90m[11:53:10.841][0m [36mDEBUG[0m [2m(251)[0m: [FILTER] Rejeitada (já processada): msg_id=false_189485451100193@lid_3EB05BFADEA828C1F993
+worker-7  | [90m[11:53:10.906][0m [32mINFO[0m [2m(251)[0m: [POLLING] Msg processada: false_180342120013859@lid_A5BCA8EFB8738CBCD16DD3876D4860C8 | Chat: 180342120013859@lid | QID: 70070e6a-0065-4862-aad4-71a9cd5d11c4
+worker-7  | [90m[11:53:10.907][0m [36mDEBUG[0m [2m(251)[0m: [FILTER] Rejeitada (já processada): msg_id=false_180342120013859@lid_A563F0E08E3BAC3408871161FB3A06E9
+worker-7  | [90m[11:53:10.907][0m [36mDEBUG[0m [2m(251)[0m: [FILTER] Rejeitada (já processada): msg_id=false_180342120013859@lid_3EB00F61779794651424
+worker-7  | [90m[11:53:10.908][0m [32mINFO[0m [2m(251)[0m: [POLLING] Ciclo concluído. Processadas: 1 | Ignoradas: 4
+worker-7  | [90m[11:53:10.910][0m [32mINFO[0m [2m(251)[0m: Successfully completed robbot.infra.jobs.message_polling_job.poll_waha_messages() job in 0:00:14.859850s on worker worker-7d7988bfb6da-1-1770734709
+worker-7  | [90m[11:53:10.910][0m [32mINFO[0m [2m(251)[0m: messages: Job OK (waha-polling-1770735176)
+worker-7  | [90m[11:53:10.911][0m [32mINFO[0m [2m(251)[0m: Result is kept for 500 seconds
+worker-7  | [90m[11:53:53.079][0m [32mINFO[0m [2m(1)[0m: messages: robbot.infra.jobs.message_polling_job.poll_waha_messages() (waha-polling-1770735233)
+worker-7  | [90m[11:54:07.273][0m [36mDEBUG[0m [2m(278)[0m: registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+worker-7  | [90m[11:54:07.276][0m [36mDEBUG[0m [2m(278)[0m: registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+worker-7  | [90m[11:54:07.286][0m [32mINFO[0m [2m(278)[0m: [POLLING] Using DEV Strategy (Restricted Senders)
+worker-7  | [90m[11:54:07.286][0m [32mINFO[0m [2m(278)[0m: QueueService inicializado
+worker-7  | [90m[11:54:07.315][0m [36mDEBUG[0m [2m(278)[0m: [FILTER] Rejeitada (já processada): msg_id=false_24988337893388@lid_3EB0715A092D49507591
+worker-7  | [90m[11:54:07.337][0m [36mDEBUG[0m [2m(278)[0m: [FILTER] Rejeitada (já processada): msg_id=false_189485451100193@lid_3EB05BFADEA828C1F993
+worker-7  | [90m[11:54:07.383][0m [36mDEBUG[0m [2m(278)[0m: [FILTER] Rejeitada (já processada): msg_id=false_180342120013859@lid_A5BCA8EFB8738CBCD16DD3876D4860C8
+worker-7  | [90m[11:54:07.384][0m [36mDEBUG[0m [2m(278)[0m: [FILTER] Rejeitada (já processada): msg_id=false_180342120013859@lid_A563F0E08E3BAC3408871161FB3A06E9
+worker-7  | [90m[11:54:07.384][0m [36mDEBUG[0m [2m(278)[0m: [FILTER] Rejeitada (já processada): msg_id=false_180342120013859@lid_3EB00F61779794651424
+worker-7  | [90m[11:54:07.384][0m [36mDEBUG[0m [2m(278)[0m: [POLLING] Ciclo sem novas mensagens. Ignoradas: 5 (dedup/filtro)
+worker-7  | [90m[11:54:07.407][0m [32mINFO[0m [2m(278)[0m: Successfully completed robbot.infra.jobs.message_polling_job.poll_waha_messages() job in 0:00:14.295054s on worker worker-7d7988bfb6da-1-1770734709
+worker-7  | [90m[11:54:07.407][0m [32mINFO[0m [2m(278)[0m: messages: Job OK (waha-polling-1770735233)
+worker-7  | [90m[11:54:07.407][0m [32mINFO[0m [2m(278)[0m: Result is kept for 500 seconds
+worker-8  | [SQL: SELECT conversations.id, conversations.chat_id, conversations.phone_number, conversations.name, conversations.status, conversations.escalation_reason, conversations.escalated_at, conversations.closed_at, conversations.is_urgent, conversations.meta_data, conversations.last_message_at, conversations.created_at, conversations.updated_at, leads_1.id AS id_1, leads_1.conversation_id, leads_1.name AS name_1, leads_1.phone_number AS phone_number_1, leads_1.email, leads_1.status AS status_1, leads_1.maturity_score, leads_1.notes, leads_1.assigned_to_user_id, leads_1.created_at AS created_at_1, leads_1.updated_at AS updated_at_1, leads_1.converted_at, leads_1.deleted_at 
+worker-8  | FROM conversations LEFT OUTER JOIN leads AS leads_1 ON conversations.id = leads_1.conversation_id 
+worker-8  | WHERE conversations.chat_id = %(chat_id_1)s]
+worker-8  | [parameters: {'chat_id_1': '180342120013859@lid'}]
+worker-8  | (Background on this error at: https://sqlalche.me/e/20/f405)
+worker-8  | 
+worker-8  | The above exception was the direct cause of the following exception:
+worker-8  | 
+worker-8  | Traceback (most recent call last):
+worker-8  |   File "/usr/local/lib/python3.11/site-packages/rq/worker.py", line 1439, in perform_job
+worker-8  |     return_value = job.perform()
+worker-8  |                    ^^^^^^^^^^^^^
+worker-8  |   File "/usr/local/lib/python3.11/site-packages/rq/job.py", line 1318, in perform
+worker-8  |     self._result = self._execute()
+worker-8  |                    ^^^^^^^^^^^^^^^
+worker-8  |   File "/usr/local/lib/python3.11/site-packages/rq/job.py", line 1376, in _execute
+worker-8  |     result = self.func(*self.args, **self.kwargs)
+worker-8  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+worker-8  |   File "/app/src/robbot/infra/jobs/message_job.py", line 40, in process_message_job
+worker-8  |     return job.run()
+worker-8  |            ^^^^^^^^^
+worker-8  |   File "/app/src/robbot/infra/jobs/base_job.py", line 147, in run
+worker-8  |     return self._handle_retryable_error(e)
+worker-8  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+worker-8  |   File "/app/src/robbot/infra/jobs/base_job.py", line 167, in _handle_retryable_error
+worker-8  |     raise error
+worker-8  |   File "/app/src/robbot/infra/jobs/base_job.py", line 134, in run
+worker-8  |     result = self.execute()
+worker-8  |              ^^^^^^^^^^^^^^
+worker-8  |   File "/app/src/robbot/infra/jobs/message_job.py", line 167, in execute
+worker-8  |     return self._process_inbound_message()
+worker-8  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+worker-8  |   File "/app/src/robbot/infra/jobs/message_job.py", line 234, in _process_inbound_message
+worker-8  |     raise JobRetryableError(f"Failed to process message: {e}") from e
+worker-8  | robbot.infra.jobs.base_job.JobRetryableError: Failed to process message: Failed to process message: (psycopg2.errors.UndefinedColumn) column conversations.closed_at does not exist
+worker-8  | LINE 1: ...ns.escalation_reason, conversations.escalated_at, conversati...
+worker-8  |                                                              ^
+worker-8  | 
+worker-8  | [SQL: SELECT conversations.id, conversations.chat_id, conversations.phone_number, conversations.name, conversations.status, conversations.escalation_reason, conversations.escalated_at, conversations.closed_at, conversations.is_urgent, conversations.meta_data, conversations.last_message_at, conversations.created_at, conversations.updated_at, leads_1.id AS id_1, leads_1.conversation_id, leads_1.name AS name_1, leads_1.phone_number AS phone_number_1, leads_1.email, leads_1.status AS status_1, leads_1.maturity_score, leads_1.notes, leads_1.assigned_to_user_id, leads_1.created_at AS created_at_1, leads_1.updated_at AS updated_at_1, leads_1.converted_at, leads_1.deleted_at 
+worker-8  | FROM conversations LEFT OUTER JOIN leads AS leads_1 ON conversations.id = leads_1.conversation_id 
+worker-8  | WHERE conversations.chat_id = %(chat_id_1)s]
+worker-8  | [parameters: {'chat_id_1': '180342120013859@lid'}]
+worker-8  | (Background on this error at: https://sqlalche.me/e/20/f405)
+worker-8  | 
+worker-8  | [90m[11:50:16.329][0m [33mWARNING[0m [2m(1)[0m: Worker worker-588661671f0e-1-1770734788: moving job 29b3eb39-c024-4659-8048-097e8f6a3686 to FailedJobRegistry (Work-horse terminated unexpectedly; waitpid returned 256; )
+worker-8  | [90m[11:50:16.329][0m [33mWARNING[0m [2m(1)[0m: Work horse killed for job 29b3eb39-c024-4659-8048-097e8f6a3686: retpid=141, ret_val=256
+worker-8  | [90m[11:51:17.981][0m [32mINFO[0m [2m(1)[0m: messages: robbot.infra.jobs.message_polling_job.poll_waha_messages() (waha-polling-1770735077)
+worker-8  | [90m[11:51:31.366][0m [36mDEBUG[0m [2m(193)[0m: registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+worker-8  | [90m[11:51:31.369][0m [36mDEBUG[0m [2m(193)[0m: registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+worker-8  | [90m[11:51:31.378][0m [32mINFO[0m [2m(193)[0m: [POLLING] Using DEV Strategy (Restricted Senders)
+worker-8  | [90m[11:51:31.379][0m [32mINFO[0m [2m(193)[0m: QueueService inicializado
+worker-8  | [90m[11:51:31.411][0m [36mDEBUG[0m [2m(193)[0m: [FILTER] Rejeitada (já processada): msg_id=false_24988337893388@lid_3EB0715A092D49507591
+worker-8  | [90m[11:51:31.438][0m [36mDEBUG[0m [2m(193)[0m: [FILTER] Rejeitada (já processada): msg_id=false_189485451100193@lid_3EB05BFADEA828C1F993
+worker-8  | [90m[11:51:31.490][0m [36mDEBUG[0m [2m(193)[0m: [FILTER] Rejeitada (já processada): msg_id=false_180342120013859@lid_A563F0E08E3BAC3408871161FB3A06E9
+worker-8  | [90m[11:51:31.490][0m [36mDEBUG[0m [2m(193)[0m: [FILTER] Rejeitada (já processada): msg_id=false_180342120013859@lid_3EB00F61779794651424
+worker-8  | [90m[11:51:31.491][0m [36mDEBUG[0m [2m(193)[0m: [POLLING] Ciclo sem novas mensagens. Ignoradas: 4 (dedup/filtro)
+worker-8  | [90m[11:51:31.514][0m [32mINFO[0m [2m(193)[0m: Successfully completed robbot.infra.jobs.message_polling_job.poll_waha_messages() job in 0:00:13.500992s on worker worker-588661671f0e-1-1770734788
+worker-8  | [90m[11:51:31.514][0m [32mINFO[0m [2m(193)[0m: messages: Job OK (waha-polling-1770735077)
+worker-8  | [90m[11:51:31.514][0m [32mINFO[0m [2m(193)[0m: Result is kept for 500 seconds
+worker-8  | [90m[11:52:31.028][0m [32mINFO[0m [2m(1)[0m: messages: robbot.infra.jobs.message_polling_job.poll_waha_messages() (waha-polling-1770735151)
+worker-8  | [90m[11:52:44.971][0m [36mDEBUG[0m [2m(220)[0m: registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+worker-8  | [90m[11:52:44.974][0m [36mDEBUG[0m [2m(220)[0m: registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+worker-8  | [90m[11:52:44.990][0m [32mINFO[0m [2m(220)[0m: [POLLING] Using DEV Strategy (Restricted Senders)
+worker-8  | [90m[11:52:44.990][0m [32mINFO[0m [2m(220)[0m: QueueService inicializado
+worker-8  | [90m[11:52:45.027][0m [36mDEBUG[0m [2m(220)[0m: [FILTER] Rejeitada (já processada): msg_id=false_24988337893388@lid_3EB0715A092D49507591
+worker-8  | [90m[11:52:45.072][0m [36mDEBUG[0m [2m(220)[0m: [FILTER] Rejeitada (já processada): msg_id=false_189485451100193@lid_3EB05BFADEA828C1F993
+worker-8  | [90m[11:52:45.139][0m [36mDEBUG[0m [2m(220)[0m: [FILTER] Rejeitada (já processada): msg_id=false_180342120013859@lid_A563F0E08E3BAC3408871161FB3A06E9
+worker-8  | [90m[11:52:45.140][0m [36mDEBUG[0m [2m(220)[0m: [FILTER] Rejeitada (já processada): msg_id=false_180342120013859@lid_3EB00F61779794651424
+worker-8  | [90m[11:52:45.141][0m [36mDEBUG[0m [2m(220)[0m: [POLLING] Ciclo sem novas mensagens. Ignoradas: 4 (dedup/filtro)
+worker-8  | [90m[11:52:45.147][0m [32mINFO[0m [2m(220)[0m: Successfully completed robbot.infra.jobs.message_polling_job.poll_waha_messages() job in 0:00:14.106945s on worker worker-588661671f0e-1-1770734788
+worker-8  | [90m[11:52:45.147][0m [32mINFO[0m [2m(220)[0m: messages: Job OK (waha-polling-1770735151)
+worker-8  | [90m[11:52:45.149][0m [32mINFO[0m [2m(220)[0m: Result is kept for 500 seconds
+worker-8  | [90m[11:53:21.058][0m [32mINFO[0m [2m(1)[0m: messages: robbot.infra.jobs.message_polling_job.poll_waha_messages() (waha-polling-1770735201)
+worker-8  | [90m[11:53:42.086][0m [36mDEBUG[0m [2m(247)[0m: registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+worker-8  | [90m[11:53:42.090][0m [36mDEBUG[0m [2m(247)[0m: registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+worker-8  | [90m[11:53:42.103][0m [32mINFO[0m [2m(247)[0m: [POLLING] Using DEV Strategy (Restricted Senders)
+worker-8  | [90m[11:53:42.104][0m [32mINFO[0m [2m(247)[0m: QueueService inicializado
+worker-8  | [90m[11:53:42.139][0m [36mDEBUG[0m [2m(247)[0m: [FILTER] Rejeitada (já processada): msg_id=false_24988337893388@lid_3EB0715A092D49507591
+worker-8  | [90m[11:53:42.168][0m [36mDEBUG[0m [2m(247)[0m: [FILTER] Rejeitada (já processada): msg_id=false_189485451100193@lid_3EB05BFADEA828C1F993
+worker-8  | [90m[11:53:42.237][0m [36mDEBUG[0m [2m(247)[0m: [FILTER] Rejeitada (já processada): msg_id=false_180342120013859@lid_A5BCA8EFB8738CBCD16DD3876D4860C8
+worker-8  | [90m[11:53:42.237][0m [36mDEBUG[0m [2m(247)[0m: [FILTER] Rejeitada (já processada): msg_id=false_180342120013859@lid_A563F0E08E3BAC3408871161FB3A06E9
+worker-8  | [90m[11:53:42.238][0m [36mDEBUG[0m [2m(247)[0m: [FILTER] Rejeitada (já processada): msg_id=false_180342120013859@lid_3EB00F61779794651424
+worker-8  | [90m[11:53:42.238][0m [36mDEBUG[0m [2m(247)[0m: [POLLING] Ciclo sem novas mensagens. Ignoradas: 5 (dedup/filtro)
+worker-8  | [90m[11:53:42.244][0m [32mINFO[0m [2m(247)[0m: Successfully completed robbot.infra.jobs.message_polling_job.poll_waha_messages() job in 0:00:21.166079s on worker worker-588661671f0e-1-1770734788
+worker-8  | [90m[11:53:42.246][0m [32mINFO[0m [2m(247)[0m: messages: Job OK (waha-polling-1770735201)
+worker-8  | [90m[11:53:42.247][0m [32mINFO[0m [2m(247)[0m: Result is kept for 500 seconds
+worker-8  | [90m[11:54:42.126][0m [32mINFO[0m [2m(1)[0m: messages: robbot.infra.jobs.message_polling_job.poll_waha_messages() (waha-polling-1770735282)
+worker-8  | [90m[11:54:55.585][0m [36mDEBUG[0m [2m(274)[0m: registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+worker-8  | [90m[11:54:55.589][0m [36mDEBUG[0m [2m(274)[0m: registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+worker-8  | [90m[11:54:55.601][0m [32mINFO[0m [2m(274)[0m: [POLLING] Using DEV Strategy (Restricted Senders)
+worker-8  | [90m[11:54:55.602][0m [32mINFO[0m [2m(274)[0m: QueueService inicializado
+worker-8  | [90m[11:54:55.629][0m [36mDEBUG[0m [2m(274)[0m: [FILTER] Rejeitada (já processada): msg_id=false_24988337893388@lid_3EB0715A092D49507591
+worker-8  | [90m[11:54:55.648][0m [36mDEBUG[0m [2m(274)[0m: [FILTER] Rejeitada (já processada): msg_id=false_189485451100193@lid_3EB05BFADEA828C1F993
+worker-8  | [90m[11:54:55.697][0m [36mDEBUG[0m [2m(274)[0m: [FILTER] Rejeitada (já processada): msg_id=false_180342120013859@lid_A5BCA8EFB8738CBCD16DD3876D4860C8
+worker-8  | [90m[11:54:55.698][0m [36mDEBUG[0m [2m(274)[0m: [FILTER] Rejeitada (já processada): msg_id=false_180342120013859@lid_A563F0E08E3BAC3408871161FB3A06E9
+worker-8  | [90m[11:54:55.698][0m [36mDEBUG[0m [2m(274)[0m: [FILTER] Rejeitada (já processada): msg_id=false_180342120013859@lid_3EB00F61779794651424
+worker-8  | [90m[11:54:55.698][0m [36mDEBUG[0m [2m(274)[0m: [POLLING] Ciclo sem novas mensagens. Ignoradas: 5 (dedup/filtro)
+worker-8  | [90m[11:54:55.701][0m [32mINFO[0m [2m(274)[0m: Successfully completed robbot.infra.jobs.message_polling_job.poll_waha_messages() job in 0:00:13.563637s on worker worker-588661671f0e-1-1770734788
+worker-8  | [90m[11:54:55.702][0m [32mINFO[0m [2m(274)[0m: messages: Job OK (waha-polling-1770735282)
+worker-8  | [90m[11:54:55.702][0m [32mINFO[0m [2m(274)[0m: Result is kept for 500 seconds
+worker-9  |     raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+worker-9  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+worker-9  |     self.dialect.do_execute(
+worker-9  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+worker-9  |     cursor.execute(statement, parameters)
+worker-9  | sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column conversations.closed_at does not exist
+worker-9  | LINE 1: ...ns.escalation_reason, conversations.escalated_at, conversati...
+worker-9  |                                                              ^
+worker-9  | 
+worker-9  | [SQL: SELECT conversations.id, conversations.chat_id, conversations.phone_number, conversations.name, conversations.status, conversations.escalation_reason, conversations.escalated_at, conversations.closed_at, conversations.is_urgent, conversations.meta_data, conversations.last_message_at, conversations.created_at, conversations.updated_at, leads_1.id AS id_1, leads_1.conversation_id, leads_1.name AS name_1, leads_1.phone_number AS phone_number_1, leads_1.email, leads_1.status AS status_1, leads_1.maturity_score, leads_1.notes, leads_1.assigned_to_user_id, leads_1.created_at AS created_at_1, leads_1.updated_at AS updated_at_1, leads_1.converted_at, leads_1.deleted_at 
+worker-9  | FROM conversations LEFT OUTER JOIN leads AS leads_1 ON conversations.id = leads_1.conversation_id 
+worker-9  | WHERE conversations.chat_id = %(chat_id_1)s]
+worker-9  | [parameters: {'chat_id_1': '180342120013859@lid'}]
+worker-9  | (Background on this error at: https://sqlalche.me/e/20/f405)
+worker-9  | 
+worker-9  | During handling of the above exception, another exception occurred:
+worker-9  | 
+worker-9  | Traceback (most recent call last):
+worker-9  |   File "/app/src/robbot/infra/jobs/message_job.py", line 205, in _process_inbound_message
+worker-9  |     result = asyncio.run(
+worker-9  |              ^^^^^^^^^^^^
+worker-9  |   File "/usr/local/lib/python3.11/asyncio/runners.py", line 190, in run
+worker-9  |     return runner.run(main)
+worker-9  |            ^^^^^^^^^^^^^^^^
+worker-9  |   File "/usr/local/lib/python3.11/asyncio/runners.py", line 118, in run
+worker-9  |     return self._loop.run_until_complete(task)
+worker-9  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+worker-9  |   File "/usr/local/lib/python3.11/asyncio/base_events.py", line 654, in run_until_complete
+worker-9  |     return future.result()
+worker-9  |            ^^^^^^^^^^^^^^^
+worker-9  |   File "/app/src/robbot/services/bot/conversation_orchestrator.py", line 122, in process_inbound_message
+worker-9  |     raise BusinessRuleError(f"Failed to process message: {e}")
+worker-9  | robbot.core.custom_exceptions.BusinessRuleError: Failed to process message: (psycopg2.errors.UndefinedColumn) column conversations.closed_at does not exist
+worker-9  | LINE 1: ...ns.escalation_reason, conversations.escalated_at, conversati...
+worker-9  |                                                              ^
+worker-9  | 
+worker-9  | [SQL: SELECT conversations.id, conversations.chat_id, conversations.phone_number, conversations.name, conversations.status, conversations.escalation_reason, conversations.escalated_at, conversations.closed_at, conversations.is_urgent, conversations.meta_data, conversations.last_message_at, conversations.created_at, conversations.updated_at, leads_1.id AS id_1, leads_1.conversation_id, leads_1.name AS name_1, leads_1.phone_number AS phone_number_1, leads_1.email, leads_1.status AS status_1, leads_1.maturity_score, leads_1.notes, leads_1.assigned_to_user_id, leads_1.created_at AS created_at_1, leads_1.updated_at AS updated_at_1, leads_1.converted_at, leads_1.deleted_at 
+worker-9  | FROM conversations LEFT OUTER JOIN leads AS leads_1 ON conversations.id = leads_1.conversation_id 
+worker-9  | WHERE conversations.chat_id = %(chat_id_1)s]
+worker-9  | [parameters: {'chat_id_1': '180342120013859@lid'}]
+worker-9  | (Background on this error at: https://sqlalche.me/e/20/f405)
+worker-9  | 
+worker-9  | The above exception was the direct cause of the following exception:
+worker-9  | 
+worker-9  | Traceback (most recent call last):
+worker-9  |   File "/usr/local/lib/python3.11/site-packages/rq/worker.py", line 1439, in perform_job
+worker-9  |     return_value = job.perform()
+worker-9  |                    ^^^^^^^^^^^^^
+worker-9  |   File "/usr/local/lib/python3.11/site-packages/rq/job.py", line 1318, in perform
+worker-9  |     self._result = self._execute()
+worker-9  |                    ^^^^^^^^^^^^^^^
+worker-9  |   File "/usr/local/lib/python3.11/site-packages/rq/job.py", line 1376, in _execute
+worker-9  |     result = self.func(*self.args, **self.kwargs)
+worker-9  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+worker-9  |   File "/app/src/robbot/infra/jobs/message_job.py", line 40, in process_message_job
+worker-9  |     return job.run()
+worker-9  |            ^^^^^^^^^
+worker-9  |   File "/app/src/robbot/infra/jobs/base_job.py", line 147, in run
+worker-9  |     return self._handle_retryable_error(e)
+worker-9  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+worker-9  |   File "/app/src/robbot/infra/jobs/base_job.py", line 167, in _handle_retryable_error
+worker-9  |     raise error
+worker-9  |   File "/app/src/robbot/infra/jobs/base_job.py", line 134, in run
+worker-9  |     result = self.execute()
+worker-9  |              ^^^^^^^^^^^^^^
+worker-9  |   File "/app/src/robbot/infra/jobs/message_job.py", line 167, in execute
+worker-9  |     return self._process_inbound_message()
+worker-9  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+worker-9  |   File "/app/src/robbot/infra/jobs/message_job.py", line 234, in _process_inbound_message
+worker-9  |     raise JobRetryableError(f"Failed to process message: {e}") from e
+worker-9  | robbot.infra.jobs.base_job.JobRetryableError: Failed to process message: Failed to process message: (psycopg2.errors.UndefinedColumn) column conversations.closed_at does not exist
+worker-9  | LINE 1: ...ns.escalation_reason, conversations.escalated_at, conversati...
+worker-9  |                                                              ^
+worker-9  | 
+worker-9  | [SQL: SELECT conversations.id, conversations.chat_id, conversations.phone_number, conversations.name, conversations.status, conversations.escalation_reason, conversations.escalated_at, conversations.closed_at, conversations.is_urgent, conversations.meta_data, conversations.last_message_at, conversations.created_at, conversations.updated_at, leads_1.id AS id_1, leads_1.conversation_id, leads_1.name AS name_1, leads_1.phone_number AS phone_number_1, leads_1.email, leads_1.status AS status_1, leads_1.maturity_score, leads_1.notes, leads_1.assigned_to_user_id, leads_1.created_at AS created_at_1, leads_1.updated_at AS updated_at_1, leads_1.converted_at, leads_1.deleted_at 
+worker-9  | FROM conversations LEFT OUTER JOIN leads AS leads_1 ON conversations.id = leads_1.conversation_id 
+worker-9  | WHERE conversations.chat_id = %(chat_id_1)s]
+worker-9  | [parameters: {'chat_id_1': '180342120013859@lid'}]
+worker-9  | (Background on this error at: https://sqlalche.me/e/20/f405)
+worker-9  | 
+worker-9  | [90m[11:53:34.060][0m [33mWARNING[0m [2m(1)[0m: Worker worker-6738b8e49cde-1-1770734788: moving job 70070e6a-0065-4862-aad4-71a9cd5d11c4 to FailedJobRegistry (Work-horse terminated unexpectedly; waitpid returned 256; )
+worker-9  | [90m[11:53:34.060][0m [33mWARNING[0m [2m(1)[0m: Work horse killed for job 70070e6a-0065-4862-aad4-71a9cd5d11c4: retpid=236, ret_val=256
+worker-9  | [90m[11:54:18.109][0m [32mINFO[0m [2m(1)[0m: messages: robbot.infra.jobs.message_polling_job.poll_waha_messages() (waha-polling-1770735258)
+worker-9  | [90m[11:54:31.716][0m [36mDEBUG[0m [2m(281)[0m: registered 'bcrypt' handler: <class 'passlib.handlers.bcrypt.bcrypt'>
+worker-9  | [90m[11:54:31.719][0m [36mDEBUG[0m [2m(281)[0m: registered 'pbkdf2_sha256' handler: <class 'passlib.handlers.pbkdf2.pbkdf2_sha256'>
+worker-9  | [90m[11:54:31.728][0m [32mINFO[0m [2m(281)[0m: [POLLING] Using DEV Strategy (Restricted Senders)
+worker-9  | [90m[11:54:31.728][0m [32mINFO[0m [2m(281)[0m: QueueService inicializado
+worker-9  | [90m[11:54:31.756][0m [36mDEBUG[0m [2m(281)[0m: [FILTER] Rejeitada (já processada): msg_id=false_24988337893388@lid_3EB0715A092D49507591
+worker-9  | [90m[11:54:31.775][0m [36mDEBUG[0m [2m(281)[0m: [FILTER] Rejeitada (já processada): msg_id=false_189485451100193@lid_3EB05BFADEA828C1F993
+worker-9  | [90m[11:54:31.818][0m [36mDEBUG[0m [2m(281)[0m: [FILTER] Rejeitada (já processada): msg_id=false_180342120013859@lid_A5BCA8EFB8738CBCD16DD3876D4860C8
+worker-9  | [90m[11:54:31.819][0m [36mDEBUG[0m [2m(281)[0m: [FILTER] Rejeitada (já processada): msg_id=false_180342120013859@lid_A563F0E08E3BAC3408871161FB3A06E9
+worker-9  | [90m[11:54:31.819][0m [36mDEBUG[0m [2m(281)[0m: [FILTER] Rejeitada (já processada): msg_id=false_180342120013859@lid_3EB00F61779794651424
+worker-9  | [90m[11:54:31.819][0m [36mDEBUG[0m [2m(281)[0m: [POLLING] Ciclo sem novas mensagens. Ignoradas: 5 (dedup/filtro)
+worker-9  | [90m[11:54:31.822][0m [32mINFO[0m [2m(281)[0m: Successfully completed robbot.infra.jobs.message_polling_job.poll_waha_messages() job in 0:00:13.695148s on worker worker-6738b8e49cde-1-1770734788
+worker-9  | [90m[11:54:31.822][0m [32mINFO[0m [2m(281)[0m: messages: Job OK (waha-polling-1770735258)
+worker-9  | [90m[11:54:31.823][0m [32mINFO[0m [2m(281)[0m: Result is kept for 500 seconds
