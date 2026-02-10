@@ -46,9 +46,18 @@ class ConversationService:
         Includes LID resolution logic.
         """
         conversation_model = self.repo.get_by_chat_id(chat_id)
-
+        
         if conversation_model:
-            logger.info("[SUCCESS] Conversation found (id=%s)", conversation_model.id)
+            # Re-open if closed/completed
+            if conversation_model.status in [ConversationStatus.CLOSED, ConversationStatus.COMPLETED]:
+                logger.info("[RE-OPEN] Detecting new message on closed conversation %s. Re-opening...", conversation_model.id)
+                conversation_model.status = ConversationStatus.ACTIVE_BOT
+                conversation_model.closed_at = None
+                conversation_model.updated_at = datetime.now(UTC)
+                self.db.commit()
+                self.db.refresh(conversation_model)
+            
+            logger.info("[SUCCESS] Conversation found (id=%s, status=%s)", conversation_model.id, conversation_model.status)
             return conversation_model
 
         # 1. LID Resolution (WhatsApp specific logic)
