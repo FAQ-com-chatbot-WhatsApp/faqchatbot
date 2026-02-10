@@ -37,12 +37,16 @@ class MessageFilterService:
         sender = message.get("from")
 
         # 1. Ignore messages sent by the bot itself
-        if message.get("fromMe", True):
+        # FIX(Bug1): Default MUST be False — if field is absent, assume NOT from bot.
+        # Previous default of True silently rejected ALL messages without fromMe field.
+        if message.get("fromMe", False):
+            logger.debug("[FILTER] Rejeitada (fromMe=True): msg_id=%s", message_id)
             return False
 
         # 2. DEV Mode Restrictions
         if settings.DEV_MODE and allowed_senders:
             if not sender:
+                logger.debug("[FILTER] Rejeitada (sem remetente): msg_id=%s", message_id)
                 return False
                 
             # Check exact match or phone number match
@@ -50,12 +54,19 @@ class MessageFilterService:
             
             # Using set for O(1) lookup
             if sender not in allowed_senders and sender_base not in allowed_senders:
-                # Logging here might be spammy if called in a loop, 
-                # but caller should handle loop-level caching or logging suppression.
+                logger.debug(
+                    "[FILTER] Rejeitada (remetente não autorizado): sender=%s, sender_base=%s, allowed=%s",
+                    sender, sender_base, allowed_senders
+                )
                 return False
 
         # 3. Deduplication Check (Idempotency)
-        if not message_id or self._is_processed(message_id):
+        if not message_id:
+            logger.debug("[FILTER] Rejeitada (sem message_id)")
+            return False
+        if self._is_processed(message_id):
+            # DEBUG level to avoid spam — dedup is normal in polling mode
+            logger.debug("[FILTER] Rejeitada (já processada): msg_id=%s", message_id)
             return False
 
         return True
