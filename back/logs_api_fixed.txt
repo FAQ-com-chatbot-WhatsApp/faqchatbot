@@ -1,0 +1,27 @@
+[ENTRYPOINT] Creating ChromaDB directory...
+[ENTRYPOINT] ChromaDB directory ready
+[36mapi[0m | [09:32:34.023] [32mINFO[0m (Entrypoint/1): Entrypoint iniciado
+[36mapi[0m | [09:32:34.040] [32mINFO[0m (Entrypoint/1): DATABASE_URL=postgresql+psycopg2://dba:***@db:5432/BotDB
+[36mapi[0m | [09:32:34.052] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true
+[36mapi[0m | [09:32:34.064] [32mINFO[0m (Entrypoint/1): WAIT_FOR_DB=true
+[36mapi[0m | [09:32:34.072] [32mINFO[0m (Entrypoint/1): DB host=db port=5432 user=dba db=BotDB
+[36mapi[0m | [09:32:34.080] [32mINFO[0m (Entrypoint/1): DB wait retries=60 sleep=2s
+[36mapi[0m | [09:32:34.089] [32mINFO[0m (Entrypoint/1): Aguardando disponibilidade do banco de dados...
+[36mapi[0m | [09:32:34.098] [32mINFO[0m (Entrypoint/1): Usando pg_isready para checar o DB
+[36mapi[0m | [09:32:34.207] [32mINFO[0m (Entrypoint/1): Banco de dados está disponível (pg_isready)
+[36mapi[0m | [09:32:34.213] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true e alembic.ini encontrado — executando alembic upgrade head
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+[36mapi[0m | [09:32:39.598] [32mINFO[0m (Entrypoint/1): Iniciando aplicação
+[90m[09:33:08.613][0m [32mINFO[0m [2m(57)[0m: Logging configured: level=DEBUG, file=logs/robbot.log, max_bytes=10485760, backup_count=5
+[90m[09:33:08.829][0m [32mINFO[0m [2m(57)[0m: Started server process [57]
+[90m[09:33:08.830][0m [32mINFO[0m [2m(57)[0m: Waiting for application startup.
+[90m[09:33:08.830][0m [32mINFO[0m [2m(57)[0m: Initializing DI Container...
+[90m[09:33:08.867][0m [32mINFO[0m [2m(57)[0m: Gemini provider initialized: model=gemini-flash-latest, temp=1.0
+[90m[09:33:08.867][0m [32mINFO[0m [2m(57)[0m: Registered gemini provider
+[90m[09:33:08.867][0m [32mINFO[0m [2m(57)[0m: [PROVIDER] Gemini registered (model=gemini-flash-latest)
+[90m[09:33:09.124][0m [32mINFO[0m [2m(57)[0m: Groq provider initialized: model=llama-3.3-70b-versatile, temp=1.0
+[90m[09:33:09.124][0m [32mINFO[0m [2m(57)[0m: Registered groq provider
+[90m[09:33:09.124][0m [32mINFO[0m [2m(57)[0m: [PROVIDER] Groq registered (model=llama-3.3-70b-versatile)
+[90m[09:33:09.125][0m [32mINFO[0m [2m(57)[0m: LLMClient initialized with groq as primary provider
+[90m[09:33:09.125][0m [32mINFO[0m [2m(57)[0m: LLMClient initialized as singleton

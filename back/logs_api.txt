@@ -1,0 +1,546 @@
+[ENTRYPOINT] Creating ChromaDB directory...
+[ENTRYPOINT] ChromaDB directory ready
+[36mapi[0m | [09:24:50.252] [32mINFO[0m (Entrypoint/1): Entrypoint iniciado
+[36mapi[0m | [09:24:50.274] [32mINFO[0m (Entrypoint/1): DATABASE_URL=postgresql+psycopg2://dba:***@db:5432/BotDB
+[36mapi[0m | [09:24:50.281] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true
+[36mapi[0m | [09:24:50.287] [32mINFO[0m (Entrypoint/1): WAIT_FOR_DB=true
+[36mapi[0m | [09:24:50.295] [32mINFO[0m (Entrypoint/1): DB host=db port=5432 user=dba db=BotDB
+[36mapi[0m | [09:24:50.302] [32mINFO[0m (Entrypoint/1): DB wait retries=60 sleep=2s
+[36mapi[0m | [09:24:50.309] [32mINFO[0m (Entrypoint/1): Aguardando disponibilidade do banco de dados...
+[36mapi[0m | [09:24:50.318] [32mINFO[0m (Entrypoint/1): Usando pg_isready para checar o DB
+[36mapi[0m | [09:24:50.648] [32mINFO[0m (Entrypoint/1): Banco de dados está disponível (pg_isready)
+[36mapi[0m | [09:24:50.657] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true e alembic.ini encontrado — executando alembic upgrade head
+Traceback (most recent call last):
+  File "/usr/local/bin/alembic", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1047, in main
+    CommandLine(prog=prog).main(argv=argv)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1037, in main
+    self.run_cmd(cfg, options)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 971, in run_cmd
+    fn(
+  File "/usr/local/lib/python3.11/site-packages/alembic/command.py", line 483, in upgrade
+    script.run_env()
+  File "/usr/local/lib/python3.11/site-packages/alembic/script/base.py", line 545, in run_env
+    util.load_python_file(self.dir, "env.py")
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 116, in load_python_file
+    module = load_module_py(module_id, path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 136, in load_module_py
+    spec.loader.exec_module(module)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/app/alembic/env.py", line 10, in <module>
+    from robbot.infra.db import models  # noqa: F401 (imported but unused) - import to register models
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'models' from 'robbot.infra.db' (/app/src/robbot/infra/db/__init__.py)
+[36mapi[0m | [09:24:57.615] [31mERROR[0m (Entrypoint/1): Alembic falhou
+[ENTRYPOINT] Creating ChromaDB directory...
+[ENTRYPOINT] ChromaDB directory ready
+[36mapi[0m | [09:24:58.709] [32mINFO[0m (Entrypoint/1): Entrypoint iniciado
+[36mapi[0m | [09:24:58.728] [32mINFO[0m (Entrypoint/1): DATABASE_URL=postgresql+psycopg2://dba:***@db:5432/BotDB
+[36mapi[0m | [09:24:58.739] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true
+[36mapi[0m | [09:24:58.756] [32mINFO[0m (Entrypoint/1): WAIT_FOR_DB=true
+[36mapi[0m | [09:24:58.768] [32mINFO[0m (Entrypoint/1): DB host=db port=5432 user=dba db=BotDB
+[36mapi[0m | [09:24:58.776] [32mINFO[0m (Entrypoint/1): DB wait retries=60 sleep=2s
+[36mapi[0m | [09:24:58.787] [32mINFO[0m (Entrypoint/1): Aguardando disponibilidade do banco de dados...
+[36mapi[0m | [09:24:58.797] [32mINFO[0m (Entrypoint/1): Usando pg_isready para checar o DB
+[36mapi[0m | [09:24:58.938] [32mINFO[0m (Entrypoint/1): Banco de dados está disponível (pg_isready)
+[36mapi[0m | [09:24:58.945] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true e alembic.ini encontrado — executando alembic upgrade head
+Traceback (most recent call last):
+  File "/usr/local/bin/alembic", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1047, in main
+    CommandLine(prog=prog).main(argv=argv)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1037, in main
+    self.run_cmd(cfg, options)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 971, in run_cmd
+    fn(
+  File "/usr/local/lib/python3.11/site-packages/alembic/command.py", line 483, in upgrade
+    script.run_env()
+  File "/usr/local/lib/python3.11/site-packages/alembic/script/base.py", line 545, in run_env
+    util.load_python_file(self.dir, "env.py")
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 116, in load_python_file
+    module = load_module_py(module_id, path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 136, in load_module_py
+    spec.loader.exec_module(module)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/app/alembic/env.py", line 10, in <module>
+    from robbot.infra.db import models  # noqa: F401 (imported but unused) - import to register models
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'models' from 'robbot.infra.db' (/app/src/robbot/infra/db/__init__.py)
+[36mapi[0m | [09:25:02.601] [31mERROR[0m (Entrypoint/1): Alembic falhou
+[ENTRYPOINT] Creating ChromaDB directory...
+[ENTRYPOINT] ChromaDB directory ready
+[36mapi[0m | [09:25:03.584] [32mINFO[0m (Entrypoint/1): Entrypoint iniciado
+[36mapi[0m | [09:25:03.600] [32mINFO[0m (Entrypoint/1): DATABASE_URL=postgresql+psycopg2://dba:***@db:5432/BotDB
+[36mapi[0m | [09:25:03.607] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true
+[36mapi[0m | [09:25:03.614] [32mINFO[0m (Entrypoint/1): WAIT_FOR_DB=true
+[36mapi[0m | [09:25:03.623] [32mINFO[0m (Entrypoint/1): DB host=db port=5432 user=dba db=BotDB
+[36mapi[0m | [09:25:03.632] [32mINFO[0m (Entrypoint/1): DB wait retries=60 sleep=2s
+[36mapi[0m | [09:25:03.638] [32mINFO[0m (Entrypoint/1): Aguardando disponibilidade do banco de dados...
+[36mapi[0m | [09:25:03.644] [32mINFO[0m (Entrypoint/1): Usando pg_isready para checar o DB
+[36mapi[0m | [09:25:03.736] [32mINFO[0m (Entrypoint/1): Banco de dados está disponível (pg_isready)
+[36mapi[0m | [09:25:03.744] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true e alembic.ini encontrado — executando alembic upgrade head
+Traceback (most recent call last):
+  File "/usr/local/bin/alembic", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1047, in main
+    CommandLine(prog=prog).main(argv=argv)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1037, in main
+    self.run_cmd(cfg, options)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 971, in run_cmd
+    fn(
+  File "/usr/local/lib/python3.11/site-packages/alembic/command.py", line 483, in upgrade
+    script.run_env()
+  File "/usr/local/lib/python3.11/site-packages/alembic/script/base.py", line 545, in run_env
+    util.load_python_file(self.dir, "env.py")
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 116, in load_python_file
+    module = load_module_py(module_id, path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 136, in load_module_py
+    spec.loader.exec_module(module)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/app/alembic/env.py", line 10, in <module>
+    from robbot.infra.db import models  # noqa: F401 (imported but unused) - import to register models
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'models' from 'robbot.infra.db' (/app/src/robbot/infra/db/__init__.py)
+[36mapi[0m | [09:25:06.304] [31mERROR[0m (Entrypoint/1): Alembic falhou
+[ENTRYPOINT] Creating ChromaDB directory...
+[ENTRYPOINT] ChromaDB directory ready
+[36mapi[0m | [09:25:07.121] [32mINFO[0m (Entrypoint/1): Entrypoint iniciado
+[36mapi[0m | [09:25:07.134] [32mINFO[0m (Entrypoint/1): DATABASE_URL=postgresql+psycopg2://dba:***@db:5432/BotDB
+[36mapi[0m | [09:25:07.140] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true
+[36mapi[0m | [09:25:07.146] [32mINFO[0m (Entrypoint/1): WAIT_FOR_DB=true
+[36mapi[0m | [09:25:07.153] [32mINFO[0m (Entrypoint/1): DB host=db port=5432 user=dba db=BotDB
+[36mapi[0m | [09:25:07.160] [32mINFO[0m (Entrypoint/1): DB wait retries=60 sleep=2s
+[36mapi[0m | [09:25:07.168] [32mINFO[0m (Entrypoint/1): Aguardando disponibilidade do banco de dados...
+[36mapi[0m | [09:25:07.177] [32mINFO[0m (Entrypoint/1): Usando pg_isready para checar o DB
+[36mapi[0m | [09:25:07.258] [32mINFO[0m (Entrypoint/1): Banco de dados está disponível (pg_isready)
+[36mapi[0m | [09:25:07.265] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true e alembic.ini encontrado — executando alembic upgrade head
+Traceback (most recent call last):
+  File "/usr/local/bin/alembic", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1047, in main
+    CommandLine(prog=prog).main(argv=argv)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1037, in main
+    self.run_cmd(cfg, options)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 971, in run_cmd
+    fn(
+  File "/usr/local/lib/python3.11/site-packages/alembic/command.py", line 483, in upgrade
+    script.run_env()
+  File "/usr/local/lib/python3.11/site-packages/alembic/script/base.py", line 545, in run_env
+    util.load_python_file(self.dir, "env.py")
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 116, in load_python_file
+    module = load_module_py(module_id, path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 136, in load_module_py
+    spec.loader.exec_module(module)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/app/alembic/env.py", line 10, in <module>
+    from robbot.infra.db import models  # noqa: F401 (imported but unused) - import to register models
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'models' from 'robbot.infra.db' (/app/src/robbot/infra/db/__init__.py)
+[36mapi[0m | [09:25:11.158] [31mERROR[0m (Entrypoint/1): Alembic falhou
+[ENTRYPOINT] Creating ChromaDB directory...
+[ENTRYPOINT] ChromaDB directory ready
+[36mapi[0m | [09:25:12.497] [32mINFO[0m (Entrypoint/1): Entrypoint iniciado
+[36mapi[0m | [09:25:12.518] [32mINFO[0m (Entrypoint/1): DATABASE_URL=postgresql+psycopg2://dba:***@db:5432/BotDB
+[36mapi[0m | [09:25:12.526] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true
+[36mapi[0m | [09:25:12.533] [32mINFO[0m (Entrypoint/1): WAIT_FOR_DB=true
+[36mapi[0m | [09:25:12.539] [32mINFO[0m (Entrypoint/1): DB host=db port=5432 user=dba db=BotDB
+[36mapi[0m | [09:25:12.546] [32mINFO[0m (Entrypoint/1): DB wait retries=60 sleep=2s
+[36mapi[0m | [09:25:12.555] [32mINFO[0m (Entrypoint/1): Aguardando disponibilidade do banco de dados...
+[36mapi[0m | [09:25:12.568] [32mINFO[0m (Entrypoint/1): Usando pg_isready para checar o DB
+[36mapi[0m | [09:25:12.688] [32mINFO[0m (Entrypoint/1): Banco de dados está disponível (pg_isready)
+[36mapi[0m | [09:25:12.698] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true e alembic.ini encontrado — executando alembic upgrade head
+Traceback (most recent call last):
+  File "/usr/local/bin/alembic", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1047, in main
+    CommandLine(prog=prog).main(argv=argv)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1037, in main
+    self.run_cmd(cfg, options)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 971, in run_cmd
+    fn(
+  File "/usr/local/lib/python3.11/site-packages/alembic/command.py", line 483, in upgrade
+    script.run_env()
+  File "/usr/local/lib/python3.11/site-packages/alembic/script/base.py", line 545, in run_env
+    util.load_python_file(self.dir, "env.py")
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 116, in load_python_file
+    module = load_module_py(module_id, path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 136, in load_module_py
+    spec.loader.exec_module(module)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/app/alembic/env.py", line 10, in <module>
+    from robbot.infra.db import models  # noqa: F401 (imported but unused) - import to register models
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'models' from 'robbot.infra.db' (/app/src/robbot/infra/db/__init__.py)
+[36mapi[0m | [09:25:15.408] [31mERROR[0m (Entrypoint/1): Alembic falhou
+[ENTRYPOINT] Creating ChromaDB directory...
+[ENTRYPOINT] ChromaDB directory ready
+[36mapi[0m | [09:25:17.394] [32mINFO[0m (Entrypoint/1): Entrypoint iniciado
+[36mapi[0m | [09:25:17.407] [32mINFO[0m (Entrypoint/1): DATABASE_URL=postgresql+psycopg2://dba:***@db:5432/BotDB
+[36mapi[0m | [09:25:17.412] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true
+[36mapi[0m | [09:25:17.416] [32mINFO[0m (Entrypoint/1): WAIT_FOR_DB=true
+[36mapi[0m | [09:25:17.422] [32mINFO[0m (Entrypoint/1): DB host=db port=5432 user=dba db=BotDB
+[36mapi[0m | [09:25:17.427] [32mINFO[0m (Entrypoint/1): DB wait retries=60 sleep=2s
+[36mapi[0m | [09:25:17.432] [32mINFO[0m (Entrypoint/1): Aguardando disponibilidade do banco de dados...
+[36mapi[0m | [09:25:17.438] [32mINFO[0m (Entrypoint/1): Usando pg_isready para checar o DB
+[36mapi[0m | [09:25:17.506] [32mINFO[0m (Entrypoint/1): Banco de dados está disponível (pg_isready)
+[36mapi[0m | [09:25:17.512] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true e alembic.ini encontrado — executando alembic upgrade head
+Traceback (most recent call last):
+  File "/usr/local/bin/alembic", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1047, in main
+    CommandLine(prog=prog).main(argv=argv)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1037, in main
+    self.run_cmd(cfg, options)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 971, in run_cmd
+    fn(
+  File "/usr/local/lib/python3.11/site-packages/alembic/command.py", line 483, in upgrade
+    script.run_env()
+  File "/usr/local/lib/python3.11/site-packages/alembic/script/base.py", line 545, in run_env
+    util.load_python_file(self.dir, "env.py")
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 116, in load_python_file
+    module = load_module_py(module_id, path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 136, in load_module_py
+    spec.loader.exec_module(module)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/app/alembic/env.py", line 10, in <module>
+    from robbot.infra.db import models  # noqa: F401 (imported but unused) - import to register models
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'models' from 'robbot.infra.db' (/app/src/robbot/infra/db/__init__.py)
+[36mapi[0m | [09:25:19.770] [31mERROR[0m (Entrypoint/1): Alembic falhou
+[ENTRYPOINT] Creating ChromaDB directory...
+[ENTRYPOINT] ChromaDB directory ready
+[36mapi[0m | [09:25:23.516] [32mINFO[0m (Entrypoint/1): Entrypoint iniciado
+[36mapi[0m | [09:25:23.529] [32mINFO[0m (Entrypoint/1): DATABASE_URL=postgresql+psycopg2://dba:***@db:5432/BotDB
+[36mapi[0m | [09:25:23.536] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true
+[36mapi[0m | [09:25:23.542] [32mINFO[0m (Entrypoint/1): WAIT_FOR_DB=true
+[36mapi[0m | [09:25:23.549] [32mINFO[0m (Entrypoint/1): DB host=db port=5432 user=dba db=BotDB
+[36mapi[0m | [09:25:23.555] [32mINFO[0m (Entrypoint/1): DB wait retries=60 sleep=2s
+[36mapi[0m | [09:25:23.562] [32mINFO[0m (Entrypoint/1): Aguardando disponibilidade do banco de dados...
+[36mapi[0m | [09:25:23.570] [32mINFO[0m (Entrypoint/1): Usando pg_isready para checar o DB
+[36mapi[0m | [09:25:23.652] [32mINFO[0m (Entrypoint/1): Banco de dados está disponível (pg_isready)
+[36mapi[0m | [09:25:23.659] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true e alembic.ini encontrado — executando alembic upgrade head
+Traceback (most recent call last):
+  File "/usr/local/bin/alembic", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1047, in main
+    CommandLine(prog=prog).main(argv=argv)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1037, in main
+    self.run_cmd(cfg, options)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 971, in run_cmd
+    fn(
+  File "/usr/local/lib/python3.11/site-packages/alembic/command.py", line 483, in upgrade
+    script.run_env()
+  File "/usr/local/lib/python3.11/site-packages/alembic/script/base.py", line 545, in run_env
+    util.load_python_file(self.dir, "env.py")
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 116, in load_python_file
+    module = load_module_py(module_id, path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 136, in load_module_py
+    spec.loader.exec_module(module)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/app/alembic/env.py", line 10, in <module>
+    from robbot.infra.db import models  # noqa: F401 (imported but unused) - import to register models
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'models' from 'robbot.infra.db' (/app/src/robbot/infra/db/__init__.py)
+[36mapi[0m | [09:25:25.930] [31mERROR[0m (Entrypoint/1): Alembic falhou
+[ENTRYPOINT] Creating ChromaDB directory...
+[ENTRYPOINT] ChromaDB directory ready
+[36mapi[0m | [09:25:32.636] [32mINFO[0m (Entrypoint/1): Entrypoint iniciado
+[36mapi[0m | [09:25:32.645] [32mINFO[0m (Entrypoint/1): DATABASE_URL=postgresql+psycopg2://dba:***@db:5432/BotDB
+[36mapi[0m | [09:25:32.651] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true
+[36mapi[0m | [09:25:32.655] [32mINFO[0m (Entrypoint/1): WAIT_FOR_DB=true
+[36mapi[0m | [09:25:32.659] [32mINFO[0m (Entrypoint/1): DB host=db port=5432 user=dba db=BotDB
+[36mapi[0m | [09:25:32.664] [32mINFO[0m (Entrypoint/1): DB wait retries=60 sleep=2s
+[36mapi[0m | [09:25:32.669] [32mINFO[0m (Entrypoint/1): Aguardando disponibilidade do banco de dados...
+[36mapi[0m | [09:25:32.673] [32mINFO[0m (Entrypoint/1): Usando pg_isready para checar o DB
+[36mapi[0m | [09:25:32.729] [32mINFO[0m (Entrypoint/1): Banco de dados está disponível (pg_isready)
+[36mapi[0m | [09:25:32.733] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true e alembic.ini encontrado — executando alembic upgrade head
+Traceback (most recent call last):
+  File "/usr/local/bin/alembic", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1047, in main
+    CommandLine(prog=prog).main(argv=argv)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1037, in main
+    self.run_cmd(cfg, options)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 971, in run_cmd
+    fn(
+  File "/usr/local/lib/python3.11/site-packages/alembic/command.py", line 483, in upgrade
+    script.run_env()
+  File "/usr/local/lib/python3.11/site-packages/alembic/script/base.py", line 545, in run_env
+    util.load_python_file(self.dir, "env.py")
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 116, in load_python_file
+    module = load_module_py(module_id, path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 136, in load_module_py
+    spec.loader.exec_module(module)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/app/alembic/env.py", line 10, in <module>
+    from robbot.infra.db import models  # noqa: F401 (imported but unused) - import to register models
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'models' from 'robbot.infra.db' (/app/src/robbot/infra/db/__init__.py)
+[36mapi[0m | [09:25:34.823] [31mERROR[0m (Entrypoint/1): Alembic falhou
+[ENTRYPOINT] Creating ChromaDB directory...
+[ENTRYPOINT] ChromaDB directory ready
+[36mapi[0m | [09:25:47.900] [32mINFO[0m (Entrypoint/1): Entrypoint iniciado
+[36mapi[0m | [09:25:47.908] [32mINFO[0m (Entrypoint/1): DATABASE_URL=postgresql+psycopg2://dba:***@db:5432/BotDB
+[36mapi[0m | [09:25:47.912] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true
+[36mapi[0m | [09:25:47.915] [32mINFO[0m (Entrypoint/1): WAIT_FOR_DB=true
+[36mapi[0m | [09:25:47.919] [32mINFO[0m (Entrypoint/1): DB host=db port=5432 user=dba db=BotDB
+[36mapi[0m | [09:25:47.922] [32mINFO[0m (Entrypoint/1): DB wait retries=60 sleep=2s
+[36mapi[0m | [09:25:47.925] [32mINFO[0m (Entrypoint/1): Aguardando disponibilidade do banco de dados...
+[36mapi[0m | [09:25:47.928] [32mINFO[0m (Entrypoint/1): Usando pg_isready para checar o DB
+[36mapi[0m | [09:25:47.960] [32mINFO[0m (Entrypoint/1): Banco de dados está disponível (pg_isready)
+[36mapi[0m | [09:25:47.963] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true e alembic.ini encontrado — executando alembic upgrade head
+Traceback (most recent call last):
+  File "/usr/local/bin/alembic", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1047, in main
+    CommandLine(prog=prog).main(argv=argv)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1037, in main
+    self.run_cmd(cfg, options)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 971, in run_cmd
+    fn(
+  File "/usr/local/lib/python3.11/site-packages/alembic/command.py", line 483, in upgrade
+    script.run_env()
+  File "/usr/local/lib/python3.11/site-packages/alembic/script/base.py", line 545, in run_env
+    util.load_python_file(self.dir, "env.py")
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 116, in load_python_file
+    module = load_module_py(module_id, path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 136, in load_module_py
+    spec.loader.exec_module(module)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/app/alembic/env.py", line 10, in <module>
+    from robbot.infra.db import models  # noqa: F401 (imported but unused) - import to register models
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'models' from 'robbot.infra.db' (/app/src/robbot/infra/db/__init__.py)
+[36mapi[0m | [09:25:49.183] [31mERROR[0m (Entrypoint/1): Alembic falhou
+[ENTRYPOINT] Creating ChromaDB directory...
+[ENTRYPOINT] ChromaDB directory ready
+[36mapi[0m | [09:26:15.085] [32mINFO[0m (Entrypoint/1): Entrypoint iniciado
+[36mapi[0m | [09:26:15.091] [32mINFO[0m (Entrypoint/1): DATABASE_URL=postgresql+psycopg2://dba:***@db:5432/BotDB
+[36mapi[0m | [09:26:15.094] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true
+[36mapi[0m | [09:26:15.097] [32mINFO[0m (Entrypoint/1): WAIT_FOR_DB=true
+[36mapi[0m | [09:26:15.099] [32mINFO[0m (Entrypoint/1): DB host=db port=5432 user=dba db=BotDB
+[36mapi[0m | [09:26:15.103] [32mINFO[0m (Entrypoint/1): DB wait retries=60 sleep=2s
+[36mapi[0m | [09:26:15.106] [32mINFO[0m (Entrypoint/1): Aguardando disponibilidade do banco de dados...
+[36mapi[0m | [09:26:15.109] [32mINFO[0m (Entrypoint/1): Usando pg_isready para checar o DB
+[36mapi[0m | [09:26:15.147] [32mINFO[0m (Entrypoint/1): Banco de dados está disponível (pg_isready)
+[36mapi[0m | [09:26:15.150] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true e alembic.ini encontrado — executando alembic upgrade head
+Traceback (most recent call last):
+  File "/usr/local/bin/alembic", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1047, in main
+    CommandLine(prog=prog).main(argv=argv)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1037, in main
+    self.run_cmd(cfg, options)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 971, in run_cmd
+    fn(
+  File "/usr/local/lib/python3.11/site-packages/alembic/command.py", line 483, in upgrade
+    script.run_env()
+  File "/usr/local/lib/python3.11/site-packages/alembic/script/base.py", line 545, in run_env
+    util.load_python_file(self.dir, "env.py")
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 116, in load_python_file
+    module = load_module_py(module_id, path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 136, in load_module_py
+    spec.loader.exec_module(module)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/app/alembic/env.py", line 10, in <module>
+    from robbot.infra.db import models  # noqa: F401 (imported but unused) - import to register models
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'models' from 'robbot.infra.db' (/app/src/robbot/infra/db/__init__.py)
+[36mapi[0m | [09:26:16.227] [31mERROR[0m (Entrypoint/1): Alembic falhou
+[ENTRYPOINT] Creating ChromaDB directory...
+[ENTRYPOINT] ChromaDB directory ready
+[36mapi[0m | [09:27:07.676] [32mINFO[0m (Entrypoint/1): Entrypoint iniciado
+[36mapi[0m | [09:27:07.681] [32mINFO[0m (Entrypoint/1): DATABASE_URL=postgresql+psycopg2://dba:***@db:5432/BotDB
+[36mapi[0m | [09:27:07.685] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true
+[36mapi[0m | [09:27:07.689] [32mINFO[0m (Entrypoint/1): WAIT_FOR_DB=true
+[36mapi[0m | [09:27:07.691] [32mINFO[0m (Entrypoint/1): DB host=db port=5432 user=dba db=BotDB
+[36mapi[0m | [09:27:07.695] [32mINFO[0m (Entrypoint/1): DB wait retries=60 sleep=2s
+[36mapi[0m | [09:27:07.698] [32mINFO[0m (Entrypoint/1): Aguardando disponibilidade do banco de dados...
+[36mapi[0m | [09:27:07.700] [32mINFO[0m (Entrypoint/1): Usando pg_isready para checar o DB
+[36mapi[0m | [09:27:07.736] [32mINFO[0m (Entrypoint/1): Banco de dados está disponível (pg_isready)
+[36mapi[0m | [09:27:07.738] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true e alembic.ini encontrado — executando alembic upgrade head
+Traceback (most recent call last):
+  File "/usr/local/bin/alembic", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1047, in main
+    CommandLine(prog=prog).main(argv=argv)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1037, in main
+    self.run_cmd(cfg, options)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 971, in run_cmd
+    fn(
+  File "/usr/local/lib/python3.11/site-packages/alembic/command.py", line 483, in upgrade
+    script.run_env()
+  File "/usr/local/lib/python3.11/site-packages/alembic/script/base.py", line 545, in run_env
+    util.load_python_file(self.dir, "env.py")
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 116, in load_python_file
+    module = load_module_py(module_id, path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 136, in load_module_py
+    spec.loader.exec_module(module)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/app/alembic/env.py", line 10, in <module>
+    from robbot.infra.db import models  # noqa: F401 (imported but unused) - import to register models
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'models' from 'robbot.infra.db' (/app/src/robbot/infra/db/__init__.py)
+[36mapi[0m | [09:27:08.946] [31mERROR[0m (Entrypoint/1): Alembic falhou
+[ENTRYPOINT] Creating ChromaDB directory...
+[ENTRYPOINT] ChromaDB directory ready
+[36mapi[0m | [09:28:09.176] [32mINFO[0m (Entrypoint/1): Entrypoint iniciado
+[36mapi[0m | [09:28:09.182] [32mINFO[0m (Entrypoint/1): DATABASE_URL=postgresql+psycopg2://dba:***@db:5432/BotDB
+[36mapi[0m | [09:28:09.187] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true
+[36mapi[0m | [09:28:09.191] [32mINFO[0m (Entrypoint/1): WAIT_FOR_DB=true
+[36mapi[0m | [09:28:09.194] [32mINFO[0m (Entrypoint/1): DB host=db port=5432 user=dba db=BotDB
+[36mapi[0m | [09:28:09.196] [32mINFO[0m (Entrypoint/1): DB wait retries=60 sleep=2s
+[36mapi[0m | [09:28:09.200] [32mINFO[0m (Entrypoint/1): Aguardando disponibilidade do banco de dados...
+[36mapi[0m | [09:28:09.203] [32mINFO[0m (Entrypoint/1): Usando pg_isready para checar o DB
+[36mapi[0m | [09:28:09.237] [32mINFO[0m (Entrypoint/1): Banco de dados está disponível (pg_isready)
+[36mapi[0m | [09:28:09.240] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true e alembic.ini encontrado — executando alembic upgrade head
+Traceback (most recent call last):
+  File "/usr/local/bin/alembic", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1047, in main
+    CommandLine(prog=prog).main(argv=argv)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1037, in main
+    self.run_cmd(cfg, options)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 971, in run_cmd
+    fn(
+  File "/usr/local/lib/python3.11/site-packages/alembic/command.py", line 483, in upgrade
+    script.run_env()
+  File "/usr/local/lib/python3.11/site-packages/alembic/script/base.py", line 545, in run_env
+    util.load_python_file(self.dir, "env.py")
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 116, in load_python_file
+    module = load_module_py(module_id, path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 136, in load_module_py
+    spec.loader.exec_module(module)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/app/alembic/env.py", line 10, in <module>
+    from robbot.infra.db import models  # noqa: F401 (imported but unused) - import to register models
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'models' from 'robbot.infra.db' (/app/src/robbot/infra/db/__init__.py)
+[36mapi[0m | [09:28:10.456] [31mERROR[0m (Entrypoint/1): Alembic falhou
+[ENTRYPOINT] Creating ChromaDB directory...
+[ENTRYPOINT] ChromaDB directory ready
+[36mapi[0m | [09:29:10.711] [32mINFO[0m (Entrypoint/1): Entrypoint iniciado
+[36mapi[0m | [09:29:10.717] [32mINFO[0m (Entrypoint/1): DATABASE_URL=postgresql+psycopg2://dba:***@db:5432/BotDB
+[36mapi[0m | [09:29:10.723] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true
+[36mapi[0m | [09:29:10.728] [32mINFO[0m (Entrypoint/1): WAIT_FOR_DB=true
+[36mapi[0m | [09:29:10.731] [32mINFO[0m (Entrypoint/1): DB host=db port=5432 user=dba db=BotDB
+[36mapi[0m | [09:29:10.735] [32mINFO[0m (Entrypoint/1): DB wait retries=60 sleep=2s
+[36mapi[0m | [09:29:10.739] [32mINFO[0m (Entrypoint/1): Aguardando disponibilidade do banco de dados...
+[36mapi[0m | [09:29:10.742] [32mINFO[0m (Entrypoint/1): Usando pg_isready para checar o DB
+[36mapi[0m | [09:29:10.781] [32mINFO[0m (Entrypoint/1): Banco de dados está disponível (pg_isready)
+[36mapi[0m | [09:29:10.784] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true e alembic.ini encontrado — executando alembic upgrade head
+Traceback (most recent call last):
+  File "/usr/local/bin/alembic", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1047, in main
+    CommandLine(prog=prog).main(argv=argv)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1037, in main
+    self.run_cmd(cfg, options)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 971, in run_cmd
+    fn(
+  File "/usr/local/lib/python3.11/site-packages/alembic/command.py", line 483, in upgrade
+    script.run_env()
+  File "/usr/local/lib/python3.11/site-packages/alembic/script/base.py", line 545, in run_env
+    util.load_python_file(self.dir, "env.py")
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 116, in load_python_file
+    module = load_module_py(module_id, path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 136, in load_module_py
+    spec.loader.exec_module(module)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/app/alembic/env.py", line 10, in <module>
+    from robbot.infra.db import models  # noqa: F401 (imported but unused) - import to register models
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'models' from 'robbot.infra.db' (/app/src/robbot/infra/db/__init__.py)
+[36mapi[0m | [09:29:12.152] [31mERROR[0m (Entrypoint/1): Alembic falhou
+[ENTRYPOINT] Creating ChromaDB directory...
+[ENTRYPOINT] ChromaDB directory ready
+[36mapi[0m | [09:30:12.385] [32mINFO[0m (Entrypoint/1): Entrypoint iniciado
+[36mapi[0m | [09:30:12.392] [32mINFO[0m (Entrypoint/1): DATABASE_URL=postgresql+psycopg2://dba:***@db:5432/BotDB
+[36mapi[0m | [09:30:12.396] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true
+[36mapi[0m | [09:30:12.405] [32mINFO[0m (Entrypoint/1): WAIT_FOR_DB=true
+[36mapi[0m | [09:30:12.409] [32mINFO[0m (Entrypoint/1): DB host=db port=5432 user=dba db=BotDB
+[36mapi[0m | [09:30:12.412] [32mINFO[0m (Entrypoint/1): DB wait retries=60 sleep=2s
+[36mapi[0m | [09:30:12.417] [32mINFO[0m (Entrypoint/1): Aguardando disponibilidade do banco de dados...
+[36mapi[0m | [09:30:12.421] [32mINFO[0m (Entrypoint/1): Usando pg_isready para checar o DB
+[36mapi[0m | [09:30:12.483] [32mINFO[0m (Entrypoint/1): Banco de dados está disponível (pg_isready)
+[36mapi[0m | [09:30:12.486] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true e alembic.ini encontrado — executando alembic upgrade head
+Traceback (most recent call last):
+  File "/usr/local/bin/alembic", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1047, in main
+    CommandLine(prog=prog).main(argv=argv)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 1037, in main
+    self.run_cmd(cfg, options)
+  File "/usr/local/lib/python3.11/site-packages/alembic/config.py", line 971, in run_cmd
+    fn(
+  File "/usr/local/lib/python3.11/site-packages/alembic/command.py", line 483, in upgrade
+    script.run_env()
+  File "/usr/local/lib/python3.11/site-packages/alembic/script/base.py", line 545, in run_env
+    util.load_python_file(self.dir, "env.py")
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 116, in load_python_file
+    module = load_module_py(module_id, path)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 136, in load_module_py
+    spec.loader.exec_module(module)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/app/alembic/env.py", line 10, in <module>
+    from robbot.infra.db import models  # noqa: F401 (imported but unused) - import to register models
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ImportError: cannot import name 'models' from 'robbot.infra.db' (/app/src/robbot/infra/db/__init__.py)
+[36mapi[0m | [09:30:13.708] [31mERROR[0m (Entrypoint/1): Alembic falhou
