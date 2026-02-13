@@ -88,7 +88,7 @@ class Settings(BaseSettings):
 
     # Message debouncing (group rapid messages)
     MESSAGE_DEBOUNCE_SECONDS: int = Field(
-        default=2,
+        default=10,
         description="Seconds to wait before processing message (groups rapid messages together)"
     )
 

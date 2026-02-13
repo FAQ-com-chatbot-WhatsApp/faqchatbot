@@ -21,6 +21,7 @@ class MessageFilterService:
 
     def __init__(self):
         self.redis = get_redis_client()
+        self.last_check_was_processed = False
 
     def should_process(self, message: dict, allowed_senders: Set[str] | None = None) -> bool:
         """
@@ -62,9 +63,14 @@ class MessageFilterService:
 
         # 3. Deduplication Check (Idempotency)
         if not message_id:
+            self.last_check_was_processed = False
             logger.debug("[FILTER] Rejeitada (sem message_id)")
             return False
-        if self._is_processed(message_id):
+        
+        is_processed = self._is_processed(message_id)
+        self.last_check_was_processed = is_processed
+        
+        if is_processed:
             # DEBUG level to avoid spam — dedup is normal in polling mode
             logger.debug("[FILTER] Rejeitada (já processada): msg_id=%s", message_id)
             return False

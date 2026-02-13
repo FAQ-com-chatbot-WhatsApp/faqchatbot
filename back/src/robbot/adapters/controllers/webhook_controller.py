@@ -11,6 +11,7 @@ from robbot.config.settings import get_settings
 from robbot.core.custom_exceptions import ExternalServiceError, QueueError
 from robbot.schemas.waha import WebhookLogOut, WebhookPayload
 from robbot.services.infrastructure.queue_service import get_queue_service
+from robbot.services.communication.message_filter_service import MessageFilterService
 
 router = APIRouter()
 
@@ -163,6 +164,13 @@ async def receive_waha_webhook(
                 message_data=message_data,
                 message_direction="inbound",
             )
+
+            # De-duplication: Mark as processed immediately to prevent polling pick-up
+            try:
+                message_filter = MessageFilterService()
+                message_filter.mark_as_processed(message_data.get("id"))
+            except Exception as e:
+                logger.warning("[WEBHOOK] Failed to mark message as processed: %s", e)
 
             logger.info(
                 "[SUCCESS] Mensagem enfileirada para processamento: %s",

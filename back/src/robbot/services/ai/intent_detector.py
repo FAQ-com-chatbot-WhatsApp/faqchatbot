@@ -57,6 +57,7 @@ class IntentDetector:
                 "DUVIDA_TECNICA",
                 "RECLAMACAO",
                 "AGRADECIMENTO",
+                "ENCERRAMENTO",
                 "OUTRO",
             ]
 

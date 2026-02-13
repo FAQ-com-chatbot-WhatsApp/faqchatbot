@@ -1,28 +1,3 @@
----
-status: filled
-generated: 2026-02-10
-agents:
-  - type: "bug-fixer"
-    role: "Corrigir os 3 bugs identificados no fluxo de polling"
-  - type: "test-writer"
-    role: "Criar testes de verificação para cada camada do fluxo"
-  - type: "code-reviewer"
-    role: "Revisar as correções garantindo que não quebram fluxo PROD"
-phases:
-  - id: "phase-1"
-    name: "Investigação & Diagnóstico"
-    prevc: "P"
-  - id: "phase-2"
-    name: "Revisão do Plano"
-    prevc: "R"
-  - id: "phase-3"
-    name: "Execução das Correções"
-    prevc: "E"
-  - id: "phase-4"
-    name: "Verificação & Validação"
-    prevc: "V"
----
-
 # Corrigir Polling WAHA — Mensagens Silenciosamente Descartadas no DEV Mode
 
 > O polling WAHA busca mensagens com sucesso (HTTP 200) de 4 chats, mas NENHUMA mensagem é
@@ -71,7 +46,7 @@ Impossível diagnosticar em produção sem adicionar logs temporários. Isso mas
 ```python
 if not message_id or self._is_processed(message_id):
 ```
-**Impacto:** O polling busca os últimos 10 mensagens repetidamente. Após o primeiro ciclo
+**Impacto:** O polling busca os últimos 10 mensagens repetidamente. Após the primeiro ciclo
 bem-sucedido, todos os IDs estão em `waha:processed:*` com TTL de 24h. Ciclos subsequentes
 rejeitam tudo por deduplicação. Isso é **comportamento esperado** quando os bugs 1-2 estiverem
 corrigidos, mas atualmente mascara o problema pois as mensagens nunca chegam a esse estágio.
@@ -198,3 +173,16 @@ allowed_senders = set(settings.dev_phone_list) if settings.DEV_MODE else None
 ## Rollback
 - Reverter commits em `message_filter_service.py` e `message_polling_job.py`
 - Nenhum impacto em banco de dados ou Redis (apenas lógica de filtro)
+
+---
+
+## 📈 Execution Report (2026-02-10)
+
+O plano foi **totalmente executado** com sucesso. As verificações no codebase confirmam:
+
+1.  **Bug 1 (fromMe)**: O default foi alterado para `False` em `MessageFilterService.should_process()`.
+2.  **Bug 2 (Allowed Senders)**: Refatorado para usar o `PollingStrategy` pattern. O `DevPollingStrategy` agora utiliza `settings.dev_phone_list` para filtrar chats diretamente na fonte (LIDs), eliminando a incompatibilidade de formatos.
+3.  **Bug 3 (Observabilidade)**: Adicionados logs `DEBUG` detalhados para cada critério de rejeição no filtro, permitindo diagnóstico rápido sem alterações de código.
+4.  **Deduplicação**: Mantida e validada via logs de `[FILTER] Rejeitada (já processada)`.
+
+**Resultado**: O polling agora processa mensagens de remetentes autorizados em DEV Mode e o ciclo completa com sucesso (`[POLLING] Ciclo concluído`).

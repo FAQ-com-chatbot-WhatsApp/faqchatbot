@@ -1,13 +1,12 @@
 # Project Overview
 
-## Project Overview
-BotDB is an intelligent chatbot automation system specifically designed for medical clinics (Clínica Go). It automates patient interactions on WhatsApp using advanced AI models like Groq (Llama 3) and Google Gemini, following the SPIN Selling methodology to qualify leads and facilitate appointment scheduling.
+BotDB is an intelligent chatbot automation system specifically designed for medical clinics (**Clínica Go**). It automates patient interactions on WhatsApp using advanced AI models like **Groq (Llama 3)** and **Google Gemini**, following the **SPIN Selling methodology** to qualify leads and facilitate appointment scheduling.
 
 ## Codebase Reference
 > **Detailed Analysis**: For complete symbol counts, architecture layers, and dependency graphs, see [`codebase-map.json`](./codebase-map.json).
 
 ## Quick Facts
-- Root: `d:\_projects\clinica_go\back`
+- Root: `d:\_projects\clinica_go\\back`
 - Languages: Python (Primary), SQL, Shell
 - Entry: `src/robbot/api/main.py`
 - Full analysis: [`codebase-map.json`](./codebase-map.json)

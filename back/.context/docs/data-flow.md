@@ -1,6 +1,5 @@
 # Data Flow & Integrations
 
-## Data Flow & Integrations
 Data in BotDB flows from external triggers (WhatsApp messages) through multiple processing stages, including filtering, queueing, AI analysis, and response generation, finally returning to the user via WhatsApp.
 
 ## Module Dependencies

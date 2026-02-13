@@ -11,6 +11,7 @@ from robbot.services.ai.context_builder import ContextBuilder
 from robbot.services.ai.intent_detector import IntentDetector
 from robbot.services.ai.context_validator import ContextValidator
 from robbot.infra.persistence.models.conversation_model import ConversationModel
+from robbot.infra.persistence.repositories.conversation_message_repository import ConversationMessageRepository
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,7 @@ class PipelineState:
         self.is_urgent = False
         self.new_score = 0
         self.validation_reason = None
+        self.recent_history = ""
 
 
 class ConversationPipeline:
@@ -44,6 +46,7 @@ class ConversationPipeline:
         self.context_builder = ContextBuilder(vector_store)
         self.intent_detector = IntentDetector(llm, prompt_templates)
         self.validator = ContextValidator(min_similarity_score=0.65)
+        self.message_repo = ConversationMessageRepository(session)
 
     async def execute(
         self, 
@@ -69,21 +72,40 @@ class ConversationPipeline:
             self.session, conversation.id, state.message_text, from_phone=conversation.phone_number
         )
 
-        # 3. Fetch context
-        raw_context = await self.context_builder.get_conversation_context(conversation.id)
+        # 3. Fetch context (RAG - Knowledge Base)
+        # We use Chroma for "long-term" or "relevant fact" retrieval, not necessarily conversation flow logs.
+        rag_context = await self.context_builder.get_conversation_context(conversation.id, limit=5)
 
-        # 4. Validate context
+        # 3b. Fetch Recent History (Sliding Window - Postgres)
+        # We fetch the last 15 messages to maintain coherent conversation flow.
+        recent_messages = self.message_repo.get_by_conversation(conversation.id, limit=15)
+        # Sort by oldest first for correct reading order
+        recent_messages.sort(key=lambda x: x.created_at)
+        
+        # Format history string
+        history_lines = []
+        for msg in recent_messages:
+            sender = "User" if msg.direction.value == "INBOUND" else "Bot"
+            history_lines.append(f"{sender}: {msg.body}")
+        
+        state.recent_history = "\n".join(history_lines)
+
+        # 4. Validate context (Chroma only)
+        # Validating recent history is redundant as it is factual log. We validate the RAG context.
         validation = await self.validator.validate_context(
             user_message=state.message_text, 
-            retrieved_context=raw_context, 
+            retrieved_context=rag_context, 
             conversation_id=conversation.id
         )
         
         if validation["is_valid"]:
-            state.context_text = validation["filtered_context"]
+            filtered_rag = validation["filtered_context"]
         else:
             state.validation_reason = validation.get("reason", "Unknown")
-            state.context_text = ""
+            filtered_rag = ""
+
+        # Combine: Priority to Recent History, then RAG
+        state.context_text = f"RECENT CONVERSATION LOG:\n{state.recent_history}\n\nRELEVANT FACTS/MEMORY:\n{filtered_rag}"
 
         # 5. Detect intent and urgency
         state.intent, state.spin_phase = await self.intent_detector.detect_intent(state.message_text, state.context_text)

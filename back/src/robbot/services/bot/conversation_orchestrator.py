@@ -87,8 +87,14 @@ class ConversationOrchestrator:
                 response_data = await self._generate_response(state, conversation)
                 response_text = self._normalize_response_text(response_data["response"])
 
-                # 7. Check Handoff
-                if await self._should_handoff(conversation, state):
+                # 7. Check Closure
+                if state.intent == "ENCERRAMENTO":
+                    conv_service.close(conversation.id, reason="CLIENT_REQUEST")
+                    # Force a polite closing message if LLM didn't generate one well
+                    response_text = "Entendido! Conversa encerrada. Se precisar de algo no futuro, é só chamar. Até mais! 👋"
+
+                # 8. Check Handoff
+                elif await self._should_handoff(conversation, state):
                     response_text = await self._trigger_handoff(session, conversation, state.new_score)
                     state.intent = "HANDOFF"
 

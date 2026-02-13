@@ -1,46 +1,42 @@
 project:
-  name: "fix-waha-polling-dev"
-  scale: SMALL
-  started: "2026-02-10T13:40:32.353Z"
+  name: "Optimize Polling and Debounce"
+  scale: MEDIUM
+  started: "2026-02-10T18:30:30.531Z"
   current_phase: V
 
 phases:
   P:
     status: filled
-    started_at: "2026-02-10T13:40:32.353Z"
-    completed_at: "2026-02-10T13:51:37.247Z"
+    started_at: "2026-02-10T18:30:30.531Z"
+    completed_at: "2026-02-10T18:30:58.521Z"
   R:
-    status: skipped
-    reason: "Not required for scale SMALL"
-  E:
     status: filled
-    started_at: "2026-02-10T13:51:37.268Z"
-    completed_at: "2026-02-10T13:51:45.072Z"
+    started_at: "2026-02-10T18:30:58.539Z"
+    completed_at: "2026-02-10T18:31:15.050Z"
+  E:
+    status: completed
+    started_at: "2026-02-10T18:31:15.058Z"
+    completed_at: "2026-02-10T18:32:55.339Z"
   V:
     status: completed
-    started_at: "2026-02-10T13:51:45.086Z"
-    completed_at: "2026-02-10T13:52:55.212Z"
-    outputs:
-      - path: "src/robbot/services/communication/message_filter_service.py"
-        status: filled
-      - path: "src/robbot/infra/jobs/message_polling_job.py"
-        status: filled
+    started_at: "2026-02-10T18:32:55.347Z"
+    completed_at: "2026-02-10T18:32:59.475Z"
   C:
     status: skipped
-    reason: "Not required for scale SMALL"
+    reason: "Not required for scale MEDIUM"
 
 execution:
   history:
-    - timestamp: "2026-02-10T13:52:55.212Z"
+    - timestamp: "2026-02-10T18:32:59.475Z"
       phase: V
       action: completed
-  last_activity: "2026-02-10T13:52:55.212Z"
+  last_activity: "2026-02-10T18:32:59.475Z"
   resume_context: "Fase V (Validação) concluída"
 
 approval:
   plan_created: true
   plan_approved: true
-  approved_by: "solo-dev"
-  approved_at: "2026-02-10T13:51:42.177Z"
-  approval_notes: "3 bugs identificados com root cause claro. Correções são cirúrgicas e de baixo risco. Plano inclui verificação completa."
+  approved_by: "architect"
+  approved_at: "2026-02-10T18:31:10.286Z"
+  approval_notes: "Plan is sound and addresses both latency and consistency issues."
 
