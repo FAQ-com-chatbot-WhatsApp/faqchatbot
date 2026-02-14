@@ -5,11 +5,14 @@ export async function loginApi(email: string, password: string, rememberMe: bool
   formData.append("username", email)
   formData.append("password", password)
   formData.append("rememberMe", rememberMe ? "true" : "false")
-  return fetchApi("/api/v1/auth/token", {
+  const res = await fetchApi("/api/v1/auth/token", {
     method: "POST",
     body: formData.toString(),
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    credentials: 'include',
   })
+  
+  return res
 }
 
 export async function signupApi(email: string, password: string, full_name?: string) {
@@ -17,6 +20,13 @@ export async function signupApi(email: string, password: string, full_name?: str
     method: "POST",
     body: JSON.stringify({ email, password, full_name }),
   })
+}
+
+export function logoutApi() {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('access_token')
+  }
+  return true
 }
 
 export { normalizeApiError }

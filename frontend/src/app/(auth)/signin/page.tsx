@@ -1,7 +1,6 @@
 "use client"
 
-import { Suspense } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -24,6 +23,7 @@ import { useFormFeedback } from "@/hooks/useFormFeedback"
 import { signInSchema, SignInValues } from "@/lib/validations/auth"
 
 function SignInForm() {
+  const router = useRouter()
   const { loading, error, success, login, setError } = useAuth()
   const searchParams = useSearchParams()
 
@@ -41,7 +41,10 @@ function SignInForm() {
 
   async function onSubmit(data: SignInValues) {
     setError(null)
-    await login(data.email, data.password, data.remember ?? false)
+    const ok = await login(data.email, data.password, data.remember ?? false)
+    if (ok) {
+      router.push('/dashboard')
+    }
   }
 
   return (
@@ -184,9 +187,5 @@ function SignInForm() {
 }
 
 export default function SignInPage() {
-  return (
-    <Suspense fallback={<div className="flex items-center justify-center p-8">Loading...</div>}>
-      <SignInForm />
-    </Suspense>
-  )
+  return <SignInForm />
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useAuthRedirect } from '../../hooks/useAuthRedirect'
 import { 
   Menu, 
   Search, 
@@ -15,13 +16,11 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Progress } from '@/components/ui/progress'
 
 export default function DashboardPage() {
+  const { loading } = useAuthRedirect()
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [selectedTab, setSelectedTab] = useState('monthly')
 
@@ -81,6 +80,14 @@ export default function DashboardPage() {
     return 'bg-gray-100 text-gray-800'
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p>Carregando...</p>
+      </div>
+    )
+  }
+
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
@@ -103,9 +110,7 @@ export default function DashboardPage() {
         <nav className="flex-1 p-4 space-y-2">
           {[
             { icon: '🏠', label: 'Dashboard', active: true },
-            { icon: '📁', label: 'Inicio/Fim de Sessão', active: false },
             { icon: '📇', label: 'Contatos', active: false },
-            { icon: '📅', label: 'Calendário', active: false },
             { icon: '💬', label: 'Mensagens', active: false },
             { icon: '⚙️', label: 'Configurações', active: false },
           ].map((item) => (
@@ -240,29 +245,6 @@ export default function DashboardPage() {
                         Colocar gráfico de alcance de novos pacientes aqui 
                       </p>
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Right Panel */}
-              <div className="space-y-6">
-                {/* Upcoming Projects */}
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">Próximos Agendamentos</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {upcomingProjects.map((project) => (
-                      <div key={project.id} className="pb-4 border-b last:border-b-0 last:pb-0">
-                        <h4 className="font-medium text-sm mb-1">{project.title}</h4>
-                        <p className="text-xs text-muted-foreground mb-2">{project.status}</p>
-                        <div className="flex items-center gap-1 text-xs text-blue-600 font-medium">
-                          ⏱️ {project.deadline}
-                        </div>
-                      </div>
-                    ))}
                   </CardContent>
                 </Card>
               </div>

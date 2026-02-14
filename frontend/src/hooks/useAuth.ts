@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { loginApi, signupApi, normalizeApiError } from "@/services/authService"
+import { loginApi, signupApi, logoutApi, normalizeApiError } from "@/services/authService"
 
 export function useAuth() {
   const [loading, setLoading] = useState(false)
@@ -12,6 +12,10 @@ export function useAuth() {
     setLoading(true)
     try {
       await loginApi(email, password, rememberMe)
+      // Ensure token is saved in localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('access_token', 'true')
+      }
       setSuccess("Login realizado com sucesso!")
       return true
     } catch (err: any) {
@@ -39,5 +43,10 @@ export function useAuth() {
     }
   }
 
-  return { loading, error, success, login, signup, setError, setSuccess }
+  async function logout() {
+    logoutApi()
+    return true
+  }
+
+  return { loading, error, success, login, signup, logout, setError, setSuccess }
 }
