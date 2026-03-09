@@ -322,17 +322,20 @@ Available in API Responses + Dashboard
 ### Development Environment
 
 **Docker Compose Services:**
-- api: FastAPI application
+- web: Next.js Frontend (Port 3000)
+- api: FastAPI application (Port 3333)
 - worker: RQ background workers (2 instances)
 - db: PostgreSQL 18
 - redis: Redis 7
-- waha: WhatsApp HTTP API
+- waha: WhatsApp HTTP API (Port 3001)
 
 **Commands:**
 ```bash
 docker-compose up --build
+# Web: http://localhost:3000
 # API: http://localhost:3333
 # Docs: http://localhost:3333/docs
+# WAHA: http://localhost:3001/dashboard
 ```
 
 ### Production Environment
