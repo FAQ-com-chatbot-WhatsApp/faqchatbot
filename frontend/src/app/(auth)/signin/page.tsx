@@ -1,5 +1,6 @@
 "use client"
 
+import { Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
@@ -187,5 +188,9 @@ function SignInForm() {
 }
 
 export default function SignInPage() {
-  return <SignInForm />
+  return (
+    <Suspense fallback={<div>Carregando...</div>}>
+      <SignInForm />
+    </Suspense>
+  )
 }
