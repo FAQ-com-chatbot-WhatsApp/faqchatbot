@@ -2,6 +2,45 @@ import { test, expect } from '@playwright/test'
 
 // Test Sign In Page
 
+// helpers to stub auth endpoints
+async function allowAuth(page, ok: boolean) {
+  await page.route('**/api/v1/auth/me', route => {
+    route.fulfill({ status: ok ? 200 : 401, contentType: 'application/json', body: '{}' })
+  })
+}
+
+// root behaviour
+
+test.describe('Root path', () => {
+  test('redirects to signin when user is not logged', async ({ page }) => {
+    await allowAuth(page, false)
+    await page.goto('/')
+    await expect(page).toHaveURL('/signin')
+  })
+
+  test('redirects to dashboard when user is already logged', async ({ page }) => {
+    await allowAuth(page, true)
+    await page.goto('/')
+    await expect(page).toHaveURL('/dashboard')
+  })
+})
+
+// dashboard protection
+
+test.describe('Dashboard Guard', () => {
+  test('unauthenticated visitor is sent to signin', async ({ page }) => {
+    await allowAuth(page, false)
+    await page.goto('/dashboard')
+    await expect(page).toHaveURL('/signin')
+  })
+
+  test('authenticated visitor stays on dashboard', async ({ page }) => {
+    await allowAuth(page, true)
+    await page.goto('/dashboard')
+    await expect(page).toHaveURL('/dashboard')
+  })
+})
+
 test.describe('Sign In Page', () => {
   test('should render all elements and allow navigation to Sign Up', async ({ page }) => {
     await page.goto('/signin')
@@ -56,6 +95,21 @@ test.describe('Sign In Page', () => {
       await expect(page.getByTestId('login-password')).toBeVisible()
       await expect(page.getByTestId('login-submit')).toBeVisible()
     })
+  })
+
+  test('successful login pushes to dashboard', async ({ page }) => {
+    // stub login and subsequent auth/me call
+    await page.route('**/api/v1/auth/token', route => {
+      route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
+    })
+    await allowAuth(page, true)
+
+    await page.goto('/signin')
+    await page.getByTestId('login-username').fill('foo@bar.com')
+    await page.getByTestId('login-password').fill('password123')
+    await page.getByTestId('login-submit').click()
+
+    await expect(page).toHaveURL('/dashboard')
   })
 })
 

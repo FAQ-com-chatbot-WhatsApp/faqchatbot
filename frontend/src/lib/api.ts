@@ -33,6 +33,8 @@ export async function fetchApi<T>(
       headers['Content-Type'] = 'application/json';
     }
     const res = await fetch(`${BASE_URL}${endpoint}`, {
+      // always include cookies for auth traffic unless explicitly overridden
+      credentials: options?.credentials ?? 'include',
       ...options,
       signal,
       headers,

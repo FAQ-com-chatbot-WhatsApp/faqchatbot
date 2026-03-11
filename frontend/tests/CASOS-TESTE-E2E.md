@@ -21,6 +21,34 @@ Este documento descreve os casos de teste end-to-end (e2e) implementados para a 
 
 ## 1. Testes de Autenticação (`auth-pages.spec.ts`)
 
+### 1.0 Redirecionamentos globais e proteção de rota
+
+#### **Teste: Acesso `/` redireciona corretamente**
+**Objetivo:** Garantir que a rota inicial leva o usuário ao lugar certo conforme seu estado de autenticação.
+
+**Passos:**
+1. Simular backend respondendo 401 para `/api/v1/auth/me` e acessar `/`  
+2. Verificar que o browser é redirecionado para `/signin`  
+3. Simular backend respondendo 200 (usuário válido) e acessar `/`  
+4. Verificar redirecionamento para `/dashboard`
+
+**Validações:**
+- ✅ Usuário não logado não vê `/dashboard` diretamente  
+- ✅ Usuário logado não é forçado a ver tela de login
+
+#### **Teste: Proteção da página de dashboard**
+**Objetivo:** Confirmar que só visitantes autenticados conseguem permanecer em `/dashboard`.
+
+**Passos:**
+1. Simular 401 em `/api/v1/auth/me` e visitar `/dashboard`  
+2. Verificar redirecionamento para `/signin`  
+3. Simular 200 em `/api/v1/auth/me` e visitar `/dashboard`  
+4. Conferir que a rota permanece `/dashboard`
+
+**Validações:**
+- ✅ Página de dashboard nunca é exibida para usuários não autorizados  
+- ✅ Não há loop de redirect para usuários validados
+
 ### 1.1 Sign In Page
 
 #### **Teste: Renderização completa e navegação**
