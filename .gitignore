@@ -1,11 +1,155 @@
-/.htaccess
-/.htaccess.admintools
-/administrator/cache/*
-/administrator/logs/*
-/cache/*
-/tmp/*
-/configuration.php
-/LICENSE.txt
-/README.txt
-/web.config.txt
+# ==================================
+# Python
+# ==================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+back/lib/
+back/lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info
+.installed.cfg
+*.egg
+MANIFEST
+
+# ==================================
+# Virtual Environments
+# ==================================
+venv/
+ENV/
+env/
+.venv/
+.env/
+
+# ==================================
+# IDE
+# ==================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ==================================
+# Environment Variables
+# ==================================
+.env
+.env.local
+.env.production
+.env.*.local
+
+# ==================================
+# Database
+# ==================================
+*.db
+*.sqlite
+*.sqlite3
+
+# ==================================
+# Logs
+# ==================================
+*.log
+logs/
+*.log.*
+
+# ==================================
+# OS
+# ==================================
 .DS_Store
+Thumbs.db
+*.bak
+*.tmp
+sitecustomize.py
+
+# ==================================
+# Docker
+# ==================================
+docker-compose.override.yml
+.dockerignore
+
+# ==================================
+# Alembic
+# ==================================
+alembic/versions/__pycache__/
+
+# ==================================
+# Redis
+# ==================================
+dump.rdb
+
+# ==================================
+# Coverage/Tests
+# ==================================
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+coverage.xml
+
+# ==================================
+# TCC - Documentação Acadêmica
+# ==================================
+# Comentado para manter versionado durante desenvolvimento
+# docs/tcc/
+*.backup.md
+
+# ==================================
+# Scripts de Desenvolvimento
+# ==================================
+# Comentado para manter versionado
+# scripts/auto-commit.sh
+# scripts/auto-commit.ps1
+
+# ==================================
+# Temporary Files
+# ==================================
+*.tmp
+*.temp
+.cache/
+.mypy_cache/
+.ruff_cache/
+
+# ==================================
+# UV Package Manager
+# ==================================
+.uv/
+
+# ==================================
+# Data/Storage
+# ==================================
+data/
+storage/
+uploads/
+
+# ==================================
+# Frontend (Next.js)
+# ==================================
+# Dependencies
+frontend/node_modules/
+frontend/.pnp
+frontend/.pnp.js
+
+# Next.js
+frontend/.next/
+frontend/out/
+
+# Production
+frontend/build/
+
+# Vercel
+frontend/.vercel
+
+# TypeScript
+frontend/*.tsbuildinfo
+frontend/next-env.d.ts
