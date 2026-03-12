@@ -1,17 +1,17 @@
-
 import asyncio
-import os
 import sys
+
 # Adiciona /app/src ao path para importar módulos do projeto
 sys.path.append("/app/src")
 
-from robbot.infra.integrations.waha.waha_client import WAHAClient
 from robbot.config.settings import settings
+from robbot.infra.integrations.waha.waha_client import WAHAClient
+
 
 async def test_health():
     print(f"Testing connectivity to WAHA at: {settings.WAHA_URL}")
     client = WAHAClient()
-    
+
     try:
         print("1. Testing ping()...")
         resp = await client.ping()
@@ -27,6 +27,7 @@ async def test_health():
         print(f"FAILED version: {e}")
 
     await client.close()
+
 
 if __name__ == "__main__":
     asyncio.run(test_health())
