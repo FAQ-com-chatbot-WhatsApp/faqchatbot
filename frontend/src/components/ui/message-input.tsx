@@ -17,7 +17,7 @@ interface MessageInputProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export function MessageInput({
   onSend,
-  placeholder = "Type a message...",
+  placeholder = "Digite uma mensagem...",
   showAttachment = true,
   showImage = false,
   showEmoji = false,
