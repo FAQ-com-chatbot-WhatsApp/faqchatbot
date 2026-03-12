@@ -411,4 +411,3 @@ def restore_lead(
     except Exception as e:  # noqa: BLE001 (blind exception)
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to restore lead: {str(e)}") from e
-
