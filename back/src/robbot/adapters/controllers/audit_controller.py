@@ -119,4 +119,3 @@ def get_entity_audit_trail(
         )
         for log in logs
     ]
-
