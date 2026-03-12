@@ -14,9 +14,9 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from robbot.services.ai.context_service import ContextService
 from robbot.services.bot.conversation_service import ConversationService
 from robbot.services.content.content_service import ContentService
-from robbot.services.ai.context_service import ContextService
 
 logger = logging.getLogger(__name__)
 # ============================================================================
@@ -82,9 +82,7 @@ GET_CONTEXT_ITEMS_DECLARATION = {
     ),
     "parameters": {
         "type": "object",
-        "properties": {
-            "context_id": {"type": "string", "description": "UUID do contexto (obtido de search_contexts)"}
-        },
+        "properties": {"context_id": {"type": "string", "description": "UUID do contexto (obtido de search_contexts)"}},
         "required": ["context_id"],
     },
 }
@@ -149,8 +147,7 @@ def send_context_content_tool(
             return {"success": False, "error": f"Conversation {conversation_id} not found"}
 
         logger.info(
-            f"Sending context content: content_id={content_id}, "
-            f"conversation_id={conversation_id}, intro={custom_intro}"
+            f"Sending context content: content_id={content_id}, conversation_id={conversation_id}, intro={custom_intro}"
         )
 
         return {
@@ -252,4 +249,3 @@ def execute_context_tool(db: Session, tool_name: str, tool_args: dict[str, Any])
     else:
         logger.error("[ERROR] Unknown tool: %s", tool_name)
         return {"error": f"Unknown tool: {tool_name}"}
-
