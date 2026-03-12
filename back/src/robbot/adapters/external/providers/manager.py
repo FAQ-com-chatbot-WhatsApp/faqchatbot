@@ -1,9 +1,8 @@
 import logging
-import time
 from typing import Any, Literal
 
-from robbot.core.interfaces import LLMProvider
 from robbot.core.custom_exceptions import LLMError
+from robbot.core.interfaces import LLMProvider
 
 logger = logging.getLogger(__name__)
 
@@ -40,12 +39,12 @@ class LLMProviderManager:
     def _select_provider(self) -> LLMProvider:
         """Select best available provider."""
         primary = self._providers.get(self._primary_provider_type)
-        if primary: # and primary.is_available():
+        if primary:  # and primary.is_available():
             return primary
 
         if self._enable_fallback:
             for provider_type, provider in self._providers.items():
-                if provider_type != self._primary_provider_type and provider: # and provider.is_available():
+                if provider_type != self._primary_provider_type and provider:  # and provider.is_available():
                     logger.warning(
                         "Primary provider %s unavailable, falling back to %s",
                         self._primary_provider_type,
