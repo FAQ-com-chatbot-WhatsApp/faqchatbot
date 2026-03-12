@@ -7,7 +7,6 @@ error handling, and automatic fallback when primary provider fails.
 """
 
 import logging
-import time
 from typing import Any
 
 from robbot.adapters.external.providers import LLMProviderManager, ProviderType
@@ -97,16 +96,15 @@ class LLMClient(LLMProvider):
         """
         try:
             logger.info("[INFO] Generating LLM response via provider manager")
-            
+
             # Provider manager handles fallback automatically
             # Note: We need to ensure LLMProviderManager.generate_response is async
             # or wrap it. Since we updated Providers to be async, let's update Manager too.
-            result = await self.manager.generate_response(
+            return await self.manager.generate_response(
                 prompt=prompt,
                 context=context,
                 max_retries=max_retries,
             )
-            return result
 
         except LLMError:
             raise
