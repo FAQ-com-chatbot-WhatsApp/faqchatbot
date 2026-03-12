@@ -2,8 +2,8 @@
 
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.base_repository import BaseRepository
 from robbot.infra.persistence.models.lead_interaction_model import LeadInteractionModel
+from robbot.infra.persistence.repositories.base_repository import BaseRepository
 
 
 class LeadInteractionRepository(BaseRepository[LeadInteractionModel]):
@@ -50,4 +50,3 @@ class LeadInteractionRepository(BaseRepository[LeadInteractionModel]):
             .limit(limit)
             .all()
         )
-
