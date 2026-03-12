@@ -1,8 +1,18 @@
 'use client'
 
-import { Menu, Search, Bell, MessageSquare } from 'lucide-react'
+import { Menu, Search, Bell, MessageSquare, LogOut, User, Settings } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/hooks/useAuth'
 
 interface HeaderProps {
   onToggleSidebar: () => void
@@ -17,6 +27,14 @@ export function Header({
   userRole = 'Admin',
   userAvatar
 }: HeaderProps) {
+  const router = useRouter()
+  const { logout } = useAuth()
+
+  const handleLogout = () => {
+    logout()
+    router.push('/signin')
+  }
+
   return (
     <header className="border-b border-border bg-card sticky top-0 z-10">
       <div className="p-6 flex items-center justify-between">
@@ -48,16 +66,38 @@ export function Header({
             <MessageSquare className="w-5 h-5" />
             <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
           </button>
-          <div className="flex items-center gap-3 pl-4 border-l border-border">
-            <Avatar className="h-9 w-9">
-              <AvatarImage src={userAvatar} />
-              <AvatarFallback>{userName.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <div className="text-sm">
-              <p className="font-medium">{userName}</p>
-              <p className="text-xs text-muted-foreground">{userRole}</p>
-            </div>
-          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-3 pl-4 border-l border-border hover:bg-muted rounded-lg p-2 transition-colors">
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src={userAvatar} />
+                  <AvatarFallback>{userName.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div className="text-sm text-left">
+                  <p className="font-medium">{userName}</p>
+                  <p className="text-xs text-muted-foreground">{userRole}</p>
+                </div>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => router.push('/profile')}>
+                <User className="mr-2 h-4 w-4" />
+                <span>Perfil</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/settings')}>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Configurações</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Sair</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
