@@ -10,19 +10,19 @@ Delegates to:
 import logging
 from typing import Any
 
-from robbot.infra.integrations.vector_store.chroma_vector_store import ChromaVectorStore
-from robbot.infra.integrations.llm.llm_client import get_llm_client
-from robbot.infra.integrations.waha.waha_client import WAHAClient
 from robbot.config.prompts import get_prompt_templates
 from robbot.core.custom_exceptions import BusinessRuleError
+from robbot.core.text_sanitizer import enforce_whatsapp_style
 from robbot.domain.shared.enums import ConversationStatus
 from robbot.infra.db.session import get_sync_session
+from robbot.infra.integrations.llm.llm_client import get_llm_client
+from robbot.infra.integrations.vector_store.chroma_vector_store import ChromaVectorStore
+from robbot.infra.integrations.waha.waha_client import WAHAClient
 from robbot.services.ai.answered_questions import AnsweredQuestionsMemory
-from robbot.services.bot.conversation_service import ConversationService
-from robbot.services.bot.conversation_pipeline import ConversationPipeline, PipelineState
-from robbot.services.bot.response_dispatcher import ResponseDispatcher
 from robbot.services.ai.persistent_memory import PersistentMemory
-from robbot.core.text_sanitizer import enforce_whatsapp_style
+from robbot.services.bot.conversation_pipeline import ConversationPipeline, PipelineState
+from robbot.services.bot.conversation_service import ConversationService
+from robbot.services.bot.response_dispatcher import ResponseDispatcher
 from robbot.services.communication.transcription_service import TranscriptionService
 
 logger = logging.getLogger(__name__)
@@ -45,12 +45,7 @@ class ConversationOrchestrator:
         logger.info("[SUCCESS] Decomposed ConversationOrchestrator initialized")
 
     async def process_inbound_message(
-        self,
-        chat_id: str,
-        phone_number: str,
-        message_text: str,
-        session_name: str = "default",
-        **media_kwargs
+        self, chat_id: str, phone_number: str, message_text: str, session_name: str = "default", **media_kwargs
     ) -> dict[str, Any]:
         """
         Main entry point for message processing.
@@ -73,7 +68,7 @@ class ConversationOrchestrator:
 
                 # 4. Pipeline Execution (Ingestion & Analysis)
                 state = await pipeline.execute(conversation, message_text, **media_kwargs)
-                
+
                 # Update urgency in DB if detected
                 if state.is_urgent and not conversation.is_urgent:
                     conversation.is_urgent = True
@@ -81,7 +76,9 @@ class ConversationOrchestrator:
 
                 # 5. Guard: Answered Questions
                 if self.answered_questions_memory.was_answered(state.message_text):
-                    return await self._handle_repeated_question(session, conversation, dispatcher, state.message_text, session_name)
+                    return await self._handle_repeated_question(
+                        session, conversation, dispatcher, state.message_text, session_name
+                    )
 
                 # 6. Response Generation
                 response_data = await self._generate_response(state, conversation)
@@ -91,7 +88,9 @@ class ConversationOrchestrator:
                 if state.intent == "ENCERRAMENTO":
                     conv_service.close(conversation.id, reason="CLIENT_REQUEST")
                     # Force a polite closing message if LLM didn't generate one well
-                    response_text = "Entendido! Conversa encerrada. Se precisar de algo no futuro, é só chamar. Até mais! 👋"
+                    response_text = (
+                        "Entendido! Conversa encerrada. Se precisar de algo no futuro, é só chamar. Até mais! 👋"
+                    )
 
                 # 8. Check Handoff
                 elif await self._should_handoff(conversation, state):
@@ -100,10 +99,15 @@ class ConversationOrchestrator:
 
                 # 8. Dispatch & Persist
                 sent = await dispatcher.dispatch(
-                    conversation.id, chat_id, phone_number, 
+                    conversation.id,
+                    chat_id,
+                    phone_number,
                     conversation.lead.id if conversation.lead else None,
-                    response_text, state.intent, state.message_text,
-                    response_data, session_name
+                    response_text,
+                    state.intent,
+                    state.message_text,
+                    response_data,
+                    session_name,
                 )
 
                 # 9. Final record in Chroma (Vector Memory)
@@ -123,7 +127,7 @@ class ConversationOrchestrator:
 
         except Exception as e:
             logger.error("[ERROR] Orchestration failed: %s", e, exc_info=True)
-            if 'session' in locals():
+            if "session" in locals():
                 session.rollback()
             raise BusinessRuleError(f"Failed to process message: {e}")
 
@@ -141,6 +145,7 @@ class ConversationOrchestrator:
 
     async def _handle_silenced(self, session, conversation, message_text):
         from robbot.services.communication.message_processor import MessageProcessor
+
         mp = MessageProcessor(session, None)
         await mp.save_inbound_message(session, conversation.id, message_text, from_phone=conversation.phone_number)
         session.commit()
@@ -149,9 +154,15 @@ class ConversationOrchestrator:
     async def _handle_repeated_question(self, session, conversation, dispatcher, message_text, session_name):
         resp = "Já respondi essa pergunta antes! Se precisar de mais detalhes, me avise. 😊"
         await dispatcher.dispatch(
-            conversation.id, conversation.chat_id, conversation.phone_number,
+            conversation.id,
+            conversation.chat_id,
+            conversation.phone_number,
             conversation.lead.id if conversation.lead else None,
-            resp, "REPETIDA", message_text, {"tokens_used": 0, "latency_ms": 0}, session_name
+            resp,
+            "REPETIDA",
+            message_text,
+            {"tokens_used": 0, "latency_ms": 0},
+            session_name,
         )
         session.commit()
         return {"conversation_id": conversation.id, "response_sent": True, "intent": "REPETIDA"}
@@ -161,7 +172,7 @@ class ConversationOrchestrator:
         questions_asked = await self.persistent_memory.get_all_questions(conversation.id)
         facts = await self.persistent_memory.get_all_facts(conversation.id)
         summary = "; ".join([f"{k}: {v}" for k, v in facts.items()]) if facts else "No facts"
-        
+
         prompt = self.prompt_templates.format_response_prompt(
             user_message=state.message_text,
             intent=state.intent,
@@ -175,10 +186,10 @@ class ConversationOrchestrator:
         )
 
         response_data = await self.llm.generate_response(prompt)
-        
+
         # Update memory
         await self._update_memory(conversation.id, response_data.get("response", ""), conversation.lead)
-        
+
         return response_data
 
     async def _update_memory(self, conv_id, response_text, lead):
@@ -190,21 +201,19 @@ class ConversationOrchestrator:
 
     async def _should_handoff(self, conversation, state: PipelineState) -> bool:
         # Handoff if score is high or intent is explicit
-        if state.new_score >= 85:
-            return True
-        if state.intent in ["AGENDAMENTO", "RECLAMACAO_PROBLEMA", "ESCALACAO_SOLICITADA"]:
-            return True
-        return False
+        return state.new_score >= 85 or state.intent in ["AGENDAMENTO", "RECLAMACAO_PROBLEMA", "ESCALACAO_SOLICITADA"]
 
     async def _trigger_handoff(self, session, conversation, score) -> str:
-        from robbot.services.handoff.handoff_service import HandoffService
         from robbot.infra.persistence.repositories.conversation_repository import ConversationRepository
         from robbot.infra.persistence.repositories.lead_repository import LeadRepository
-        
+        from robbot.services.handoff.handoff_service import HandoffService
+
         handoff_service = HandoffService(ConversationRepository(session), LeadRepository(session))
         res = await handoff_service.trigger_handoff(
-            session=session, conversation_id=conversation.id, 
-            reason="score_high" if score >= 85 else "intent_triggered", score=score
+            session=session,
+            conversation_id=conversation.id,
+            reason="score_high" if score >= 85 else "intent_triggered",
+            score=score,
         )
         return res["message"]
 
@@ -226,4 +235,3 @@ def get_conversation_orchestrator() -> ConversationOrchestrator:
     if _orchestrator is None:
         _orchestrator = ConversationOrchestrator()
     return _orchestrator
-
