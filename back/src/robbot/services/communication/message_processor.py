@@ -14,10 +14,10 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.conversation_message_repository import ConversationMessageRepository
 from robbot.core.custom_exceptions import DatabaseError
 from robbot.domain.shared.enums import MessageDirection
 from robbot.infra.persistence.models.conversation_message_model import ConversationMessageModel
+from robbot.infra.persistence.repositories.conversation_message_repository import ConversationMessageRepository
 from robbot.services.communication.transcription_service import TranscriptionService
 
 logger = logging.getLogger(__name__)
@@ -165,4 +165,3 @@ class MessageProcessor:
         except Exception as e:  # noqa: BLE001
             logger.error("[ERROR] Failed to save outbound message: %s", e)
             raise DatabaseError(f"Failed to save outbound message: {e}") from e
-
