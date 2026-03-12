@@ -84,12 +84,13 @@ class Settings(BaseSettings):
     WAHA_ANTI_BAN_ENABLED: bool = Field(default=True, description="Enable anti-ban delays")
     WAHA_MIN_DELAY_SECONDS: int = Field(default=3, description="Min delay before sending (balance UX vs safety)")
     WAHA_MAX_DELAY_SECONDS: int = Field(default=8, description="Max delay before sending")
-    WAHA_MESSAGES_PER_HOUR: int = Field(default=30, description="Max messages per hour (increased for faster conversations)")
+    WAHA_MESSAGES_PER_HOUR: int = Field(
+        default=30, description="Max messages per hour (increased for faster conversations)"
+    )
 
     # Message debouncing (group rapid messages)
     MESSAGE_DEBOUNCE_SECONDS: int = Field(
-        default=10,
-        description="Seconds to wait before processing message (groups rapid messages together)"
+        default=10, description="Seconds to wait before processing message (groups rapid messages together)"
     )
 
     # ChromaDB (persistência vetorial)
@@ -145,7 +146,7 @@ class Settings(BaseSettings):
     def dev_phone_list(self) -> list[str]:
         """
         Convert DEV_PHONE_NUMBERS to list format for compatibility.
-        
+
         Supports:
         - Single phone: "555198098876" → ["555198098876"]
         - Multiple phones: "555198098876,555191234567" → ["555198098876", "555191234567"]
