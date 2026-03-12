@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from datetime import datetime
-from uuid import uuid4
 
 from robbot.domain.shared.enums import ConversationStatus
 
