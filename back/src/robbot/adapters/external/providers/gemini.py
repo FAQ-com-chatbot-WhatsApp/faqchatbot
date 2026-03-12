@@ -7,18 +7,19 @@ using LangChain's ChatGoogleGenerativeAI with automatic model fallback.
 import logging
 import time
 from typing import Any
+
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 
-from robbot.core.interfaces import LLMProvider
 from robbot.core.custom_exceptions import LLMError
+from robbot.core.interfaces import LLMProvider
 
 logger = logging.getLogger(__name__)
 
 # Gemini models ordered by preference (speed, quota availability, capability)
 GEMINI_FALLBACK_MODELS = [
-    "gemini-2.0-flash",             # Latest and fastest
-    "gemini-1.5-flash",             # Robust flash model
-    "gemini-1.5-pro",               # Most capable
+    "gemini-2.0-flash",  # Latest and fastest
+    "gemini-1.5-flash",  # Robust flash model
+    "gemini-1.5-pro",  # Most capable
 ]
 
 
@@ -74,15 +75,13 @@ class GeminiProvider(LLMProvider):
     ) -> dict[str, Any]:
         """Generate response using Gemini model with automatic fallback."""
         full_prompt = f"Context:\n{context}\n\nPrompt:\n{prompt}" if context else prompt
-        
+
         start_time = time.time()
         # Build list of models to try: primary + fallbacks
-        models_to_try = [self._primary_model] + [
-            m for m in GEMINI_FALLBACK_MODELS if m != self._primary_model
-        ]
+        models_to_try = [self._primary_model] + [m for m in GEMINI_FALLBACK_MODELS if m != self._primary_model]
         last_error = None
 
-        for attempt in range(max_retries):
+        for _attempt in range(max_retries):
             for model_name in models_to_try:
                 try:
                     # Switch model if needed
@@ -99,7 +98,7 @@ class GeminiProvider(LLMProvider):
 
                     response = await self._client.ainvoke(full_prompt)
                     latency_ms = int((time.time() - start_time) * 1000)
-                    
+
                     return {
                         "response": response.content,
                         "tokens_used": None,
@@ -132,8 +131,7 @@ class GeminiProvider(LLMProvider):
         # For now, simple implementation using prompt engineering
         # Gemini 1.5+ supports actual JSON mode, but for unification we start simple
         structured_prompt = f"{prompt}\n\nYour response MUST be a valid JSON object matching this schema: {schema}"
-        result = await self.generate_response(structured_prompt, context)
-        return result
+        return await self.generate_response(structured_prompt, context)
 
     async def call_function(
         self,
@@ -148,8 +146,7 @@ class GeminiProvider(LLMProvider):
     async def embed_text(self, text: str) -> list[float]:
         """Generate embeddings using Gemini Text Embedding model."""
         try:
-            embeddings = await self._embeddings_client.aembed_query(text)
-            return embeddings
+            return await self._embeddings_client.aembed_query(text)
         except Exception as e:
             logger.error("Gemini embedding failed: %s", e)
             raise LLMError("GeminiEmbeddings", str(e), original_error=e) from e
