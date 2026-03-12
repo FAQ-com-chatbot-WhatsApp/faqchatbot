@@ -4,11 +4,9 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.content_repository import ContentRepository
 from robbot.core.custom_exceptions import NotFoundException
+from robbot.infra.persistence.repositories.content_repository import ContentRepository
 from robbot.schemas.content import (
-    DeletedResponse,
-    MediaFile,
     ContentCreateLocation,
     ContentCreateMedia,
     ContentCreateText,
@@ -18,9 +16,11 @@ from robbot.schemas.content import (
     ContentUpdateLocation,
     ContentUpdateMedia,
     ContentUpdateText,
+    DeletedResponse,
+    MediaFile,
 )
-from robbot.services.content.description_service import DescriptionService
 from robbot.services.communication.transcription_service import TranscriptionService
+from robbot.services.content.description_service import DescriptionService
 
 
 class ContentService:
@@ -318,4 +318,3 @@ class ContentService:
 
         self.repo.delete(msg)
         return DeletedResponse(deleted=True)
-
