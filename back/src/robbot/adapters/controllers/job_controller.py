@@ -7,8 +7,8 @@ from sqlalchemy.orm import Session
 
 from robbot.api.v1.dependencies import get_current_user, get_db
 from robbot.domain.shared.enums import Role
-from robbot.infra.persistence.models.user_model import UserModel
 from robbot.infra.jobs.reengagement_job import run_reengagement_job
+from robbot.infra.persistence.models.user_model import UserModel
 
 router = APIRouter()
 
@@ -41,4 +41,3 @@ def trigger_reengagement_job(
         }
     except Exception as e:  # noqa: BLE001 (blind exception)
         raise HTTPException(status_code=500, detail=f"Failed to run re-engagement job: {str(e)}")
-
