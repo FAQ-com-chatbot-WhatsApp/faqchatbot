@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Test Messages API</title>
+</head>
+
+<body>
+  <h1>Test Messages API</h1>
+  <button onclick="testConversations()">1. Test Get Conversations</button>
+  <button onclick="testMessages()">2. Test Get Messages</button>
+  <pre id="output"></pre>
+
+  <script>
+    const output = document.getElementById('output');
+
+    async function testConversations() {
+      try {
+        output.textContent = 'Fetching conversations...';
+        const response = await fetch('/api/v1/conversations?limit=50&offset=0', {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        output.textContent = JSON.stringify(data, null, 2);
+
+        if (data.conversations && data.conversations.length > 0) {
+          window.testConvId = data.conversations[0].id;
+          output.textContent += '\n\n✅ Use ID: ' + window.testConvId + '\n\nClick button 2 to test messages';
+        }
+      } catch (err) {
+        output.textContent = 'ERROR: ' + err.message;
+      }
+    }
+
+    async function testMessages() {
+      if (!window.testConvId) {
+        output.textContent = 'Click button 1 first to get a conversation ID';
+        return;
+      }
+
+      try {
+        output.textContent = 'Fetching messages for ' + window.testConvId + '...';
+        const response = await fetch(`/api/v1/conversations/${window.testConvId}/messages?limit=50`, {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        output.textContent = JSON.stringify(data, null, 2);
+
+        if (Array.isArray(data)) {
+          output.textContent += '\n\n✅ Got ' + data.length + ' messages';
+        }
+      } catch (err) {
+        output.textContent = 'ERROR: ' + err.message;
+      }
+    }
+  </script>
+</body>
+
+</html>
