@@ -4,8 +4,8 @@ Tag Repository - database operations for tags.
 
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.base_repository import BaseRepository
 from robbot.infra.persistence.models.tag_model import TagModel
+from robbot.infra.persistence.repositories.base_repository import BaseRepository
 
 
 class TagRepository(BaseRepository[TagModel]):
@@ -21,4 +21,3 @@ class TagRepository(BaseRepository[TagModel]):
     def find_by_names(self, names: list[str]) -> list[TagModel]:
         """Find tags by list of names."""
         return self.session.query(TagModel).filter(TagModel.name.in_(names)).all()
-
