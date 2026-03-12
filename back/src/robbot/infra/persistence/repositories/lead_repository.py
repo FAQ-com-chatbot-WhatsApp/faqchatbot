@@ -1,11 +1,10 @@
 """Repository for Lead entity."""
 
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func
 
-from robbot.infra.persistence.repositories.base_repository import BaseRepository
-from robbot.infra.persistence.models.lead_model import LeadModel
 from robbot.domain.shared.enums import LeadStatus
+from robbot.infra.persistence.models.lead_model import LeadModel
+from robbot.infra.persistence.repositories.base_repository import BaseRepository
 
 
 class LeadRepository(BaseRepository[LeadModel]):
@@ -56,4 +55,3 @@ class LeadRepository(BaseRepository[LeadModel]):
         leads = query.offset(offset).limit(limit).all()
 
         return leads, total
-
