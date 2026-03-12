@@ -6,9 +6,9 @@ services:
   # ============================================================================
 
   # DB (PostgreSQL 18)
-  db:
+  postgres:
     image: postgres:18-alpine
-    container_name: db
+    container_name: postgres
     restart: unless-stopped
     env_file:
       - ./back/.env
@@ -30,9 +30,9 @@ services:
       - skynet
 
   # Redis (Cache)
-  rd:
+  redis:
     image: redis:7-alpine
-    container_name: rd
+    container_name: redis
     restart: unless-stopped
     command: redis-server --appendonly yes
     ports:
@@ -71,10 +71,14 @@ services:
       AUTO_MIGRATE: ${AUTO_MIGRATE:-true}
       SERVICE_NAME: "go"
       LOG_COLOR: "true"
-      DATABASE_URL: postgresql+psycopg2://dba:dba@db:5432/BotDB
-      POSTGRES_HOST: db
+      DATABASE_URL: postgresql+psycopg2://dba:dba@postgres:5432/BotDB
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: dba
+      POSTGRES_DB: BotDB
+      POSTGRES_PASSWORD: dba
       # Update Redis Host ref
-      REDIS_URL: redis://rd:6379/0
+      REDIS_URL: redis://redis:6379/0
       # SMTP
       SMTP_HOST: md
       SMTP_PORT: 1025
@@ -85,9 +89,9 @@ services:
     volumes:
       - ./back/src:/app/src # Hot-reload mount
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
-      rd:
+      redis:
         condition: service_healthy
       md:
         condition: service_started
@@ -103,7 +107,7 @@ services:
       - skynet
 
   # RQ Workers (WK)
-  wk:
+  worker:
     build:
       context: ./back
       dockerfile: Dockerfile
@@ -115,8 +119,8 @@ services:
       - ./back/.env
     environment:
       PYTHONPATH: "/app/src"
-      DATABASE_URL: postgresql+psycopg2://dba:dba@db:5432/BotDB
-      REDIS_URL: redis://rd:6379/0
+      DATABASE_URL: postgresql+psycopg2://dba:dba@postgres:5432/BotDB
+      REDIS_URL: redis://redis:6379/0
       SERVICE_NAME: "wk"
       LOG_COLOR: "true"
       RQ_JOB_TIMEOUT_MESSAGE: 600
@@ -125,9 +129,9 @@ services:
     volumes:
       - chroma_data:/app/data/chroma
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
-      rd:
+      redis:
         condition: service_healthy
       waha:
         condition: service_healthy
@@ -152,16 +156,16 @@ services:
       - ./back/.env
     environment:
       PYTHONPATH: /app/src
-      DATABASE_URL: postgresql+psycopg2://dba:dba@db:5432/BotDB
-      REDIS_URL: redis://rd:6379/0
+      DATABASE_URL: postgresql+psycopg2://dba:dba@postgres:5432/BotDB
+      REDIS_URL: redis://redis:6379/0
       SERVICE_NAME: "pwk"
       LOG_COLOR: "true"
       WAHA_POLLING_INTERVAL: ${WAHA_POLLING_INTERVAL:-10}
     command: python -m robbot.workers.polling_worker
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
-      rd:
+      redis:
         condition: service_healthy
       waha:
         condition: service_healthy
@@ -186,16 +190,16 @@ services:
       - ./back/.env
     environment:
       PYTHONPATH: /app/src
-      REDIS_URL: redis://rd:6379/0
-      DATABASE_URL: postgresql+psycopg2://dba:dba@db:5432/BotDB
+      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: postgresql+psycopg2://dba:dba@postgres:5432/BotDB
       LOG_COLOR: "true"
     user: "root"
     # Fix: Added missing semicolons for valid shell syntax
     command: sh -c "while true; do python /app/back/scripts/autoscale_workers.py; sleep 120; done"
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
-      rd:
+      redis:
         condition: service_healthy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -221,16 +225,16 @@ services:
       dockerfile: Dockerfile
       target: runner
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:3333/api/v1
+        NEXT_PUBLIC_API_URL: http://localhost:3333
     image: tic-web
     container_name: web
     restart: unless-stopped
     environment:
       NODE_ENV: production
       # Internal URL -> points to 'go' service
-      API_URL: http://go:3333/api/v1
+      API_URL: http://go:3333
       # Public URL -> points to localhost host binding
-      NEXT_PUBLIC_API_URL: http://localhost:3333/api/v1
+      NEXT_PUBLIC_API_URL: http://localhost:3333
     ports:
       - "3000:3000"
     depends_on:
@@ -273,7 +277,7 @@ services:
     ports:
       - "127.0.0.1:8080:8080"
     depends_on:
-      db:
+      postgres:
         condition: service_started
     volumes:
       - ./back/adminer-dark.css:/var/www/html/adminer.css:ro
