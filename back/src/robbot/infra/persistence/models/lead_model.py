@@ -76,9 +76,7 @@ class LeadModel(Base):
     converted_at: Mapped[datetime | None] = mapped_column(
         DateTime, nullable=True, comment="When lead was converted (scheduled)"
     )
-    deleted_at: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True, comment="Soft delete timestamp"
-    )
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, comment="Soft delete timestamp")
 
     # Relationships
     conversation: Mapped["ConversationModel"] = relationship("ConversationModel", back_populates="lead")
@@ -96,4 +94,3 @@ class LeadModel(Base):
 
     def __repr__(self) -> str:
         return f"<LeadModel(id='{self.id}', name='{self.name}', status='{self.status}', score={self.maturity_score})>"
-
