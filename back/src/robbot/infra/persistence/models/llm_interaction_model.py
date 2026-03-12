@@ -50,4 +50,3 @@ class LLMInteractionModel(Base):
 
     def __repr__(self) -> str:
         return f"<LLMInteractionModel(id='{self.id}', model='{self.model_name}', tokens={self.tokens_used})>"
-
