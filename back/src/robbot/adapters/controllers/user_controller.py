@@ -128,4 +128,3 @@ def unblock_user(
         return service.unblock_user(user_id, reason=(payload.reason if payload else None))
     except NotFoundException as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
-
