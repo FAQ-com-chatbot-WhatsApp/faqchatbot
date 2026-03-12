@@ -28,10 +28,8 @@ from robbot.infra.persistence.models.user_model import UserModel
 
 try:
     from robbot.infra.integrations.llm.llm_client import get_llm_client
-    from robbot.core.cache import get_cache
-except Exception:  # noqa: BLE001 (blind exception)
+except ImportError:
     get_llm_client = None
-    get_cache = None
 
 
 class AnalyticsRepository:
@@ -1270,12 +1268,9 @@ class AnalyticsRepository:
         if get_llm_client is None:
             return sentiment_counts
 
-        cache = get_cache() if get_cache else None
-
         # Config Gemini
         gemini_config = config.data.get("sentiment_analysis", {}).get("gemini_fallback", {})
         batch_size = gemini_config.get("batch_size", 50)
-        cache_ttl = gemini_config.get("cache_ttl_seconds", 86400)
         prompt_template = config.data.get("sentiment_analysis", {}).get("gemini_prompt", "")
 
         llm = get_llm_client()
@@ -1288,19 +1283,6 @@ class AnalyticsRepository:
             batch = neutral_messages[i : i + batch_size]
 
             for msg in batch:
-                # Check cache primeiro
-                cache_key = f"sentiment:gemini:{msg['id']}"
-                cached_sentiment = cache.get(cache_key) if cache else None
-
-                if cached_sentiment:
-                    if cached_sentiment == "POSITIVE":
-                        refined_positive += 1
-                    elif cached_sentiment == "NEGATIVE":
-                        refined_negative += 1
-                    else:
-                        refined_neutral += 1
-                    continue
-
                 # Chamada Gemini
                 try:
                     prompt = prompt_template.replace("{message}", msg["body"])
@@ -1312,10 +1294,6 @@ class AnalyticsRepository:
                     # Normalizar resposta
                     if gemini_sentiment not in ["POSITIVE", "NEGATIVE", "NEUTRAL"]:
                         gemini_sentiment = "NEUTRAL"
-
-                    # Cache resultado
-                    if cache:
-                        cache.set(cache_key, gemini_sentiment, ttl=cache_ttl)
 
                     # Contar
                     if gemini_sentiment == "POSITIVE":
