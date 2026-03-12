@@ -10,12 +10,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.conversation_message_repository import ConversationMessageRepository
-from robbot.infra.persistence.repositories.conversation_repository import ConversationRepository
-from robbot.infra.persistence.repositories.lead_repository import LeadRepository
 from robbot.api.v1.dependencies import get_current_user, get_db
 from robbot.domain.shared.enums import ConversationStatus
 from robbot.infra.persistence.models.user_model import UserModel
+from robbot.infra.persistence.repositories.conversation_message_repository import ConversationMessageRepository
+from robbot.infra.persistence.repositories.conversation_repository import ConversationRepository
+from robbot.infra.persistence.repositories.lead_repository import LeadRepository
 from robbot.services.handoff.handoff_service import HandoffService
 
 logger = logging.getLogger(__name__)
@@ -365,4 +365,3 @@ async def trigger_handoff_alias(
         db=db,
         current_user=current_user,
     )
-
