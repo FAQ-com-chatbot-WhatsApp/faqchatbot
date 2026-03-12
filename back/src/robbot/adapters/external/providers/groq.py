@@ -10,16 +10,16 @@ from typing import Any
 
 from langchain_groq import ChatGroq
 
-from robbot.core.interfaces import LLMProvider
 from robbot.core.custom_exceptions import LLMError
+from robbot.core.interfaces import LLMProvider
 
 logger = logging.getLogger(__name__)
 
 # Groq models ordered by preference (speed, capability, availability)
 GROQ_FALLBACK_MODELS = [
-    "llama-3.3-70b-versatile",      # Latest Llama 3.3, best balance
-    "llama-3.1-8b-instant",         # Fast, lower capability
-    "mixtral-8x7b-32768",           # Good for long context
+    "llama-3.3-70b-versatile",  # Latest Llama 3.3, best balance
+    "llama-3.1-8b-instant",  # Fast, lower capability
+    "mixtral-8x7b-32768",  # Good for long context
 ]
 
 
@@ -71,15 +71,13 @@ class GroqProvider(LLMProvider):
     ) -> dict[str, Any]:
         """Generate response using Groq model with automatic fallback."""
         full_prompt = f"Context:\n{context}\n\nPrompt:\n{prompt}" if context else prompt
-        
+
         start_time = time.time()
         # Build list of models to try: primary + fallbacks
-        models_to_try = [self._primary_model] + [
-            m for m in GROQ_FALLBACK_MODELS if m != self._primary_model
-        ]
+        models_to_try = [self._primary_model] + [m for m in GROQ_FALLBACK_MODELS if m != self._primary_model]
         last_error = None
 
-        for attempt in range(max_retries):
+        for _attempt in range(max_retries):
             for model_name in models_to_try:
                 try:
                     # Switch model if needed
@@ -96,7 +94,7 @@ class GroqProvider(LLMProvider):
 
                     response = await self._client.ainvoke(full_prompt)
                     latency_ms = int((time.time() - start_time) * 1000)
-                    
+
                     return {
                         "response": response.content,
                         "tokens_used": None,
@@ -127,8 +125,7 @@ class GroqProvider(LLMProvider):
     ) -> dict[str, Any]:
         """Generate structured response from Groq."""
         structured_prompt = f"{prompt}\n\nYour response MUST be a valid JSON object matching this schema: {schema}"
-        result = await self.generate_response(structured_prompt, context)
-        return result
+        return await self.generate_response(structured_prompt, context)
 
     async def call_function(
         self,
