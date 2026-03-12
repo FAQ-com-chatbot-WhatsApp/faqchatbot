@@ -42,3 +42,56 @@ export interface GetMessagesResponse {
   messages: WahaMessage[]
   total: number
 }
+
+export interface WahaContact {
+  id: string
+  name: string  
+  phone: string
+  avatar?: string
+  about?: string
+  isBlocked?: boolean
+  lastSeen?: number
+}
+
+export interface ContactAboutResponse {
+  about: string | null
+}
+
+export interface ContactPictureResponse {
+  url: string | null
+}
+
+export interface CheckNumberResponse {
+  exists: boolean
+  jid?: string
+}
+
+export interface BlockContactRequest {
+  contact_id: string
+}
+
+export interface WahaSession {
+  id: number
+  name: string
+  status: 'STOPPED' | 'STARTING' | 'SCAN_QR_CODE' | 'WORKING' | 'FAILED'
+  webhook_url?: string | null
+  qr_code?: string | null
+  connected_phone?: string | null
+  connected_at?: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface SessionCreate {
+  name: string
+  webhook_url?: string
+  config?: Record<string, any>
+}
+
+export interface SessionStatus {
+  name: string
+  status: string
+  qr_code?: string | null
+  connected_phone?: string | null
+}
