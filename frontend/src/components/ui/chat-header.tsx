@@ -49,22 +49,22 @@ export function ChatHeader({
 
       <div className="flex items-center gap-1">
         {onCall && (
-          <Button variant="ghost" size="icon-sm" onClick={onCall} aria-label="Call">
+          <Button variant="ghost" size="icon-sm" onClick={onCall} aria-label="Ligar">
             <Phone className="h-5 w-5" />
           </Button>
         )}
         {onVideo && (
-          <Button variant="ghost" size="icon-sm" onClick={onVideo} aria-label="Video call">
+          <Button variant="ghost" size="icon-sm" onClick={onVideo} aria-label="Chamada de vídeo">
             <Video className="h-5 w-5" />
           </Button>
         )}
         {onSearch && (
-          <Button variant="ghost" size="icon-sm" onClick={onSearch} aria-label="Search">
+          <Button variant="ghost" size="icon-sm" onClick={onSearch} aria-label="Buscar">
             <Search className="h-5 w-5" />
           </Button>
         )}
         {onMore && (
-          <Button variant="ghost" size="icon-sm" onClick={onMore} aria-label="More options">
+          <Button variant="ghost" size="icon-sm" onClick={onMore} aria-label="Mais opções">
             <MoreVertical className="h-5 w-5" />
           </Button>
         )}
