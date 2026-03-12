@@ -5,10 +5,9 @@ Factory para Redis Queue (RQ) com filas separadas por prioridade.
 import logging
 
 from redis import Redis
-from rq import Queue, Worker
+from rq import Queue
 
 from robbot.config.settings import settings
-from robbot.core.custom_exceptions import QueueError
 from robbot.infra.redis.client import get_redis_client
 
 logger = logging.getLogger(__name__)
@@ -80,7 +79,9 @@ class RQQueueManager:
             raise ValueError(f"Fila '{queue_name}' não existe.")
         return queues[queue_name]
 
+
 _queue_manager: RQQueueManager | None = None
+
 
 def get_queue_manager(redis_client: Redis | None = None) -> RQQueueManager:
     global _queue_manager
