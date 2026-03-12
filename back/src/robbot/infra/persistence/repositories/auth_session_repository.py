@@ -7,8 +7,8 @@ from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.base_repository import BaseRepository
 from robbot.infra.persistence.models.auth_session_model import AuthSessionModel
+from robbot.infra.persistence.repositories.base_repository import BaseRepository
 
 
 class AuthSessionRepository(BaseRepository[AuthSessionModel]):
@@ -242,4 +242,3 @@ class AuthSessionRepository(BaseRepository[AuthSessionModel]):
             )
             .count()
         )
-
