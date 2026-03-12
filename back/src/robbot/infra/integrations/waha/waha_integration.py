@@ -9,8 +9,8 @@ Resolves Issue #3: Missing Abstraction for External Services
 import logging
 from typing import Any
 
-from robbot.infra.integrations.waha.waha_client import WAHAClient
 from robbot.core.interfaces import WAHAClientInterface
+from robbot.infra.integrations.waha.waha_client import WAHAClient
 
 logger = logging.getLogger("robbot.adapters.external.waha_integration")
 
@@ -129,4 +129,3 @@ class WAHAIntegration(WAHAClientInterface):
             logger.info("WAHAIntegration closed")
         except Exception as e:
             logger.error("Error closing WAHA client: %s", e)
-
