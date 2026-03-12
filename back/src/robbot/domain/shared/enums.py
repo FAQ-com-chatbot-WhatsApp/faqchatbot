@@ -1,17 +1,17 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class Role(str, Enum):
+class Role(StrEnum):
     ADMIN = "admin"
     USER = "user"
 
 
-class UserStatus(str, Enum):
+class UserStatus(StrEnum):
     ACTIVE = "active"
     INACTIVE = "inactive"
 
 
-class ConversationStatus(str, Enum):
+class ConversationStatus(StrEnum):
     ACTIVE_BOT = "ACTIVE_BOT"  # Bot conversando ativamente
     PENDING_HANDOFF = "PENDING_HANDOFF"  # Aguardando atendente assumir
     ACTIVE_HUMAN = "ACTIVE_HUMAN"  # Atendente conversando
@@ -25,7 +25,7 @@ class ConversationStatus(str, Enum):
     TRANSFERRED = "ACTIVE_HUMAN"
 
 
-class LeadStatus(str, Enum):
+class LeadStatus(StrEnum):
     NEW = "NEW"
     CONTACTED = "CONTACTED"
     ENGAGED = "ENGAGED"
@@ -35,12 +35,12 @@ class LeadStatus(str, Enum):
     LOST = "LOST"
 
 
-class MessageDirection(str, Enum):
+class MessageDirection(StrEnum):
     INBOUND = "INBOUND"
     OUTBOUND = "OUTBOUND"
 
 
-class SessionStatus(str, Enum):
+class SessionStatus(StrEnum):
     STOPPED = "STOPPED"
     STARTING = "STARTING"
     SCAN_QR_CODE = "SCAN_QR_CODE"
@@ -48,12 +48,12 @@ class SessionStatus(str, Enum):
     FAILED = "FAILED"
 
 
-class LLMProvider(str, Enum):
+class LLMProvider(StrEnum):
     GEMINI = "GEMINI"
     GROQ = "GROQ"
 
 
-class InteractionType(str, Enum):
+class InteractionType(StrEnum):
     NOTE = "NOTE"
     STATUS_CHANGE = "STATUS_CHANGE"
     CALL = "CALL"
@@ -62,7 +62,7 @@ class InteractionType(str, Enum):
     MEETING = "MEETING"
 
 
-class IntentType(str, Enum):
+class IntentType(StrEnum):
     """Intent classification for conversation messages."""
 
     INTERESSE_TRATAMENTO = "INTERESSE_TRATAMENTO"
@@ -78,7 +78,7 @@ class IntentType(str, Enum):
     OUTRO = "OUTRO"
 
 
-class MessageType(str, Enum):
+class MessageType(StrEnum):
     """Message type enum."""
 
     TEXT = "text"
