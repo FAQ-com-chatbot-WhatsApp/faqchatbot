@@ -3,8 +3,8 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.base_repository import BaseRepository
 from robbot.infra.persistence.models.session_model import WhatsAppSession
+from robbot.infra.persistence.repositories.base_repository import BaseRepository
 
 
 class SessionRepository(BaseRepository[WhatsAppSession]):
@@ -115,4 +115,3 @@ class SessionRepository(BaseRepository[WhatsAppSession]):
         """
         stmt = select(WhatsAppSession).where(WhatsAppSession.is_active)
         return len(self.db.scalars(stmt).all())
-
