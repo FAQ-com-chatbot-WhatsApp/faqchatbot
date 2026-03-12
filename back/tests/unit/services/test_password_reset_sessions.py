@@ -64,4 +64,3 @@ def test_reset_password_revokes_sessions(db_session):
     # Reload sessions and assert revoked
     sess = db_session.query(AuthSessionModel).filter(AuthSessionModel.user_id == user.id).all()
     assert all(s.is_revoked for s in sess)
-

@@ -2,8 +2,10 @@
 Testes unitários para MessageFilterService.
 Verifica todos os cenários de rejeição/aceitação de mensagens.
 """
-import pytest
+
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 class TestMessageFilterService:
@@ -25,6 +27,7 @@ class TestMessageFilterService:
         with patch("robbot.services.communication.message_filter_service.settings") as mock_settings:
             mock_settings.DEV_MODE = False
             from robbot.services.communication.message_filter_service import MessageFilterService
+
             service = MessageFilterService()
             service._mock_settings = mock_settings
             yield service

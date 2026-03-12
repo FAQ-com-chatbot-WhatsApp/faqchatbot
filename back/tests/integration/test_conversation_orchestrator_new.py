@@ -18,9 +18,9 @@ from robbot.domain.shared.enums import (
 )
 from robbot.infra.persistence.models.conversation_model import ConversationModel
 from robbot.infra.persistence.models.lead_model import LeadModel
+from robbot.services.bot.response_generator import ResponseGenerator
 from robbot.services.conversation_state_machine import ConversationStateMachine
 from robbot.services.message_pipeline import MessagePipeline
-from robbot.services.bot.response_generator import ResponseGenerator
 
 
 @pytest.fixture
@@ -340,4 +340,3 @@ class TestFullConversationFlow:
             # Verify flow
             assert mock_msg_repo.return_value.create.call_count == 2  # Message + Response
             assert mock_lead_repo.return_value.update.called  # Lead updated
-

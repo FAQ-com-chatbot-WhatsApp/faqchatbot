@@ -229,4 +229,3 @@ class TestLeadServiceErrorHandling:
                 phone_number="+5511999999999",
                 name="João Silva",
             )
-

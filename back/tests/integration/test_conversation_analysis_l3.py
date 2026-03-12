@@ -256,4 +256,3 @@ def test_topics_null_handling(analytics_repo, mock_db_session):
     call_args = mock_db_session.execute.call_args
     # A query deve ter WHERE body IS NOT NULL ou equivalente
     assert "body" in str(call_args[0][0]).lower()
-

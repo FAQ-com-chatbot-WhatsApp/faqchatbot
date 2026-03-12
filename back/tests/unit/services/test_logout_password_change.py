@@ -108,4 +108,3 @@ def test_change_password_updates_credential_and_revokes_sessions(db_session):
     sess = db_session.query(AuthSessionModel).filter(AuthSessionModel.user_id == user.id).all()
     assert len(sess) == 2
     assert all(s.is_revoked for s in sess)
-

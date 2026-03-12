@@ -11,18 +11,17 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from robbot.infra.persistence.repositories.credential_repository import CredentialRepository
 from robbot.config.settings import settings
 from robbot.core.custom_exceptions import AuthException
+from robbot.infra.persistence.models.audit_log_model import AuditLogModel
+from robbot.infra.persistence.models.auth_session_model import AuthSessionModel
+from robbot.infra.persistence.models.credential_model import CredentialModel
+from robbot.infra.persistence.models.revoked_token_model import RevokedTokenModel
+from robbot.infra.persistence.models.user_model import UserModel
+from robbot.infra.persistence.repositories.credential_repository import CredentialRepository
 from robbot.schemas.auth import SignupRequest
 from robbot.services.auth.auth_services import AuthService
 from robbot.services.auth.email_verification_service import EmailVerificationService
-
-from robbot.infra.persistence.models.user_model import UserModel
-from robbot.infra.persistence.models.credential_model import CredentialModel
-from robbot.infra.persistence.models.auth_session_model import AuthSessionModel
-from robbot.infra.persistence.models.revoked_token_model import RevokedTokenModel
-from robbot.infra.persistence.models.audit_log_model import AuditLogModel
 
 
 @pytest.fixture

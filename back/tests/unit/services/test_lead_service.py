@@ -7,13 +7,10 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from robbot.core.custom_exceptions import NotFoundException
 from robbot.domain.shared.enums import LeadStatus
-from robbot.infra.persistence.models.lead_model import LeadModel
-from robbot.infra.persistence.models.conversation_model import ConversationModel
+from robbot.infra.db.base import Base
 from robbot.infra.persistence.models.user_model import UserModel
 from robbot.services.leads.lead_service import LeadService
-from robbot.infra.db.base import Base
 
 
 @pytest.fixture()
@@ -168,7 +165,7 @@ def test_list_leads_filtering(service):
     # Create leads
     service.create_from_conversation("+5511100100100", "Lead A")
     lead_b = service.create_from_conversation("+5511200200200", "Lead B")
-    
+
     # Assign Lead B
     service.assign_to_user(str(lead_b.id), 123)
     service.update_maturity(str(lead_b.id), 90)
@@ -188,6 +185,7 @@ def test_list_leads_filtering(service):
     assert total == 1
     assert leads[0].name == "Lead A"
 
+
 def test_auto_assign_logic(service, db_session):
     """Test auto-assignment workload balancing logic."""
     # Add another secretary
@@ -199,13 +197,13 @@ def test_auto_assign_logic(service, db_session):
     lead1 = service.create_from_conversation("+5511500500501", "Auto Lead 1")
     # Mark as Engaged so it counts in workload
     service.update_maturity(str(lead1.id), 60)
-    
+
     assigned1 = service.auto_assign_lead(str(lead1.id))
     assert assigned1.assigned_to_user_id in [123, 456]
-    
+
     # Create another lead - should go to the OTHER secretary
     lead2 = service.create_from_conversation("+5511500500502", "Auto Lead 2")
     service.update_maturity(str(lead2.id), 60)
     assigned2 = service.auto_assign_lead(str(lead2.id))
-    
+
     assert assigned2.assigned_to_user_id != assigned1.assigned_to_user_id

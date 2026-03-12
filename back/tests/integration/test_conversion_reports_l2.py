@@ -159,4 +159,3 @@ class TestConversionReportsL2:
         # Testa month
         result_month = analytics_repo.get_conversion_trend(start_date, end_date, "month")
         assert isinstance(result_month, list)
-

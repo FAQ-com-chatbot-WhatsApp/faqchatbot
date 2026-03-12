@@ -373,4 +373,3 @@ def test_notification_ordering(notification_service):
 
     # Most recent should be first (if ordering is implemented)
     # This assumes the service/repository implements DESC ordering
-

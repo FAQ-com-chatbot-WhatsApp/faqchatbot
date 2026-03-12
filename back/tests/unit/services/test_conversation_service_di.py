@@ -259,4 +259,3 @@ class TestConversationServiceErrorHandling:
                 phone_number="+5511999999999",
                 lead=mock_lead_model,
             )
-

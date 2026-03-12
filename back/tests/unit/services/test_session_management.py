@@ -9,9 +9,9 @@ import pytest
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
+from robbot.infra.persistence.models.user_model import UserModel
 from robbot.infra.persistence.repositories.auth_session_repository import AuthSessionRepository
 from robbot.infra.persistence.repositories.user_repository import UserRepository
-from robbot.infra.persistence.models.user_model import UserModel
 
 
 @pytest.fixture
@@ -269,4 +269,3 @@ def test_get_active_sessions_excludes_expired_and_revoked(session_repo, test_use
     # Should only return the active, non-expired session
     assert len(active_sessions) == 1
     assert active_sessions[0].refresh_token_jti == "jti_active"
-

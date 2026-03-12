@@ -41,4 +41,3 @@ def test_change_password(db_session):
 
     # verify new
     assert svc.verify_password(user_id, "NewPass456!") is True
-
