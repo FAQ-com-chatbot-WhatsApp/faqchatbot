@@ -696,10 +696,7 @@ class WAHAClient:
 
             # Calculate human-like delay based on message length
             # Base: from settings, +0.1s per character (simulate reading/typing)
-            base_delay = random.uniform(
-                settings.WAHA_MIN_DELAY_SECONDS,
-                settings.WAHA_MAX_DELAY_SECONDS
-            )
+            base_delay = random.uniform(settings.WAHA_MIN_DELAY_SECONDS, settings.WAHA_MAX_DELAY_SECONDS)
             typing_delay = len(text) * 0.1
             total_delay = min(base_delay + typing_delay, 120)  # Max 2min
 
@@ -1569,9 +1566,7 @@ class WAHAClient:
             name,
             session,
         )
-        return await self._request(
-            "PUT", f"/api/{session}/contacts/{chat_id}", json=payload
-        )
+        return await self._request("PUT", f"/api/{session}/contacts/{chat_id}", json=payload)
 
     # ========================================================================
     # PRESENCE (Online/Offline Status)
@@ -1889,4 +1884,3 @@ async def close_waha_client():  # pylint: disable=global-statement
     if _waha_client_instance:
         await _waha_client_instance.close()
         _waha_client_instance = None
-
