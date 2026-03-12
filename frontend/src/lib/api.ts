@@ -1,8 +1,9 @@
 
-// Use internal Docker URL for server-side, public URL for client-side
+// In development: use Next.js proxy (/api/* rewrites to backend:3333/api/*)
+// In production (Docker): use internal Docker URL for SSR, same-origin for client
 const BASE_URL = typeof window === 'undefined'
-  ? process.env.API_URL || 'http://go:3333' // Server-side (SSR)
-  : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333'; // Client-side (browser)
+  ? process.env.API_URL || 'http://go:3333' // Server-side (SSR in Docker)
+  : ''; // Client-side uses same-origin via Next.js rewrite proxy
 
 export async function fetchApi<T>(
   endpoint: string,
