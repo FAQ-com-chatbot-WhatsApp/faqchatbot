@@ -56,7 +56,7 @@ export const realtimeAnalytics = {
    * Auto-refresh every 30 seconds recommended
    */
   getDashboard: (): Promise<RealtimeDashboard> => {
-    return fetchApi('/api/v1/analytics/realtime/dashboard')
+    return fetchApi('/api/v1/dashboard/realtime/dashboard')
   },
 }
 
@@ -70,7 +70,7 @@ export const dashboardAnalytics = {
    * Cache: 5 minutes
    */
   getSummary: (params: DateRangeParams = {}): Promise<DashboardSummary> => {
-    return fetchApi(`/api/v1/analytics/dashboard${buildQueryString(params)}`)
+    return fetchApi(`/api/v1/dashboard/dashboard${buildQueryString(params)}`)
   },
 }
 
@@ -84,7 +84,7 @@ export const conversionAnalytics = {
    * Cache: 15 minutes
    */
   getFunnel: (params: DateRangeParams = {}): Promise<ConversionFunnel> => {
-    return fetchApi(`/api/v1/analytics/conversion-funnel${buildQueryString(params)}`)
+    return fetchApi(`/api/v1/dashboard/conversion-funnel${buildQueryString(params)}`)
   },
 
   /**
@@ -92,7 +92,7 @@ export const conversionAnalytics = {
    * Cache: 15 minutes
    */
   getTimeToConversion: (params: DateRangeParams = {}): Promise<TimeToConversion> => {
-    return fetchApi(`/api/v1/analytics/conversion/time-to-conversion-extended${buildQueryString(params)}`)
+    return fetchApi(`/api/v1/dashboard/conversion/time-to-conversion-extended${buildQueryString(params)}`)
   },
 
   /**
@@ -100,7 +100,7 @@ export const conversionAnalytics = {
    * Cache: 15 minutes
    */
   getBySource: (params: DateRangeParams = {}): Promise<ConversionBySourceResponse> => {
-    return fetchApi(`/api/v1/analytics/conversion/by-source${buildQueryString(params)}`)
+    return fetchApi(`/api/v1/dashboard/conversion/by-source${buildQueryString(params)}`)
   },
 
   /**
@@ -108,7 +108,7 @@ export const conversionAnalytics = {
    * Cache: 15 minutes
    */
   getLostLeads: (params: DateRangeParams = {}): Promise<LostLeadsResponse> => {
-    return fetchApi(`/api/v1/analytics/conversion/lost-leads${buildQueryString(params)}`)
+    return fetchApi(`/api/v1/dashboard/conversion/lost-leads${buildQueryString(params)}`)
   },
 
   /**
@@ -116,7 +116,7 @@ export const conversionAnalytics = {
    * Cache: 15 minutes
    */
   getTrend: (params: GranularityParams = {}): Promise<ConversionTrend> => {
-    return fetchApi(`/api/v1/analytics/conversion/trend${buildQueryString(params)}`)
+    return fetchApi(`/api/v1/dashboard/conversion/trend${buildQueryString(params)}`)
   },
 }
 
@@ -130,7 +130,7 @@ export const botAnalytics = {
    * Cache: 15 minutes
    */
   getAutonomy: (params: DateRangeParams = {}): Promise<BotAutonomy> => {
-    return fetchApi(`/api/v1/analytics/bot-autonomy${buildQueryString(params)}`)
+    return fetchApi(`/api/v1/dashboard/bot-autonomy${buildQueryString(params)}`)
   },
 
   /**
@@ -138,7 +138,7 @@ export const botAnalytics = {
    * Cache: 15 minutes
    */
   getResponseTime: (params: DateRangeParams = {}): Promise<BotResponseTime> => {
-    return fetchApi(`/api/v1/analytics/performance/bot-response-time${buildQueryString(params)}`)
+    return fetchApi(`/api/v1/dashboard/performance/bot-response-time${buildQueryString(params)}`)
   },
 
   /**
@@ -146,7 +146,7 @@ export const botAnalytics = {
    * Cache: 15 minutes
    */
   getHandoffRate: (params: DateRangeParams = {}): Promise<HandoffRate> => {
-    return fetchApi(`/api/v1/analytics/performance/handoff-rate${buildQueryString(params)}`)
+    return fetchApi(`/api/v1/dashboard/performance/handoff-rate${buildQueryString(params)}`)
   },
 }
 
@@ -160,7 +160,7 @@ export const conversationAnalytics = {
    * Cache: 15 minutes
    */
   getByStatus: (params: DateRangeParams = {}): Promise<ConversationsByStatus> => {
-    return fetchApi(`/api/v1/analytics/performance/conversations-by-status${buildQueryString(params)}`)
+    return fetchApi(`/api/v1/dashboard/performance/conversations-by-status${buildQueryString(params)}`)
   },
 
   /**
@@ -168,7 +168,7 @@ export const conversationAnalytics = {
    * Cache: 15 minutes
    */
   getPeakHours: (params: DateRangeParams = {}): Promise<PeakHours> => {
-    return fetchApi(`/api/v1/analytics/performance/peak-hours${buildQueryString(params)}`)
+    return fetchApi(`/api/v1/dashboard/performance/peak-hours${buildQueryString(params)}`)
   },
 
   /**
@@ -176,7 +176,7 @@ export const conversationAnalytics = {
    * Cache: 15 minutes
    */
   getActivityHeatmap: (params: DateRangeParams = {}): Promise<{ data: any }> => {
-    return fetchApi(`/api/v1/analytics/conversation/activity-heatmap${buildQueryString(params)}`)
+    return fetchApi(`/api/v1/dashboard/conversation/activity-heatmap${buildQueryString(params)}`)
   },
 
   /**
@@ -184,7 +184,7 @@ export const conversationAnalytics = {
    * Cache: 15 minutes
    */
   getKeywords: (params: DateRangeParams & { limit?: number } = {}): Promise<{ keywords: any[] }> => {
-    return fetchApi(`/api/v1/analytics/conversation/keywords${buildQueryString(params)}`)
+    return fetchApi(`/api/v1/dashboard/conversation/keywords${buildQueryString(params)}`)
   },
 
   /**
@@ -192,7 +192,7 @@ export const conversationAnalytics = {
    * Cache: 15 minutes
    */
   getSentiment: (params: DateRangeParams = {}): Promise<{ sentiment: any }> => {
-    return fetchApi(`/api/v1/analytics/conversation/sentiment${buildQueryString(params)}`)
+    return fetchApi(`/api/v1/dashboard/conversation/sentiment${buildQueryString(params)}`)
   },
 
   /**
@@ -200,7 +200,7 @@ export const conversationAnalytics = {
    * Cache: 15 minutes
    */
   getTopics: (params: DateRangeParams = {}): Promise<{ topics: any[] }> => {
-    return fetchApi(`/api/v1/analytics/conversation/topics${buildQueryString(params)}`)
+    return fetchApi(`/api/v1/dashboard/conversation/topics${buildQueryString(params)}`)
   },
 
   /**
@@ -208,7 +208,7 @@ export const conversationAnalytics = {
    * Cache: 30 minutes
    */
   getReport: (params: DateRangeParams = {}): Promise<ConversationAnalysisReport> => {
-    return fetchApi(`/api/v1/analytics/conversation/report${buildQueryString(params)}`)
+    return fetchApi(`/api/v1/dashboard/conversation/report${buildQueryString(params)}`)
   },
 }
 
@@ -222,7 +222,7 @@ export const performanceAnalytics = {
    * Cache: 15 minutes
    */
   getReport: (params: DateRangeParams = {}): Promise<PerformanceReport> => {
-    return fetchApi(`/api/v1/analytics/performance/report${buildQueryString(params)}`)
+    return fetchApi(`/api/v1/dashboard/performance/report${buildQueryString(params)}`)
   },
 
   /**
@@ -230,7 +230,7 @@ export const performanceAnalytics = {
    */
   exportPDF: async (params: DateRangeParams = {}): Promise<Blob> => {
     const response = await fetch(
-      `/api/v1/analytics/performance/report/export/pdf?${new URLSearchParams(params as any)}`,
+      `/api/v1/dashboard/performance/report/export/pdf?${new URLSearchParams(params as any)}`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -250,7 +250,7 @@ export const performanceAnalytics = {
    */
   exportExcel: async (params: DateRangeParams = {}): Promise<Blob> => {
     const response = await fetch(
-      `/api/v1/analytics/performance/report/export/excel?${new URLSearchParams(params as any)}`,
+      `/api/v1/dashboard/performance/report/export/excel?${new URLSearchParams(params as any)}`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
