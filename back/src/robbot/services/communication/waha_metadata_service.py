@@ -36,11 +36,7 @@ class WahaMetadataService:
             "X-Api-Key": self.api_key,
         }
         # Connection Pooling: Persistent client for multiple calls per cycle
-        self.client = httpx.Client(
-            base_url=self.base_url,
-            headers=self.headers,
-            timeout=10.0
-        )
+        self.client = httpx.Client(base_url=self.base_url, headers=self.headers, timeout=10.0)
         # Cache TTLs
         self.CACHE_TTL_LID = 3600  # 1 hour for direct mapping
         self.CACHE_TTL_REVERSE = 86400  # 24 hours for reverse mapping
@@ -149,9 +145,7 @@ class WahaMetadataService:
                 logger.warning("[WAHA_METADATA] LID not found for phone: %s", phone)
             else:
                 logger.warning(
-                    "[WAHA_METADATA] Failed to resolve LID: %s (status %s)",
-                    lids_resp.text,
-                    lids_resp.status_code
+                    "[WAHA_METADATA] Failed to resolve LID: %s (status %s)", lids_resp.text, lids_resp.status_code
                 )
 
         except httpx.HTTPError as e:
@@ -253,5 +247,6 @@ class WahaMetadataService:
     def __del__(self):
         """Ensure the client is closed when the service is destroyed."""
         import contextlib
+
         with contextlib.suppress(Exception):
             self.client.close()
