@@ -2,8 +2,8 @@
 
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.base_repository import BaseRepository
 from robbot.infra.persistence.models.topic_model import TopicModel
+from robbot.infra.persistence.repositories.base_repository import BaseRepository
 
 
 class TopicRepository(BaseRepository[TopicModel]):
@@ -41,4 +41,3 @@ class TopicRepository(BaseRepository[TopicModel]):
         if active_only:
             query = query.filter(TopicModel.active)
         return query.limit(limit).offset(offset).all()
-
