@@ -71,17 +71,17 @@ export function ContactCard({
             </Button>
           )}
           {onMessage && (
-            <Button variant="ghost" size="icon-sm" onClick={onMessage} aria-label="Message">
+            <Button variant="ghost" size="icon-sm" onClick={onMessage} aria-label="Mensagem">
               <MessageSquare className="size-4" />
             </Button>
           )}
           {onEdit && (
-            <Button variant="ghost" size="icon-sm" onClick={onEdit} aria-label="Edit">
+            <Button variant="ghost" size="icon-sm" onClick={onEdit} aria-label="Editar">
               <Edit2 className="size-4" />
             </Button>
           )}
           {onDelete && (
-            <Button variant="ghost" size="icon-sm" onClick={onDelete} aria-label="Delete" className="text-destructive">
+            <Button variant="ghost" size="icon-sm" onClick={onDelete} aria-label="Excluir" className="text-destructive">
               <Trash2 className="size-4" />
             </Button>
           )}
