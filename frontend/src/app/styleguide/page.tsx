@@ -29,7 +29,7 @@ export default function StyleguidePage() {
     return (
       <div className="p-8 max-w-7xl mx-auto">
         <div className="h-screen flex items-center justify-center">
-          <div className="animate-pulse text-muted-foreground">Loading...</div>
+          <div className="animate-pulse text-muted-foreground">Carregando...</div>
         </div>
       </div>
     )
@@ -297,25 +297,25 @@ export default function StyleguidePage() {
 
               <Alert className="border-success/50 text-success">
                 <CheckCircle2 className="h-4 w-4" />
-                <AlertTitle>Success</AlertTitle>
+                <AlertTitle>Sucesso</AlertTitle>
                 <AlertDescription>
-                  Your changes have been saved successfully.
+                  Suas alterações foram salvas com sucesso.
                 </AlertDescription>
               </Alert>
 
               <Alert className="border-warning/50 text-warning">
                 <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Warning</AlertTitle>
+                <AlertTitle>Aviso</AlertTitle>
                 <AlertDescription>
-                  Please review the information before proceeding.
+                  Por favor, revise as informações antes de prosseguir.
                 </AlertDescription>
               </Alert>
 
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
+                <AlertTitle>Erro</AlertTitle>
                 <AlertDescription>
-                  An error occurred while processing your request.
+                  Ocorreu um erro ao processar sua solicitação.
                 </AlertDescription>
               </Alert>
             </CardContent>
