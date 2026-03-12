@@ -2,8 +2,8 @@
 
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.base_repository import BaseRepository
 from robbot.infra.persistence.models.context_embedding_model import ContextEmbeddingModel
+from robbot.infra.persistence.repositories.base_repository import BaseRepository
 
 
 class ContextEmbeddingRepository(BaseRepository[ContextEmbeddingModel]):
@@ -18,7 +18,4 @@ class ContextEmbeddingRepository(BaseRepository[ContextEmbeddingModel]):
 
     def get_by_chroma_id(self, chroma_doc_id: str) -> ContextEmbeddingModel | None:
         """Retrieve embedding by ChromaDB document ID."""
-        return (
-            self.db.query(ContextEmbeddingModel).filter(ContextEmbeddingModel.chroma_doc_id == chroma_doc_id).first()
-        )
-
+        return self.db.query(ContextEmbeddingModel).filter(ContextEmbeddingModel.chroma_doc_id == chroma_doc_id).first()
