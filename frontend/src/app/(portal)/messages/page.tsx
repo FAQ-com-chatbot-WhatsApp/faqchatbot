@@ -11,14 +11,14 @@ import { ConversationItem } from "@/components/ui/conversation-item"
 import { ChatHeader } from "@/components/ui/chat-header"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { EmptyState } from "@/components/ui/empty-state"
-import { useConversations } from "@/hooks/useConversations"
-import { useMessages } from "@/hooks/useMessages"
-import type { WahaMessage } from "@/types/waha"
-import type { Conversation } from "@/services/conversationService"
+import { useConversations, useConversationMessages } from "@/hooks/useConversations"
+import type { Conversation, ConversationMessage } from "@/services/conversationService"
 
 export default function MessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
+
+  console.log('[MessagesPage] selectedConversation:', selectedConversation?.id)
 
   const {
     conversations,
@@ -30,23 +30,27 @@ export default function MessagesPage() {
     search: searchQuery,
   })
 
+  console.log('[MessagesPage] conversations:', conversations.length)
+
   const {
     messages,
     isLoading: isLoadingMessages,
     error: messagesError,
-    sendMessage,
     refresh: refreshMessages,
-  } = useMessages({
-    chatId: selectedConversation?.lead?.phone_number ? `${selectedConversation.lead.phone_number}@c.us` : "",
-    enabled: !!selectedConversation?.lead?.phone_number,
+  } = useConversationMessages({
+    conversationId: selectedConversation?.id,
+    enabled: !!selectedConversation?.id,
   })
 
+  console.log('[MessagesPage] messages:', messages.length, messages)
+
   const handleSendMessage = async (text: string) => {
-    await sendMessage(text)
+    // TODO: Implementar envio via API backend
+    console.log("Enviar mensagem:", text)
   }
 
-  const formatTimestamp = (timestamp: number) => {
-    const date = new Date(timestamp * 1000)
+  const formatTimestamp = (isoString: string) => {
+    const date = new Date(isoString)
     return date.toLocaleTimeString("pt-BR", {
       hour: "2-digit",
       minute: "2-digit",
@@ -61,8 +65,8 @@ export default function MessagesPage() {
       : name.slice(0, 2).toUpperCase()
   }
 
-  const selectedChatId = selectedConversation?.lead?.phone_number 
-    ? `${selectedConversation.lead.phone_number}@c.us` 
+  const selectedChatId = selectedConversation?.phone_number
+    ? `${selectedConversation.phone_number}@c.us`
     : null
 
   return (
@@ -72,8 +76,8 @@ export default function MessagesPage() {
         <div className="p-4 border-b">
           <div className="relative">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Buscar conversa..." 
+            <Input
+              placeholder="Buscar conversa..."
               className="pl-9"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -98,12 +102,12 @@ export default function MessagesPage() {
             conversations.map((conv) => (
               <ConversationItem
                 key={conv.id}
-                name={conv.lead?.name || conv.lead?.phone_number || "Desconhecido"}
-                initials={getInitials(conv.lead?.name)}
+                name={conv.phone_number}
+                initials={getInitials(conv.phone_number)}
                 lastMessage={undefined}
                 unreadCount={0}
                 isActive={selectedConversation?.id === conv.id}
-                isOnline={conv.status === "ACTIVE"}
+                isOnline={conv.status === "active"}
                 onClick={() => setSelectedConversation(conv)}
               />
             ))
@@ -116,10 +120,10 @@ export default function MessagesPage() {
         {selectedConversation ? (
           <>
             <ChatHeader
-              name={selectedConversation.lead?.name || selectedConversation.lead?.phone_number || "Desconhecido"}
-              initials={getInitials(selectedConversation.lead?.name)}
-              status={selectedConversation.status === "ACTIVE" ? "online" : "offline"}
-              isOnline={selectedConversation.status === "ACTIVE"}
+              name={selectedConversation.phone_number}
+              initials={getInitials(selectedConversation.phone_number)}
+              status={selectedConversation.status === "active" ? "online" : "offline"}
+              isOnline={selectedConversation.status === "active"}
               onMore={refreshMessages}
             />
 
@@ -137,13 +141,13 @@ export default function MessagesPage() {
               ) : messages.length === 0 ? (
                 <EmptyState icon={MessageSquare} message="Nenhuma mensagem ainda" />
               ) : (
-                messages.map((msg: WahaMessage) => (
+                messages.map((msg: ConversationMessage) => (
                   <MessageBubble
                     key={msg.id}
-                    sender={msg.fromMe ? "user" : "other"}
+                    sender={msg.direction === "OUTBOUND" ? "user" : "other"}
                     message={msg.body}
-                    timestamp={formatTimestamp(msg.timestamp)}
-                    senderName={msg.fromMe ? undefined : selectedConversation.lead?.name}
+                    timestamp={formatTimestamp(msg.created_at)}
+                    senderName={msg.direction === "INBOUND" ? msg.from_phone : undefined}
                   />
                 ))
               )}
@@ -158,9 +162,9 @@ export default function MessagesPage() {
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center">
-            <EmptyState 
-              icon={MessageSquare} 
-              message="Selecione uma conversa para começar" 
+            <EmptyState
+              icon={MessageSquare}
+              message="Selecione uma conversa para começar"
             />
           </div>
         )}
