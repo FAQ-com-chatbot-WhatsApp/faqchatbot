@@ -30,17 +30,25 @@ export function useConversations(options: UseConversationsOptions = {}): UseConv
   const [pages, setPages] = useState(0)
 
   const loadConversations = useCallback(async () => {
-    if (!enabled) return
+    if (!enabled) {
+      console.log('[useConversations] Disabled, skipping load');
+      return;
+    }
 
+    console.log('[useConversations] Loading conversations with params:', { page, size, status, search });
     setIsLoading(true)
     setError(null)
 
     try {
       const response = await getConversations({ page, size, status, search })
-      setConversations(response.items || [])
+      console.log('[useConversations] API response:', response);
+      console.log('[useConversations] Conversations array:', response.conversations);
+      console.log('[useConversations] Total:', response.total);
+      setConversations(response.conversations || [])
       setTotal(response.total || 0)
-      setPages(response.pages || 0)
+      setPages(Math.ceil((response.total || 0) / size))
     } catch (err: any) {
+      console.error('[useConversations] Error:', err);
       setError(err.message || "Erro ao carregar conversas")
       console.error("Erro ao carregar conversas:", err)
     } finally {
@@ -67,7 +75,7 @@ export function useConversations(options: UseConversationsOptions = {}): UseConv
 }
 
 interface UseConversationMessagesOptions {
-  conversationId?: number
+  conversationId?: string
   enabled?: boolean
 }
 
@@ -88,16 +96,22 @@ export function useConversationMessages(options: UseConversationMessagesOptions 
   const [total, setTotal] = useState(0)
 
   const loadMessages = useCallback(async () => {
-    if (!enabled || !conversationId) return
+    if (!enabled || !conversationId) {
+      console.log('[useConversationMessages] Skipping load:', { enabled, conversationId });
+      return;
+    }
 
+    console.log('[useConversationMessages] Loading messages for:', conversationId);
     setIsLoading(true)
     setError(null)
 
     try {
-      const response = await getConversationMessages(conversationId)
-      setMessages(response.items || [])
-      setTotal(response.total || 0)
+      const messages = await getConversationMessages(conversationId)
+      console.log('[useConversationMessages] Received messages:', messages.length, messages);
+      setMessages(messages || [])
+      setTotal(messages.length)
     } catch (err: any) {
+      console.error('[useConversationMessages] Error loading messages:', err);
       setError(err.message || "Erro ao carregar mensagens")
       console.error("Erro ao carregar mensagens:", err)
     } finally {
