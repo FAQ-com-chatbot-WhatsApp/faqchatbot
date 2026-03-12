@@ -1,24 +1,20 @@
 import { fetchApi } from "@/lib/api"
 
 export interface Lead {
-  id: number
+  id: string
   phone_number: string
-  name?: string
-  email?: string
-  maturity_level: "COLD" | "WARM" | "HOT" | "CONVERTED" | "LOST"
-  source?: string
+  name?: string | null
+  email?: string | null
+  status: string
+  maturity_score: number
+  assigned_to?: number | null
   created_at: string
   updated_at: string
-  last_interaction_at?: string
-  assigned_to?: number
 }
 
 export interface LeadListResponse {
-  items: Lead[]
+  leads: Lead[]
   total: number
-  page: number
-  size: number
-  pages: number
 }
 
 export interface LeadInteraction {
@@ -33,15 +29,17 @@ export interface LeadInteraction {
 export async function getLeads(params?: {
   page?: number
   size?: number
-  maturity_level?: string
   search?: string
 }): Promise<LeadListResponse> {
   const queryParams = new URLSearchParams()
   
-  if (params?.page) queryParams.append("page", params.page.toString())
-  if (params?.size) queryParams.append("size", params.size.toString())
-  if (params?.maturity_level) queryParams.append("maturity_level", params.maturity_level)
-  if (params?.search) queryParams.append("search", params.search)
+  // Backend usa limit/offset, não page/size
+  const limit = params?.size || 50
+  const offset = params?.page ? (params.page - 1) * limit : 0
+  
+  queryParams.append("limit", limit.toString())
+  queryParams.append("offset", offset.toString())
+  if (params?.search) queryParams.append("phone_number", params.search)
 
   const url = `/api/v1/leads${queryParams.toString() ? `?${queryParams.toString()}` : ""}`
   
@@ -50,13 +48,13 @@ export async function getLeads(params?: {
   })
 }
 
-export async function getLead(id: number): Promise<Lead> {
+export async function getLead(id: string): Promise<Lead> {
   return fetchApi<Lead>(`/api/v1/leads/${id}`, {
     method: "GET",
   })
 }
 
-export async function getLeadInteractions(id: number): Promise<LeadInteraction[]> {
+export async function getLeadInteractions(id: string): Promise<LeadInteraction[]> {
   return fetchApi<LeadInteraction[]>(`/api/v1/leads/${id}/interactions`, {
     method: "GET",
   })
@@ -75,11 +73,11 @@ export async function createLead(data: {
 }
 
 export async function updateLeadMaturity(
-  id: number,
-  maturity_level: "COLD" | "WARM" | "HOT" | "CONVERTED" | "LOST"
+  id: string,
+  maturity_score: number
 ): Promise<Lead> {
   return fetchApi<Lead>(`/api/v1/leads/${id}/maturity`, {
     method: "PUT",
-    body: JSON.stringify({ maturity_level }),
+    body: JSON.stringify({ maturity_score }),
   })
 }
