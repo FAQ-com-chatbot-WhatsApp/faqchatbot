@@ -5,12 +5,12 @@ Job para processar mensagens com Gemini AI.
 import logging
 from typing import Any
 
+from robbot.infra.db.session import get_sync_session
+from robbot.infra.jobs.base_job import BaseJob, JobFailureError, JobRetryableError
 from robbot.infra.persistence.repositories.conversation_message_repository import (
     ConversationMessageRepository,
 )
 from robbot.infra.persistence.repositories.conversation_repository import ConversationRepository
-from robbot.infra.db.session import get_sync_session
-from robbot.infra.jobs.base_job import BaseJob, JobFailureError, JobRetryableError
 
 logger = logging.getLogger(__name__)
 
@@ -279,4 +279,3 @@ class MessageAnalysisJob(BaseJob):
                 "Continue com resposta automática",
             ],
         }
-
