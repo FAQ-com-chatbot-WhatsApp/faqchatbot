@@ -21,7 +21,7 @@ interface UseLeadsReturn {
 }
 
 export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
-  const { page = 1, size = 50, maturity_level, search, enabled = true } = options
+  const { page = 1, size = 50, search, enabled = true } = options
 
   const [leads, setLeads] = useState<Lead[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -36,17 +36,17 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
     setError(null)
 
     try {
-      const response = await getLeads({ page, size, maturity_level, search })
-      setLeads(response.items || [])
+      const response = await getLeads({ page, size, search })
+      setLeads(response.leads || [])
       setTotal(response.total || 0)
-      setPages(response.pages || 0)
+      setPages(Math.ceil((response.total || 0) / size))
     } catch (err: any) {
       setError(err.message || "Erro ao carregar leads")
       console.error("Erro ao carregar leads:", err)
     } finally {
       setIsLoading(false)
     }
-  }, [page, size, maturity_level, search, enabled])
+  }, [page, size, search, enabled])
 
   useEffect(() => {
     loadLeads()
