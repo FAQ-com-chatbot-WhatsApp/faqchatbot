@@ -5,16 +5,15 @@ This service orchestrates lead operations and status transitions using rich doma
 """
 
 import logging
-from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.lead_repository import LeadRepository
-from robbot.core.custom_exceptions import BusinessRuleError, NotFoundException
-from robbot.domain.shared.enums import LeadStatus
-from robbot.domain.leads.mapper import LeadMapper
+from robbot.core.custom_exceptions import NotFoundException
 from robbot.domain.leads.lead import Lead
+from robbot.domain.leads.mapper import LeadMapper
+from robbot.domain.shared.enums import LeadStatus
 from robbot.infra.persistence.models.lead_model import LeadModel
+from robbot.infra.persistence.repositories.lead_repository import LeadRepository
 
 logger = logging.getLogger(__name__)
 
@@ -70,15 +69,20 @@ class LeadService:
         # Domain transition
         lead_domain = LeadMapper.to_domain(lead_model)
         old_score = lead_domain.maturity_score.value
-        
+
         lead_domain.update_score(new_score)
-        
+
         # Save change
         LeadMapper.to_model(lead_domain, lead_model)
         updated = self.repo.update(lead_model)
 
-        logger.info("[SUCCESS] Score updated (lead_id=%s, %s -> %s, status=%s)", 
-                    lead_id, old_score, new_score, lead_domain.status)
+        logger.info(
+            "[SUCCESS] Score updated (lead_id=%s, %s -> %s, status=%s)",
+            lead_id,
+            old_score,
+            new_score,
+            lead_domain.status,
+        )
         return updated
 
     def assign_to_user(
@@ -93,7 +97,7 @@ class LeadService:
 
         lead_domain = LeadMapper.to_domain(lead_model)
         lead_domain.assign_to(user_id)
-        
+
         LeadMapper.to_model(lead_domain, lead_model)
         updated = self.repo.update(lead_model)
 
@@ -108,7 +112,7 @@ class LeadService:
 
         lead_domain = LeadMapper.to_domain(lead_model)
         lead_domain.convert()
-        
+
         LeadMapper.to_model(lead_domain, lead_model)
         updated = self.repo.update(lead_model)
 
@@ -127,7 +131,7 @@ class LeadService:
 
         lead_domain = LeadMapper.to_domain(lead_model)
         lead_domain.update_score(0)
-        
+
         LeadMapper.to_model(lead_domain, lead_model)
         updated = self.repo.update(lead_model)
 
@@ -142,7 +146,7 @@ class LeadService:
 
         lead_domain = LeadMapper.to_domain(lead_model)
         lead_domain.soft_delete()
-        
+
         LeadMapper.to_model(lead_domain, lead_model)
         updated = self.repo.update(lead_model)
 
@@ -157,7 +161,7 @@ class LeadService:
 
         lead_domain = LeadMapper.to_domain(lead_model)
         lead_domain.restore()
-        
+
         LeadMapper.to_model(lead_domain, lead_model)
         updated = self.repo.update(lead_model)
 
@@ -183,7 +187,7 @@ class LeadService:
             min_score=min_score,
             unassigned_only=unassigned_only,
             limit=limit,
-            offset=offset
+            offset=offset,
         )
 
     def auto_assign_lead(self, lead_id: str) -> LeadModel | None:
@@ -204,16 +208,16 @@ class LeadService:
         # Workload balancing
         active_leads = self.repo.get_leads_by_statuses([LeadStatus.ENGAGED, LeadStatus.INTERESTED])
         from collections import Counter
-        lead_counts = Counter(l.assigned_to_user_id for l in active_leads if l.assigned_to_user_id)
-        
+
+        lead_counts = Counter(lead.assigned_to_user_id for lead in active_leads if lead.assigned_to_user_id)
+
         selected_secretary = min(secretaries, key=lambda s: lead_counts.get(s.id, 0))
 
         lead_domain = LeadMapper.to_domain(lead_model)
         lead_domain.assign_to(selected_secretary.id)
-        
+
         LeadMapper.to_model(lead_domain, lead_model)
         updated = self.repo.update(lead_model)
 
         logger.info("[SUCCESS] Lead auto-assigned (lead_id=%s, user_id=%s)", lead_id, selected_secretary.id)
         return updated
-
