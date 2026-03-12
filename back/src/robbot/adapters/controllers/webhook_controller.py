@@ -5,13 +5,13 @@ import logging
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.webhook_log_repository import WebhookLogRepository
 from robbot.api.v1.dependencies import get_db
 from robbot.config.settings import get_settings
 from robbot.core.custom_exceptions import ExternalServiceError, QueueError
+from robbot.infra.persistence.repositories.webhook_log_repository import WebhookLogRepository
 from robbot.schemas.waha import WebhookLogOut, WebhookPayload
-from robbot.services.infrastructure.queue_service import get_queue_service
 from robbot.services.communication.message_filter_service import MessageFilterService
+from robbot.services.infrastructure.queue_service import get_queue_service
 
 router = APIRouter()
 
@@ -100,7 +100,7 @@ async def receive_waha_webhook(
                             phone,
                             extra={"lid": chat_id, "phone": phone, "webhook_log_id": log.id},
                         )
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     logger.debug(
                         "[WEBHOOK] LID resolution timeout, accepting original: %s",
                         phone,
@@ -218,4 +218,3 @@ async def get_webhook_logs(
     """
     logs = repo.get_unprocessed(limit=limit, event_type=event_type)
     return [WebhookLogOut.model_validate(log) for log in logs]
-
