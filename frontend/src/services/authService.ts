@@ -23,9 +23,7 @@ export async function signupApi(email: string, password: string, full_name?: str
 }
 
 export function logoutApi() {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('access_token')
-  }
+  // Token is in HttpOnly cookie, no localStorage cleanup needed
   return true
 }
 
