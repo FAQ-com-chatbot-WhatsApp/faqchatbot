@@ -7,8 +7,8 @@ from datetime import datetime
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, MetaData, String, Table, text
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.tag_repository import TagRepository
 from robbot.infra.persistence.models.tag_model import TagModel
+from robbot.infra.persistence.repositories.tag_repository import TagRepository
 
 # Local metadata for this repository
 metadata = MetaData()
@@ -93,4 +93,3 @@ class ConversationTagRepository:
         result = self.session.execute(self.table.select().where(self.table.c.tag_id == tag_id)).fetchall()
 
         return [row.conversation_id for row in result]
-
