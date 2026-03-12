@@ -38,6 +38,8 @@ export async function fetchApi<T>(
     const res = await fetch(`${BASE_URL}${endpoint}`, {
       // always include cookies for auth traffic unless explicitly overridden
       credentials: options?.credentials ?? 'include',
+      // Disable Next.js cache to ensure fresh data on every request
+      cache: 'no-store',
       ...options,
       signal,
       headers,
