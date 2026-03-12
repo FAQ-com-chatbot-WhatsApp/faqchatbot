@@ -106,6 +106,33 @@ class WAHAClient:
 
         except httpx.HTTPStatusError as e:
             error_detail = e.response.text
+
+            # Special handling for 422 session status errors
+            if e.response.status_code == 422:
+                try:
+                    error_json = e.response.json()
+                    if "session" in error_json and "status" in error_json:
+                        session_name = error_json.get("session", "unknown")
+                        current_status = error_json.get("status", "UNKNOWN")
+                        expected_statuses = error_json.get("expected", ["WORKING"])
+
+                        logger.error(
+                            "WAHA session '%s' is '%s' but expected %s. Please ensure the session is started and authenticated.",
+                            session_name,
+                            current_status,
+                            expected_statuses,
+                            extra={"endpoint": endpoint, "method": method},
+                        )
+                        raise WAHAError(
+                            f"Session '{session_name}' is '{current_status}' (expected {expected_statuses}). "
+                            f"Start the session and scan QR code to authenticate.",
+                            original_error=e,
+                            status_code=422,
+                        ) from e
+                except (ValueError, KeyError):
+                    # If JSON parsing fails or expected fields are missing, fall through to generic error
+                    pass
+
             logger.error(
                 "WAHA HTTP error %s: %s",
                 e.response.status_code,
@@ -362,6 +389,71 @@ class WAHAClient:
         """
         logger.info("[INFO] Logging out WAHA session: %s", name)
         return await self._request("POST", f"/api/sessions/{name}/logout")
+
+    async def ensure_session_working(
+        self,
+        session_name: str,
+        auto_start: bool = True,
+        max_retries: int = 3,
+    ) -> bool:
+        """Ensure session is in WORKING status.
+
+        Args:
+            session_name: Session name to check
+            auto_start: Whether to automatically start the session if stopped
+            max_retries: Maximum number of retries to check status
+
+        Returns:
+            True if session is WORKING, False otherwise
+
+        Raises:
+            WAHAError: If session cannot be started or status check fails
+        """
+        for attempt in range(max_retries):
+            try:
+                status_data = await self.get_session_status(session_name)
+                current_status = status_data.get("status", "STOPPED")
+
+                if current_status == "WORKING":
+                    return True
+
+                if current_status == "STOPPED" and auto_start:
+                    logger.warning(
+                        "[WAHA] Session '%s' is STOPPED, attempting to start (attempt %d/%d)",
+                        session_name,
+                        attempt + 1,
+                        max_retries,
+                    )
+                    await self.start_session(session_name)
+                    # Wait a bit for session to transition
+                    await asyncio.sleep(2)
+                    continue
+
+                if current_status in {"STARTING", "SCAN_QR_CODE"}:
+                    logger.warning(
+                        "[WAHA] Session '%s' is in '%s' status, requires manual QR scan",
+                        session_name,
+                        current_status,
+                    )
+                    return False
+
+                if current_status == "FAILED":
+                    logger.error("[WAHA] Session '%s' is in FAILED status", session_name)
+                    return False
+
+            except Exception as e:  # noqa: BLE001  # pylint: disable=broad-exception-caught
+                logger.error(
+                    "[WAHA] Error checking session status (attempt %d/%d): %s",
+                    attempt + 1,
+                    max_retries,
+                    str(e),
+                )
+                if attempt == max_retries - 1:
+                    raise
+
+            await asyncio.sleep(1)
+
+        return False
 
     # ========================================================================
     # ANTI-BAN HELPERS (WhatsApp Best Practices)
@@ -628,7 +720,7 @@ class WAHAClient:
                     try:
                         await self.get_session_status(session)
                         logger.info("[HEARTBEAT] Session alive: %s (elapsed: %.1fs)", session, elapsed)
-                    except Exception as e:  # noqa: BLE001
+                    except Exception as e:  # noqa: BLE001  # pylint: disable=broad-exception-caught
                         # Heartbeat failure is non-critical, just log and continue
                         logger.warning("[HEARTBEAT] Ping failed (non-critical): %s", e)
 
@@ -1465,7 +1557,7 @@ class WAHAClient:
             Success response
 
         Docs: PUT /api/{session}/contacts/{chatId}
-        
+
         Note: Adding a contact to WhatsApp's contact list is REQUIRED
         before LID resolution will work. WAHA can only resolve LIDs for
         contacts that exist in the WhatsApp contact list.
@@ -1785,7 +1877,7 @@ def get_waha_client() -> WAHAClient:  # pylint: disable=global-statement
     Returns:
         Shared WAHAClient instance
     """
-    global _waha_client_instance
+    global _waha_client_instance  # pylint: disable=global-statement
     if _waha_client_instance is None:
         _waha_client_instance = WAHAClient()
     return _waha_client_instance
@@ -1793,7 +1885,7 @@ def get_waha_client() -> WAHAClient:  # pylint: disable=global-statement
 
 async def close_waha_client():  # pylint: disable=global-statement
     """Close global WAHA client connection."""
-    global _waha_client_instance
+    global _waha_client_instance  # pylint: disable=global-statement
     if _waha_client_instance:
         await _waha_client_instance.close()
         _waha_client_instance = None
