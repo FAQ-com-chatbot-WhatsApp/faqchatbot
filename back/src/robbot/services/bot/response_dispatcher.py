@@ -4,14 +4,15 @@ Response Dispatcher - Handles delivery and logging of robot responses.
 
 import logging
 from typing import Any
+
 from sqlalchemy.orm import Session
 
-from robbot.infra.integrations.waha.waha_client import WAHAClient
-from robbot.infra.persistence.repositories.lead_interaction_repository import LeadInteractionRepository
-from robbot.infra.persistence.repositories.llm_interaction_repository import LLMInteractionRepository
 from robbot.domain.shared.enums import InteractionType
+from robbot.infra.integrations.waha.waha_client import WAHAClient
 from robbot.infra.persistence.models.lead_interaction_model import LeadInteractionModel
 from robbot.infra.persistence.models.llm_interaction_model import LLMInteractionModel
+from robbot.infra.persistence.repositories.lead_interaction_repository import LeadInteractionRepository
+from robbot.infra.persistence.repositories.llm_interaction_repository import LLMInteractionRepository
 from robbot.services.communication.message_processor import MessageProcessor
 
 logger = logging.getLogger(__name__)
@@ -21,10 +22,11 @@ class ResponseDispatcher:
     """
     Coordinates delivering responses and persisting interaction logs.
     """
+
     def __init__(self, session: Session, waha_client: WAHAClient):
         self.session = session
         self.waha_client = waha_client
-        self.message_processor = MessageProcessor(session, None) # transcription not needed for outbound
+        self.message_processor = MessageProcessor(session, None)  # transcription not needed for outbound
         self.lead_interaction_repo = LeadInteractionRepository(session)
         self.llm_interaction_repo = LLMInteractionRepository(session)
 
@@ -36,9 +38,9 @@ class ResponseDispatcher:
         lead_id: str | None,
         response_text: str,
         intent: str,
-        message_text: str, # original user message for logging
-        response_data: dict[str, Any], # LLM metadata (tokens, latency)
-        session_name: str = "default"
+        message_text: str,  # original user message for logging
+        response_data: dict[str, Any],  # LLM metadata (tokens, latency)
+        session_name: str = "default",
     ) -> bool:
         """
         Send response via WAHA and record all logs.
@@ -75,13 +77,13 @@ class ResponseDispatcher:
     async def _register_interaction(self, lead_id: str | None, intent: str, inbound: str, outbound: str):
         if not lead_id:
             return
-        
+
         type_map = {
             "INTERESSE_TRATAMENTO": InteractionType.MESSAGE,
             "AGENDAMENTO": InteractionType.MEETING,
             "URGENCIA_DOR": InteractionType.CALL,
         }
-        
+
         interaction = LeadInteractionModel(
             lead_id=lead_id,
             interaction_type=type_map.get(intent, InteractionType.MESSAGE),
@@ -99,4 +101,3 @@ class ResponseDispatcher:
             latency_ms=latency,
         )
         self.llm_interaction_repo.create(interaction)
-
