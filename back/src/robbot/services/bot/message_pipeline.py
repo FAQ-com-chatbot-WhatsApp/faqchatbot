@@ -15,13 +15,13 @@ from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.conversation_message_repository import (
-    ConversationMessageRepository,
-)
 from robbot.core.custom_exceptions import DatabaseError, ValidationError
 from robbot.domain.shared.enums import MessageDirection, MessageType
 from robbot.infra.persistence.models.conversation_message_model import ConversationMessageModel
 from robbot.infra.persistence.models.conversation_model import ConversationModel
+from robbot.infra.persistence.repositories.conversation_message_repository import (
+    ConversationMessageRepository,
+)
 from robbot.services.communication.message_processor import MessageProcessor
 
 logger = logging.getLogger(__name__)
@@ -189,4 +189,3 @@ class MessagePipeline:
         except Exception as e:
             logger.error("[ERROR] Failed to save response: %s", e)
             raise DatabaseError(f"Failed to save response: {e}") from e
-
