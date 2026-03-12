@@ -7,8 +7,8 @@ from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.base_repository import BaseRepository
 from robbot.infra.persistence.models.credential_model import CredentialModel
+from robbot.infra.persistence.repositories.base_repository import BaseRepository
 
 
 class CredentialRepository(BaseRepository[CredentialModel]):
@@ -199,4 +199,3 @@ class CredentialRepository(BaseRepository[CredentialModel]):
         self.db.commit()
         self.db.refresh(credential)
         return credential
-
