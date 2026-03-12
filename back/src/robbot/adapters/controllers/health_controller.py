@@ -27,4 +27,3 @@ async def health_check(response: Response, db: Session = Depends(get_db)):
     overall_ok = all(component.get("ok") for component in result.components.values())
     response.status_code = status.HTTP_200_OK if overall_ok else status.HTTP_503_SERVICE_UNAVAILABLE
     return result
-
