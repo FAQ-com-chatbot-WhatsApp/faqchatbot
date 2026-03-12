@@ -2,8 +2,8 @@
 
 from sqlalchemy.orm import Session, joinedload
 
-from robbot.infra.persistence.repositories.base_repository import BaseRepository
 from robbot.infra.persistence.models.context_item_model import ContextItemModel
+from robbot.infra.persistence.repositories.base_repository import BaseRepository
 
 
 class ContextItemRepository(BaseRepository[ContextItemModel]):
@@ -57,4 +57,3 @@ class ContextItemRepository(BaseRepository[ContextItemModel]):
         except Exception:
             self.db.rollback()
             return False
-
