@@ -9,13 +9,13 @@ Resolves Issue #1: Rampant Singleton Anti-Pattern
 
 import redis
 
-from robbot.infra.integrations.vector_store.chroma_vector_store import ChromaVectorStore
-from robbot.infra.integrations.llm.llm_client import get_llm_client
-from robbot.infra.integrations.waha.waha_integration import WAHAIntegration
 from robbot.config.prompt_loader import PromptLoader
 from robbot.config.settings import Settings
 from robbot.core.interfaces import LLMProvider, VectorStore, WAHAClientInterface
 from robbot.infra.db.base import SessionLocal
+from robbot.infra.integrations.llm.llm_client import get_llm_client
+from robbot.infra.integrations.vector_store.chroma_vector_store import ChromaVectorStore
+from robbot.infra.integrations.waha.waha_integration import WAHAIntegration
 from robbot.infra.redis.client import get_redis_client
 
 
@@ -56,8 +56,9 @@ class DIContainer:
 
         # Initialize service implementations (via interfaces)
         # In dev/test we may skip LLM if API key is unavailable
-        if (not self.settings.GOOGLE_API_KEY or self.settings.GOOGLE_API_KEY.lower() == "skip") and \
-           (not self.settings.GROQ_API_KEY or self.settings.GROQ_API_KEY.lower() == "skip"):
+        if (not self.settings.GOOGLE_API_KEY or self.settings.GOOGLE_API_KEY.lower() == "skip") and (
+            not self.settings.GROQ_API_KEY or self.settings.GROQ_API_KEY.lower() == "skip"
+        ):
             self._llm = None
         else:
             # LLMClient handles internal provider registration and fallback
@@ -184,4 +185,3 @@ async def shutdown_container() -> None:
     if _container:
         await _container.shutdown()
         _container = None
-
