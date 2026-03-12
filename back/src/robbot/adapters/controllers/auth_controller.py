@@ -12,7 +12,6 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.auth_session_repository import AuthSessionRepository
 from robbot.api.v1.dependencies import get_current_user, get_db
 from robbot.config.settings import get_settings
 from robbot.core.custom_exceptions import AuthException
@@ -24,6 +23,7 @@ from robbot.core.rate_limiting import (
     RATE_LIMIT_REGISTER,
 )
 from robbot.infra.persistence.models.user_model import UserModel
+from robbot.infra.persistence.repositories.auth_session_repository import AuthSessionRepository
 from robbot.schemas.auth import (
     AuthSessionResponse,
     ChangePasswordRequest,
@@ -758,4 +758,3 @@ def mfa_login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(exc),
         ) from exc
-
