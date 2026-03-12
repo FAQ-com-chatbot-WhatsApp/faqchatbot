@@ -13,11 +13,11 @@ import json
 import logging
 from typing import Any
 
-from robbot.core.interfaces import LLMProvider
-from robbot.infra.persistence.repositories.lead_repository import LeadRepository
 from robbot.config.prompts import PromptTemplates
 from robbot.core.custom_exceptions import DatabaseError, LLMError
+from robbot.core.interfaces import LLMProvider
 from robbot.infra.persistence.models.conversation_model import ConversationModel
+from robbot.infra.persistence.repositories.lead_repository import LeadRepository
 
 logger = logging.getLogger(__name__)
 
@@ -336,4 +336,3 @@ class IntentDetector:
             logger.info("[WARNING] Intent OUTRO detected - may need escalation - conv=%s", conversation.id)
 
         return False
-
