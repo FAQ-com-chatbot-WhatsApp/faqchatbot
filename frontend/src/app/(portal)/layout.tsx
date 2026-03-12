@@ -17,9 +17,9 @@ export default function PortalLayout({
 
   const navItems = [
     { icon: 'Home', label: 'Dashboard', path: '/dashboard' },
-    { icon: 'Users', label: 'Contacts', path: '/contacts' },
-    { icon: 'MessageSquare', label: 'Messages', path: '/messages' },
-    { icon: 'Settings', label: 'Settings', path: '/settings' },
+    { icon: 'Users', label: 'Contatos', path: '/contacts' },
+    { icon: 'MessageSquare', label: 'Mensagens', path: '/messages' },
+    { icon: 'Settings', label: 'Configurações', path: '/settings' },
   ]
 
   if (loading) {
