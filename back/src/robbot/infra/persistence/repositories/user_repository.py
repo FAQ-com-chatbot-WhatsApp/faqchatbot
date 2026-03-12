@@ -2,8 +2,8 @@
 
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.base_repository import BaseRepository
 from robbot.infra.persistence.models.user_model import UserModel
+from robbot.infra.persistence.repositories.base_repository import BaseRepository
 from robbot.schemas.user import UserCreate
 
 
@@ -42,4 +42,3 @@ class UserRepository(BaseRepository[UserModel]):
     def list_users(self, skip: int = 0, limit: int = 100) -> list[UserModel]:
         """Retrieve a paginated list of users."""
         return self.db.query(UserModel).offset(skip).limit(limit).all()
-
