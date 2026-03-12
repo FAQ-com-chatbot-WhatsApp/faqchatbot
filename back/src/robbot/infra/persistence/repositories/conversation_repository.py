@@ -5,10 +5,10 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
-from robbot.infra.persistence.repositories.base_repository import BaseRepository
 from robbot.domain.shared.enums import ConversationStatus
 from robbot.infra.persistence.models.conversation_model import ConversationModel
 from robbot.infra.persistence.models.lead_model import LeadModel
+from robbot.infra.persistence.repositories.base_repository import BaseRepository
 
 
 class ConversationRepository(BaseRepository[ConversationModel]):
@@ -29,11 +29,7 @@ class ConversationRepository(BaseRepository[ConversationModel]):
 
     def get_by_id(self, id: str) -> ConversationModel | None:  # Corrected type hint to str (UUID)
         """Get conversation by ID with lead loaded."""
-        stmt = (
-            select(ConversationModel)
-            .options(joinedload(ConversationModel.lead))
-            .where(ConversationModel.id == id)
-        )
+        stmt = select(ConversationModel).options(joinedload(ConversationModel.lead)).where(ConversationModel.id == id)
         return self.db.scalars(stmt).first()
 
     def update_status(
@@ -92,4 +88,3 @@ class ConversationRepository(BaseRepository[ConversationModel]):
         stmt = stmt.order_by(ConversationModel.updated_at.desc()).limit(limit).offset(offset)
 
         return list(self.db.scalars(stmt).all())
-
