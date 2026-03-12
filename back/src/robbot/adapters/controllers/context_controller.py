@@ -123,4 +123,3 @@ def delete_context(
         raise HTTPException(status_code=404, detail=f"Context {context_id} not found")
 
     return DeletedResponse(message="Context deleted successfully", deleted_id=context_id)
-
