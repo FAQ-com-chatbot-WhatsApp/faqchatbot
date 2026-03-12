@@ -302,4 +302,3 @@ through the appropriate SPIN selling phase. Be conversational and helpful.
             response = response.replace(placeholder, value)
 
         return response
-
