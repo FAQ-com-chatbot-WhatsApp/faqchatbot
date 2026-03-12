@@ -10,7 +10,7 @@ export default function ResetPasswordPage() {
           <h1 className="text-center text-2xl font-bold font-serif mb-2" data-testid="reset-title">Redefinir senha</h1>
         </CardHeader>
         <CardContent className="space-y-6">
-          <Suspense fallback={<div className="flex justify-center p-4">Loading...</div>}>
+          <Suspense fallback={<div className="flex justify-center p-4">Carregando...</div>}>
             <ResetPasswordForm />
           </Suspense>
         </CardContent>
