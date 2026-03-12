@@ -9,12 +9,12 @@ from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.user_repository import UserRepository
 from robbot.core import security
 from robbot.core.custom_exceptions import AuthException
 from robbot.core.rate_limiting import init_rate_limiter
-from robbot.infra.persistence.models.user_model import UserModel
 from robbot.infra.db.session import get_db as session_get_db
+from robbot.infra.persistence.models.user_model import UserModel
+from robbot.infra.persistence.repositories.user_repository import UserRepository
 from robbot.infra.redis.client import get_redis_client
 
 # OAuth2 scheme for documentation (tokens now in cookies, not Authorization header)
@@ -183,4 +183,3 @@ def get_waha_from_container(container=Depends(get_container_dep)):
 def get_prompt_loader_from_container(container=Depends(get_container_dep)):
     """Dependency to get prompt loader from DI container."""
     return container.get_prompt_loader()  # type: PromptLoader
-
