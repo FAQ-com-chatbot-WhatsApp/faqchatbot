@@ -96,7 +96,7 @@ export function MessageInput({
         onClick={handleSend}
         disabled={disabled || !message.trim()}
         size="icon"
-        aria-label="Send message"
+        aria-label="Enviar mensagem"
       >
         <Send className="size-4" />
       </Button>
