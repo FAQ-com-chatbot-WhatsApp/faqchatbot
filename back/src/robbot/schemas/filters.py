@@ -8,14 +8,14 @@ Resolves Issue #2: Business Logic in Controllers (SRP Violation)
 """
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field, field_validator
 
 # ===== Enum Definitions =====
 
 
-class LeadStatus(str, Enum):
+class LeadStatus(StrEnum):
     """Lead status enum."""
 
     NEW = "NEW"
@@ -27,7 +27,7 @@ class LeadStatus(str, Enum):
     LOST = "LOST"
 
 
-class ConversationStatus(str, Enum):
+class ConversationStatus(StrEnum):
     """Conversation status enum."""
 
     ACTIVE = "ACTIVE"
@@ -35,7 +35,7 @@ class ConversationStatus(str, Enum):
     ARCHIVED = "ARCHIVED"
 
 
-class LeadSource(str, Enum):
+class LeadSource(StrEnum):
     """Lead source channel enum."""
 
     INSTAGRAM = "INSTAGRAM"
@@ -46,7 +46,7 @@ class LeadSource(str, Enum):
     REFERRAL = "REFERRAL"
 
 
-class SortOrder(str, Enum):
+class SortOrder(StrEnum):
     """Sort direction enum."""
 
     ASC = "asc"
