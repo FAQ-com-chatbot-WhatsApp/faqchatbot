@@ -153,10 +153,9 @@ class Settings(BaseSettings):
         """
         if not self.DEV_PHONE_NUMBERS:
             return []
-        
+
         # Split by comma and strip whitespace
-        phones = [p.strip() for p in str(self.DEV_PHONE_NUMBERS).split(",") if p.strip()]
-        return phones
+        return [p.strip() for p in str(self.DEV_PHONE_NUMBERS).split(",") if p.strip()]
 
 
 @lru_cache
