@@ -241,6 +241,7 @@ services:
       target: runner
       args:
         NEXT_PUBLIC_API_URL: http://localhost:3333
+        BACKEND_URL: http://go:3333
     image: tic-web
     container_name: web
     restart: unless-stopped
