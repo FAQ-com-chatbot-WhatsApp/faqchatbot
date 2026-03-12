@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from sqlalchemy import Boolean, DateTime, String, JSON
+from sqlalchemy import JSON, Boolean, DateTime, String
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -57,13 +57,13 @@ class ConversationModel(Base):
     escalated_at: Mapped[datetime | None] = mapped_column(
         DateTime, nullable=True, comment="When conversation was escalated"
     )
-    closed_at: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True, comment="When conversation was closed"
-    )
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, comment="When conversation was closed")
     is_urgent: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False, server_default="false", comment="Urgency flag"
     )
-    meta_data: Mapped[dict] = mapped_column(JSON, default={}, nullable=False, server_default="{}", comment="Extra structured metadata")
+    meta_data: Mapped[dict] = mapped_column(
+        JSON, default={}, nullable=False, server_default="{}", comment="Extra structured metadata"
+    )
 
     last_message_at: Mapped[datetime] = mapped_column(
         DateTime,
@@ -99,4 +99,3 @@ class ConversationModel(Base):
 
     def __repr__(self) -> str:
         return f"<ConversationModel(id='{self.id}', chat_id='{self.chat_id}', status='{self.status}')>"
-
