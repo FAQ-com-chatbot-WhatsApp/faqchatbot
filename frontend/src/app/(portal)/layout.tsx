@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useAuthRedirect } from '../../hooks/useAuthRedirect'
+import { useUser } from '../../hooks/useUser'
 import { Sidebar } from '@/components/dashboard/Sidebar'
 import { Header } from '@/components/dashboard/Header'
 
@@ -11,6 +12,7 @@ export default function PortalLayout({
   children: React.ReactNode
 }) {
   const { loading } = useAuthRedirect()
+  const { user } = useUser()
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
 
   const navItems = [
@@ -35,8 +37,8 @@ export default function PortalLayout({
       <main className={`flex-1 flex flex-col ${isSidebarOpen ? 'ml-64' : 'ml-20'} transition-all duration-300`}>
         <Header
           onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-          userName="Karollini Moraes"
-          userRole="Admin"
+          userName={user?.full_name || user?.email || "Usuário"}
+          userRole={user?.role || "User"}
           userAvatar="https://github.com/shadcn.png"
         />
 
