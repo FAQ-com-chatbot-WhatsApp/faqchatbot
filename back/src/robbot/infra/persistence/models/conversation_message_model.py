@@ -62,4 +62,3 @@ class ConversationMessageModel(Base):
 
     def __repr__(self) -> str:
         return f"<ConversationMessageModel(id='{self.id}', direction='{self.direction}', body='{self.body[:30]}...')>"
-
