@@ -2,9 +2,9 @@
 Strategy definitions for WAHA Chat Polling.
 Allows dynamic switching of polling behavior based on environment (DEV vs PROD).
 """
+
 import logging
 from abc import ABC, abstractmethod
-from typing import List
 
 from robbot.config.settings import settings
 from robbot.services.communication.waha_metadata_service import WahaMetadataService
@@ -14,9 +14,9 @@ logger = logging.getLogger(__name__)
 
 class PollingStrategy(ABC):
     """Abstract base strategy for fetching target chat IDs to monitor."""
-    
+
     @abstractmethod
-    def get_target_chats(self) -> List[str]:
+    def get_target_chats(self) -> list[str]:
         """Returns a list of Chat IDs (LIDs or Phone IDs) to monitor."""
         pass
 
@@ -31,9 +31,9 @@ class DevPollingStrategy(PollingStrategy):
     def __init__(self, metadata_service: WahaMetadataService):
         self.metadata_service = metadata_service
 
-    def get_target_chats(self) -> List[str]:
-        target_chats: List[str] = []
-        
+    def get_target_chats(self) -> list[str]:
+        target_chats: list[str] = []
+
         if not settings.dev_phone_list:
             logger.warning("[POLLING][DEV] No DEV_PHONE_NUMBERS configured.")
             return []
@@ -41,7 +41,7 @@ class DevPollingStrategy(PollingStrategy):
         for phone in settings.dev_phone_list:
             # Uses optimized cached fetch logic
             lid = self.metadata_service.get_lid_for_phone(phone)
-            
+
             if lid:
                 target_chats.append(lid)
             else:
@@ -50,7 +50,7 @@ class DevPollingStrategy(PollingStrategy):
                 # assuming it might be a standard @c.us chat.
                 logger.debug("[POLLING][DEV] LID resolution failed for %s. Using raw phone ID.", phone)
                 target_chats.append(f"{phone}@c.us" if "@" not in phone else phone)
-                
+
         return target_chats
 
 
@@ -61,9 +61,9 @@ class ProdPollingStrategy(PollingStrategy):
     """
 
     def __init__(self, metadata_service: WahaMetadataService):
-         self.metadata_service = metadata_service
+        self.metadata_service = metadata_service
 
-    def get_target_chats(self) -> List[str]:
+    def get_target_chats(self) -> list[str]:
         # Fetch all chats from WAHA session
         chats = self.metadata_service.get_all_chats(limit=200)
         if not chats:
@@ -74,10 +74,10 @@ class ProdPollingStrategy(PollingStrategy):
 def get_polling_strategy() -> PollingStrategy:
     """Factory to get the correct strategy based on current settings."""
     metadata_service = WahaMetadataService()
-    
+
     if settings.DEV_MODE:
         logger.info("[POLLING] Using DEV Strategy (Restricted Senders)")
         return DevPollingStrategy(metadata_service)
-    
+
     logger.info("[POLLING] Using PROD Strategy (All Chats)")
     return ProdPollingStrategy(metadata_service)
