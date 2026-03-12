@@ -14,13 +14,13 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.auth_session_repository import AuthSessionRepository
-from robbot.infra.persistence.repositories.token_repository import TokenRepository
-from robbot.infra.persistence.repositories.user_repository import UserRepository
 from robbot.common.utils import send_email
 from robbot.config.settings import settings
 from robbot.core import security
 from robbot.core.custom_exceptions import AuthException
+from robbot.infra.persistence.repositories.auth_session_repository import AuthSessionRepository
+from robbot.infra.persistence.repositories.token_repository import TokenRepository
+from robbot.infra.persistence.repositories.user_repository import UserRepository
 from robbot.schemas.auth import SignupRequest
 from robbot.schemas.token import Token
 from robbot.schemas.user import UserOut
@@ -548,4 +548,3 @@ class AuthService:
         )
 
         return Token(**tokens, user=user)
-
