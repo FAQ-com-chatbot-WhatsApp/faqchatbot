@@ -7,8 +7,8 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.base_repository import BaseRepository
 from robbot.infra.persistence.models.notification_model import NotificationModel
+from robbot.infra.persistence.repositories.base_repository import BaseRepository
 
 
 class NotificationRepository(BaseRepository[NotificationModel]):
@@ -152,4 +152,3 @@ class NotificationRepository(BaseRepository[NotificationModel]):
 
         self.db.flush()
         return len(notifications)
-
