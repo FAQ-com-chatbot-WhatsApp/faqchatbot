@@ -6,8 +6,8 @@ import json
 import logging
 from typing import Any
 
-from robbot.infra.persistence.repositories.audit_log_repository import AuditLogRepository
 from robbot.infra.persistence.models.audit_log_model import AuditLogModel
+from robbot.infra.persistence.repositories.audit_log_repository import AuditLogRepository
 
 logger = logging.getLogger(__name__)
 
@@ -143,4 +143,3 @@ class AuditService:
     def get_recent_logs(self, limit: int = 100) -> list[AuditLogModel]:
         """Get most recent audit logs (admin only)."""
         return self.repo.get_recent(limit)
-
