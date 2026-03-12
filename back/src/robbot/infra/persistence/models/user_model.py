@@ -35,4 +35,3 @@ class UserModel(Base):
         cascade="all, delete-orphan",
     )
     auth_sessions = relationship("AuthSessionModel", back_populates="user", cascade="all, delete-orphan")
-
