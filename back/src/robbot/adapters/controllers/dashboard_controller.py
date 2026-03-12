@@ -25,11 +25,11 @@ from fastapi.responses import Response
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.analytics_repository import AnalyticsRepository
 from robbot.api.v1.dependencies import get_current_user, get_db
 from robbot.config.settings import get_settings
 from robbot.domain.shared.enums import Role
 from robbot.infra.persistence.models.user_model import UserModel
+from robbot.infra.persistence.repositories.analytics_repository import AnalyticsRepository
 from robbot.infra.redis.client import get_redis_client
 from robbot.infra.redis.queue import get_queue_manager
 from robbot.schemas.metrics_schemas import (
@@ -547,4 +547,3 @@ async def websocket_realtime_metrics(
             _ws_connections[user_id].remove(websocket)
         if not _ws_connections[user_id]:
             del _ws_connections[user_id]
-
