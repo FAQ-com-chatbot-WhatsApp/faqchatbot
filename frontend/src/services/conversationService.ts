@@ -47,13 +47,18 @@ export async function getConversations(params?: {
 
   const url = `/api/v1/conversations${queryParams.toString() ? `?${queryParams.toString()}` : ""}`
   
-  console.log('[conversationService] Fetching:', url);
-  
-  const response = await fetchApi<ConversationListResponse>(url, {
+  const response = await fetchApi<ConversationListResponse | Conversation[]>(url, {
     method: "GET",
   })
   
-  console.log('[conversationService] Response:', response);
+  // Backend retorna array direto quando phone_number não está presente
+  // e objeto {conversations, total} quando phone_number está presente
+  if (Array.isArray(response)) {
+    return {
+      conversations: response,
+      total: response.length
+    };
+  }
   
   return response;
 }
