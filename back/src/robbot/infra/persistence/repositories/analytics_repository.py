@@ -149,8 +149,8 @@ class AnalyticsRepository:
                     COUNT(DISTINCT l.id) as total_created,
                     COUNT(DISTINCT CASE WHEN cm.id IS NOT NULL THEN l.id END) as total_engaged,
                     COUNT(DISTINCT CASE WHEN l.maturity_score >= 60 THEN l.id END) as total_qualified,
-                    COUNT(DISTINCT CASE WHEN c.handoff_at IS NOT NULL THEN l.id END) as total_handoff,
-                    COUNT(DISTINCT CASE WHEN l.status = 'CONVERTED' THEN l.id END) as total_converted
+                    COUNT(DISTINCT CASE WHEN c.escalated_at IS NOT NULL THEN l.id END) as total_handoff,
+                    COUNT(DISTINCT CASE WHEN l.converted_at IS NOT NULL THEN l.id END) as total_converted
                 FROM leads l
                 LEFT JOIN conversations c ON c.id = l.conversation_id
                 LEFT JOIN conversation_messages cm ON c.id = cm.conversation_id
@@ -252,8 +252,7 @@ class AnalyticsRepository:
                 MAX(EXTRACT(EPOCH FROM (l.converted_at - l.created_at)) / 3600) as max_hours,
                 PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (l.converted_at - l.created_at)) / 3600) as p95_hours
             FROM leads l
-            WHERE l.status = 'CONVERTED'
-                AND l.converted_at IS NOT NULL
+            WHERE l.converted_at IS NOT NULL
                 AND l.created_at >= :start_date
                 AND l.created_at <= :end_date
                 AND l.deleted_at IS NULL
@@ -310,8 +309,7 @@ class AnalyticsRepository:
                 MIN(EXTRACT(EPOCH FROM (l.converted_at - l.created_at)) / 3600) as min_hours,
                 MAX(EXTRACT(EPOCH FROM (l.converted_at - l.created_at)) / 3600) as max_hours
             FROM leads l
-            WHERE l.status = 'CONVERTED'
-                AND l.converted_at IS NOT NULL
+            WHERE l.converted_at IS NOT NULL
                 AND l.created_at >= :start_date
                 AND l.created_at <= :end_date
                 AND l.deleted_at IS NULL
@@ -372,6 +370,7 @@ class AnalyticsRepository:
                 SELECT
                     l.id,
                     l.status,
+                    l.converted_at,
                     CASE
                         WHEN c.chat_id LIKE '%@g.us' THEN 'group'
                         ELSE 'direct'
@@ -385,8 +384,8 @@ class AnalyticsRepository:
             SELECT
                 source,
                 COUNT(*) as total_leads,
-                COUNT(*) FILTER (WHERE status = 'CONVERTED') as converted_leads,
-                (COUNT(*) FILTER (WHERE status = 'CONVERTED')::float / COUNT(*) * 100) as conversion_rate
+                COUNT(*) FILTER (WHERE converted_at IS NOT NULL) as converted_leads,
+                (COUNT(*) FILTER (WHERE converted_at IS NOT NULL)::float / COUNT(*) * 100) as conversion_rate
             FROM lead_sources
             GROUP BY source
             ORDER BY conversion_rate DESC
@@ -536,8 +535,8 @@ class AnalyticsRepository:
             SELECT
                 date_trunc(:granularity, l.created_at) as period,
                 COUNT(*) as total_leads,
-                COUNT(*) FILTER (WHERE l.status = 'CONVERTED') as converted_leads,
-                (COUNT(*) FILTER (WHERE l.status = 'CONVERTED')::float / COUNT(*) * 100) as conversion_rate
+                COUNT(*) FILTER (WHERE l.converted_at IS NOT NULL) as converted_leads,
+                (COUNT(*) FILTER (WHERE l.converted_at IS NOT NULL)::float / COUNT(*) * 100) as conversion_rate
             FROM leads l
             WHERE l.created_at >= :start_date
                 AND l.created_at <= :end_date
@@ -718,10 +717,10 @@ class AnalyticsRepository:
         """
         query = self.db.query(
             func.count(ConversationModel.id).label("total"),
-            func.count(case((ConversationModel.handoff_at.is_(None), ConversationModel.id), else_=None)).label(
+            func.count(case((ConversationModel.escalated_at.is_(None), ConversationModel.id), else_=None)).label(
                 "bot_only"
             ),
-            func.count(case((ConversationModel.handoff_at.isnot(None), ConversationModel.id), else_=None)).label(
+            func.count(case((ConversationModel.escalated_at.isnot(None), ConversationModel.id), else_=None)).label(
                 "with_handoff"
             ),
         ).filter(
@@ -904,8 +903,8 @@ class AnalyticsRepository:
         query = text("""
             SELECT
                 COUNT(*) as total_conversations,
-                COUNT(*) FILTER (WHERE handoff_at IS NULL) as bot_resolved,
-                COUNT(*) FILTER (WHERE handoff_at IS NOT NULL) as handoff_required
+                COUNT(*) FILTER (WHERE escalated_at IS NULL) as bot_resolved,
+                COUNT(*) FILTER (WHERE escalated_at IS NOT NULL) as handoff_required
             FROM conversations
             WHERE created_at >= :start_date
                 AND created_at <= :end_date
@@ -1543,7 +1542,7 @@ class AnalyticsRepository:
                     COUNT(DISTINCT c.id) as active_conversations,
                     COUNT(DISTINCT cm.id) as total_messages,
                     AVG(li.latency_ms) as avg_latency,
-                    COUNT(DISTINCT c.id) FILTER (WHERE c.handoff_at IS NULL AND c.status = 'COMPLETED') as bot_resolved,
+                    COUNT(DISTINCT c.id) FILTER (WHERE c.escalated_at IS NULL AND c.status = 'COMPLETED') as bot_resolved,
                     COUNT(DISTINCT c.id) FILTER (WHERE c.status IN ('COMPLETED', 'PENDING_HANDOFF', 'ACTIVE_HUMAN')) as total_completed
                 FROM conversations c
                 LEFT JOIN conversation_messages cm ON cm.conversation_id = c.id
