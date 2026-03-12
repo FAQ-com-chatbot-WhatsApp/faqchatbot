@@ -120,6 +120,11 @@ services:
     environment:
       PYTHONPATH: "/app/src"
       DATABASE_URL: postgresql+psycopg2://dba:dba@postgres:5432/BotDB
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: dba
+      POSTGRES_DB: BotDB
+      POSTGRES_PASSWORD: dba
       REDIS_URL: redis://redis:6379/0
       SERVICE_NAME: "wk"
       LOG_COLOR: "true"
@@ -157,6 +162,11 @@ services:
     environment:
       PYTHONPATH: /app/src
       DATABASE_URL: postgresql+psycopg2://dba:dba@postgres:5432/BotDB
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: dba
+      POSTGRES_DB: BotDB
+      POSTGRES_PASSWORD: dba
       REDIS_URL: redis://redis:6379/0
       SERVICE_NAME: "pwk"
       LOG_COLOR: "true"
@@ -192,6 +202,11 @@ services:
       PYTHONPATH: /app/src
       REDIS_URL: redis://redis:6379/0
       DATABASE_URL: postgresql+psycopg2://dba:dba@postgres:5432/BotDB
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: dba
+      POSTGRES_DB: BotDB
+      POSTGRES_PASSWORD: dba
       LOG_COLOR: "true"
     user: "root"
     # Fix: Added missing semicolons for valid shell syntax
@@ -233,6 +248,8 @@ services:
       NODE_ENV: production
       # Internal URL -> points to 'go' service
       API_URL: http://go:3333
+      # For rewrites in next.config - internal docker network
+      BACKEND_URL: http://go:3333
       # Public URL -> points to localhost host binding
       NEXT_PUBLIC_API_URL: http://localhost:3333
     ports:
