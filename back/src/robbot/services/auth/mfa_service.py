@@ -11,9 +11,9 @@ import pyotp
 from passlib.hash import bcrypt, pbkdf2_sha256
 from sqlalchemy.orm import Session
 
+from robbot.core.custom_exceptions import AuthException
 from robbot.infra.persistence.repositories.credential_repository import CredentialRepository
 from robbot.infra.persistence.repositories.user_repository import UserRepository
-from robbot.core.custom_exceptions import AuthException
 
 
 class MfaService:
@@ -92,9 +92,8 @@ class MfaService:
                 if pbkdf2_sha256.identify(h):
                     if pbkdf2_sha256.verify(code, h):
                         matched = True
-                elif bcrypt.identify(h):
-                    if bcrypt.verify(code, h):
-                        matched = True
+                elif bcrypt.identify(h) and bcrypt.verify(code, h):
+                    matched = True
             except ValueError:
                 continue
 
@@ -116,4 +115,3 @@ class MfaService:
         if not credential:
             raise AuthException("Credential not found")
         self.credential_repo.disable_mfa(credential)
-
