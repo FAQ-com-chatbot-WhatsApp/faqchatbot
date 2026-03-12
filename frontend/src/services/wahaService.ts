@@ -6,6 +6,13 @@ import type {
   SendImageMessageRequest,
   SendLocationMessageRequest,
   GetMessagesResponse,
+  ContactAboutResponse,
+  ContactPictureResponse,
+  CheckNumberResponse,
+  BlockContactRequest,
+  WahaSession,
+  SessionCreate,
+  SessionStatus,
 } from "@/types/waha"
 
 const WAHA_BASE = "/waha"
@@ -74,4 +81,86 @@ export async function editMessage(
       body: JSON.stringify({ text }),
     }
   )
+}
+
+// ============================================================================
+// CONTACTS
+// ============================================================================
+
+export async function checkNumberExists(phone: string): Promise<CheckNumberResponse> {
+  return fetchApi<CheckNumberResponse>(
+    `${WAHA_BASE}/check-number?phone=${encodeURIComponent(phone)}`,
+    { method: "GET" }
+  )
+}
+
+export async function getContactAbout(contactId: string): Promise<ContactAboutResponse> {
+  return fetchApi<ContactAboutResponse>(
+    `${WAHA_BASE}/contact-about?contact_id=${encodeURIComponent(contactId)}`,
+    { method: "GET" }
+  )
+}
+
+export async function getContactPicture(contactId: string): Promise<ContactPictureResponse> {
+  return fetchApi<ContactPictureResponse>(
+    `${WAHA_BASE}/contact-picture?contact_id=${encodeURIComponent(contactId)}`,
+    { method: "GET" }
+  )
+}
+
+export async function blockContact(contactId: string): Promise<void> {
+  const request: BlockContactRequest = { contact_id: contactId }
+  return fetchApi<void>(`${WAHA_BASE}/contact/block`, {
+    method: "POST",
+    body: JSON.stringify(request),
+  })
+}
+
+export async function unblockContact(contactId: string): Promise<void> {
+  const request: BlockContactRequest = { contact_id: contactId }
+  return fetchApi<void>(`${WAHA_BASE}/contact/unblock`, {
+    method: "POST",
+    body: JSON.stringify(request),
+  })
+}
+
+// ============================================================================
+// SESSIONS (WhatsApp Connection Management)
+// ============================================================================
+
+export async function listSessions(): Promise<WahaSession[]> {
+  return fetchApi<WahaSession[]>(`${WAHA_BASE}/sessions`, {
+    method: "GET",
+  })
+}
+
+export async function createSession(data: SessionCreate): Promise<WahaSession> {
+  return fetchApi<WahaSession>(`${WAHA_BASE}/sessions`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  })
+}
+
+export async function getSessionStatus(sessionName: string): Promise<SessionStatus> {
+  return fetchApi<SessionStatus>(`${WAHA_BASE}/sessions/${encodeURIComponent(sessionName)}/status`, {
+    method: "GET",
+  })
+}
+
+export async function startSession(sessionName: string): Promise<SessionStatus> {
+  return fetchApi<SessionStatus>(`${WAHA_BASE}/sessions/${encodeURIComponent(sessionName)}/start`, {
+    method: "POST",
+  })
+}
+
+export async function stopSession(sessionName: string): Promise<void> {
+  return fetchApi<void>(`${WAHA_BASE}/sessions/${encodeURIComponent(sessionName)}/stop`, {
+    method: "POST",
+  })
+}
+
+export async function restartSession(sessionName: string): Promise<void> {
+  return fetchApi<void>(`${WAHA_BASE}/sessions/${encodeURIComponent(sessionName)}/restart`, {
+    method: "POST",
+  })
 }
