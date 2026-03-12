@@ -8,9 +8,9 @@ import logging
 
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.notification_repository import NotificationRepository
 from robbot.core.custom_exceptions import NotFoundException
 from robbot.infra.persistence.models.notification_model import NotificationModel
+from robbot.infra.persistence.repositories.notification_repository import NotificationRepository
 
 logger = logging.getLogger(__name__)
 
@@ -227,4 +227,3 @@ class NotificationService:
             title="Conversation Transferred",
             message=f"You received a conversation from {from_user_name} (ID: {conversation_id[:8]})",
         )
-
