@@ -267,4 +267,3 @@ IMPORTANTE:
 
         else:
             return f"[Mensagem de tipo {message_type}]"
-
