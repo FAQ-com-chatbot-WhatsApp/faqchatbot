@@ -7,8 +7,8 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.analytics_repository import AnalyticsRepository
 from robbot.api.v1.dependencies import get_current_user, get_db
+from robbot.infra.persistence.repositories.analytics_repository import AnalyticsRepository
 from robbot.infra.redis.client import get_redis_client
 from robbot.infra.redis.queue import get_queue_manager
 from robbot.services.analytics.metrics_service import MetricsService
@@ -70,4 +70,3 @@ def get_campaign_metrics(
 ):
     """Legacy campaigns metrics endpoint used by API tests."""
     return []
-
