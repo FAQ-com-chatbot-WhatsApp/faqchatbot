@@ -1286,7 +1286,7 @@ class AnalyticsRepository:
                 # Chamada Gemini
                 try:
                     prompt = prompt_template.replace("{message}", msg["body"])
-                    
+
                     # LLMClient now uses generate_response which returns a dict
                     response_data = await llm.generate_response(prompt)
                     gemini_sentiment = response_data.get("response", "NEUTRAL").strip().upper()
@@ -1555,4 +1555,3 @@ class AnalyticsRepository:
             "avg_response_time_ms": round(float(row.avg_latency or 0), 2),
             "bot_resolution_rate": round(float(row.bot_resolution_rate or 0), 2),
         }
-
