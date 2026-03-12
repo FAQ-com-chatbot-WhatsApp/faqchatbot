@@ -56,4 +56,3 @@ class LeadInteractionModel(Base):
 
     def __repr__(self) -> str:
         return f"<LeadInteractionModel(id='{self.id}', type='{self.interaction_type}', lead_id='{self.lead_id}')>"
-
