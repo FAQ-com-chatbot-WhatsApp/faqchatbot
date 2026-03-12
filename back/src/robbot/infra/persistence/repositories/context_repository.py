@@ -2,8 +2,8 @@
 
 from sqlalchemy.orm import Session, joinedload
 
-from robbot.infra.persistence.repositories.base_repository import BaseRepository
 from robbot.infra.persistence.models.context_model import ContextModel
+from robbot.infra.persistence.repositories.base_repository import BaseRepository
 
 
 class ContextRepository(BaseRepository[ContextModel]):
@@ -61,4 +61,3 @@ class ContextRepository(BaseRepository[ContextModel]):
     def list_by_topic(self, topic_id: str) -> list[ContextModel]:
         """List all contexts for a given topic."""
         return self.get_by_topic_id(topic_id, active_only=False)
-
