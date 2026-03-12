@@ -4,8 +4,8 @@ Audit Log Repository - database operations for audit logs.
 
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.base_repository import BaseRepository
 from robbot.infra.persistence.models.audit_log_model import AuditLogModel
+from robbot.infra.persistence.repositories.base_repository import BaseRepository
 
 
 class AuditLogRepository(BaseRepository[AuditLogModel]):
@@ -37,4 +37,3 @@ class AuditLogRepository(BaseRepository[AuditLogModel]):
     def get_recent(self, limit: int = 100) -> list[AuditLogModel]:
         """Get most recent audit logs."""
         return self.session.query(AuditLogModel).order_by(AuditLogModel.created_at.desc()).limit(limit).all()
-
