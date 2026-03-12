@@ -4,10 +4,10 @@ import contextlib
 
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.auth_session_repository import AuthSessionRepository
-from robbot.infra.persistence.repositories.user_repository import UserRepository
 from robbot.core.custom_exceptions import NotFoundException
 from robbot.infra.persistence.models.user_model import UserModel
+from robbot.infra.persistence.repositories.auth_session_repository import AuthSessionRepository
+from robbot.infra.persistence.repositories.user_repository import UserRepository
 from robbot.schemas.user import UserOut, UserUpdate
 from robbot.services.auth.audit_service import AuditService
 
@@ -99,4 +99,3 @@ class UserService:
                 new_value={"is_active": True, "reason": reason},
             )
         return UserOut.model_validate(user)
-
