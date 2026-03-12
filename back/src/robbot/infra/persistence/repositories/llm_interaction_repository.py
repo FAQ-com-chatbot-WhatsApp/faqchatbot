@@ -2,8 +2,8 @@
 
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.base_repository import BaseRepository
 from robbot.infra.persistence.models.llm_interaction_model import LLMInteractionModel
+from robbot.infra.persistence.repositories.base_repository import BaseRepository
 
 
 class LLMInteractionRepository(BaseRepository[LLMInteractionModel]):
@@ -50,4 +50,3 @@ class LLMInteractionRepository(BaseRepository[LLMInteractionModel]):
             .limit(limit)
             .all()
         )
-
