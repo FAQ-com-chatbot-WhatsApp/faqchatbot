@@ -2,8 +2,8 @@
 
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.base_repository import BaseRepository
 from robbot.infra.persistence.models.revoked_token_model import RevokedTokenModel
+from robbot.infra.persistence.repositories.base_repository import BaseRepository
 
 
 class TokenRepository(BaseRepository[RevokedTokenModel]):
@@ -35,4 +35,3 @@ class TokenRepository(BaseRepository[RevokedTokenModel]):
     def get_by_token(self, token: str) -> RevokedTokenModel | None:
         """Retrieve a revoked token record by token string."""
         return self.db.query(RevokedTokenModel).filter(RevokedTokenModel.token == token).first()
-
