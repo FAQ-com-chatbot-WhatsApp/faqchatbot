@@ -99,4 +99,3 @@ class WebhookLogRepository:
 
         self.db.commit()
         return len(logs)
-
