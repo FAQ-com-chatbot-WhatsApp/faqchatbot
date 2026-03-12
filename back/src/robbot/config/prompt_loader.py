@@ -110,10 +110,10 @@ class PromptLoader:
             Formatted prompt ready for LLM
         """
         template = self.get_prompt("response_generation")
-        
+
         # Format questions_asked as string
         questions_str = ", ".join(questions_asked) if questions_asked else "None"
-        
+
         return template.format(
             user_message=user_message,
             history=conversation_history,

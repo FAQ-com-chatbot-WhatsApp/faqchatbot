@@ -37,7 +37,7 @@ def run_polling_worker():
         try:
             now = datetime.now(UTC)
             job_func_path = "robbot.infra.jobs.message_polling_job.poll_waha_messages"
-            
+
             job_id_val = queue_service.enqueue_custom(
                 func=job_func_path,
                 queue_name="messages",
@@ -47,18 +47,18 @@ def run_polling_worker():
 
             if job_id_val:
                 logger.info("[POLLING WORKER] Job enfileirado: %s", job_id_val)
-                
+
                 # Aguardar conclusão para evitar sobreposição se o job demorar
                 try:
                     job = Job.fetch(job_id_val, connection=redis_client)
                     start_wait = time.time()
                     while job.get_status() not in [JobStatus.FINISHED, JobStatus.FAILED]:
-                        if time.time() - start_wait > 125: # Pouco mais que o timeout do job
+                        if time.time() - start_wait > 125:  # Pouco mais que o timeout do job
                             break
                         time.sleep(1)
                 except Exception as e:
                     logger.error("[POLLING WORKER] Erro ao monitorar job: %s", e)
-            
+
         except Exception as e:
             logger.error("[POLLING WORKER] Erro inesperado: %s", e, exc_info=True)
 

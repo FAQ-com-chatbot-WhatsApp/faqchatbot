@@ -24,7 +24,7 @@ class LeadMapper:
     def to_model(entity: Lead, model: LeadModel | None = None) -> LeadModel:
         if model is None:
             model = LeadModel(id=entity.id)
-        
+
         model.name = entity.name
         model.phone_number = entity.phone_number.value
         model.status = entity.status
@@ -36,5 +36,5 @@ class LeadMapper:
         model.converted_at = entity.converted_at
         if hasattr(model, "deleted_at"):
             model.deleted_at = entity.deleted_at
-            
+
         return model

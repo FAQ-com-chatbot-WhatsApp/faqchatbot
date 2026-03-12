@@ -19,12 +19,12 @@ class ConversationMapper:
     def to_model(entity: Conversation, model: ConversationModel | None = None) -> ConversationModel:
         if model is None:
             model = ConversationModel(id=entity.id)
-            
+
         model.chat_id = entity.chat_id
         model.phone_number = entity.phone_number
         model.status = entity.status
         model.last_message_at = entity.last_message_at
         model.is_urgent = entity.is_urgent
         model.meta_data = entity.metadata
-        
+
         return model
