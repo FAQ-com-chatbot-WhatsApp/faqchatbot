@@ -4,7 +4,10 @@ Designed to be used by background jobs (RQ) that require blocking I/O.
 """
 
 import logging
+from typing import cast
+
 import httpx
+
 from robbot.config.settings import settings
 from robbot.infra.redis.client import get_redis_client
 
@@ -17,11 +20,17 @@ class WahaMetadataService:
     Uses Redis caching to minimize external API calls.
     """
 
+    base_url: str
+    api_key: str | None
+    session: str
+
     def __init__(self):
         self.redis = get_redis_client()
-        self.base_url = settings.WAHA_URL.rstrip("/")
-        self.api_key = settings.WAHA_API_KEY
-        self.session = settings.WAHA_SESSION_NAME
+        # Explicitly cast Pydantic fields to their actual types
+        waha_url_str = cast(str, settings.WAHA_URL)
+        self.base_url = waha_url_str.rstrip("/")  # pylint: disable=no-member
+        self.api_key = cast(str | None, settings.WAHA_API_KEY)
+        self.session = cast(str, settings.WAHA_SESSION_NAME)
         self.headers = {
             "Content-Type": "application/json",
             "X-Api-Key": self.api_key,
@@ -39,7 +48,7 @@ class WahaMetadataService:
     def get_lid_for_phone(self, phone: str) -> str | None:
         """
         Resolves a phone number to its WAHA LID (Logical ID).
-        
+
         Flow:
         1. Check Redis cache (waha:target_phone_lid:{phone})
         2. If miss, call WAHA API:
@@ -58,28 +67,60 @@ class WahaMetadataService:
         cached_lid = self.redis.get(cache_key)
 
         if cached_lid:
-            resolved_lid = cached_lid.decode("utf-8") if isinstance(cached_lid, bytes) else cached_lid
-            # logger.debug("Cache HIT for LID: %s -> %s", phone, resolved_lid) # Verbose
-            return resolved_lid
+            # logger.debug("Cache HIT for LID: %s -> %s", phone, cached_lid) # Verbose
+            return cached_lid.decode("utf-8") if isinstance(cached_lid, bytes) else cached_lid
 
         # 2. External API Resolution
         try:
             # Step A: Normalize Phone via check-exists
             check_url = "/api/contacts/check-exists"
             check_params = {"session": self.session, "phone": phone}
-            
+
             check_resp = self.client.get(check_url, params=check_params)
-            
+
+            # Handle session not ready (422)
+            if check_resp.status_code == 422:
+                error_data = check_resp.json() if check_resp.content else {}
+                session_status = error_data.get("status", "UNKNOWN")
+                logger.warning(
+                    "[WAHA_METADATA] Failed to resolve LID: %s (status %s)",
+                    error_data.get("error", "Session status is not as expected"),
+                    check_resp.status_code,
+                )
+                logger.info(
+                    "[WAHA_METADATA] Session '%s' is in '%s' status. Please ensure session is WORKING.",
+                    self.session,
+                    session_status,
+                )
+                return None
+
             normalized_phone = phone
             if check_resp.status_code == 200:
                 data = check_resp.json()
                 chat_id = data.get("chatId")
                 if chat_id:
                     normalized_phone = chat_id.split("@")[0]
+            elif check_resp.status_code != 404:
+                # Log other non-404 errors but continue with original phone
+                logger.debug(
+                    "[WAHA_METADATA] check-exists returned %s for %s, using original phone",
+                    check_resp.status_code,
+                    phone,
+                )
 
             # Step B: Get LID via lids/pn
             lids_url = f"/api/{self.session}/lids/pn/{normalized_phone}"
             lids_resp = self.client.get(lids_url)
+
+            # Handle session not ready for LID lookup as well
+            if lids_resp.status_code == 422:
+                error_data = lids_resp.json() if lids_resp.content else {}
+                logger.warning(
+                    "[WAHA_METADATA] Failed to resolve LID: %s (status %s)",
+                    error_data.get("error", "Session status is not as expected"),
+                    lids_resp.status_code,
+                )
+                return None
 
             if lids_resp.status_code == 200:
                 data = lids_resp.json()
@@ -87,11 +128,11 @@ class WahaMetadataService:
 
                 if resolved_lid:
                     lid_number = resolved_lid.split("@")[0] if "@" in resolved_lid else resolved_lid
-                    
+
                     # 3. Cache Set
                     # Direct mapping: Phone -> LID (for this lookup)
                     self.redis.setex(cache_key, self.CACHE_TTL_LID, resolved_lid)
-                    
+
                     # Reverse mapping: LID Number -> Phone (for incoming webhooks identification)
                     # Used to know that a message from 12345@lid is actually from 55119999
                     reverse_key = f"waha:dev_phone:{lid_number}"
@@ -103,19 +144,19 @@ class WahaMetadataService:
                         resolved_lid,
                     )
                     return resolved_lid
-            
+
             elif lids_resp.status_code == 404:
                 logger.warning("[WAHA_METADATA] LID not found for phone: %s", phone)
             else:
                 logger.warning(
-                    "[WAHA_METADATA] Failed to resolve LID: %s (status %s)", 
-                    lids_resp.text, 
+                    "[WAHA_METADATA] Failed to resolve LID: %s (status %s)",
+                    lids_resp.text,
                     lids_resp.status_code
                 )
 
         except httpx.HTTPError as e:
             logger.error("[WAHA_METADATA] HTTP/Network error resolving LID for %s: %s", phone, e)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001  # pylint: disable=broad-exception-caught
             logger.error("[WAHA_METADATA] Unexpected error resolving LID for %s: %s", phone, e)
 
         return None
@@ -137,15 +178,14 @@ class WahaMetadataService:
             # 1. Try Optimized Overview Endpoint
             overview_url = f"/api/{self.session}/chats/overview"
             params = {"limit": limit, "offset": offset}
-            
+
             resp = self.client.get(overview_url, params=params)
-            
+
             if resp.status_code == 200:
                 try:
                     payload = resp.json()
                     # Overview payload is typically a list of chat objects
-                    chat_ids = [c.get("id") for c in payload if c.get("id")]
-                    return chat_ids
+                    return [c.get("id") for c in payload if c.get("id")]
                 except ValueError:
                     logger.warning("[WAHA_METADATA] Invalid JSON from chats/overview")
 
@@ -167,7 +207,7 @@ class WahaMetadataService:
 
         except httpx.HTTPError as e:
             logger.error("[WAHA_METADATA] HTTP error fetching chats: %s", e)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001  # pylint: disable=broad-exception-caught
             logger.error("[WAHA_METADATA] Unexpected error fetching chats: %s", e)
 
         return chat_ids
@@ -205,14 +245,13 @@ class WahaMetadataService:
 
         except httpx.HTTPError as e:
             logger.error("[WAHA_METADATA] HTTP error fetching messages for %s: %s", chat_id, e)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001  # pylint: disable=broad-exception-caught
             logger.error("[WAHA_METADATA] Unexpected error fetching messages for %s: %s", chat_id, e)
 
         return messages
 
     def __del__(self):
         """Ensure the client is closed when the service is destroyed."""
-        try:
+        import contextlib
+        with contextlib.suppress(Exception):
             self.client.close()
-        except Exception:
-            pass
