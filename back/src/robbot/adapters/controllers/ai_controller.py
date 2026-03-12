@@ -10,9 +10,9 @@ This module exposes REST endpoints for:
 from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
+from robbot.infra.db.session import get_sync_session
 from robbot.infra.persistence.repositories.conversation_repository import ConversationRepository
 from robbot.infra.persistence.repositories.llm_interaction_repository import LLMInteractionRepository
-from robbot.infra.db.session import get_sync_session
 from robbot.infra.vectordb.chroma_client import get_chroma_client
 from robbot.services.bot.conversation_orchestrator import get_conversation_orchestrator
 
@@ -212,4 +212,3 @@ def get_llm_interactions(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get LLM interactions: {str(e)}",
         ) from e
-
