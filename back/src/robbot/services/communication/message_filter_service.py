@@ -2,8 +2,8 @@
 Service for filtering WhatsApp messages based on business rules and state (deduplication).
 Ensures only valid, new, and allowed messages are processed.
 """
+
 import logging
-from typing import Set
 
 from robbot.config.settings import settings
 from robbot.infra.redis.client import get_redis_client
@@ -23,13 +23,10 @@ class MessageFilterService:
         self.redis = get_redis_client()
         self.last_check_was_processed = False
 
-    def should_process(self, message: dict, allowed_senders: Set[str] | None = None) -> bool:
+    def should_process(self, message: dict, allowed_senders: set[str] | None = None) -> bool:
         """
         Determines if a message should be processed.
-        
-        Args:
-            message: Raw message dict from WAHA.
-            allowed_senders: Optional set of allowed sender IDs (for DEV mode).
+
 
         Returns:
             True if message is valid and new, False otherwise.
@@ -49,15 +46,17 @@ class MessageFilterService:
             if not sender:
                 logger.debug("[FILTER] Rejeitada (sem remetente): msg_id=%s", message_id)
                 return False
-                
+
             # Check exact match or phone number match
             sender_base = sender.split("@")[0]
-            
+
             # Using set for O(1) lookup
             if sender not in allowed_senders and sender_base not in allowed_senders:
                 logger.debug(
                     "[FILTER] Rejeitada (remetente não autorizado): sender=%s, sender_base=%s, allowed=%s",
-                    sender, sender_base, allowed_senders
+                    sender,
+                    sender_base,
+                    allowed_senders,
                 )
                 return False
 
@@ -66,10 +65,10 @@ class MessageFilterService:
             self.last_check_was_processed = False
             logger.debug("[FILTER] Rejeitada (sem message_id)")
             return False
-        
+
         is_processed = self._is_processed(message_id)
         self.last_check_was_processed = is_processed
-        
+
         if is_processed:
             # DEBUG level to avoid spam — dedup is normal in polling mode
             logger.debug("[FILTER] Rejeitada (já processada): msg_id=%s", message_id)
