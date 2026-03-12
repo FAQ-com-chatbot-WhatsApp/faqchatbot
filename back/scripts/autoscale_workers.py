@@ -33,7 +33,7 @@ def execute_scaling(target_workers: int) -> bool:
         compose_bin = "/usr/local/bin/docker-compose"
         # Use 'up -d --no-recreate --scale worker=N' to ONLY scale worker service
         # --no-recreate prevents restarting other services (including autoscaler itself)
-        cmd = [compose_bin, "up", "-d", "--no-recreate", "--scale", f"wk={target_workers}", "wk"]
+        cmd = [compose_bin, "up", "-d", "--no-recreate", "--scale", f"worker={target_workers}", "worker"]
 
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=60, cwd="/app")
 
