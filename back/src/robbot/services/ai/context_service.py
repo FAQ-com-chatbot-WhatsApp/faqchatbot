@@ -6,17 +6,17 @@ import chromadb
 from chromadb.config import Settings as ChromaSettings
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.content_repository import ContentRepository
-from robbot.infra.persistence.repositories.context_embedding_repository import ContextEmbeddingRepository
-from robbot.infra.persistence.repositories.context_repository import ContextRepository
-from robbot.infra.persistence.repositories.context_item_repository import ContextItemRepository
-from robbot.infra.persistence.repositories.topic_repository import TopicRepository
 from robbot.config.settings import get_settings
 from robbot.core.custom_exceptions import NotFoundException
 from robbot.infra.persistence.models.context_embedding_model import ContextEmbeddingModel as ContextEmbedding
-from robbot.infra.persistence.models.context_model import ContextModel
 from robbot.infra.persistence.models.context_item_model import ContextItemModel
+from robbot.infra.persistence.models.context_model import ContextModel
 from robbot.infra.persistence.models.topic_model import TopicModel
+from robbot.infra.persistence.repositories.content_repository import ContentRepository
+from robbot.infra.persistence.repositories.context_embedding_repository import ContextEmbeddingRepository
+from robbot.infra.persistence.repositories.context_item_repository import ContextItemRepository
+from robbot.infra.persistence.repositories.context_repository import ContextRepository
+from robbot.infra.persistence.repositories.topic_repository import TopicRepository
 from robbot.schemas.context import ContextSearchResult
 
 logger = logging.getLogger(__name__)
@@ -371,4 +371,3 @@ class ContextService:
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("[ERROR] Failed to generate embedding for context %s: %s", context_id, e, exc_info=True)
             raise
-
