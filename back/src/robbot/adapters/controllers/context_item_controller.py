@@ -158,4 +158,3 @@ def delete_item(
         raise HTTPException(status_code=404, detail=f"Item {item_id} not found")
 
     return DeletedResponse(message="Item deleted successfully", deleted_id=item_id)
-
