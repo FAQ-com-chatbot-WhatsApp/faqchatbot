@@ -18,8 +18,6 @@ export default function MessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
 
-  console.log('[MessagesPage] selectedConversation:', selectedConversation?.id)
-
   const {
     conversations,
     isLoading: isLoadingConversations,
@@ -30,8 +28,6 @@ export default function MessagesPage() {
     search: searchQuery,
   })
 
-  console.log('[MessagesPage] conversations:', conversations.length)
-
   const {
     messages,
     isLoading: isLoadingMessages,
@@ -41,8 +37,6 @@ export default function MessagesPage() {
     conversationId: selectedConversation?.id,
     enabled: !!selectedConversation?.id,
   })
-
-  console.log('[MessagesPage] messages:', messages.length, messages)
 
   const handleSendMessage = async (text: string) => {
     // TODO: Implementar envio via API backend
@@ -63,6 +57,19 @@ export default function MessagesPage() {
     return parts.length > 1
       ? `${parts[0][0]}${parts[1][0]}`.toUpperCase()
       : name.slice(0, 2).toUpperCase()
+  }
+
+  const formatPhoneNumber = (phone: string) => {
+    // Remove prefixo de país se tiver
+    const cleaned = phone.replace(/^\+?55/, '')
+
+    // Formata como (XX) XXXXX-XXXX ou (XX) XXXX-XXXX
+    if (cleaned.length === 11) {
+      return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`
+    } else if (cleaned.length === 10) {
+      return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(6)}`
+    }
+    return phone
   }
 
   const selectedChatId = selectedConversation?.phone_number
@@ -102,8 +109,8 @@ export default function MessagesPage() {
             conversations.map((conv) => (
               <ConversationItem
                 key={conv.id}
-                name={conv.phone_number}
-                initials={getInitials(conv.phone_number)}
+                name={formatPhoneNumber(conv.phone_number)}
+                initials={conv.phone_number.slice(-2)}
                 lastMessage={undefined}
                 unreadCount={0}
                 isActive={selectedConversation?.id === conv.id}
@@ -120,8 +127,8 @@ export default function MessagesPage() {
         {selectedConversation ? (
           <>
             <ChatHeader
-              name={selectedConversation.phone_number}
-              initials={getInitials(selectedConversation.phone_number)}
+              name={formatPhoneNumber(selectedConversation.phone_number)}
+              initials={selectedConversation.phone_number.slice(-2)}
               status={selectedConversation.status === "active" ? "online" : "offline"}
               isOnline={selectedConversation.status === "active"}
               onMore={refreshMessages}
