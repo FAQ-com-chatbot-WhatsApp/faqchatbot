@@ -78,7 +78,7 @@ async def receive_waha_webhook(
 
             # LID RESOLUTION: Try to resolve @lid to real phone number (non-blocking)
             if "@lid" in chat_id:
-                from robbot.services.lid_resolver_service import get_lid_resolver
+                from robbot.services.leads.lid_resolver_service import get_lid_resolver
 
                 lid_resolver = get_lid_resolver()
                 resolved_phone = None
