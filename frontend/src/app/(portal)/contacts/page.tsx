@@ -92,7 +92,7 @@ export default function ContatosPage() {
                   key={lead.id}
                   name={lead.name || lead.phone_number}
                   avatar={getAvatarUrl(lead.phone_number)}
-                  initials={getInitials(lead.name, lead.phone_number)}
+                  initials={getInitials(lead.name ?? undefined, lead.phone_number)}
                   isOnline={false}
                   onCall={() => handleCall(lead.phone_number)}
                   onVideo={() => handleVideo(lead.phone_number)}
@@ -109,8 +109,8 @@ export default function ContatosPage() {
               <ContactDetailPanel
                 name={selectedLead.name || selectedLead.phone_number}
                 avatar={getAvatarUrl(selectedLead.phone_number)}
-                initials={getInitials(selectedLead.name, selectedLead.phone_number)}
-                about={`Lead: ${selectedLead.maturity_level}`}
+                initials={getInitials(selectedLead.name ?? undefined, selectedLead.phone_number)}
+                about={`Pontuação: ${selectedLead.maturity_score}/100`}
                 onCall={() => handleCall(selectedLead.phone_number)}
                 onVideo={() => handleVideo(selectedLead.phone_number)}
                 onMessage={() => handleMessage(selectedLead.phone_number)}
