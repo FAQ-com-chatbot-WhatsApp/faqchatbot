@@ -15,7 +15,7 @@ import type {
   SessionStatus,
 } from "@/types/waha"
 
-const WAHA_BASE = "/waha"
+const WAHA_BASE = "/api/v1/waha"
 
 export async function getChatMessages(
   chatId: string,
