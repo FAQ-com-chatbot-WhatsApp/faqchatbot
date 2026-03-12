@@ -34,15 +34,8 @@ def execute_scaling(target_workers: int) -> bool:
         # Use 'up -d --no-recreate --scale worker=N' to ONLY scale worker service
         # --no-recreate prevents restarting other services (including autoscaler itself)
         cmd = [compose_bin, "up", "-d", "--no-recreate", "--scale", f"wk={target_workers}", "wk"]
-        cwd = "/app"
 
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=60,
-            cwd="/app"
-        )
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60, cwd="/app")
 
         if result.returncode == 0:
             logger.info("Scaled to %s workers", target_workers)
