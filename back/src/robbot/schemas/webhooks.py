@@ -8,12 +8,12 @@ Resolves Issue #8: Missing Input Validation at API Layer (Security Risk)
 """
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field, validator
 
 
-class MediaType(str, Enum):
+class MediaType(StrEnum):
     """Types of media in WhatsApp messages."""
 
     TEXT = "text"
@@ -25,7 +25,7 @@ class MediaType(str, Enum):
     CONTACT = "contact"
 
 
-class MessageType(str, Enum):
+class MessageType(StrEnum):
     """Message type enum."""
 
     TEXT = "text"
