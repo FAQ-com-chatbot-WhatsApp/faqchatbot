@@ -12,14 +12,14 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.conversation_message_repository import ConversationMessageRepository
-from robbot.infra.persistence.repositories.conversation_tag_repository import ConversationTagRepository
-from robbot.infra.persistence.repositories.tag_repository import TagRepository
 from robbot.api.v1.dependencies import get_current_user, get_db
 from robbot.core.custom_exceptions import NotFoundException
 from robbot.domain.shared.enums import ConversationStatus, Role
 from robbot.infra.persistence.models.conversation_message_model import ConversationMessageModel
 from robbot.infra.persistence.models.user_model import UserModel
+from robbot.infra.persistence.repositories.conversation_message_repository import ConversationMessageRepository
+from robbot.infra.persistence.repositories.conversation_tag_repository import ConversationTagRepository
+from robbot.infra.persistence.repositories.tag_repository import TagRepository
 from robbot.services.bot.conversation_service import ConversationService
 
 router = APIRouter()
@@ -639,4 +639,3 @@ def update_conversation_notes(
         raise HTTPException(status_code=404, detail="Conversation not found") from exc
     except Exception as e:  # noqa: BLE001 (blind exception)
         raise HTTPException(status_code=500, detail=f"Failed to update notes: {e!s}") from e
-
