@@ -233,4 +233,3 @@ class FilterService:
 
         logger.warning("Sort column '%s' not found on %s", column_name, model.__name__)
         return None
-
