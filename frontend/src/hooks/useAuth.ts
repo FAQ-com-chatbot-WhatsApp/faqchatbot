@@ -12,10 +12,6 @@ export function useAuth() {
     setLoading(true)
     try {
       await loginApi(email, password, rememberMe)
-      // Ensure token is saved in localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('access_token', 'true')
-      }
       setSuccess("Login realizado com sucesso!")
       return true
     } catch (err: any) {
