@@ -34,7 +34,7 @@ class QueueService:
     ) -> str:
         """Enfileirar um job customizado (função ou string path)."""
         queue = self.queue_manager.get_queue(queue_name)
-        
+
         # Determinar nome para logging sem quebrar se for string
         func_name = func if isinstance(func, str) else getattr(func, "__name__", str(func))
 
@@ -43,7 +43,7 @@ class QueueService:
             job_id=job_id,
             job_timeout=timeout,
         )
-        
+
         # CRITICAL: Force timeout explicitly (RQ sometimes ignores job_timeout parameter)
         try:
             enqueued_job.timeout = timeout
@@ -51,7 +51,7 @@ class QueueService:
             logger.debug("Forced job timeout to %ds for job %s", timeout, enqueued_job.id)
         except Exception as e:
             logger.warning("Failed to force job timeout: %s", e)
-        
+
         logger.info(
             "Job customizado enfileirado (fila: %s) -> %s",
             queue_name,
@@ -117,7 +117,7 @@ class QueueService:
 
         existing = redis_client.get(buffer_key)
         payload = json.loads(existing) if existing else {"messages": [], "last_payload": {}}
-        
+
         body = message_data.get("body", "")
         if isinstance(body, str) and body.strip():
             payload.setdefault("messages", []).append(body)
@@ -187,14 +187,16 @@ class QueueService:
             redis_client = get_redis_client()
             if not redis_client.ping():
                 return {"status": "unhealthy", "error": "Redis ping failed"}
-            
+
             # Opcional: Verificar tamanhos das filas (apenas para debug extra)
             # q_len = len(self.queue_manager.queue_messages)
-            
+
             return {"status": "healthy"}
         except Exception as e:
             logger.error("Queue health check failed: %s", e)
             return {"status": "unhealthy", "error": str(e)}
+
+
 # Singleton global
 _queue_service: QueueService | None = None
 
