@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
 from uuid import uuid4
 
 from robbot.domain.shared.enums import LeadStatus
@@ -18,15 +17,15 @@ class Lead:
     phone_number: PhoneNumber
     status: LeadStatus = LeadStatus.NEW
     maturity_score: LeadScore = LeadScore(0)
-    email: Optional[str] = None
-    assigned_to_user_id: Optional[int] = None
+    email: str | None = None
+    assigned_to_user_id: int | None = None
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
-    converted_at: Optional[datetime] = None
-    deleted_at: Optional[datetime] = None
+    converted_at: datetime | None = None
+    deleted_at: datetime | None = None
 
     @classmethod
-    def create(cls, name: str, phone_number: str, id: Optional[str] = None) -> "Lead":
+    def create(cls, name: str, phone_number: str, id: str | None = None) -> "Lead":
         return cls(
             id=id or str(uuid4()),
             name=name,
@@ -55,9 +54,8 @@ class Lead:
         elif score >= 50:
             if self.status in (LeadStatus.NEW, LeadStatus.CONTACTED):
                 self.status = LeadStatus.ENGAGED
-        elif score > 0:
-            if self.status == LeadStatus.NEW:
-                self.status = LeadStatus.CONTACTED
+        elif score > 0 and self.status == LeadStatus.NEW:
+            self.status = LeadStatus.CONTACTED
 
     def convert(self):
         """Mark as scheduled/converted."""
