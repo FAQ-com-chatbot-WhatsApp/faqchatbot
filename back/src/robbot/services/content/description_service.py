@@ -5,8 +5,8 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.conversation_message_repository import ConversationMessageRepository
 from robbot.core.custom_exceptions import NotFoundException
+from robbot.infra.persistence.repositories.conversation_message_repository import ConversationMessageRepository
 from robbot.services.content.vision_service import get_vision_service
 
 logger = logging.getLogger(__name__)
@@ -225,4 +225,3 @@ class DescriptionService:
         logger.info("[SUCCESS] Basic metadata generated: title='%s...', %s tags", title[:30], len(base_tags))
 
         return {"generated_title": title, "generated_description": description, "suggested_tags": tags}
-
