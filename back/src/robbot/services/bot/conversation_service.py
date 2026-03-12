@@ -9,10 +9,10 @@ from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
-from robbot.core.custom_exceptions import BusinessRuleError, NotFoundException
-from robbot.domain.shared.enums import ConversationStatus
-from robbot.domain.conversations.mapper import ConversationMapper
+from robbot.core.custom_exceptions import NotFoundException
 from robbot.domain.conversations.conversation import Conversation
+from robbot.domain.conversations.mapper import ConversationMapper
+from robbot.domain.shared.enums import ConversationStatus
 from robbot.infra.persistence.models.conversation_model import ConversationModel
 from robbot.infra.persistence.repositories.conversation_repository import ConversationRepository
 
@@ -46,25 +46,30 @@ class ConversationService:
         Includes LID resolution logic.
         """
         conversation_model = self.repo.get_by_chat_id(chat_id)
-        
+
         if conversation_model:
             # Re-open if closed/completed
             if conversation_model.status in [ConversationStatus.CLOSED, ConversationStatus.COMPLETED]:
-                logger.info("[RE-OPEN] Detecting new message on closed conversation %s. Re-opening...", conversation_model.id)
+                logger.info(
+                    "[RE-OPEN] Detecting new message on closed conversation %s. Re-opening...", conversation_model.id
+                )
                 conversation_model.status = ConversationStatus.ACTIVE_BOT
                 conversation_model.closed_at = None
                 conversation_model.updated_at = datetime.now(UTC)
                 self.db.commit()
                 self.db.refresh(conversation_model)
-            
-            logger.info("[SUCCESS] Conversation found (id=%s, status=%s)", conversation_model.id, conversation_model.status)
+
+            logger.info(
+                "[SUCCESS] Conversation found (id=%s, status=%s)", conversation_model.id, conversation_model.status
+            )
             return conversation_model
 
         # 1. LID Resolution (WhatsApp specific logic)
         resolved_phone = phone_number
         from robbot.services.leads.lid_resolver_service import get_lid_resolver
+
         lid_resolver = get_lid_resolver()
-        
+
         if lid_resolver.is_lid_format(phone_number):
             try:
                 resolved = await lid_resolver.try_resolve_lid(phone_number, timeout_seconds=1.0)
@@ -80,15 +85,15 @@ class ConversationService:
             chat_id=chat_id,
             phone_number=phone_number,
         )
-        
+
         conversation_model = ConversationMapper.to_model(conversation_domain)
         conversation_model.name = name or resolved_phone
         conversation_model = self.repo.create(conversation_model)
-        
+
         # 3. Create Lead
-        from robbot.infra.persistence.repositories.lead_repository import LeadRepository
         from robbot.infra.persistence.models.lead_model import LeadModel
-        
+        from robbot.infra.persistence.repositories.lead_repository import LeadRepository
+
         lead_repo = LeadRepository(self.db)
         lead = LeadModel(
             phone_number=resolved_phone,
@@ -98,7 +103,7 @@ class ConversationService:
         )
         lead_repo.create(lead)
         self.db.flush()
-        
+
         logger.info("[SUCCESS] Created conversation %s and lead for %s", conversation_model.id, resolved_phone)
         return conversation_model
 
@@ -114,11 +119,11 @@ class ConversationService:
 
         # Map to domain to perform logic
         conversation_domain = ConversationMapper.to_domain(conversation_model)
-        
+
         # Simple transition check (can be expanded in domain entity)
         old_status = conversation_domain.status
         conversation_domain.status = new_status
-        
+
         ConversationMapper.to_model(conversation_domain, conversation_model)
         updated = self.repo.update(conversation_model)
 
@@ -133,7 +138,7 @@ class ConversationService:
 
         conversation_domain = ConversationMapper.to_domain(conversation_model)
         conversation_domain.close()
-        
+
         ConversationMapper.to_model(conversation_domain, conversation_model)
         conversation_model.closed_at = datetime.now(UTC)
         updated = self.repo.update(conversation_model)
@@ -149,11 +154,11 @@ class ConversationService:
 
         conversation_domain = ConversationMapper.to_domain(conversation_model)
         conversation_domain.escalate(reason)
-        
+
         ConversationMapper.to_model(conversation_domain, conversation_model)
         conversation_model.escalated_at = datetime.now(UTC)
         conversation_model.escalation_reason = reason
-        
+
         updated = self.repo.update(conversation_model)
         logger.info("[SUCCESS] Conversation escalated (id=%s, reason=%s)", conversation_id, reason)
         return updated
@@ -178,12 +183,15 @@ class ConversationService:
             "phone_number": phone_number,
             "is_urgent": is_urgent,
             "assigned_to_user_id": assigned_to_user_id,
-            "conversation_ids": conversation_ids
+            "conversation_ids": conversation_ids,
         }
-        
+
         conversations = self.repo.find_by_criteria(filters, limit=limit, offset=offset)
         # For count, we use a separate count method in repo or simple count
-        total = self.repo.db.query(ConversationModel).filter_by(**{k: v for k, v in filters.items() if v is not None and k != "conversation_ids"}).count()
+        total = (
+            self.repo.db.query(ConversationModel)
+            .filter_by(**{k: v for k, v in filters.items() if v is not None and k != "conversation_ids"})
+            .count()
+        )
 
         return conversations, total
-
