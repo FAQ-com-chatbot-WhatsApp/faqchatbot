@@ -1,6 +1,8 @@
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333';
-
+// Use internal Docker URL for server-side, public URL for client-side
+const BASE_URL = typeof window === 'undefined'
+  ? process.env.API_URL || 'http://go:3333' // Server-side (SSR)
+  : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333'; // Client-side (browser)
 
 export async function fetchApi<T>(
   endpoint: string,
