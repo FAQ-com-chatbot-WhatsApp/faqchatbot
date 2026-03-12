@@ -111,4 +111,3 @@ def delete_topic(
         raise HTTPException(status_code=404, detail=f"Topic {topic_id} not found")
 
     return DeletedResponse(message="Topic deleted successfully", deleted_id=topic_id)
-
