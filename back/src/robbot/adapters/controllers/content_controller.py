@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 
 from robbot.api.v1.dependencies import get_current_user, get_db
 from robbot.schemas.content import (
-    DeletedResponse,
     ContentCreateLocation,
     ContentCreateMedia,
     ContentCreateText,
@@ -17,6 +16,7 @@ from robbot.schemas.content import (
     ContentUpdateLocation,
     ContentUpdateMedia,
     ContentUpdateText,
+    DeletedResponse,
 )
 from robbot.services.content.content_service import ContentService
 
