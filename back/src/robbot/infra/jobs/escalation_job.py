@@ -5,10 +5,10 @@ Job para escalar conversa para secretária.
 import logging
 from typing import Any
 
-from robbot.infra.persistence.repositories.conversation_repository import ConversationRepository
 from robbot.domain.shared.enums import ConversationStatus, LeadStatus
 from robbot.infra.db.session import get_sync_session
 from robbot.infra.jobs.base_job import BaseJob, JobFailureError, JobRetryableError
+from robbot.infra.persistence.repositories.conversation_repository import ConversationRepository
 
 logger = logging.getLogger(__name__)
 
@@ -235,4 +235,3 @@ class MultipleEscalationJob(BaseJob):
             "failed": failed,
             "total": len(self.conversation_ids),
         }
-
