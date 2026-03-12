@@ -239,7 +239,7 @@ export const performanceAnalytics = {
     )
     
     if (!response.ok) {
-      throw new Error('Failed to export PDF')
+      throw new Error('Falha ao exportar PDF')
     }
     
     return response.blob()
@@ -259,7 +259,7 @@ export const performanceAnalytics = {
     )
     
     if (!response.ok) {
-      throw new Error('Failed to export Excel')
+      throw new Error('Falha ao exportar Excel')
     }
     
     return response.blob()
