@@ -19,8 +19,8 @@ from uuid import UUID
 
 from redis import Redis
 
-from robbot.infra.persistence.repositories.analytics_repository import AnalyticsRepository
 from robbot.config.settings import get_settings
+from robbot.infra.persistence.repositories.analytics_repository import AnalyticsRepository
 from robbot.infra.redis.queue import RQQueueManager
 
 logger = logging.getLogger(__name__)
@@ -1288,4 +1288,3 @@ class MetricsService:
         except Exception as e:  # noqa: BLE001 (blind exception)
             logger.error("[ERROR] Failed to get cache stats: %s", e)
             return {}
-
