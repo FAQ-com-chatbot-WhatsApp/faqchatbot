@@ -191,4 +191,3 @@ async def mark_notification_as_read(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to mark notification as read: {str(e)}",
         ) from e
-
