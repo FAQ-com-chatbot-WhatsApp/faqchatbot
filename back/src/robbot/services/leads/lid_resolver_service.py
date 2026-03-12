@@ -95,7 +95,7 @@ class LIDResolverService:
         except WAHAError:
             # Expected error for not found
             pass
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning("[LID RESOLVER] Timeout resolving LID: %s", lid)
         except Exception as e:
             logger.warning("[LID RESOLVER] Error resolving LID %s: %s", lid, str(e))
@@ -240,9 +240,7 @@ class LIDResolverService:
         contact_saved = await self.save_contact_to_whatsapp(current_phone, lead_name)
 
         if not contact_saved:
-            logger.warning(
-                "[LID RESOLVER] Failed to save contact to WhatsApp, aborting resolution"
-            )
+            logger.warning("[LID RESOLVER] Failed to save contact to WhatsApp, aborting resolution")
             return False
 
         # STEP 2: Wait brief moment for WhatsApp to sync contact
@@ -260,23 +258,23 @@ class LIDResolverService:
             if lead:
                 # Update lead phone_number
                 lead.phone_number = resolved_phone
-                
+
                 # Update conversation phone_number AND chat_id if exists
                 if lead.conversation:
                     lead.conversation.phone_number = resolved_phone
-                    
+
                     # Also update chat_id (format: phone@c.us)
                     new_chat_id = f"{resolved_phone}@c.us"
                     old_chat_id = lead.conversation.chat_id
                     lead.conversation.chat_id = new_chat_id
-                    
+
                     logger.info(
                         "[LID RESOLVER] 📊 Updated conversation: phone=%s, chat_id=%s -> %s",
                         resolved_phone,
                         old_chat_id,
                         new_chat_id,
                     )
-                
+
                 session.commit()
 
                 logger.info(
@@ -315,4 +313,3 @@ def get_lid_resolver(waha_client=None):
         waha_client = get_waha_client()
 
     return LIDResolverService(waha_client)
-
