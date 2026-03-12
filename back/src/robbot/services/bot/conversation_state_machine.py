@@ -14,8 +14,6 @@ import logging
 
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.conversation_repository import ConversationRepository
-from robbot.infra.persistence.repositories.lead_repository import LeadRepository
 from robbot.core.custom_exceptions import BusinessRuleError, NotFoundException
 from robbot.domain.shared.enums import (
     ConversationStatus,
@@ -23,6 +21,8 @@ from robbot.domain.shared.enums import (
     LeadStatus,
 )
 from robbot.infra.persistence.models.conversation_model import ConversationModel
+from robbot.infra.persistence.repositories.conversation_repository import ConversationRepository
+from robbot.infra.persistence.repositories.lead_repository import LeadRepository
 
 logger = logging.getLogger(__name__)
 
@@ -257,4 +257,3 @@ class ConversationStateMachine:
             return LeadStatus.INTERESTED
         else:
             return LeadStatus.READY
-
