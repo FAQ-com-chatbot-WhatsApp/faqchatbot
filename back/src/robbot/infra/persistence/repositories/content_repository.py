@@ -138,4 +138,3 @@ class ContentRepository:
         """Delete content (cascades to media/location)."""
         self.db.delete(content)
         self.db.commit()
-
