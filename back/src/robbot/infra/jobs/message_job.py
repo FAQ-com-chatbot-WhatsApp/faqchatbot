@@ -8,12 +8,12 @@ import logging
 import time
 from typing import Any
 
-from robbot.infra.persistence.repositories.conversation_message_repository import (
-    ConversationMessageRepository,
-)
 from robbot.config.settings import settings
 from robbot.infra.db.session import get_sync_session
 from robbot.infra.jobs.base_job import BaseJob, JobRetryableError
+from robbot.infra.persistence.repositories.conversation_message_repository import (
+    ConversationMessageRepository,
+)
 from robbot.infra.redis.client import get_redis_client
 
 logger = logging.getLogger(__name__)
@@ -303,4 +303,3 @@ class MessageBatchProcessingJob(BaseJob):
             "failed": failed,
             "total": len(self.messages),
         }
-
