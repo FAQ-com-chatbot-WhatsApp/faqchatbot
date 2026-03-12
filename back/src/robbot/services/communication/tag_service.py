@@ -4,8 +4,8 @@ Tag Service - business logic for tags.
 
 import logging
 
-from robbot.infra.persistence.repositories.tag_repository import TagRepository
 from robbot.infra.persistence.models.tag_model import TagModel
+from robbot.infra.persistence.repositories.tag_repository import TagRepository
 
 logger = logging.getLogger(__name__)
 
@@ -111,4 +111,3 @@ class TagService:
         logger.info("[SUCCESS] Tag deleted (id=%s)", tag_id)
 
         return True
-
