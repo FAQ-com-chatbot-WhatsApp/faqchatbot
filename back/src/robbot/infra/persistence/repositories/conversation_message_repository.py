@@ -4,8 +4,8 @@ import logging
 
 from sqlalchemy.orm import Session
 
-from robbot.infra.persistence.repositories.base_repository import BaseRepository
 from robbot.infra.persistence.models.conversation_message_model import ConversationMessageModel
+from robbot.infra.persistence.repositories.base_repository import BaseRepository
 
 logger = logging.getLogger(__name__)
 
@@ -35,4 +35,3 @@ class ConversationMessageRepository(BaseRepository[ConversationMessageModel]):
             .limit(limit)
             .all()
         )
-
