@@ -7,10 +7,10 @@ Consolidates session operations + message sending with rate limiting.
 import logging
 from datetime import UTC, datetime
 
-from robbot.infra.integrations.waha.waha_client import WAHAClient
-from robbot.infra.persistence.repositories.session_repository import SessionRepository
 from robbot.config.settings import settings
+from robbot.infra.integrations.waha.waha_client import WAHAClient
 from robbot.infra.persistence.models.session_model import WhatsAppSession
+from robbot.infra.persistence.repositories.session_repository import SessionRepository
 from robbot.infra.redis.client import get_redis_client
 from robbot.schemas.waha import (
     MessageSentResponse,
@@ -419,4 +419,3 @@ class WAHAService:
             chat_id=chat_id,
             message_id=message_id,
         )
-
