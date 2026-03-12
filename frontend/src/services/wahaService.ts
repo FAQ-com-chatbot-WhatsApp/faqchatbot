@@ -31,7 +31,7 @@ export async function getChatMessages(
 export async function sendTextMessage(
   request: SendTextMessageRequest
 ): Promise<WahaMessage> {
-  return fetchApi<WahaMessage>(`${WAHA_BASE}/messages/text`, {
+  return fetchApi<WahaMessage>(`${WAHA_BASE}/messages/send-text`, {
     method: "POST",
     body: JSON.stringify(request),
   })
@@ -40,7 +40,7 @@ export async function sendTextMessage(
 export async function sendImageMessage(
   request: SendImageMessageRequest
 ): Promise<WahaMessage> {
-  return fetchApi<WahaMessage>(`${WAHA_BASE}/messages/image`, {
+  return fetchApi<WahaMessage>(`${WAHA_BASE}/messages/send-image`, {
     method: "POST",
     body: JSON.stringify(request),
   })
@@ -49,7 +49,7 @@ export async function sendImageMessage(
 export async function sendLocationMessage(
   request: SendLocationMessageRequest
 ): Promise<WahaMessage> {
-  return fetchApi<WahaMessage>(`${WAHA_BASE}/messages/location`, {
+  return fetchApi<WahaMessage>(`${WAHA_BASE}/messages/send-location`, {
     method: "POST",
     body: JSON.stringify(request),
   })
