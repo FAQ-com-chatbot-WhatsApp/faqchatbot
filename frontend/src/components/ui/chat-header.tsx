@@ -2,7 +2,8 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { MoreVertical, Phone, Video, Search } from "lucide-react"
+import { MoreVertical, Phone, Video, Search, Bot, User } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
 
 interface ChatHeaderProps {
   name: string
@@ -10,6 +11,8 @@ interface ChatHeaderProps {
   initials: string
   status?: string
   isOnline?: boolean
+  isBotActive?: boolean
+  onBotToggle?: (enabled: boolean) => void
   onCall?: () => void
   onVideo?: () => void
   onSearch?: () => void
@@ -22,6 +25,8 @@ export function ChatHeader({
   initials,
   status,
   isOnline = false,
+  isBotActive = true,
+  onBotToggle,
   onCall,
   onVideo,
   onSearch,
@@ -47,7 +52,19 @@ export function ChatHeader({
         </div>
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-3">
+        {onBotToggle && (
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-background rounded-lg border">
+            <User className={`h-4 w-4 ${!isBotActive ? 'text-primary' : 'text-muted-foreground'}`} />
+            <Switch
+              id="bot-toggle"
+              checked={isBotActive}
+              onCheckedChange={onBotToggle}
+              aria-label="Alternar modo bot"
+            />
+            <Bot className={`h-4 w-4 ${isBotActive ? 'text-primary' : 'text-muted-foreground'}`} />
+          </div>
+        )}
         {onCall && (
           <Button variant="ghost" size="icon-sm" onClick={onCall} aria-label="Ligar">
             <Phone className="h-5 w-5" />
