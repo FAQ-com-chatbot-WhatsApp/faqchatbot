@@ -4,6 +4,7 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Check, CheckCheck } from "lucide-react"
+import { AudioPlayer } from "@/components/ui/audio-player"
 
 type MessageStatus = "pending" | "sent" | "delivered" | "read"
 
@@ -16,6 +17,7 @@ interface MessageBubbleProps extends React.HTMLAttributes<HTMLDivElement> {
   senderAvatar?: string
   unread?: boolean
   status?: MessageStatus
+  mediaUrl?: string | null
 }
 
 export function MessageBubble({
@@ -27,10 +29,26 @@ export function MessageBubble({
   senderAvatar,
   unread = false,
   status = "sent",
+  mediaUrl,
   className,
   ...props
 }: MessageBubbleProps) {
   const isUser = sender === "user"
+
+  // Detectar se é mensagem de áudio
+  // Check for common audio URL patterns and also check if the body starts with "[Áudio transcrito]:"
+  const isAudioMessage = (mediaUrl && (
+    mediaUrl.includes('/audio/') ||
+    mediaUrl.includes('/voice/') ||
+    mediaUrl.includes('/ptt/') ||
+    mediaUrl.includes('.ogg') ||
+    mediaUrl.includes('.opus') ||
+    mediaUrl.includes('.mp3') ||
+    mediaUrl.includes('.m4a') ||
+    mediaUrl.includes('.wav') ||
+    mediaUrl.includes('.aac') ||
+    mediaUrl.includes('.webm')
+  )) || (message && message.startsWith('[Áudio transcrito]'))
 
   // Renderizar ícone de status para mensagens do usuário
   const renderStatusIcon = () => {
@@ -83,10 +101,20 @@ export function MessageBubble({
             unread && !isUser && "ring-2 ring-primary/50"
           )}
         >
-          {/* Mensagem com espaço reservado para timestamp */}
-          <p className="text-[14px] leading-[1.4] pr-16 break-words">
-            {message}
-          </p>
+          {/* Conteúdo: AudioPlayer para áudio, texto para mensagens normais */}
+          {isAudioMessage ? (
+            <div className="pr-16">
+              <AudioPlayer
+                audioUrl={mediaUrl || ''}
+                transcription={message}
+                sender={sender}
+              />
+            </div>
+          ) : (
+            <p className="text-[14px] leading-[1.4] pr-16 break-words">
+              {message}
+            </p>
+          )}
 
           {/* Timestamp e status dentro do balão, canto inferior direito */}
           {timestamp && (
