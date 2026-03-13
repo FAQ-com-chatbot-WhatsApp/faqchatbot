@@ -98,8 +98,12 @@ class WAHAClient:
             response = await self._client.request(method, endpoint, **kwargs)
             response.raise_for_status()
 
-            # Handle empty responses (204 No Content)
-            if response.status_code == 204 or not response.content:
+            # Handle empty responses (204 No Content, 201 Created)
+            if response.status_code in (204, 201) and not response.content:
+                logger.warning(f"WAHA returned {response.status_code} with empty content for {endpoint}")
+                return {"success": True, "id": "", "timestamp": int(time.time())}
+
+            if not response.content:
                 return {"success": True}
 
             return response.json()
