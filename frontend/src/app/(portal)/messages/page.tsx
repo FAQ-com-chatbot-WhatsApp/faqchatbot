@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Search, AlertCircle, MessageSquare } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -13,10 +13,15 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { EmptyState } from "@/components/ui/empty-state"
 import { useConversations, useConversationMessages } from "@/hooks/useConversations"
 import type { Conversation, ConversationMessage } from "@/services/conversationService"
+import { sendTextMessage } from "@/services/wahaService"
+
+type FilterType = "all" | "unread" | "groups" | "favorites"
 
 export default function MessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
+  const [activeFilter, setActiveFilter] = useState<FilterType>("all")
+  const [isSending, setIsSending] = useState(false)
 
   const {
     conversations,
@@ -39,17 +44,48 @@ export default function MessagesPage() {
   })
 
   const handleSendMessage = async (text: string) => {
-    // TODO: Implementar envio via API backend
-    console.log("Enviar mensagem:", text)
+    if (!selectedConversation || !text.trim()) return
+
+    setIsSending(true)
+    try {
+      const chatId = `${selectedConversation.phone_number}@c.us`
+      await sendTextMessage({
+        chat_id: chatId,
+        text: text.trim(),
+      })
+
+      // Atualizar mensagens após envio
+      await refreshMessages()
+    } catch (error) {
+      console.error("Erro ao enviar mensagem:", error)
+      alert("Erro ao enviar mensagem. Tente novamente.")
+    } finally {
+      setIsSending(false)
+    }
   }
 
-  const formatTimestamp = (isoString: string) => {
-    const date = new Date(isoString)
-    return date.toLocaleTimeString("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-  }
+  // Contadores de conversas por tipo
+  const conversationCounts = useMemo(() => {
+    const unread = conversations.filter(c => (c.unread_count || 0) > 0).length
+    const groups = 0 // TODO: Implementar quando tivermos grupos
+    const favorites = 0 // TODO: Implementar quando tivermos favoritos
+
+    return { unread, groups, favorites }
+  }, [conversations])
+
+  // Filtrar conversas baseado no filtro ativo
+  const filteredConversations = useMemo(() => {
+    switch (activeFilter) {
+      case "unread":
+        return conversations.filter(c => (c.unread_count || 0) > 0)
+      case "groups":
+        return [] // TODO: Implementar filtro de grupos
+      case "favorites":
+        return [] // TODO: Implementar filtro de favoritos
+      default:
+        return conversations
+    }
+  }, [conversations, activeFilter])
 
   const getInitials = (name?: string) => {
     if (!name) return "??"
@@ -72,15 +108,23 @@ export default function MessagesPage() {
     return phone
   }
 
-  const selectedChatId = selectedConversation?.phone_number
-    ? `${selectedConversation.phone_number}@c.us`
-    : null
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp)
+    const now = new Date()
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+
+    if (diffInHours < 24) {
+      return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    } else {
+      return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+    }
+  }
 
   return (
-    <div className="flex h-[calc(100vh-80px)] gap-4 p-4">
+    <div className="flex h-[calc(100vh-4rem)] gap-4 p-4">
       {/* 1. Lista de Conversas */}
       <Card className="w-80 flex flex-col shadow-sm">
-        <div className="p-4 border-b">
+        <div className="p-4 border-b space-y-3">
           <div className="relative">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -90,7 +134,39 @@ export default function MessagesPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+
+          {/* Filtros estilo WhatsApp */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveFilter("all")}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${activeFilter === "all"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+            >
+              Tudo
+            </button>
+            <button
+              onClick={() => setActiveFilter("unread")}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${activeFilter === "unread"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+            >
+              Não lidas {conversationCounts.unread > 0 && conversationCounts.unread}
+            </button>
+            <button
+              onClick={() => setActiveFilter("favorites")}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${activeFilter === "favorites"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+            >
+              Favoritos
+            </button>
+          </div>
         </div>
+
         <div className="flex-1 overflow-y-auto">
           {isLoadingConversations ? (
             <div className="flex items-center justify-center p-8">
@@ -103,15 +179,15 @@ export default function MessagesPage() {
                 <AlertDescription>{conversationsError}</AlertDescription>
               </Alert>
             </div>
-          ) : conversations.length === 0 ? (
+          ) : filteredConversations.length === 0 ? (
             <EmptyState icon={MessageSquare} message="Nenhuma conversa encontrada" />
           ) : (
-            conversations.map((conv) => (
+            filteredConversations.map((conv) => (
               <ConversationItem
                 key={conv.id}
-                name={formatPhoneNumber(conv.phone_number)}
+                name={conv.lead_name || formatPhoneNumber(conv.phone_number)}
                 initials={conv.phone_number.slice(-2)}
-                lastMessage={undefined}
+                lastMessage={conv.last_message || undefined}
                 unreadCount={0}
                 isActive={selectedConversation?.id === conv.id}
                 isOnline={conv.status === "active"}
@@ -127,7 +203,7 @@ export default function MessagesPage() {
         {selectedConversation ? (
           <>
             <ChatHeader
-              name={formatPhoneNumber(selectedConversation.phone_number)}
+              name={selectedConversation.lead_name || formatPhoneNumber(selectedConversation.phone_number)}
               initials={selectedConversation.phone_number.slice(-2)}
               status={selectedConversation.status === "active" ? "online" : "offline"}
               isOnline={selectedConversation.status === "active"}
@@ -163,7 +239,7 @@ export default function MessagesPage() {
             <MessageInput
               onSend={handleSendMessage}
               placeholder="Digite sua mensagem..."
-              disabled={isLoadingMessages}
+              disabled={isLoadingMessages || isSending}
               showAttachment
             />
           </>
