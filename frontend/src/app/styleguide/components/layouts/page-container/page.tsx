@@ -32,7 +32,7 @@ export default function PageContainerShowcase() {
             <div className="ml-auto flex items-center gap-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                <Input className="pl-10 w-[280px]" placeholder="Search..." />
+                <Input id="page-search" name="search" className="pl-10 w-[280px]" placeholder="Search..." autoComplete="off" />
               </div>
               <Button variant="ghost" size="icon-sm" aria-label="Notifications">
                 <Bell className="size-4" />
