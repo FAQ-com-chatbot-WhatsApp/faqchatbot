@@ -146,8 +146,9 @@ export default function MessagesPage() {
         text: text.trim(),
       })
 
-      // Aguardar sincronização e atualizar com dados reais
-      await new Promise(resolve => setTimeout(resolve, 800))
+      // Backend agora salva a mensagem outbound automaticamente
+      // Aguardar um pouco e atualizar com dados reais do servidor
+      await new Promise(resolve => setTimeout(resolve, 500))
       await refreshMessages()
 
       // Remover mensagem pendente após receber do servidor
@@ -381,7 +382,7 @@ export default function MessagesPage() {
                 <EmptyState icon={MessageSquare} message="Nenhuma mensagem ainda" />
               ) : (
                 messages.map((msg: ConversationMessage) => {
-                  const isInbound = msg.direction === "INBOUND"
+                  const isInbound = msg.direction === "INBOUND" || msg.direction === "inbound"
                   const leadName = selectedConversation?.lead_name || "Lead"
 
                   return (
