@@ -54,6 +54,7 @@ export function Header({
                 name="search"
                 placeholder="Pesquisar"
                 className="pl-10"
+                autoComplete="off"
               />
             </div>
           </div>
