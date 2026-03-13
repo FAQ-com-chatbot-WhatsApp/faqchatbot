@@ -34,12 +34,12 @@ async def sync_sessions():
     """
     waha_client = get_waha_client()
 
-    print("🔍 Fetching sessions from WAHA...")
+    print("[SYNC] Fetching sessions from WAHA...")
     try:
         waha_sessions = await waha_client.list_sessions()
-        print(f"✅ Found {len(waha_sessions)} session(s) in WAHA")
+        print(f"[SYNC] Found {len(waha_sessions)} session(s) in WAHA")
     except Exception as e:
-        print(f"❌ Failed to fetch WAHA sessions: {e}")
+        print(f"[ERROR] Failed to fetch WAHA sessions: {e}")
         return
 
     # Get database session
@@ -59,7 +59,7 @@ async def sync_sessions():
             # Determine webhook URL
             webhook_url = settings.WAHA_WEBHOOK_URL
 
-            print(f"\n📱 Session: {session_name}")
+            print(f"\n[SESSION] {session_name}")
             print(f"   Status: {session_status}")
             print(f"   Connected: {connected_phone or 'Not connected'}")
 
@@ -68,7 +68,7 @@ async def sync_sessions():
 
             if existing:
                 # Update existing session
-                print(f"   ℹ️  Already exists in DB (ID: {existing.id})")
+                print(f"   [INFO] Already exists in DB (ID: {existing.id})")
 
                 # Update status and connected_phone if changed
                 if existing.status != session_status or existing.connected_phone != connected_phone:
@@ -77,15 +77,15 @@ async def sync_sessions():
                         status=session_status,
                         connected_phone=connected_phone,
                     )
-                    print(f"   ✅ Updated status to {session_status}")
+                    print(f"   [UPDATE] Status changed to {session_status}")
             else:
                 # Create new session record
-                print("   🆕 Creating new DB record...")
+                print("   [CREATE] Creating new DB record...")
                 new_session = session_repo.create(
                     name=session_name,
                     webhook_url=webhook_url,
                 )
-                print(f"   ✅ Created with ID: {new_session.id}")
+                print(f"   [CREATE] Created with ID: {new_session.id}")
 
                 # Update status and connected_phone if different from default
                 if session_status != "STOPPED" or connected_phone:
@@ -94,11 +94,11 @@ async def sync_sessions():
                         status=session_status,
                         connected_phone=connected_phone,
                     )
-                    print(f"   ✅ Updated status to {session_status}")
+                    print(f"   [UPDATE] Status changed to {session_status}")
 
         db.commit()
 
-    print("\n✨ Sync completed successfully!")
+    print("\n[SYNC] Sync completed successfully")
 
 
 if __name__ == "__main__":
