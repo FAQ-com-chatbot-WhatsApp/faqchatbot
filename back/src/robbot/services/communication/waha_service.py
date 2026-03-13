@@ -342,9 +342,33 @@ class WAHAService:
         )
 
         logger.info("[INFO] Text message sent to %s", data.chat_id)
+        logger.debug(f"[DEBUG] WAHA raw response: {response}")
+
+        # Extract message_id from WAHA response
+        # WAHA can return different formats:
+        # 1. {'id': 'string'} - simple format
+        # 2. {'id': {'id': 'xxx', '_serialized': 'true_xxx@lid_yyy'}} - complex format
+        # 3. {'message_id': 'string'} - alternative format
+        message_id = None
+
+        if "id" in response:
+            id_value = response["id"]
+            if isinstance(id_value, dict):
+                # Complex format: extract _serialized or id field
+                message_id = id_value.get("_serialized") or id_value.get("id")
+            elif isinstance(id_value, str):
+                # Simple string format
+                message_id = id_value
+        elif "message_id" in response:
+            message_id = response["message_id"]
+
+        if not message_id:
+            logger.warning(
+                f"[WARN] WAHA did not return message_id for {data.chat_id}. Response keys: {response.keys()}"
+            )
 
         return MessageSentResponse(
-            message_id=response.get("id", ""),
+            message_id=message_id or "",
             timestamp=response.get("timestamp", int(datetime.now(UTC).timestamp())),
             chat_id=data.chat_id,
         )
