@@ -93,47 +93,47 @@ def send_waha_webhook(message_text: str, chat_id: str = "555198098876@c.us"):
     }
 
     print(f"\n{'=' * 80}")
-    print(f"📤 ENVIANDO: {message_text}")
+    print(f"[SENDING] {message_text}")
     print(f"{'=' * 80}")
 
     try:
         response = requests.post(WEBHOOK_URL, json=payload, timeout=10)
-        print(f"✅ Webhook aceito: {response.status_code}")
+        print(f"[SUCCESS] Webhook accepted: {response.status_code}")
         print(f"Response: {response.json()}")
         return response.json()
     except Exception as e:
-        print(f"❌ Erro ao enviar webhook: {e}")
+        print(f"[ERROR] Failed to send webhook: {e}")
         return None
 
 
 def wait_for_processing(seconds: int):
     """Aguarda processamento com feedback visual."""
-    print(f"\n⏳ Aguardando {seconds}s para processamento...", end="", flush=True)
+    print(f"\n[WAIT] Processing delay {seconds}s...", end="", flush=True)
     for _i in range(seconds):
         time.sleep(1)
         print(".", end="", flush=True)
-    print(" ✅")
+    print(" [DONE]")
 
 
 def check_conversation_state():
     """Verifica estado da conversa no banco."""
     # TODO: Implementar query no banco para verificar
-    print("\n📊 Estado da conversa:")
-    print("   (Verificar manualmente com: docker exec postgres psql...)")
+    print("\n[STATE] Conversation state:")
+    print("   (Check manually with: docker exec postgres psql...)")
 
 
 def main():
     """Executa simulação completa."""
     print("""
 ╔═══════════════════════════════════════════════════════════════════════╗
-║                   SIMULAÇÃO CONVERSA DA KAROL                         ║
+║                   KAROL CONVERSATION SIMULATION                       ║
 ║                                                                       ║
-║  Objetivo: Testar fluxo completo e verificar:                        ║
-║  ✓ Memória persistente (sem repetições)                              ║
-║  ✓ Handoff triggers (scheduling, calendar)                           ║
-║  ✓ Context builder (10 docs, 5000 chars)                             ║
-║  ✓ Uso correto do nome                                               ║
-║  ✓ Facts salvos (has_done_procedure_before)                          ║
+║  Objective: Test complete flow and verify:                           ║
+║  - Persistent memory (no repetitions)                                ║
+║  - Handoff triggers (scheduling, calendar)                           ║
+║  - Context builder (10 docs, 5000 chars)                             ║
+║  - Correct name usage                                                ║
+║  - Facts saved (has_done_procedure_before)                           ║
 ╚═══════════════════════════════════════════════════════════════════════╝
 """)
 
@@ -153,12 +153,12 @@ def main():
         # Aguardar tempo até próxima mensagem (simula conversa real)
         if i < len(KAROL_MESSAGES):
             delay = msg.get("time", 30)
-            print(f"⏸️  Simulando delay de {delay}s até próxima mensagem...")
+            print(f"[DELAY] Simulating {delay}s delay until next message...")
             # Não aguardar de verdade (teste rápido)
             # time.sleep(delay)
 
     print(f"\n\n{'=' * 80}")
-    print("✅ SIMULAÇÃO COMPLETA")
+    print("[COMPLETE] SIMULATION COMPLETED")
     print(f"{'=' * 80}")
     print("\nVerificar logs:")
     print("  docker-compose logs -f worker | grep -E 'MEMORY|HANDOFF|Karol'")
