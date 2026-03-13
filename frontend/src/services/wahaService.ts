@@ -5,6 +5,9 @@ import type {
   SendTextMessageRequest,
   SendImageMessageRequest,
   SendLocationMessageRequest,
+  SendVoiceMessageRequest,
+  SendVideoMessageRequest,
+  SendFileMessageRequest,
   GetMessagesResponse,
   ContactAboutResponse,
   ContactPictureResponse,
@@ -50,6 +53,33 @@ export async function sendLocationMessage(
   request: SendLocationMessageRequest
 ): Promise<WahaMessage> {
   return fetchApi<WahaMessage>(`${WAHA_BASE}/messages/send-location`, {
+    method: "POST",
+    body: JSON.stringify(request),
+  })
+}
+
+export async function sendVoiceMessage(
+  request: SendVoiceMessageRequest
+): Promise<WahaMessage> {
+  return fetchApi<WahaMessage>(`${WAHA_BASE}/messages/send-voice`, {
+    method: "POST",
+    body: JSON.stringify(request),
+  })
+}
+
+export async function sendVideoMessage(
+  request: SendVideoMessageRequest
+): Promise<WahaMessage> {
+  return fetchApi<WahaMessage>(`${WAHA_BASE}/messages/send-video`, {
+    method: "POST",
+    body: JSON.stringify(request),
+  })
+}
+
+export async function sendFileMessage(
+  request: SendFileMessageRequest
+): Promise<WahaMessage> {
+  return fetchApi<WahaMessage>(`${WAHA_BASE}/messages/send-file`, {
     method: "POST",
     body: JSON.stringify(request),
   })
