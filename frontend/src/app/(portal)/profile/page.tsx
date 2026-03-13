@@ -65,10 +65,12 @@ export default function ProfilePage() {
               </Label>
               <Input
                 id="fullName"
+                name="fullName"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 disabled={!isEditing}
                 placeholder="Seu nome completo"
+                autoComplete="name"
               />
             </div>
 
@@ -79,22 +81,27 @@ export default function ProfilePage() {
               </Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={!isEditing}
                 placeholder="seu@email.com"
+                autoComplete="email"
               />
             </div>
 
             <div className="space-y-2">
-              <Label>
+              <Label htmlFor="role">
                 <Shield className="inline mr-2 h-4 w-4" />
                 Função
               </Label>
               <Input
+                id="role"
+                name="role"
                 value={user?.role === "admin" ? "Administrador" : "Usuário"}
                 disabled
+                autoComplete="off"
               />
             </div>
           </div>
