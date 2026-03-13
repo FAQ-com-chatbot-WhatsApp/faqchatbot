@@ -66,6 +66,35 @@ async def receive_waha_webhook(
         if payload.event in {"message", "message.any"} and payload.payload:
             message_data = payload.payload
 
+            # DEBUG: Log completo da mensagem recebida
+            msg_type = message_data.get("type", "unknown")
+            has_media = message_data.get("hasMedia", False)
+            media_data = message_data.get("media")
+            _data = message_data.get("_data", {})
+
+            logger.info(
+                "[WEBHOOK DEBUG] Mensagem recebida - Type: %s | HasMedia: %s | Media: %s | _data.type: %s",
+                msg_type,
+                has_media,
+                "PRESENTE" if media_data else "NULL",
+                _data.get("type") if _data else "NO_DATA",
+                extra={
+                    "msg_type": msg_type,
+                    "has_media": has_media,
+                    "media_keys": list(media_data.keys()) if media_data else [],
+                    "_data_keys": list(_data.keys()) if _data else [],
+                },
+            )
+
+            # If it's an audio/voice message, log the complete payload for debugging
+            if msg_type in ["voice", "ptt", "audio"]:
+                import json
+
+                logger.info(
+                    "[WEBHOOK DEBUG AUDIO] Payload completo de áudio: %s",
+                    json.dumps(message_data, indent=2, default=str)[:2000],
+                )
+
             if message_data.get("fromMe") is True:
                 logger.debug(
                     "[WEBHOOK] Ignorando mensagem enviada pelo bot (fromMe=true)",
