@@ -183,10 +183,9 @@ def list_conversations(
         messages = msg_repo.get_by_conversation(c.id, limit=1)
         last_message = messages[-1] if messages else None
 
-        # Count unread messages (messages with direction INBOUND that are newer than last_read_at)
-        # For now, we'll just count all INBOUND messages as a simple implementation
+        # Count unread messages (INBOUND messages with is_read=False)
         all_messages = msg_repo.get_by_conversation(c.id, limit=100)
-        unread_count = sum(1 for msg in all_messages if msg.direction == "INBOUND")
+        unread_count = sum(1 for msg in all_messages if msg.direction == "INBOUND" and not msg.is_read)
 
         conversations_out.append(
             ConversationOut(
@@ -660,3 +659,30 @@ def update_conversation_notes(
         raise HTTPException(status_code=404, detail="Conversation not found") from exc
     except Exception as e:  # noqa: BLE001 (blind exception)
         raise HTTPException(status_code=500, detail=f"Failed to update notes: {e!s}") from e
+
+
+@router.post("/{conversation_id}/mark-read", tags=["Conversations"])
+def mark_conversation_as_read(
+    conversation_id: str,
+    _current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Mark all unread messages in a conversation as read.
+
+    Requires JWT authentication.
+
+    This endpoint marks all INBOUND messages as read, resetting
+    the unread counter to zero for the conversation.
+    """
+    try:
+        msg_repo = ConversationMessageRepository(db)
+        updated_count = msg_repo.mark_conversation_as_read(conversation_id)
+
+        return {
+            "message": "Conversation marked as read",
+            "conversation_id": conversation_id,
+            "messages_marked_read": updated_count,
+        }
+    except Exception as e:  # noqa: BLE001 (blind exception)
+        raise HTTPException(status_code=500, detail=f"Failed to mark as read: {e!s}") from e
