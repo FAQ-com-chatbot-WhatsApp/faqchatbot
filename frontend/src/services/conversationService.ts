@@ -94,3 +94,13 @@ export async function markConversationAsRead(conversationId: string): Promise<vo
     method: "POST",
   })
 }
+
+export async function updateConversationStatus(
+  conversationId: string,
+  newStatus: "ACTIVE_BOT" | "ACTIVE_HUMAN"
+): Promise<{ message: string; conversation_id: string; new_status: string }> {
+  return fetchApi(`/api/v1/conversations/${conversationId}/status`, {
+    method: "PUT",
+    body: JSON.stringify({ new_status: newStatus }),
+  })
+}
