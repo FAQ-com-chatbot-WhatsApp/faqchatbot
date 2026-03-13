@@ -9,6 +9,7 @@ import time
 from typing import Any
 
 from robbot.config.settings import settings
+from robbot.domain.shared.enums import MessageDirection
 from robbot.infra.db.session import get_sync_session
 from robbot.infra.jobs.base_job import BaseJob, JobRetryableError
 from robbot.infra.persistence.repositories.conversation_message_repository import (
@@ -70,12 +71,25 @@ def process_debounced_message(chat_id: str) -> dict[str, Any]:
     combined_text = "\n".join(messages).strip()
     last_payload = payload.get("last_payload", {})
 
+    # CRITICAL FIX: Preserve original message metadata (type, _data, media, etc)
+    # Instead of forcing type="text", use the last message's actual metadata
+
+    # DEBUG: Log what we're preserving from debounce
+    logger.info("[DEBOUNCE] Preservando metadata do last_payload:")
+    logger.info("[DEBOUNCE]   type: %s", last_payload.get("type", "text"))
+    logger.info("[DEBOUNCE]   _data.type: %s", last_payload.get("_data", {}).get("type"))
+    logger.info("[DEBOUNCE]   hasMedia: %s", last_payload.get("hasMedia", False))
+    logger.info("[DEBOUNCE]   media keys: %s", list(last_payload.get("media", {}).keys()))
+
     message_data = {
         "from": chat_id,
         "body": combined_text,
         "timestamp": int(time.time()),
         "session": last_payload.get("session", "default"),
-        "type": "text",
+        "type": last_payload.get("type", "text"),  # Preserve original type
+        "_data": last_payload.get("_data", {}),  # Preserve _data with correct type
+        "media": last_payload.get("media", {}),  # Preserve media payload
+        "hasMedia": last_payload.get("hasMedia", False),  # Preserve hasMedia flag
         "debounced": True,
         "debounce_window": settings.MESSAGE_DEBOUNCE_SECONDS,
     }
@@ -187,19 +201,75 @@ class MessageProcessingJob(BaseJob):
             audio_url = None
             has_video = False
             video_url = None
-            message_type = self.message_data.get("type", "text")
 
-            media_payload = self.message_data.get("media", {}) or self.message_data.get("_data", {})
-            potential_url = media_payload.get("url")
+            # CRITICAL FIX: WAHA sends type="unknown" but _data.type has correct value (e.g., "ptt")
+            _data = self.message_data.get("_data", {})
+            message_type = self.message_data.get("type") or _data.get("type", "text")
+
+            # DEBUG: Log message data recebido
+            logger.info("[MESSAGE_JOB] Iniciando processamento:")
+            logger.info("[MESSAGE_JOB]   message_data.type: %s", self.message_data.get("type"))
+            logger.info("[MESSAGE_JOB]   _data.type: %s", _data.get("type"))
+            logger.info("[MESSAGE_JOB]   hasMedia: %s", self.message_data.get("hasMedia"))
+            logger.info("[MESSAGE_JOB]   message_type FINAL: %s", message_type)
+
+            # Force "unknown" types to check _data.type (WAHA bug workaround)
+            if message_type == "unknown" and _data.get("type"):
+                message_type = _data.get("type")
+                logger.info("[MESSAGE_JOB FIX] Corrigido type='unknown' para '%s' via _data.type", message_type)
+
+            # Try multiple sources for media URL (WAHA can send in different formats)
+            media_payload = self.message_data.get("media", {}) or _data
+
+            # Try to get URL from multiple possible locations
+            potential_url = (
+                media_payload.get("url")
+                or media_payload.get("mediaUrl")
+                or media_payload.get("link")
+                or self.message_data.get("mediaUrl")
+                or self.message_data.get("url")
+            )
+
+            # DEBUG: Log detalhado de detecção de áudio
+            logger.info(
+                "[MESSAGE_JOB DEBUG] Tipo mensagem: %s | Media payload: %s | URL: %s | hasMedia: %s",
+                message_type,
+                "PRESENTE" if media_payload else "NULL",
+                potential_url[:50] if potential_url else "NULL",
+                self.message_data.get("hasMedia", False),
+                extra={
+                    "message_type": message_type,
+                    "has_media_flag": self.message_data.get("hasMedia", False),
+                    "media_payload_keys": list(media_payload.keys()) if media_payload else [],
+                    "message_data_keys": list(self.message_data.keys()),
+                    "potential_url_present": bool(potential_url),
+                },
+            )
 
             if message_type in ["voice", "ptt", "audio"]:
                 has_audio = True
                 audio_url = potential_url
+                logger.info(
+                    "[MESSAGE_JOB DEBUG] ÁUDIO DETECTADO! Type: %s | URL: %s",
+                    message_type,
+                    audio_url[:100] if audio_url else "NULL",
+                )
+
+                # If no URL found, log the entire payload for debugging
+                if not audio_url:
+                    logger.error(
+                        "[MESSAGE_JOB ERROR] Mensagem de áudio sem URL! Payload completo: %s",
+                        json.dumps(self.message_data, indent=2)[:1000],
+                    )
             elif message_type == "video":
                 has_video = True
                 has_audio = True
                 video_url = potential_url
                 audio_url = potential_url
+                logger.info(
+                    "[MESSAGE_JOB DEBUG] VÍDEO DETECTADO! URL: %s",
+                    video_url[:100] if video_url else "NULL",
+                )
 
             # Processar com orchestrator
             result = asyncio.run(
@@ -240,20 +310,23 @@ class MessageProcessingJob(BaseJob):
 
             with get_sync_session() as db:
                 conv_msg_repo = ConversationMessageRepository(db)
-                from robbot.infra.persistence.models import MessageModel
+                from robbot.infra.persistence.models.conversation_message_model import ConversationMessageModel
 
                 content = self.message_data.get("text") or self.message_data.get("body")
                 content = enforce_whatsapp_style(content)
 
-                message_record = MessageModel(
+                # Extract phone numbers
+                chat_id = self.message_data.get("to") or self.message_data.get("chat_id", "")
+                to_phone = chat_id.split("@")[0] if "@" in chat_id else chat_id
+                from_phone = self.message_data.get("from", "BOT")
+
+                message_record = ConversationMessageModel(
                     conversation_id=self.conversation_id,
-                    direction=self.message_direction,
-                    content=content,
-                    message_type=self.message_data.get("type", "text"),
+                    direction=MessageDirection.OUTBOUND,
+                    from_phone=from_phone,
+                    to_phone=to_phone,
+                    body=content,
                     waha_message_id=self.message_data.get("id"),
-                    phone=self.message_data.get("phone"),
-                    timestamp=self.message_data.get("timestamp"),
-                    metadata=self.message_data,
                 )
                 conv_msg_repo.create(message_record)
 
@@ -294,7 +367,8 @@ class MessageBatchProcessingJob(BaseJob):
                 )
                 job.run()
                 processed += 1
-            except Exception:
+            except (ValueError, JobRetryableError) as e:
+                logger.warning("Failed to process message in batch: %s", e)
                 failed += 1
 
         return {
