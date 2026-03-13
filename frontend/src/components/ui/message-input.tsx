@@ -8,6 +8,7 @@ import { Paperclip, Send, Image, Smile } from "lucide-react"
 
 interface MessageInputProps extends React.HTMLAttributes<HTMLDivElement> {
   onSend?: (message: string) => void
+  onAttachment?: (file: File) => void
   placeholder?: string
   showAttachment?: boolean
   showImage?: boolean
@@ -17,6 +18,7 @@ interface MessageInputProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export function MessageInput({
   onSend,
+  onAttachment,
   placeholder = "Digite uma mensagem...",
   showAttachment = true,
   showImage = false,
@@ -26,6 +28,7 @@ export function MessageInput({
   ...props
 }: MessageInputProps) {
   const [message, setMessage] = React.useState("")
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   const handleSend = () => {
     if (message.trim() && onSend) {
@@ -41,6 +44,20 @@ export function MessageInput({
     }
   }
 
+  const handleAttachmentClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file && onAttachment) {
+      onAttachment(file)
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
   return (
     <div
       className={cn(
@@ -49,6 +66,14 @@ export function MessageInput({
       )}
       {...props}
     >
+      <input
+        ref={fileInputRef}
+        type="file"
+        className="hidden"
+        onChange={handleFileChange}
+        accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx"
+        disabled={disabled}
+      />
       <div className="flex gap-1">
         {showAttachment && (
           <Button
@@ -56,6 +81,8 @@ export function MessageInput({
             size="icon-sm"
             disabled={disabled}
             aria-label="Attach file"
+            onClick={handleAttachmentClick}
+            type="button"
           >
             <Paperclip className="size-4" />
           </Button>
