@@ -18,10 +18,10 @@ export default function InputShowcase() {
       <section className="space-y-4">
         <h2 className="text-2xl font-medium">Básico</h2>
         <div className="max-w-sm space-y-4">
-          <Input placeholder="Digite algo..." />
+          <Input id="basic-input" name="basic" placeholder="Digite algo..." autoComplete="off" />
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="email@example.com" />
+            <Input id="email" name="email" type="email" placeholder="email@example.com" autoComplete="email" />
           </div>
         </div>
       </section>
@@ -32,11 +32,11 @@ export default function InputShowcase() {
         <div className="max-w-sm space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-            <Input className="pl-10" placeholder="Search..." />
+            <Input id="search-icon" name="search" className="pl-10" placeholder="Search..." autoComplete="off" />
           </div>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-            <Input className="pl-10" type="email" placeholder="Enter your email..." />
+            <Input id="email-icon" name="email-icon" className="pl-10" type="email" placeholder="Enter your email..." autoComplete="email" />
           </div>
         </div>
       </section>
@@ -45,11 +45,11 @@ export default function InputShowcase() {
       <section className="space-y-4">
         <h2 className="text-2xl font-medium">Estados</h2>
         <div className="max-w-sm space-y-4">
-          <Input placeholder="Default" />
-          <Input placeholder="Focused" className="ring-ring ring-[3px]" />
-          <Input placeholder="Filled" defaultValue="John Doe" />
-          <Input placeholder="Disabled" disabled />
-          <Input placeholder="Error" aria-invalid className="border-destructive focus-visible:ring-destructive/20" />
+          <Input id="state-default" name="default" placeholder="Default" autoComplete="off" />
+          <Input id="state-focused" name="focused" placeholder="Focused" className="ring-ring ring-[3px]" autoComplete="off" />
+          <Input id="state-filled" name="filled" placeholder="Filled" defaultValue="John Doe" autoComplete="name" />
+          <Input id="state-disabled" name="disabled" placeholder="Disabled" disabled autoComplete="off" />
+          <Input id="state-error" name="error" placeholder="Error" aria-invalid className="border-destructive focus-visible:ring-destructive/20" autoComplete="off" />
         </div>
       </section>
 
@@ -58,24 +58,24 @@ export default function InputShowcase() {
         <h2 className="text-2xl font-medium">Tipos</h2>
         <div className="max-w-sm space-y-4">
           <div className="space-y-2">
-            <Label>Text</Label>
-            <Input type="text" placeholder="Text input" />
+            <Label htmlFor="type-text">Text</Label>
+            <Input id="type-text" name="text" type="text" placeholder="Text input" autoComplete="off" />
           </div>
           <div className="space-y-2">
-            <Label>Email</Label>
-            <Input type="email" placeholder="email@example.com" />
+            <Label htmlFor="type-email">Email</Label>
+            <Input id="type-email" name="email-type" type="email" placeholder="email@example.com" autoComplete="email" />
           </div>
           <div className="space-y-2">
-            <Label>Password</Label>
-            <Input type="password" placeholder="••••••••" />
+            <Label htmlFor="type-password">Password</Label>
+            <Input id="type-password" name="password" type="password" placeholder="••••••••" autoComplete="current-password" />
           </div>
           <div className="space-y-2">
-            <Label>Number</Label>
-            <Input type="number" placeholder="123" />
+            <Label htmlFor="type-number">Number</Label>
+            <Input id="type-number" name="number" type="number" placeholder="123" autoComplete="off" />
           </div>
           <div className="space-y-2">
-            <Label>Date</Label>
-            <Input type="date" />
+            <Label htmlFor="type-date">Date</Label>
+            <Input id="type-date" name="date" type="date" autoComplete="off" />
           </div>
         </div>
       </section>
