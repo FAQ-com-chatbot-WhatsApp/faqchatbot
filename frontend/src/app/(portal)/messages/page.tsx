@@ -90,7 +90,7 @@ export default function MessagesPage() {
       }
       return url
     } catch (error) {
-      console.error('Error fetching avatar:', error)
+      // Silently fail - WAHA session may not be active
       return ''
     }
   }
@@ -204,15 +204,14 @@ export default function MessagesPage() {
 
     try {
       const newStatus = isBotEnabled ? "ACTIVE_BOT" : "ACTIVE_HUMAN"
-      console.log("[BOT TOGGLE] Mudando de", selectedConversation.status, "para", newStatus)
       await updateConversationStatus(selectedConversation.id, newStatus)
-      
+
       // Atualizar status local
       setSelectedConversation({
         ...selectedConversation,
         status: newStatus,
       })
-      
+
       // Refresh para obter estado atualizado
       await refreshConversations()
     } catch (error) {
