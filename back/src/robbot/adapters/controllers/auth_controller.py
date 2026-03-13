@@ -67,7 +67,7 @@ async def signup(_request: Request, payload: SignupRequest, db: Session = Depend
 
 @router.post("/test/create-verified-user", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 async def test_create_verified_user(payload: SignupRequest, db: Session = Depends(get_db)):
-    """⚠️ APENAS PARA TESTES: Cria usuário com email já verificado.
+    """WARNING: TEST ONLY - Creates user with verified email.
 
     Este endpoint NÃO DEVE SER EXPOSTO EM PRODUÇÃO.
 
