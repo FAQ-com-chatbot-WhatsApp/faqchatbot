@@ -7,8 +7,11 @@ from sqlalchemy.orm import Session
 
 from robbot.api.v1.dependencies import get_current_user, get_db, require_role
 from robbot.core.custom_exceptions import ExternalServiceError
-from robbot.domain.shared.enums import Role
+from robbot.domain.shared.enums import MessageDirection, Role
 from robbot.infra.integrations.waha.waha_client import WAHAClient, get_waha_client
+from robbot.infra.persistence.models.conversation_message_model import ConversationMessageModel
+from robbot.infra.persistence.repositories.conversation_message_repository import ConversationMessageRepository
+from robbot.infra.persistence.repositories.conversation_repository import ConversationRepository
 from robbot.infra.persistence.repositories.session_repository import SessionRepository
 from robbot.schemas.waha import (
     ContactBlockRequest,
@@ -302,13 +305,39 @@ async def logout_session(
 async def send_text_message(
     data: SendTextRequest,
     service: WAHAService = Depends(_get_waha_service),
+    db: Session = Depends(get_db),
 ):
     """Send text message with anti-ban delays.
 
     **Authenticated users** - Rate limited per chat_id.
     """
     try:
-        return await service.send_text(data)
+        # 1. Enviar via WAHA
+        response = await service.send_text(data)
+
+        # 2. Salvar mensagem outbound no banco imediatamente
+        # Extrair phone number do chat_id (formato: 5511999999999@c.us)
+        phone_number = data.chat_id.split("@")[0] if "@" in data.chat_id else data.chat_id
+
+        # Buscar conversation pelo chat_id
+        conv_repo = ConversationRepository(db)
+        conversation = conv_repo.get_by_chat_id(data.chat_id)
+
+        if conversation:
+            msg_repo = ConversationMessageRepository(db)
+            outbound_msg = ConversationMessageModel(
+                conversation_id=conversation.id,
+                direction=MessageDirection.OUTBOUND,
+                from_phone="user",  # Usuário da interface web
+                to_phone=phone_number,
+                body=data.text,
+                waha_message_id=response.message_id,  # Associar com mensagem WAHA
+            )
+            msg_repo.create(outbound_msg)
+            db.commit()
+
+        return response
+
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail=str(e)) from e
     except ExternalServiceError as e:
