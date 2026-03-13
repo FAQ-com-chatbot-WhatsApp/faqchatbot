@@ -1,3 +1,4 @@
+# pylint: disable=no-member,invalid-name,line-too-long
 """Sync ConversationModel
 
 # pylint: disable=no-member
