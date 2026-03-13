@@ -104,10 +104,24 @@ class MessageProcessor:
             return "[Áudio recebido - erro na transcrição]"
 
     async def save_inbound_message(
-        self, session: Any, conversation_id: str, text: str, from_phone: str, to_phone: str = "BOT"
+        self,
+        session: Any,
+        conversation_id: str,
+        text: str,
+        from_phone: str,
+        to_phone: str = "BOT",
+        media_url: str | None = None,
     ) -> ConversationMessageModel:
         """
         Persistir mensagem recebida do cliente no banco.
+
+        Args:
+            session: Database session
+            conversation_id: ID da conversa
+            text: Texto da mensagem (ou transcrição)
+            from_phone: Telefone do remetente
+            to_phone: Telefone do destinatário
+            media_url: URL da mídia (áudio, vídeo, imagem) se presente
 
         Returns:
             ConversationMessageModel: Mensagem salva com timestamp UTC
@@ -121,11 +135,12 @@ class MessageProcessor:
                 from_phone=from_phone,
                 to_phone=to_phone,
                 body=text,
+                media_url=media_url,
             )
             repo.create(message)
             session.flush()
 
-            logger.info("[SUCCESS] Inbound message saved (id=%s)", message.id)
+            logger.info("[SUCCESS] Inbound message saved (id=%s, has_media=%s)", message.id, bool(media_url))
 
             return message
 
