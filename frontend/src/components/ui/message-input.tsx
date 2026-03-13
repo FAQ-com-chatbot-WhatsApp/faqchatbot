@@ -83,6 +83,8 @@ export function MessageInput({
       </div>
 
       <Textarea
+        id="message-input"
+        name="message"
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         onKeyDown={handleKeyDown}
