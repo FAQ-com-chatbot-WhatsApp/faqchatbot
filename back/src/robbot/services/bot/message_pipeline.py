@@ -11,7 +11,6 @@ Responsibilities:
 """
 
 import logging
-from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
@@ -111,7 +110,13 @@ class MessagePipeline:
             # Step 2: Process media if present
             processed_content = content
             if has_media and media_url:
-                logger.info("[INFO] Processing media for message")
+                logger.info(
+                    "[MESSAGE_PIPELINE DEBUG] Processando mídia - Type: %s | HasAudio: %s | AudioURL: %s | HasVideo: %s",
+                    message_type,
+                    message_type == MessageType.AUDIO,
+                    media_url[:100] if media_url else "NULL",
+                    message_type == MessageType.VIDEO,
+                )
                 processed_content = await self.message_processor.process_media_message(
                     message_text=content,
                     has_audio=message_type == MessageType.AUDIO,
@@ -119,14 +124,26 @@ class MessagePipeline:
                     has_video=message_type == MessageType.VIDEO,
                     video_url=media_url if message_type == MessageType.VIDEO else None,
                 )
+                logger.info(
+                    "[MESSAGE_PIPELINE DEBUG] Mídia processada - Conteúdo: %s",
+                    processed_content[:200] if processed_content else "NULL",
+                )
 
             # Step 3: Create message model
             message = ConversationMessageModel(
                 conversation_id=conversation.id,
                 direction=MessageDirection.INBOUND,
-                message_type=message_type,
-                content=processed_content,
-                created_at=datetime.now(UTC),
+                from_phone=conversation.phone_number,
+                to_phone="BOT",
+                body=processed_content,
+                media_url=media_url,
+            )
+
+            logger.info(
+                "[MESSAGE_PIPELINE DEBUG] Criando mensagem - ConvID: %s | Type: %s | MediaURL presente? %s",
+                conversation.id,
+                message_type,
+                "SIM" if media_url else "NÃO",
             )
 
             # Step 4: Store in database
@@ -134,9 +151,10 @@ class MessagePipeline:
             self.db.flush()
 
             logger.info(
-                "[SUCCESS] Message stored (id=%s, type=%s)",
+                "[MESSAGE_PIPELINE DEBUG] Mensagem salva no banco - ID: %s | Type: %s | MediaURL no objeto: %s",
                 stored.id,
                 message_type,
+                getattr(stored, "media_url", "ATTR_NOT_FOUND"),
             )
 
             return stored
@@ -173,9 +191,9 @@ class MessagePipeline:
             message = ConversationMessageModel(
                 conversation_id=conversation.id,
                 direction=MessageDirection.OUTBOUND,
-                message_type=MessageType.TEXT,
-                content=response_text,
-                created_at=datetime.now(UTC),
+                from_phone="BOT",
+                to_phone=conversation.phone_number,
+                body=response_text,
             )
 
             # Store
