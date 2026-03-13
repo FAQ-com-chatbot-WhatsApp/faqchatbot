@@ -85,7 +85,7 @@ class Settings(BaseSettings):
     WAHA_MIN_DELAY_SECONDS: int = Field(default=3, description="Min delay before sending (balance UX vs safety)")
     WAHA_MAX_DELAY_SECONDS: int = Field(default=8, description="Max delay before sending")
     WAHA_MESSAGES_PER_HOUR: int = Field(
-        default=30, description="Max messages per hour (increased for faster conversations)"
+        default=100, description="Max messages per hour (increased for web interface testing)"
     )
 
     # Message debouncing (group rapid messages)
