@@ -2,6 +2,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
+import { User } from "lucide-react"
 
 interface ConversationItemProps {
   name: string
@@ -40,7 +41,7 @@ export function ConversationItem({
           <AvatarFallback className={cn(
             isActive && "bg-primary text-primary-foreground font-semibold"
           )}>
-            {initials}
+            {/^\d+$/.test(initials) ? <User className="h-6 w-6" /> : initials}
           </AvatarFallback>
         </Avatar>
         {isOnline && (
