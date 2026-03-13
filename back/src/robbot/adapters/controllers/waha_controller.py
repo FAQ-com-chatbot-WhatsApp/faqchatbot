@@ -334,33 +334,36 @@ async def send_text_message(
                     session=session,
                     phone=phone_number,
                 )
-                logger.info(f"[CONTACT CHECK] {phone_number}: {check_result}")
+                logger.info("[CONTACT CHECK] %s: %s", phone_number, check_result)
 
                 # Se não existir, criar contato
                 number_exists = check_result.get("numberExists", False)
 
                 if not number_exists:
-                    logger.info(f"[CONTACT] Number {phone_number} not in WhatsApp. Creating contact...")
+                    logger.info("[CONTACT] Number %s not in WhatsApp. Creating contact...", phone_number)
                     contact_name = f"Lead {phone_number[-4:]}"  # Últimos 4 dígitos
                     await service.waha_client.update_contact(
                         session=session,
                         chat_id=data.chat_id,
                         name=contact_name,
                     )
-                    logger.info(f"[CONTACT] Created contact: {data.chat_id} -> {contact_name}")
+                    logger.info("[CONTACT] Created contact: %s -> %s", data.chat_id, contact_name)
                     await asyncio.sleep(1)
-            except Exception as e:
-                logger.warning(f"[CONTACT] Error checking/creating contact: {e}. Proceeding with send...")
+            except ExternalServiceError as e:
+                logger.warning("[CONTACT] Error checking/creating contact: %s. Proceeding with send...", e)
         else:
-            logger.info(f"[CONTACT] Skipping contact creation for {data.chat_id} (not individual contact)")
+            logger.info("[CONTACT] Skipping contact creation for %s (not individual contact)", data.chat_id)
 
         # 2. Enviar via WAHA
-        logger.info(f"[DEBUG] Sending message to {data.chat_id}: {data.text[:50]}...")
+        logger.info("[DEBUG] Sending message to %s: %s...", data.chat_id, data.text[:50])
 
         response = await service.send_text(data)
 
         logger.info(
-            f"[DEBUG] WAHA response: message_id={response.message_id}, timestamp={response.timestamp}, chat_id={response.chat_id}"
+            "[DEBUG] WAHA response: message_id=%s, timestamp=%s, chat_id=%s",
+            response.message_id,
+            response.timestamp,
+            response.chat_id,
         )
 
         # 2. Salvar mensagem outbound no banco imediatamente
@@ -393,7 +396,7 @@ async def send_text_message(
             import logging
 
             logger = logging.getLogger(__name__)
-            logger.warning(f"Conversation not found for chat_id={data.chat_id} or phone={phone_number}")
+            logger.warning("Conversation not found for chat_id=%s or phone=%s", data.chat_id, phone_number)
 
         return response
 
