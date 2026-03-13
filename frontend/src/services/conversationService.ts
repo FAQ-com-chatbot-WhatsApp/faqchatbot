@@ -79,16 +79,6 @@ export async function getConversationMessages(id: string, limit: number = 50): P
   })
 }
 
-export async function updateConversationStatus(
-  id: string,
-  status: string
-): Promise<Conversation> {
-  return fetchApi<Conversation>(`/api/v1/conversations/${id}/status`, {
-    method: "PUT",
-    body: JSON.stringify({ status }),
-  })
-}
-
 export async function markConversationAsRead(conversationId: string): Promise<void> {
   return fetchApi<void>(`/api/v1/conversations/${conversationId}/mark-read`, {
     method: "POST",
