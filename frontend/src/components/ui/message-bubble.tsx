@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface MessageBubbleProps extends React.HTMLAttributes<HTMLDivElement> {
   sender?: "user" | "other"
@@ -10,6 +10,7 @@ interface MessageBubbleProps extends React.HTMLAttributes<HTMLDivElement> {
   timestamp?: string
   senderName?: string
   senderInitials?: string
+  senderAvatar?: string
   unread?: boolean
 }
 
@@ -19,6 +20,7 @@ export function MessageBubble({
   timestamp,
   senderName,
   senderInitials = "JD",
+  senderAvatar,
   unread = false,
   className,
   ...props
@@ -36,6 +38,7 @@ export function MessageBubble({
     >
       {!isUser && (
         <Avatar className="size-8 shrink-0">
+          {senderAvatar && <AvatarImage src={senderAvatar} alt={senderName} />}
           <AvatarFallback className="text-xs">{senderInitials}</AvatarFallback>
         </Avatar>
       )}
