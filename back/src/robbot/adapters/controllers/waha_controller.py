@@ -307,21 +307,74 @@ async def send_text_message(
     service: WAHAService = Depends(_get_waha_service),
     db: Session = Depends(get_db),
 ):
-    """Send text message with anti-ban delays.
+    """Send text message directly (no anti-ban delays for web interface).
 
     **Authenticated users** - Rate limited per chat_id.
+    Messages from web interface are sent immediately without typing indicators or delays.
     """
     try:
-        # 1. Enviar via WAHA
+        # Desligar anti-ban para mensagens da interface web (diretas, sem delays)
+        data.apply_anti_ban = False
+
+        import asyncio
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        # 1. Verificar se contato existe APENAS para números @c.us (contatos individuais)
+        # NÃO tentar criar contatos para @lid (canais) ou @g.us (grupos)
+        phone_number = data.chat_id.split("@")[0] if "@" in data.chat_id else data.chat_id
+        session = "default"  # Sessão WAHA padrão
+
+        # Só tentar criar contato se for @c.us (contato individual WhatsApp)
+        if "@c.us" in data.chat_id:
+            try:
+                # Checar se número existe
+                check_result = await service.waha_client.check_number_exists(
+                    session=session,
+                    phone=phone_number,
+                )
+                logger.info(f"[CONTACT CHECK] {phone_number}: {check_result}")
+
+                # Se não existir, criar contato
+                number_exists = check_result.get("numberExists", False)
+
+                if not number_exists:
+                    logger.info(f"[CONTACT] Number {phone_number} not in WhatsApp. Creating contact...")
+                    contact_name = f"Lead {phone_number[-4:]}"  # Últimos 4 dígitos
+                    await service.waha_client.update_contact(
+                        session=session,
+                        chat_id=data.chat_id,
+                        name=contact_name,
+                    )
+                    logger.info(f"[CONTACT] Created contact: {data.chat_id} -> {contact_name}")
+                    await asyncio.sleep(1)
+            except Exception as e:
+                logger.warning(f"[CONTACT] Error checking/creating contact: {e}. Proceeding with send...")
+        else:
+            logger.info(f"[CONTACT] Skipping contact creation for {data.chat_id} (not individual contact)")
+
+        # 2. Enviar via WAHA
+        logger.info(f"[DEBUG] Sending message to {data.chat_id}: {data.text[:50]}...")
+
         response = await service.send_text(data)
 
+        logger.info(
+            f"[DEBUG] WAHA response: message_id={response.message_id}, timestamp={response.timestamp}, chat_id={response.chat_id}"
+        )
+
         # 2. Salvar mensagem outbound no banco imediatamente
-        # Extrair phone number do chat_id (formato: 5511999999999@c.us)
+        # Extrair phone number do chat_id (formato: 5511999999999@c.us ou @lid)
         phone_number = data.chat_id.split("@")[0] if "@" in data.chat_id else data.chat_id
 
-        # Buscar conversation pelo chat_id
+        # Buscar conversation pelo phone_number (não pelo chat_id completo)
         conv_repo = ConversationRepository(db)
+        # Buscar primeiro pelo chat_id exato, depois pelo phone_number
         conversation = conv_repo.get_by_chat_id(data.chat_id)
+        if not conversation:
+            # Se não encontrar, buscar por phone_number (pode ter @lid ou @g.us)
+            conversations = conv_repo.find_by_criteria({"phone_number": phone_number}, limit=1)
+            conversation = conversations[0] if conversations else None
 
         if conversation:
             msg_repo = ConversationMessageRepository(db)
@@ -331,10 +384,16 @@ async def send_text_message(
                 from_phone="user",  # Usuário da interface web
                 to_phone=phone_number,
                 body=data.text,
-                waha_message_id=response.message_id,  # Associar com mensagem WAHA
+                waha_message_id=response.message_id if response.message_id else None,  # NULL se vazio
             )
             msg_repo.create(outbound_msg)
             db.commit()
+        else:
+            # Log de aviso se não encontrar a conversation
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Conversation not found for chat_id={data.chat_id} or phone={phone_number}")
 
         return response
 
