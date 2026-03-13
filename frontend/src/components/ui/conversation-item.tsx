@@ -41,7 +41,7 @@ export function ConversationItem({
           <AvatarFallback className={cn(
             isActive && "bg-primary text-primary-foreground font-semibold"
           )}>
-            {/^\d+$/.test(initials) ? <User className="h-6 w-6" /> : initials}
+            {(/^\d+$/.test(initials) || initials === "??") ? <User className="h-6 w-6" /> : initials}
           </AvatarFallback>
         </Avatar>
         {isOnline && (
