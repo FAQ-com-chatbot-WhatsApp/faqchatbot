@@ -88,3 +88,9 @@ export async function updateConversationStatus(
     body: JSON.stringify({ status }),
   })
 }
+
+export async function markConversationAsRead(conversationId: string): Promise<void> {
+  return fetchApi<void>(`/api/v1/conversations/${conversationId}/mark-read`, {
+    method: "POST",
+  })
+}
