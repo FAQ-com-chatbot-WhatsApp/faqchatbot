@@ -29,15 +29,19 @@ export function ConversationItem({
   return (
     <div
       className={cn(
-        "p-4 flex items-center gap-3 hover:bg-accent cursor-pointer border-b transition-colors",
-        isActive && "bg-accent"
+        "p-4 flex items-center gap-3 hover:bg-primary/5 cursor-pointer border-b transition-colors",
+        isActive && "bg-primary/10 border-l-4 border-l-primary"
       )}
       onClick={onClick}
     >
       <div className="relative flex-shrink-0">
         <Avatar className="h-12 w-12">
           {avatar && <AvatarImage src={avatar} />}
-          <AvatarFallback>{initials}</AvatarFallback>
+          <AvatarFallback className={cn(
+            isActive && "bg-primary text-primary-foreground font-semibold"
+          )}>
+            {initials}
+          </AvatarFallback>
         </Avatar>
         {isOnline && (
           <span className="absolute bottom-0 right-0 size-3 rounded-full bg-green-500 border-2 border-background" />
