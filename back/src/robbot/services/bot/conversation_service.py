@@ -167,6 +167,51 @@ class ConversationService:
         """Get active conversations."""
         return self.repo.get_active(limit=limit)
 
+    def get_by_id(self, conversation_id: str) -> ConversationModel | None:
+        """Get conversation by ID."""
+        return self.repo.get_by_id(conversation_id)
+
+    def find_by_criteria(
+        self,
+        filters: dict,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[ConversationModel]:
+        """Find conversations by criteria."""
+        return self.repo.find_by_criteria(filters, limit=limit, offset=offset)
+
+    def transfer_to_secretary(
+        self,
+        conversation_id: str,
+        user_id: int,
+    ) -> ConversationModel:
+        """Transfer conversation to secretary."""
+        conversation_model = self.repo.get_by_id(conversation_id)
+        if not conversation_model:
+            raise NotFoundException(f"Conversation {conversation_id} not found")
+
+        conversation_model.assigned_to_user_id = user_id
+        conversation_model.status = ConversationStatus.ACTIVE_HUMAN
+        conversation_model.assigned_at = datetime.now(UTC)
+        conversation_model.updated_at = datetime.now(UTC)
+
+        updated = self.repo.update(conversation_model)
+        logger.info("[SUCCESS] Conversation transferred (id=%s, user=%s)", conversation_id, user_id)
+        return updated
+
+    def update_notes(self, conversation_id: str, notes: str) -> ConversationModel:
+        """Update conversation notes."""
+        conversation_model = self.repo.get_by_id(conversation_id)
+        if not conversation_model:
+            raise NotFoundException(f"Conversation {conversation_id} not found")
+
+        conversation_model.notes = notes
+        conversation_model.updated_at = datetime.now(UTC)
+
+        updated = self.repo.update(conversation_model)
+        logger.info("[SUCCESS] Notes updated (id=%s)", conversation_id)
+        return updated
+
     def list_conversations(
         self,
         phone_number: str | None = None,
