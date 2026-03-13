@@ -6,9 +6,13 @@ export interface Conversation {
   phone_number: string
   status: string
   lead_status: string
+  lead_name?: string | null
   is_urgent: boolean
   lead_id: string | null
   assigned_to_user_id: number | null
+  last_message?: string | null
+  last_message_at?: string | null
+  unread_count?: number
   created_at: string
   updated_at: string
 }
