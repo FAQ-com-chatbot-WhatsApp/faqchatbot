@@ -65,9 +65,14 @@ class ConversationPipeline:
             state.message_text, has_audio, audio_url, has_video, video_url
         )
 
-        # 2. Save inbound message
+        # 2. Save inbound message with media URL
+        message_media_url = audio_url if has_audio else (video_url if has_video else None)
         await self.message_processor.save_inbound_message(
-            self.session, conversation.id, state.message_text, from_phone=conversation.phone_number
+            self.session,
+            conversation.id,
+            state.message_text,
+            from_phone=conversation.phone_number,
+            media_url=message_media_url,
         )
 
         # 3. Fetch context (RAG - Knowledge Base)
