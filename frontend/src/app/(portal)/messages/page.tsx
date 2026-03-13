@@ -204,14 +204,15 @@ export default function MessagesPage() {
 
     try {
       const newStatus = isBotEnabled ? "ACTIVE_BOT" : "ACTIVE_HUMAN"
+      console.log("[BOT TOGGLE] Mudando de", selectedConversation.status, "para", newStatus)
       await updateConversationStatus(selectedConversation.id, newStatus)
-
+      
       // Atualizar status local
       setSelectedConversation({
         ...selectedConversation,
         status: newStatus,
       })
-
+      
       // Refresh para obter estado atualizado
       await refreshConversations()
     } catch (error) {
@@ -414,7 +415,7 @@ export default function MessagesPage() {
               avatar={avatarCache[selectedConversation.phone_number] || ''}
               status={selectedConversation.status === "active" ? "online" : "offline"}
               isOnline={selectedConversation.status === "active"}
-              isBotActive={selectedConversation.status === "ACTIVE_BOT"}
+              isBotActive={selectedConversation.status === "ACTIVE_BOT" || !selectedConversation.status.includes("HUMAN")}
               onBotToggle={handleBotToggle}
               onMore={refreshMessages}
             />
