@@ -48,9 +48,13 @@ class ConversationOut(BaseModel):
     phone_number: str
     status: str
     lead_status: str
+    lead_name: str | None = None
     is_urgent: bool
     lead_id: str | None
     assigned_to_user_id: int | None
+    last_message: str | None = None
+    last_message_at: str | None = None
+    unread_count: int = 0
     created_at: str
     updated_at: str
 
@@ -169,27 +173,44 @@ def list_conversations(
         offset=offset,
     )
 
+    # Get last messages and unread counts for each conversation
+    msg_repo = ConversationMessageRepository(db)
+
     # Convert to response
-    conversations_out = [
-        ConversationOut(
-            id=c.id,
-            chat_id=c.chat_id,
-            phone_number=c.phone_number,
-            status=(
-                "active"
-                if c.status
-                in (ConversationStatus.ACTIVE, ConversationStatus.ACTIVE_BOT, ConversationStatus.PENDING_HANDOFF)
-                else c.status.value
-            ),
-            lead_status=c.lead.status.value if c.lead and c.lead.status else "NEW",
-            is_urgent=getattr(c, "is_urgent", False),
-            lead_id=c.lead.id if c.lead else None,
-            assigned_to_user_id=getattr(c.lead, "assigned_to_user_id", None) if c.lead else None,
-            created_at=c.created_at.isoformat(),
-            updated_at=c.updated_at.isoformat(),
+    conversations_out = []
+    for c in conversations:
+        # Get last message
+        messages = msg_repo.get_by_conversation(c.id, limit=1)
+        last_message = messages[-1] if messages else None
+
+        # Count unread messages (messages with direction INBOUND that are newer than last_read_at)
+        # For now, we'll just count all INBOUND messages as a simple implementation
+        all_messages = msg_repo.get_by_conversation(c.id, limit=100)
+        unread_count = sum(1 for msg in all_messages if msg.direction == "INBOUND")
+
+        conversations_out.append(
+            ConversationOut(
+                id=c.id,
+                chat_id=c.chat_id,
+                phone_number=c.phone_number,
+                status=(
+                    "active"
+                    if c.status
+                    in (ConversationStatus.ACTIVE, ConversationStatus.ACTIVE_BOT, ConversationStatus.PENDING_HANDOFF)
+                    else c.status.value
+                ),
+                lead_status=c.lead.status.value if c.lead and c.lead.status else "NEW",
+                lead_name=c.lead.name if c.lead else None,
+                is_urgent=getattr(c, "is_urgent", False),
+                lead_id=c.lead.id if c.lead else None,
+                assigned_to_user_id=getattr(c.lead, "assigned_to_user_id", None) if c.lead else None,
+                last_message=last_message.body if last_message else None,
+                last_message_at=last_message.created_at.isoformat() if last_message else None,
+                unread_count=unread_count,
+                created_at=c.created_at.isoformat(),
+                updated_at=c.updated_at.isoformat(),
+            )
         )
-        for c in conversations
-    ]
 
     if phone_number is None:
         return conversations_out
