@@ -320,6 +320,7 @@ export default function MessagesPage() {
               className="pl-9"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              autoComplete="off"
             />
           </div>
 
