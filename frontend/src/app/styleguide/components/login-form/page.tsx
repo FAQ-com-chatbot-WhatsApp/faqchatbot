@@ -54,10 +54,12 @@ export default function LoginFormShowcase() {
                         <Label htmlFor="email">Email address</Label>
                         <Input
                           id="email"
+                          name="email"
                           type="email"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           placeholder="your@email.com"
+                          autoComplete="email"
                         />
                       </div>
 
@@ -85,10 +87,12 @@ export default function LoginFormShowcase() {
                         </div>
                         <Input
                           id="password"
+                          name="password"
                           type={showPassword ? "text" : "password"}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           placeholder="••••••••"
+                          autoComplete="current-password"
                         />
                       </div>
 
