@@ -35,3 +35,23 @@ class ConversationMessageRepository(BaseRepository[ConversationMessageModel]):
             .limit(limit)
             .all()
         )
+
+    def mark_conversation_as_read(self, conversation_id: str) -> int:
+        """
+        Mark all INBOUND messages in a conversation as read.
+
+        Args:
+            conversation_id: Conversation ID
+
+        Returns:
+            Number of messages marked as read
+        """
+        updated_count = (
+            self.session.query(ConversationMessageModel)
+            .filter_by(conversation_id=conversation_id, is_read=False)
+            .filter(ConversationMessageModel.direction == "INBOUND")
+            .update({"is_read": True}, synchronize_session=False)
+        )
+        self.session.commit()
+        logger.info(f"Marked {updated_count} messages as read in conversation {conversation_id}")
+        return updated_count
