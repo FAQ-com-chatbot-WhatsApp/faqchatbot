@@ -95,3 +95,29 @@ export interface SessionStatus {
   qr_code?: string | null
   connected_phone?: string | null
 }
+
+export interface SendVoiceMessageRequest {
+  chat_id: string
+  file_url?: string
+  file_data?: string
+  mimetype?: string
+  convert?: boolean
+}
+
+export interface SendVideoMessageRequest {
+  chat_id: string
+  file_url?: string
+  file_data?: string
+  filename?: string
+  caption?: string
+  mimetype?: string
+  convert?: boolean
+}
+
+export interface SendFileMessageRequest {
+  chat_id: string
+  file_url: string
+  filename?: string
+  mimetype?: string
+  caption?: string
+}
