@@ -13,7 +13,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { EmptyState } from "@/components/ui/empty-state"
 import { useConversations, useConversationMessages } from "@/hooks/useConversations"
 import type { Conversation, ConversationMessage } from "@/services/conversationService"
-import { markConversationAsRead } from "@/services/conversationService"
+import { markConversationAsRead, updateConversationStatus } from "@/services/conversationService"
 import { sendTextMessage, getContactPicture } from "@/services/wahaService"
 
 type FilterType = "all" | "unread" | "groups" | "favorites"
@@ -197,6 +197,27 @@ export default function MessagesPage() {
       }
       return newFavorites
     })
+  }
+
+  const handleBotToggle = async (isBotEnabled: boolean) => {
+    if (!selectedConversation) return
+
+    try {
+      const newStatus = isBotEnabled ? "ACTIVE_BOT" : "ACTIVE_HUMAN"
+      await updateConversationStatus(selectedConversation.id, newStatus)
+
+      // Atualizar status local
+      setSelectedConversation({
+        ...selectedConversation,
+        status: newStatus,
+      })
+
+      // Refresh para obter estado atualizado
+      await refreshConversations()
+    } catch (error) {
+      console.error("Erro ao alternar modo bot:", error)
+      alert("Erro ao alternar modo. Tente novamente.")
+    }
   }
 
   const conversationCounts = useMemo(() => {
@@ -393,6 +414,8 @@ export default function MessagesPage() {
               avatar={avatarCache[selectedConversation.phone_number] || ''}
               status={selectedConversation.status === "active" ? "online" : "offline"}
               isOnline={selectedConversation.status === "active"}
+              isBotActive={selectedConversation.status === "ACTIVE_BOT"}
+              onBotToggle={handleBotToggle}
               onMore={refreshMessages}
             />
 
