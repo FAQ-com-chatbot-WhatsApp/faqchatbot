@@ -68,12 +68,22 @@ export default function MessagesPage() {
     }
   }, [conversations])
 
-  const loadAvatar = async (phoneNumber: string) => {
-    if (avatarCache[phoneNumber]) return avatarCache[phoneNumber]
+  const loadAvatar = async (phoneNumber: string, chatId: string) => {
+    // Verificar se já tem no cache (incluindo vazio para canais/grupos)
+    if (avatarCache[phoneNumber] !== undefined) {
+      return avatarCache[phoneNumber]
+    }
 
-    const contactId = `${phoneNumber}@c.us`
-    const cacheKey = `avatar_${contactId}`
+    // Só buscar avatar de contatos individuais (@c.us), não de canais (@lid) ou grupos (@g.us)
+    if (!chatId || !chatId.includes('@c.us')) {
+      // Marcar no cache como vazio para não tentar buscar novamente
+      setAvatarCache(prev => ({ ...prev, [phoneNumber]: '' }))
+      return ''
+    }
 
+    const cacheKey = `avatar_${chatId}`
+
+    // Verificar localStorage
     const cached = localStorage.getItem(cacheKey)
     if (cached) {
       setAvatarCache(prev => ({ ...prev, [phoneNumber]: cached }))
@@ -81,26 +91,31 @@ export default function MessagesPage() {
     }
 
     try {
-      const response = await getContactPicture(contactId)
+      const response = await getContactPicture(chatId)
       const url = response.url || ''
 
-      if (url) {
-        localStorage.setItem(cacheKey, url)
-        setAvatarCache(prev => ({ ...prev, [phoneNumber]: url }))
-      }
+      // Salvar no cache (mesmo se vazio, para evitar novas tentativas)
+      localStorage.setItem(cacheKey, url)
+      setAvatarCache(prev => ({ ...prev, [phoneNumber]: url }))
+
       return url
     } catch (error) {
-      // Silently fail - WAHA session may not be active
+      // Marcar no cache como vazio para não tentar novamente
+      setAvatarCache(prev => ({ ...prev, [phoneNumber]: '' }))
       return ''
     }
   }
 
   useEffect(() => {
     conversations.forEach(conv => {
-      if (!avatarCache[conv.phone_number]) {
-        loadAvatar(conv.phone_number)
+      // Só tentar carregar se não estiver no cache E tiver chat_id
+      if (avatarCache[conv.phone_number] === undefined && conv.chat_id) {
+        loadAvatar(conv.phone_number, conv.chat_id).catch(() => {
+          // Erro já tratado dentro da função
+        })
       }
     })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversations])
 
   const {
@@ -451,6 +466,7 @@ export default function MessagesPage() {
                       senderInitials={isInbound ? getInitials(leadName) : undefined}
                       senderAvatar={isInbound ? avatarCache[selectedConversation?.phone_number || ''] : undefined}
                       status={messageStatus}
+                      mediaUrl={msg.media_url}
                     />
                   )
                 })
@@ -462,7 +478,7 @@ export default function MessagesPage() {
               onSend={handleSendMessage}
               placeholder="Digite sua mensagem..."
               disabled={isLoadingMessages || isSending}
-              showAttachment
+              showAttachment={false}
             />
           </>
         ) : (
