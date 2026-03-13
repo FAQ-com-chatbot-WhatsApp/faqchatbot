@@ -10,11 +10,11 @@ import { PageHeader } from '@/components/ui/page-header'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { 
-  AlertCircle, 
-  CheckCircle2, 
-  User, 
-  Shield, 
+import {
+  AlertCircle,
+  CheckCircle2,
+  User,
+  Shield,
   Smartphone,
   Power,
   PowerOff,
@@ -29,16 +29,16 @@ import Image from 'next/image'
 
 export default function SettingsPage() {
   const { user, isLoading: userLoading, error: userError, updateUser } = useUser()
-  const { 
-    currentSession, 
-    isLoading: sessionLoading, 
-    error: sessionError, 
-    startSession, 
-    stopSession, 
+  const {
+    currentSession,
+    isLoading: sessionLoading,
+    error: sessionError,
+    startSession,
+    stopSession,
     restartSession,
-    refresh: refreshSession 
+    refresh: refreshSession
   } = useSession({ sessionName: 'default', autoRefresh: true, refreshInterval: 5000 })
-  
+
   const [fullName, setFullName] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
@@ -249,7 +249,7 @@ export default function SettingsPage() {
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  <strong>Importante:</strong> Mantenha apenas uma sessão ativa por vez. 
+                  <strong>Importante:</strong> Mantenha apenas uma sessão ativa por vez.
                   Desconectar aqui não afeta o WhatsApp no seu celular.
                 </AlertDescription>
               </Alert>
@@ -271,10 +271,12 @@ export default function SettingsPage() {
                   <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
+                    name="email"
                     type="email"
                     value={user?.email || ''}
                     disabled
                     className="bg-muted"
+                    autoComplete="email"
                   />
                   <p className="text-sm text-muted-foreground">
                     O email não pode ser alterado
@@ -285,10 +287,12 @@ export default function SettingsPage() {
                   <Label htmlFor="fullName">Nome Completo</Label>
                   <Input
                     id="fullName"
+                    name="fullName"
                     type="text"
                     placeholder={user?.full_name || 'Seu nome completo'}
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
+                    autoComplete="name"
                   />
                 </div>
 
