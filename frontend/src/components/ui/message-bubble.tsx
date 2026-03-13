@@ -3,6 +3,9 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Check, CheckCheck } from "lucide-react"
+
+type MessageStatus = "pending" | "sent" | "delivered" | "read"
 
 interface MessageBubbleProps extends React.HTMLAttributes<HTMLDivElement> {
   sender?: "user" | "other"
@@ -12,6 +15,7 @@ interface MessageBubbleProps extends React.HTMLAttributes<HTMLDivElement> {
   senderInitials?: string
   senderAvatar?: string
   unread?: boolean
+  status?: MessageStatus
 }
 
 export function MessageBubble({
@@ -22,10 +26,30 @@ export function MessageBubble({
   senderInitials = "JD",
   senderAvatar,
   unread = false,
+  status = "sent",
   className,
   ...props
 }: MessageBubbleProps) {
   const isUser = sender === "user"
+
+  // Renderizar ícone de status para mensagens do usuário
+  const renderStatusIcon = () => {
+    if (!isUser || !timestamp) return null
+
+    const iconClasses = cn(
+      "size-3.5 inline-block ml-1",
+      status === "pending" && "text-primary-foreground/60",
+      status === "sent" && "text-primary-foreground/80",
+      (status === "delivered" || status === "read") && "text-primary-foreground"
+    )
+
+    if (status === "pending") {
+      return <Check className={iconClasses} />
+    }
+
+    // Checkmark duplo para enviado/entregue/lido
+    return <CheckCheck className={iconClasses} />
+  }
 
   return (
     <div
@@ -52,21 +76,29 @@ export function MessageBubble({
 
         <div
           className={cn(
-            "px-4 py-2 rounded-2xl",
+            "px-3 py-1.5 rounded-lg relative",
             isUser
-              ? "bg-primary text-primary-foreground rounded-br-sm"
-              : "bg-muted text-foreground rounded-bl-sm",
+              ? "bg-primary text-primary-foreground rounded-tr-none shadow-sm"
+              : "bg-muted text-foreground rounded-tl-none shadow-sm",
             unread && !isUser && "ring-2 ring-primary/50"
           )}
         >
-          <p className="text-sm leading-relaxed">{message}</p>
-        </div>
+          {/* Mensagem com espaço reservado para timestamp */}
+          <p className="text-[14px] leading-[1.4] pr-16 break-words">
+            {message}
+          </p>
 
-        {timestamp && (
-          <span className="text-xs text-muted-foreground px-1">
-            {timestamp}
-          </span>
-        )}
+          {/* Timestamp e status dentro do balão, canto inferior direito */}
+          {timestamp && (
+            <span className={cn(
+              "absolute bottom-1 right-2 flex items-center gap-0.5 text-[11px] whitespace-nowrap",
+              isUser ? "text-primary-foreground/70" : "text-muted-foreground"
+            )}>
+              {timestamp}
+              {renderStatusIcon()}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   )
