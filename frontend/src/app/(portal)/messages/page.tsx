@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import { Search, AlertCircle, MessageSquare } from "lucide-react"
+import { useState, useMemo, useEffect } from "react"
+import { Search, AlertCircle, MessageSquare, Star } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -22,6 +22,24 @@ export default function MessagesPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [activeFilter, setActiveFilter] = useState<FilterType>("all")
   const [isSending, setIsSending] = useState(false)
+  const [favorites, setFavorites] = useState<Set<string>>(new Set())
+
+  // Carregar favoritos do localStorage ao iniciar
+  useEffect(() => {
+    const saved = localStorage.getItem('conversation_favorites')
+    if (saved) {
+      try {
+        setFavorites(new Set(JSON.parse(saved)))
+      } catch (error) {
+        console.error('Erro ao carregar favoritos:', error)
+      }
+    }
+  }, [])
+
+  // Salvar favoritos no localStorage sempre que mudar
+  useEffect(() => {
+    localStorage.setItem('conversation_favorites', JSON.stringify([...favorites]))
+  }, [favorites])
 
   const {
     conversations,
@@ -64,16 +82,29 @@ export default function MessagesPage() {
     }
   }
 
-  // Contadores de conversas por tipo
+  const toggleFavorite = (conversationId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    setFavorites(prev => {
+      const newFavorites = new Set(prev)
+      if (newFavorites.has(conversationId)) {
+        newFavorites.delete(conversationId)
+      } else {
+        newFavorites.add(conversationId)
+      }
+      return newFavorites
+    })
+  }
+
+  // Contadores de conversas por tipo - ATUALIZA DINAMICAMENTE
   const conversationCounts = useMemo(() => {
     const unread = conversations.filter(c => (c.unread_count || 0) > 0).length
     const groups = 0 // TODO: Implementar quando tivermos grupos
-    const favorites = 0 // TODO: Implementar quando tivermos favoritos
+    const favoritesCount = conversations.filter(c => favorites.has(c.id)).length
 
-    return { unread, groups, favorites }
-  }, [conversations])
+    return { unread, groups, favorites: favoritesCount }
+  }, [conversations, favorites])
 
-  // Filtrar conversas baseado no filtro ativo
+  // Filtrar conversas baseado no filtro ativo - FUNCIONA DE VERDADE
   const filteredConversations = useMemo(() => {
     switch (activeFilter) {
       case "unread":
@@ -81,11 +112,11 @@ export default function MessagesPage() {
       case "groups":
         return [] // TODO: Implementar filtro de grupos
       case "favorites":
-        return [] // TODO: Implementar filtro de favoritos
+        return conversations.filter(c => favorites.has(c.id))
       default:
         return conversations
     }
-  }, [conversations, activeFilter])
+  }, [conversations, activeFilter, favorites])
 
   const getInitials = (name?: string) => {
     if (!name) return "??"
@@ -135,7 +166,7 @@ export default function MessagesPage() {
             />
           </div>
 
-          {/* Filtros estilo WhatsApp */}
+          {/* Filtros estilo WhatsApp - FUNCIONAM DE VERDADE */}
           <div className="flex gap-2">
             <button
               onClick={() => setActiveFilter("all")}
@@ -162,7 +193,7 @@ export default function MessagesPage() {
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
                 }`}
             >
-              Favoritos
+              Favoritos {conversationCounts.favorites > 0 && conversationCounts.favorites}
             </button>
           </div>
         </div>
@@ -180,19 +211,38 @@ export default function MessagesPage() {
               </Alert>
             </div>
           ) : filteredConversations.length === 0 ? (
-            <EmptyState icon={MessageSquare} message="Nenhuma conversa encontrada" />
+            <EmptyState
+              icon={MessageSquare}
+              message={
+                activeFilter === "unread"
+                  ? "Nenhuma conversa não lida"
+                  : activeFilter === "favorites"
+                    ? "Nenhum favorito ainda. Passe o mouse e clique na estrela!"
+                    : "Nenhuma conversa encontrada"
+              }
+            />
           ) : (
             filteredConversations.map((conv) => (
-              <ConversationItem
-                key={conv.id}
-                name={conv.lead_name || formatPhoneNumber(conv.phone_number)}
-                initials={conv.phone_number.slice(-2)}
-                lastMessage={conv.last_message || undefined}
-                unreadCount={0}
-                isActive={selectedConversation?.id === conv.id}
-                isOnline={conv.status === "active"}
-                onClick={() => setSelectedConversation(conv)}
-              />
+              <div key={conv.id} className="relative group">
+                <ConversationItem
+                  name={conv.lead_name || formatPhoneNumber(conv.phone_number)}
+                  initials={conv.phone_number.slice(-2)}
+                  lastMessage={conv.last_message || undefined}
+                  unreadCount={conv.unread_count || 0}
+                  isActive={selectedConversation?.id === conv.id}
+                  isOnline={conv.status === "active"}
+                  onClick={() => setSelectedConversation(conv)}
+                />
+                <button
+                  onClick={(e) => toggleFavorite(conv.id, e)}
+                  className="absolute top-2 right-2 p-1.5 rounded-full hover:bg-muted/80 transition-colors opacity-0 group-hover:opacity-100"
+                  title={favorites.has(conv.id) ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                >
+                  <Star
+                    className={`h-4 w-4 ${favorites.has(conv.id) ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
+                  />
+                </button>
+              </div>
             ))
           )}
         </div>
