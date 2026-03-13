@@ -46,10 +46,21 @@ export async function fetchApi<T>(
       let errorMessage = `API error: ${res.status}`;
       try {
         const data = await res.json();
-        errorMessage = normalizeApiError(data, res.status);
+        errorMessage = normalizeApiError(data, res.status, endpoint);
       } catch (e) {}
       const error = new Error(errorMessage);
       (error as any).status = res.status;
+      
+      // Global 401 handler - redirect to signin (except for signin/signup pages)
+      if (res.status === 401 && typeof window !== 'undefined') {
+        const isAuthPage = window.location.pathname.startsWith('/signin') || 
+                          window.location.pathname.startsWith('/signup') ||
+                          window.location.pathname.startsWith('/reset');
+        if (!isAuthPage) {
+          window.location.href = '/signin';
+        }
+      }
+      
       if (typeof options?.onError === 'function') {
         options.onError(error, endpoint);
       }
@@ -66,25 +77,40 @@ export async function fetchApi<T>(
   }
 }
 
-export function normalizeApiError(data: any, status?: number): string {
+export function normalizeApiError(data: any, status?: number, endpoint?: string): string {
   if (!data) return "Ocorreu um erro inesperado. Tente novamente.";
+
+  // Handle 401 Unauthorized
+  if (status === 401) {
+    // Only treat as password reset error if it's actually a reset endpoint
+    if (endpoint && endpoint.includes('/reset')) {
+      return "O link de redefinição é inválido ou está corrompido.";
+    }
+    // For all other 401s, it's an authentication issue
+    return "Sessão expirada. Por favor, faça login novamente.";
+  }
 
   // FastAPI: string detail (ex: token inválido)
   if (typeof data.detail === 'string') {
     const detail = data.detail.toLowerCase();
-    if (detail.includes('expired')) {
-      return "Este link de redefinição expirou.";
+    
+    // Password reset specific errors (only for reset endpoints)
+    if (endpoint && endpoint.includes('/reset')) {
+      if (detail.includes('expired')) {
+        return "Este link de redefinição expirou.";
+      }
+      if (detail.includes('already used')) {
+        return "Este link de redefinição já foi utilizado.";
+      }
+      if (detail.includes('invalid signature') || detail.includes('invalid token')) {
+        return "O link de redefinição é inválido ou está corrompido.";
+      }
     }
-    if (detail.includes('already used')) {
-      return "Este link de redefinição já foi utilizado.";
-    }
-    if (detail.includes('invalid signature') || detail.includes('invalid token') || detail.includes('token')) {
-      return "O link de redefinição é inválido ou está corrompido.";
-    }
+    
     if (detail.includes('not found')) {
       return "Recurso não encontrado.";
     }
-    return "Ocorreu um erro ao validar o link. Tente novamente!";
+    return data.detail; // Return original message
   }
 
   // FastAPI: validation error array
@@ -121,8 +147,11 @@ export function normalizeApiError(data: any, status?: number): string {
       if (msg.includes('already used')) {
         return "Este link de redefinição já foi utilizado. Solicite um novo para redefinir sua senha.";
       }
-      if (msg.includes('invalid signature') || msg.includes('invalid token') || msg.includes('token')) {
-        return "O link de redefinição é inválido ou está corrompido. Solicite um novo para redefinir sua senha.";
+      // Password reset specific (only for reset endpoints)
+      if (endpoint && endpoint.includes('/reset')) {
+        if (msg.includes('invalid signature') || msg.includes('invalid token')) {
+          return "O link de redefinição é inválido ou está corrompido. Solicite um novo para redefinir sua senha.";
+        }
       }
       if (msg.includes('not found')) {
         return "Recurso não encontrado.";
