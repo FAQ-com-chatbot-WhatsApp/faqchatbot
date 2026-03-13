@@ -13,6 +13,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { EmptyState } from "@/components/ui/empty-state"
 import { useConversations, useConversationMessages } from "@/hooks/useConversations"
 import type { Conversation, ConversationMessage } from "@/services/conversationService"
+import { markConversationAsRead } from "@/services/conversationService"
 import { sendTextMessage, getContactPicture } from "@/services/wahaService"
 
 type FilterType = "all" | "unread" | "groups" | "favorites"
@@ -135,7 +136,8 @@ export default function MessagesPage() {
     }
 
     try {
-      const chatId = `${selectedConversation.phone_number}@c.us`
+      // USAR CHAT_ID REAL DO BANCO (pode ser @lid, @c.us, @g.us)
+      const chatId = selectedConversation.chat_id
 
       // Adicionar mensagem pendente imediatamente à UI
       setPendingMessages(prev => [...prev, optimisticMessage])
@@ -172,6 +174,11 @@ export default function MessagesPage() {
       const newCounts = new Map(prev)
       newCounts.set(conv.id, 0)
       return newCounts
+    })
+
+    // Marcar conversa como lida no backend
+    markConversationAsRead(conv.id).catch(err => {
+      console.error("Erro ao marcar conversa como lida:", err)
     })
 
     setTimeout(() => {
@@ -247,14 +254,35 @@ export default function MessagesPage() {
   }
 
   const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp)
+    // Se o timestamp não tem 'Z' ou '+', adicionar 'Z' para tratar como UTC
+    const isoTimestamp = timestamp.includes('Z') || timestamp.includes('+')
+      ? timestamp
+      : timestamp + 'Z'
+
+    const date = new Date(isoTimestamp)
     const now = new Date()
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60)
 
     if (diffInHours < 24) {
-      return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      // Exibir hora local (hora:minuto)
+      return date.toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'America/Sao_Paulo'
+      })
+    } else if (diffInHours < 24 * 7) {
+      // Menos de uma semana: mostrar dia da semana
+      return date.toLocaleDateString('pt-BR', {
+        weekday: 'short',
+        timeZone: 'America/Sao_Paulo'
+      })
     } else {
-      return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+      // Mais de uma semana: mostrar data
+      return date.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        timeZone: 'America/Sao_Paulo'
+      })
     }
   }
 
@@ -385,6 +413,10 @@ export default function MessagesPage() {
                   const isInbound = msg.direction === "INBOUND" || msg.direction === "inbound"
                   const leadName = selectedConversation?.lead_name || "Lead"
 
+                  // Determinar status da mensagem
+                  const isPending = typeof msg.id === 'number' && msg.id > 1000000000000 // ID temporário (timestamp)
+                  const messageStatus = isPending ? "pending" : "sent"
+
                   return (
                     <MessageBubble
                       key={msg.id}
@@ -394,6 +426,7 @@ export default function MessagesPage() {
                       senderName={isInbound ? leadName : undefined}
                       senderInitials={isInbound ? getInitials(leadName) : undefined}
                       senderAvatar={isInbound ? avatarCache[selectedConversation?.phone_number || ''] : undefined}
+                      status={messageStatus}
                     />
                   )
                 })
