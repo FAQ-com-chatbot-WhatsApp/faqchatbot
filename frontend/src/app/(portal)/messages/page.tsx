@@ -25,6 +25,7 @@ export default function MessagesPage() {
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
   const [localUnreadCounts, setLocalUnreadCounts] = useState<Map<string, number>>(new Map())
   const [avatarCache, setAvatarCache] = useState<Record<string, string>>({})
+  const [pendingMessages, setPendingMessages] = useState<ConversationMessage[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -102,7 +103,7 @@ export default function MessagesPage() {
   }, [conversations])
 
   const {
-    messages,
+    messages: serverMessages,
     isLoading: isLoadingMessages,
     error: messagesError,
     refresh: refreshMessages,
@@ -111,22 +112,52 @@ export default function MessagesPage() {
     enabled: !!selectedConversation?.id,
   })
 
+  // Combinar mensagens do servidor com mensagens pendentes
+  const messages = useMemo(() => {
+    return [...serverMessages, ...pendingMessages].sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    )
+  }, [serverMessages, pendingMessages])
+
   const handleSendMessage = async (text: string) => {
     if (!selectedConversation || !text.trim()) return
 
     setIsSending(true)
+
+    // Criar mensagem otimista para exibir imediatamente
+    const optimisticMessage: ConversationMessage = {
+      id: Date.now(), // ID temporário único
+      direction: "outgoing",
+      from_phone: "user",
+      to_phone: selectedConversation.phone_number,
+      body: text.trim(),
+      created_at: new Date().toISOString(),
+    }
+
     try {
       const chatId = `${selectedConversation.phone_number}@c.us`
+
+      // Adicionar mensagem pendente imediatamente à UI
+      setPendingMessages(prev => [...prev, optimisticMessage])
+      setTimeout(() => scrollToBottom(), 50)
+
       await sendTextMessage({
         chat_id: chatId,
         text: text.trim(),
       })
 
+      // Aguardar sincronização e atualizar com dados reais
+      await new Promise(resolve => setTimeout(resolve, 800))
       await refreshMessages()
+
+      // Remover mensagem pendente após receber do servidor
+      setPendingMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id))
       setTimeout(() => scrollToBottom(), 100)
     } catch (error) {
       console.error("Erro ao enviar mensagem:", error)
       alert("Erro ao enviar mensagem. Tente novamente.")
+      // Remover mensagem pendente em caso de erro
+      setPendingMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id))
     } finally {
       setIsSending(false)
     }
@@ -134,6 +165,7 @@ export default function MessagesPage() {
 
   const handleSelectConversation = (conv: Conversation) => {
     setSelectedConversation(conv)
+    setPendingMessages([]) // Limpar mensagens pendentes ao trocar conversa
 
     setLocalUnreadCounts(prev => {
       const newCounts = new Map(prev)
@@ -226,164 +258,164 @@ export default function MessagesPage() {
   }
 
   return (
-  <div className="flex h-[calc(100vh-4rem)] gap-4 p-4">
-    <Card className="w-80 flex flex-col shadow-sm">
-      <div className="p-4 border-b space-y-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            id="search-conversations"
-            name="search"
-            placeholder="Buscar conversa..."
-            className="pl-9"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+    <div className="flex h-[calc(100vh-4rem)] gap-4 p-4">
+      <Card className="w-80 flex flex-col shadow-sm">
+        <div className="p-4 border-b space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="search-conversations"
+              name="search"
+              placeholder="Buscar conversa..."
+              className="pl-9"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveFilter("all")}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${activeFilter === "all"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+            >
+              Tudo
+            </button>
+            <button
+              onClick={() => setActiveFilter("unread")}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${activeFilter === "unread"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+            >
+              Não lidas {conversationCounts.unread > 0 && conversationCounts.unread}
+            </button>
+            <button
+              onClick={() => setActiveFilter("favorites")}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${activeFilter === "favorites"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+            >
+              Favoritos {conversationCounts.favorites > 0 && conversationCounts.favorites}
+            </button>
+          </div>
         </div>
 
-        <div className="flex gap-2">
-          <button
-            onClick={() => setActiveFilter("all")}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${activeFilter === "all"
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground hover:bg-muted/80"
-              }`}
-          >
-            Tudo
-          </button>
-          <button
-            onClick={() => setActiveFilter("unread")}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${activeFilter === "unread"
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground hover:bg-muted/80"
-              }`}
-          >
-            Não lidas {conversationCounts.unread > 0 && conversationCounts.unread}
-          </button>
-          <button
-            onClick={() => setActiveFilter("favorites")}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${activeFilter === "favorites"
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground hover:bg-muted/80"
-              }`}
-          >
-            Favoritos {conversationCounts.favorites > 0 && conversationCounts.favorites}
-          </button>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto">
-        {isLoadingConversations ? (
-          <div className="flex items-center justify-center p-8">
-            <LoadingSpinner />
-          </div>
-        ) : conversationsError ? (
-          <div className="p-4">
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{conversationsError}</AlertDescription>
-            </Alert>
-          </div>
-        ) : filteredConversations.length === 0 ? (
-          <EmptyState
-            icon={MessageSquare}
-            message={
-              activeFilter === "unread"
-                ? "Nenhuma conversa não lida"
-                : activeFilter === "favorites"
-                  ? "Nenhum favorito. Passe o mouse e clique na estrela!"
-                  : "Nenhuma conversa encontrada"
-            }
-          />
-        ) : (
-          filteredConversations.map((conv) => (
-            <div key={conv.id} className="relative group">
-              <ConversationItem
-                name={conv.lead_name || formatPhoneNumber(conv.phone_number)}
-                initials={getInitials(conv.lead_name)}
-                avatar={avatarCache[conv.phone_number] || ''}
-                lastMessage={conv.last_message || undefined}
-                unreadCount={localUnreadCounts.get(conv.id) ?? conv.unread_count ?? 0}
-                isActive={selectedConversation?.id === conv.id}
-                isOnline={conv.status === "active"}
-                onClick={() => handleSelectConversation(conv)}
-              />
-              <button
-                onClick={(e) => toggleFavorite(conv.id, e)}
-                className="absolute top-2 right-2 p-1.5 rounded-full hover:bg-muted/80 transition-colors opacity-0 group-hover:opacity-100"
-                title={favorites.has(conv.id) ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-              >
-                <Star
-                  className={`h-4 w-4 ${favorites.has(conv.id) ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
-                />
-              </button>
-            </div>
-          ))
-        )}
-      </div>
-    </Card>
-
-    <Card className="flex-1 flex flex-col shadow-sm">
-      {selectedConversation ? (
-        <>
-          <ChatHeader
-            name={selectedConversation.lead_name || formatPhoneNumber(selectedConversation.phone_number)}
-            initials={getInitials(selectedConversation.lead_name)}
-            avatar={avatarCache[selectedConversation.phone_number] || ''}
-            status={selectedConversation.status === "active" ? "online" : "offline"}
-            isOnline={selectedConversation.status === "active"}
-            onMore={refreshMessages}
-          />
-
-          {messagesError && (
-            <Alert variant="destructive" className="m-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{messagesError}</AlertDescription>
-            </Alert>
-          )}
-
-          <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
-            {isLoadingMessages && messages.length === 0 ? (
+        <div className="flex-1 overflow-y-auto">
+          {isLoadingConversations ? (
+            <div className="flex items-center justify-center p-8">
               <LoadingSpinner />
-            ) : messages.length === 0 ? (
-              <EmptyState icon={MessageSquare} message="Nenhuma mensagem ainda" />
-            ) : (
-              messages.map((msg: ConversationMessage) => {
-                const isInbound = msg.direction === "INBOUND"
-                const leadName = selectedConversation?.lead_name || "Lead"
-
-                return (
-                  <MessageBubble
-                    key={msg.id}
-                    sender={isInbound ? "other" : "user"}
-                    message={msg.body}
-                    timestamp={formatTimestamp(msg.created_at)}
-                    senderName={isInbound ? leadName : undefined}
-                    senderInitials={isInbound ? getInitials(leadName) : undefined}
-                    senderAvatar={isInbound ? avatarCache[selectedConversation?.phone_number || ''] : undefined}
+            </div>
+          ) : conversationsError ? (
+            <div className="p-4">
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{conversationsError}</AlertDescription>
+              </Alert>
+            </div>
+          ) : filteredConversations.length === 0 ? (
+            <EmptyState
+              icon={MessageSquare}
+              message={
+                activeFilter === "unread"
+                  ? "Nenhuma conversa não lida"
+                  : activeFilter === "favorites"
+                    ? "Nenhum favorito. Passe o mouse e clique na estrela!"
+                    : "Nenhuma conversa encontrada"
+              }
+            />
+          ) : (
+            filteredConversations.map((conv) => (
+              <div key={conv.id} className="relative group">
+                <ConversationItem
+                  name={conv.lead_name || formatPhoneNumber(conv.phone_number)}
+                  initials={getInitials(conv.lead_name)}
+                  avatar={avatarCache[conv.phone_number] || ''}
+                  lastMessage={conv.last_message || undefined}
+                  unreadCount={localUnreadCounts.get(conv.id) ?? conv.unread_count ?? 0}
+                  isActive={selectedConversation?.id === conv.id}
+                  isOnline={conv.status === "active"}
+                  onClick={() => handleSelectConversation(conv)}
+                />
+                <button
+                  onClick={(e) => toggleFavorite(conv.id, e)}
+                  className="absolute top-2 right-2 p-1.5 rounded-full hover:bg-muted/80 transition-colors opacity-0 group-hover:opacity-100"
+                  title={favorites.has(conv.id) ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                >
+                  <Star
+                    className={`h-4 w-4 ${favorites.has(conv.id) ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
                   />
-                )
-              })
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          <MessageInput
-            onSend={handleSendMessage}
-            placeholder="Digite sua mensagem..."
-            disabled={isLoadingMessages || isSending}
-            showAttachment
-          />
-        </>
-      ) : (
-        <div className="flex-1 flex items-center justify-center">
-          <EmptyState
-            icon={MessageSquare}
-            message="Selecione uma conversa para começar"
-          />
+                </button>
+              </div>
+            ))
+          )}
         </div>
-      )}
-    </Card>
-  </div>
-)
+      </Card>
+
+      <Card className="flex-1 flex flex-col shadow-sm">
+        {selectedConversation ? (
+          <>
+            <ChatHeader
+              name={selectedConversation.lead_name || formatPhoneNumber(selectedConversation.phone_number)}
+              initials={getInitials(selectedConversation.lead_name)}
+              avatar={avatarCache[selectedConversation.phone_number] || ''}
+              status={selectedConversation.status === "active" ? "online" : "offline"}
+              isOnline={selectedConversation.status === "active"}
+              onMore={refreshMessages}
+            />
+
+            {messagesError && (
+              <Alert variant="destructive" className="m-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{messagesError}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+              {isLoadingMessages && messages.length === 0 ? (
+                <LoadingSpinner />
+              ) : messages.length === 0 ? (
+                <EmptyState icon={MessageSquare} message="Nenhuma mensagem ainda" />
+              ) : (
+                messages.map((msg: ConversationMessage) => {
+                  const isInbound = msg.direction === "INBOUND"
+                  const leadName = selectedConversation?.lead_name || "Lead"
+
+                  return (
+                    <MessageBubble
+                      key={msg.id}
+                      sender={isInbound ? "other" : "user"}
+                      message={msg.body}
+                      timestamp={formatTimestamp(msg.created_at)}
+                      senderName={isInbound ? leadName : undefined}
+                      senderInitials={isInbound ? getInitials(leadName) : undefined}
+                      senderAvatar={isInbound ? avatarCache[selectedConversation?.phone_number || ''] : undefined}
+                    />
+                  )
+                })
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <MessageInput
+              onSend={handleSendMessage}
+              placeholder="Digite sua mensagem..."
+              disabled={isLoadingMessages || isSending}
+              showAttachment
+            />
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <EmptyState
+              icon={MessageSquare}
+              message="Selecione uma conversa para começar"
+            />
+          </div>
+        )}
+      </Card>
+    </div>
+  )
 }
