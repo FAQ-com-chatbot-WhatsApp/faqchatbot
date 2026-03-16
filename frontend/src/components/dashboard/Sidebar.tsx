@@ -60,14 +60,6 @@ export function Sidebar({ isOpen, navItems }: SidebarProps) {
           )
         })}
       </nav>
-
-      {isOpen && (
-        <div className="p-4 border-t border-border">
-          <Button className="w-full bg-blue-600 hover:bg-blue-700" size="sm">
-            + Novo Agendamento
-          </Button>
-        </div>
-      )}
     </aside>
   )
 }
