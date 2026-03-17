@@ -8,8 +8,9 @@ import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { PageHeader } from '@/components/ui/page-header'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   AlertCircle,
   CheckCircle2,
@@ -21,7 +22,8 @@ import {
   RotateCw,
   QrCode,
   Phone,
-  RefreshCw
+  RefreshCw,
+  Brain
 } from 'lucide-react'
 import { useUser } from '@/hooks/useUser'
 import { useSession } from '@/hooks/useSession'
@@ -42,6 +44,7 @@ export default function SettingsPage() {
   const [fullName, setFullName] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [selectedLLM, setSelectedLLM] = useState('gemini')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -145,6 +148,10 @@ export default function SettingsPage() {
           <TabsTrigger value="security">
             <Shield className="w-4 h-4 mr-2" />
             Segurança
+          </TabsTrigger>
+          <TabsTrigger value="ia">
+            <Brain className="w-4 h-4 mr-2" />
+            IA
           </TabsTrigger>
         </TabsList>
 
@@ -364,6 +371,45 @@ export default function SettingsPage() {
                 <p className="text-sm text-muted-foreground mb-4">
                   Em desenvolvimento
                 </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="ia" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Configurações de Inteligência Artificial</CardTitle>
+              <CardDescription>
+                Escolha o provedor de IA para suas conversas e respostas automáticas
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="llm-select">Provedor de IA</Label>
+                <Select value={selectedLLM} onValueChange={setSelectedLLM}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione o provedor de IA" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gemini">Google Gemini</SelectItem>
+                    <SelectItem value="groq">Groq</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  O provedor selecionado será usado para gerar respostas automáticas nas conversas.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <div>
+                    <strong>Google Gemini:</strong> Modelo avançado da Google, ótimo para conversas naturais e análise de contexto.
+                  </div>
+                  <div>
+                    <strong>Groq:</strong> Focado em velocidade e eficiência, ideal para respostas rápidas e processamento em tempo real.
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
