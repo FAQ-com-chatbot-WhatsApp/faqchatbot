@@ -1,14 +1,14 @@
-"use client"
+'use client'
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect } from 'react'
 import {
   listSessions,
   getSessionStatus,
   startSession,
   stopSession,
   restartSession,
-} from "@/services/wahaService"
-import type { WahaSession, SessionStatus } from "@/types/waha"
+} from '@/services/wahaService'
+import type { WahaSession, SessionStatus } from '@/types/waha'
 
 interface UseSessionOptions {
   sessionName?: string
@@ -28,10 +28,16 @@ interface UseSessionReturn {
 }
 
 export function useSession(options: UseSessionOptions = {}): UseSessionReturn {
-  const { sessionName = "default", autoRefresh = false, refreshInterval = 5000 } = options
+  const {
+    sessionName = 'default',
+    autoRefresh = false,
+    refreshInterval = 5000,
+  } = options
 
   const [sessions, setSessions] = useState<WahaSession[]>([])
-  const [currentSession, setCurrentSession] = useState<SessionStatus | null>(null)
+  const [currentSession, setCurrentSession] = useState<SessionStatus | null>(
+    null
+  )
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -41,7 +47,8 @@ export function useSession(options: UseSessionOptions = {}): UseSessionReturn {
       const data = await listSessions()
       setSessions(data)
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Erro ao carregar sessões"
+      const message =
+        err instanceof Error ? err.message : 'Erro ao carregar sessões'
       setError(message)
     }
   }, [])
@@ -51,8 +58,18 @@ export function useSession(options: UseSessionOptions = {}): UseSessionReturn {
       setError(null)
       const status = await getSessionStatus(sessionName)
       setCurrentSession(status)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Erro ao carregar status da sessão"
+    } catch (err: any) {
+      // Se a sessão não existe (404), não é um erro crítico
+      if (
+        err?.status === 404 ||
+        (err instanceof Error && err.message.includes('404'))
+      ) {
+        setCurrentSession(null)
+        setError(null)
+        return
+      }
+      const message =
+        err instanceof Error ? err.message : 'Erro ao carregar status da sessão'
       setError(message)
     }
   }, [sessionName])
@@ -64,7 +81,8 @@ export function useSession(options: UseSessionOptions = {}): UseSessionReturn {
       const status = await startSession(sessionName)
       setCurrentSession(status)
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Erro ao iniciar sessão"
+      const message =
+        err instanceof Error ? err.message : 'Erro ao iniciar sessão'
       setError(message)
       throw err
     } finally {
@@ -79,7 +97,8 @@ export function useSession(options: UseSessionOptions = {}): UseSessionReturn {
       await stopSession(sessionName)
       await fetchSessionStatus()
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Erro ao parar sessão"
+      const message =
+        err instanceof Error ? err.message : 'Erro ao parar sessão'
       setError(message)
       throw err
     } finally {
@@ -94,7 +113,8 @@ export function useSession(options: UseSessionOptions = {}): UseSessionReturn {
       await restartSession(sessionName)
       await fetchSessionStatus()
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Erro ao reiniciar sessão"
+      const message =
+        err instanceof Error ? err.message : 'Erro ao reiniciar sessão'
       setError(message)
       throw err
     } finally {
