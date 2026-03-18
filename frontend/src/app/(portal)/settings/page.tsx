@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Card,
   CardContent,
@@ -24,6 +24,13 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
   AlertCircle,
   CheckCircle2,
   User,
@@ -36,6 +43,8 @@ import {
   Phone,
   RefreshCw,
   Brain,
+  Play,
+  Square,
 } from 'lucide-react'
 import { useUser } from '@/hooks/useUser'
 import { useSession } from '@/hooks/useSession'
@@ -67,6 +76,19 @@ export default function SettingsPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [selectedLLM, setSelectedLLM] = useState('gemini')
+  const [qrDialogOpen, setQrDialogOpen] = useState(false)
+
+  // Auto-open QR dialog when status changes to SCAN_QR_CODE
+  useEffect(() => {
+    if (
+      currentSession?.status === 'SCAN_QR_CODE' &&
+      (currentSession?.qr || currentSession?.qr_code)
+    ) {
+      setQrDialogOpen(true)
+    } else if (currentSession?.status === 'WORKING') {
+      setQrDialogOpen(false)
+    }
+  }, [currentSession?.status, currentSession?.qr, currentSession?.qr_code])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -99,8 +121,22 @@ export default function SettingsPage() {
       await startSession()
       setSuccessMessage('Sessão WhatsApp iniciada com sucesso!')
       setTimeout(() => setSuccessMessage(null), 3000)
-    } catch (err) {
+      // Auto-refresh após 2 segundos para buscar QR code
+      setTimeout(() => refreshSession(), 2000)
+    } catch (err: any) {
       console.error('Failed to start session', err)
+      // Se já está iniciada (409), apenas atualiza status sem mostrar erro
+      if (
+        err?.status === 409 ||
+        err?.message?.includes('409') ||
+        err?.message?.includes('already')
+      ) {
+        console.log(
+          '[handleStartSession] Session already started, refreshing status...'
+        )
+        setTimeout(() => refreshSession(), 1000)
+        return
+      }
       const message =
         err instanceof Error ? err.message : 'Erro ao iniciar sessão WhatsApp'
       setErrorMessage(message)
@@ -114,6 +150,8 @@ export default function SettingsPage() {
       await stopSession()
       setSuccessMessage('Sessão WhatsApp parada com sucesso!')
       setTimeout(() => setSuccessMessage(null), 3000)
+      // Auto-refresh para atualizar status
+      setTimeout(() => refreshSession(), 1000)
     } catch (err) {
       console.error('Failed to stop session', err)
       const message =
@@ -129,6 +167,8 @@ export default function SettingsPage() {
       await restartSession()
       setSuccessMessage('Sessão WhatsApp reiniciada com sucesso!')
       setTimeout(() => setSuccessMessage(null), 3000)
+      // Auto-refresh para buscar novo QR code
+      setTimeout(() => refreshSession(), 2000)
     } catch (err) {
       console.error('Failed to restart session', err)
       const message =
@@ -257,40 +297,72 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* QR Code Display */}
-              {currentSession?.status === 'SCAN_QR_CODE' &&
-                currentSession?.qr_code && (
-                  <div className="space-y-4">
-                    <div className="flex flex-col items-center justify-center p-6 border rounded-lg bg-muted/50">
-                      <QrCode className="h-8 w-8 mb-4 text-muted-foreground" />
-                      <p className="text-sm font-medium mb-4">
-                        Escaneie o QR Code com seu WhatsApp
-                      </p>
-                      <div className="bg-white p-4 rounded-lg">
-                        <Image
-                          src={`data:image/png;base64,${currentSession.qr_code}`}
-                          alt="QR Code WhatsApp"
-                          width={256}
-                          height={256}
-                        />
+              {/* QR Code Dialog */}
+              <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <QrCode className="w-5 h-5 text-green-600" />
+                      Scan to log in
+                    </DialogTitle>
+                    <DialogDescription>
+                      Escaneie o QR Code com seu WhatsApp
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="flex flex-col items-center justify-center py-6">
+                    {currentSession?.qr_code || currentSession?.qr ? (
+                      <>
+                        <div className="bg-white p-4 rounded-lg shadow-lg">
+                          <Image
+                            src={`data:image/png;base64,${
+                              currentSession.qr_code || currentSession.qr
+                            }`}
+                            alt="QR Code WhatsApp"
+                            width={320}
+                            height={320}
+                            priority
+                          />
+                        </div>
+                        <div className="mt-6 space-y-2 text-sm text-muted-foreground">
+                          <p className="flex items-center gap-2">
+                            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-muted text-xs">
+                              1
+                            </span>
+                            Scan the QR code with your phone's camera
+                          </p>
+                          <p className="flex items-center gap-2">
+                            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-muted text-xs">
+                              2
+                            </span>
+                            Tap the link to open WhatsApp
+                          </p>
+                          <p className="flex items-center gap-2">
+                            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-muted text-xs">
+                              3
+                            </span>
+                            Scan the QR code again to link to your account
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 mt-4 text-xs text-muted-foreground">
+                          <RefreshCw className="w-3 h-3 animate-spin" />
+                          <span>Atualizando a cada 15 segundos</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-8">
+                        <QrCode className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
+                          QR Code não disponível. Inicie a sessão primeiro.
+                        </p>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-4 text-center">
-                        1. Abra o WhatsApp no seu celular
-                        <br />
-                        2. Toque em Menu ou Configurações
-                        <br />
-                        3. Toque em Aparelhos conectados
-                        <br />
-                        4. Toque em Conectar um aparelho
-                        <br />
-                        5. Aponte seu celular para esta tela
-                      </p>
-                    </div>
+                    )}
                   </div>
-                )}
+                </DialogContent>
+              </Dialog>
 
-              {/* Action Buttons */}
-              <div className="flex gap-3">
+              {/* Action Buttons - Circular Icons */}
+              <div className="flex items-center justify-center gap-6">
+                {/* Play/Start Button */}
                 <Button
                   onClick={handleStartSession}
                   disabled={
@@ -298,30 +370,48 @@ export default function SettingsPage() {
                     currentSession?.status === 'WORKING' ||
                     currentSession?.status === 'STARTING'
                   }
-                  className="flex-1"
+                  size="icon"
+                  className="w-16 h-16 rounded-full bg-transparent border-2 border-green-500 hover:bg-green-500/10 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                  title="Iniciar conexão"
                 >
-                  <Power className="w-4 h-4 mr-2" />
-                  Iniciar Conexão
+                  <Play className="w-7 h-7" fill="currentColor" />
                 </Button>
+
+                {/* QR Code Button */}
                 <Button
-                  variant="outline"
+                  onClick={() => setQrDialogOpen(true)}
+                  disabled={
+                    sessionLoading || currentSession?.status !== 'SCAN_QR_CODE'
+                  }
+                  size="icon"
+                  className="w-16 h-16 rounded-full bg-transparent border-2 border-purple-500 hover:bg-purple-500/10 text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                  title="Ver QR Code"
+                >
+                  <QrCode className="w-7 h-7" />
+                </Button>
+
+                {/* Refresh/Restart Button */}
+                <Button
+                  onClick={handleRestartSession}
+                  disabled={sessionLoading}
+                  size="icon"
+                  className="w-16 h-16 rounded-full bg-transparent border-2 border-blue-500 hover:bg-blue-500/10 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                  title="Reiniciar conexão"
+                >
+                  <RotateCw className="w-7 h-7" />
+                </Button>
+
+                {/* Stop Button */}
+                <Button
                   onClick={handleStopSession}
                   disabled={
                     sessionLoading || currentSession?.status === 'STOPPED'
                   }
-                  className="flex-1"
+                  size="icon"
+                  className="w-16 h-16 rounded-full bg-transparent border-2 border-red-500 hover:bg-red-500/10 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                  title="Parar conexão"
                 >
-                  <PowerOff className="w-4 h-4 mr-2" />
-                  Parar Conexão
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleRestartSession}
-                  disabled={sessionLoading}
-                  className="flex-1"
-                >
-                  <RotateCw className="w-4 h-4 mr-2" />
-                  Reiniciar
+                  <Square className="w-7 h-7" />
                 </Button>
               </div>
 
