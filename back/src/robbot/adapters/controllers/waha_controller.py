@@ -103,48 +103,18 @@ async def list_sessions(service: WAHAService = Depends(_get_waha_service)):
 async def create_session(
     data: SessionCreate,
     service: WAHAService = Depends(_get_waha_service),
-    db: Session = Depends(get_db),
 ):
     """Create new WhatsApp session.
 
     **Admin only** - Creates session in WAHA and saves to database.
 
-    If session already exists in WAHA (status 409), still creates the DB record
-    to track it, then returns 201 (idempotent behavior).
+    Service handles idempotent behavior if session already exists.
     """
     try:
         return await service.create_session(data)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except ExternalServiceError as e:
-        # Special handling for 409: session already exists in WAHA
-        # Create DB record to track it and return success
-        if e.status_code == 422:  # WAHA 422 = conflict/exists
-            # Check if we need to create DB record
-            session_repo = SessionRepository(db)
-            existing = session_repo.get_by_name(data.name)
-            if not existing:
-                # Extract webhook URL
-                webhook_url = data.webhook_url or None
-                if not webhook_url and isinstance(data.config, dict):
-                    webhooks = data.config.get("webhooks") or []
-                    if isinstance(webhooks, list) and webhooks:
-                        first_webhook = webhooks[0] if isinstance(webhooks[0], dict) else None
-                        if first_webhook:
-                            webhook_url = first_webhook.get("url")
-                from robbot.config.settings import settings
-
-                webhook_url = webhook_url or settings.WAHA_WEBHOOK_URL
-
-                # Create DB record for existing WAHA session
-                existing = session_repo.create(
-                    name=data.name,
-                    webhook_url=webhook_url,
-                )
-            # Return 201 as if created (idempotent behavior)
-            return SessionOut.model_validate(existing)
-
-        # For other WAHA errors, map status codes
         raise _handle_waha_error(e) from e
 
 
