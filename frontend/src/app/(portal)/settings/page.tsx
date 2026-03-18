@@ -48,7 +48,6 @@ import {
 } from 'lucide-react'
 import { useUser } from '@/hooks/useUser'
 import { useSession } from '@/hooks/useSession'
-import Image from 'next/image'
 
 export default function SettingsPage() {
   const {
@@ -77,18 +76,53 @@ export default function SettingsPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [selectedLLM, setSelectedLLM] = useState('gemini')
   const [qrDialogOpen, setQrDialogOpen] = useState(false)
+  const [qrImageUrl, setQrImageUrl] = useState<string | null>(null)
 
   // Auto-open QR dialog when status changes to SCAN_QR_CODE
   useEffect(() => {
-    if (
-      currentSession?.status === 'SCAN_QR_CODE' &&
-      (currentSession?.qr || currentSession?.qr_code)
-    ) {
-      setQrDialogOpen(true)
-    } else if (currentSession?.status === 'WORKING') {
-      setQrDialogOpen(false)
+    const fetchQrImage = async () => {
+      if (currentSession?.status === 'SCAN_QR_CODE') {
+        try {
+          const { getScreenshot } = await import('@/services/wahaService')
+          const blob = await getScreenshot()
+          const url = URL.createObjectURL(blob)
+
+          // Revoke old URL before setting new one
+          if (qrImageUrl) {
+            URL.revokeObjectURL(qrImageUrl)
+          }
+
+          setQrImageUrl(url)
+          setQrDialogOpen(true)
+        } catch (err) {
+          console.error('Failed to fetch QR screenshot:', err)
+        }
+      } else if (currentSession?.status === 'WORKING') {
+        setQrDialogOpen(false)
+        if (qrImageUrl) {
+          URL.revokeObjectURL(qrImageUrl)
+          setQrImageUrl(null)
+        }
+      }
     }
-  }, [currentSession?.status, currentSession?.qr, currentSession?.qr_code])
+
+    fetchQrImage()
+
+    // Auto-refresh QR screenshot every 5 seconds when waiting for scan
+    let intervalId: NodeJS.Timeout | null = null
+    if (currentSession?.status === 'SCAN_QR_CODE') {
+      intervalId = setInterval(fetchQrImage, 5000)
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId)
+      }
+      if (qrImageUrl) {
+        URL.revokeObjectURL(qrImageUrl)
+      }
+    }
+  }, [currentSession?.status])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -119,10 +153,10 @@ export default function SettingsPage() {
     try {
       setErrorMessage(null)
       await startSession()
+      // Refresh imediatamente para pegar o novo status
+      await refreshSession()
       setSuccessMessage('Sessão WhatsApp iniciada com sucesso!')
       setTimeout(() => setSuccessMessage(null), 3000)
-      // Auto-refresh após 2 segundos para buscar QR code
-      setTimeout(() => refreshSession(), 2000)
     } catch (err: any) {
       console.error('Failed to start session', err)
       // Se já está iniciada (409), apenas atualiza status sem mostrar erro
@@ -134,7 +168,7 @@ export default function SettingsPage() {
         console.log(
           '[handleStartSession] Session already started, refreshing status...'
         )
-        setTimeout(() => refreshSession(), 1000)
+        await refreshSession()
         return
       }
       const message =
@@ -148,10 +182,10 @@ export default function SettingsPage() {
     try {
       setErrorMessage(null)
       await stopSession()
+      // Refresh imediatamente para pegar o novo status
+      await refreshSession()
       setSuccessMessage('Sessão WhatsApp parada com sucesso!')
       setTimeout(() => setSuccessMessage(null), 3000)
-      // Auto-refresh para atualizar status
-      setTimeout(() => refreshSession(), 1000)
     } catch (err) {
       console.error('Failed to stop session', err)
       const message =
@@ -165,10 +199,10 @@ export default function SettingsPage() {
     try {
       setErrorMessage(null)
       await restartSession()
+      // Refresh imediatamente para pegar o novo status
+      await refreshSession()
       setSuccessMessage('Sessão WhatsApp reiniciada com sucesso!')
       setTimeout(() => setSuccessMessage(null), 3000)
-      // Auto-refresh para buscar novo QR code
-      setTimeout(() => refreshSession(), 2000)
     } catch (err) {
       console.error('Failed to restart session', err)
       const message =
@@ -310,17 +344,13 @@ export default function SettingsPage() {
                     </DialogDescription>
                   </DialogHeader>
                   <div className="flex flex-col items-center justify-center py-6">
-                    {currentSession?.qr_code || currentSession?.qr ? (
+                    {qrImageUrl ? (
                       <>
                         <div className="bg-white p-4 rounded-lg shadow-lg">
-                          <Image
-                            src={`data:image/png;base64,${
-                              currentSession.qr_code || currentSession.qr
-                            }`}
+                          <img
+                            src={qrImageUrl}
                             alt="QR Code WhatsApp"
-                            width={320}
-                            height={320}
-                            priority
+                            className="w-80 h-80 object-contain"
                           />
                         </div>
                         <div className="mt-6 space-y-2 text-sm text-muted-foreground">
@@ -345,14 +375,14 @@ export default function SettingsPage() {
                         </div>
                         <div className="flex items-center gap-2 mt-4 text-xs text-muted-foreground">
                           <RefreshCw className="w-3 h-3 animate-spin" />
-                          <span>Atualizando a cada 15 segundos</span>
+                          <span>Atualizando automaticamente</span>
                         </div>
                       </>
                     ) : (
                       <div className="text-center py-8">
-                        <QrCode className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                        <QrCode className="w-12 h-12 mx-auto mb-4 text-muted-foreground animate-pulse" />
                         <p className="text-sm text-muted-foreground">
-                          QR Code não disponível. Inicie a sessão primeiro.
+                          Carregando QR Code...
                         </p>
                       </div>
                     )}
