@@ -6,7 +6,6 @@ segurança de preocupações de domínio.
 """
 
 from datetime import datetime
-from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
@@ -19,12 +18,14 @@ class SignupRequest(BaseModel):
 
     This replaces UserCreate for authentication purposes.
     Separates credential creation from user profile creation.
+
+    Note: All users are created with admin role by default.
+    The role field is not configurable during signup.
     """
 
     email: EmailStr
     password: str = Field(..., min_length=8, max_length=128)
     full_name: str | None = None
-    role: Literal["admin", "user"] = "user"
 
     @field_validator("password")
     @classmethod
