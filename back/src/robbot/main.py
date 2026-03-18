@@ -49,6 +49,27 @@ def create_app() -> FastAPI:
             logger.error("[ERROR] Failed to initialize rate limiter: %s", e)
             # Don't fail app startup, rate limiter will fail gracefully
 
+        # Initialize default WAHA session in DB
+        logger.info("[INFO] Initializing default WAHA session...")
+        try:
+            from robbot.infra.db.base import SessionLocal
+            from robbot.infra.integrations.waha.waha_client import get_waha_client
+            from robbot.infra.persistence.repositories.session_repository import SessionRepository
+            from robbot.services.communication.waha_service import WAHAService
+
+            with SessionLocal() as db:
+                session_repo = SessionRepository(db)
+                waha_service = WAHAService(session_repo, get_waha_client())
+                default_session = waha_service.get_or_create_default_session()
+                logger.info(
+                    "[SUCCESS] Default WAHA session ready: %s (status: %s)",
+                    default_session.name,
+                    default_session.status,
+                )
+        except Exception as e:
+            logger.warning("[WARN] Failed to initialize default WAHA session: %s", e)
+            # Non-critical - session can be created via UI or sync script
+
         yield
 
         # Shutdown DI Container
