@@ -153,9 +153,28 @@ export function useSession(options: UseSessionOptions = {}): UseSessionReturn {
     }
   }, [fetchSessions, fetchSessionStatus])
 
+  // Fetch inicial apenas no mount
   useEffect(() => {
-    refresh()
-  }, [refresh])
+    let mounted = true
+
+    const initialFetch = async () => {
+      if (mounted) {
+        setIsLoading(true)
+        try {
+          await Promise.all([fetchSessions(), fetchSessionStatus()])
+        } finally {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    initialFetch()
+
+    return () => {
+      mounted = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Roda apenas uma vez no mount
 
   // Auto-refresh genérico (se habilitado)
   useEffect(() => {
