@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import * as React from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
-import { resetPassword, normalizeApiError } from '@/services/passwordService'
+import { resetPassword } from '@/services/passwordService'
 import { useFormFeedback } from '@/hooks/useFormFeedback'
 import { useSearchParams } from 'next/navigation'
 
@@ -13,13 +13,13 @@ export function ResetPasswordForm() {
   const searchParams = useSearchParams()
 
   const token = searchParams.get('token')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
-  const newPasswordRef = useRef<HTMLInputElement>(null)
-  const confirmPasswordRef = useRef<HTMLInputElement>(null)
+  const [newPassword, setNewPassword] = React.useState('')
+  const [confirmPassword, setConfirmPassword] = React.useState('')
+  const [loading, setLoading] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+  const [success, setSuccess] = React.useState<string | null>(null)
+  const newPasswordRef = React.useRef<HTMLInputElement>(null)
+  const confirmPasswordRef = React.useRef<HTMLInputElement>(null)
 
   useFormFeedback(error, success)
 
@@ -62,18 +62,9 @@ export function ResetPasswordForm() {
     try {
       await resetPassword(token, newPassword)
       setSuccess('✓ Senha redefinida! Redirecionando...')
-
-      window.location.href = '/signin'
-
-      setTimeout(() => {
-        window.location.replace('/signin')
-      }, 100)
-
-      setTimeout(() => {
-        window.location.assign('/signin')
-      }, 500)
+      setTimeout(() => (window.location.href = '/signin'), 2000)
     } catch (err: any) {
-      setError(normalizeApiError(err.message || err))
+      setError(err.message)
       focusFirstError()
       setLoading(false)
     }
@@ -96,7 +87,7 @@ export function ResetPasswordForm() {
           type="password"
           placeholder="Digite a nova senha"
           value={newPassword}
-          onChange={e => setNewPassword(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPassword(e.target.value)}
           required
           minLength={8}
           autoComplete="new-password"
@@ -116,7 +107,7 @@ export function ResetPasswordForm() {
           type="password"
           placeholder="Confirme a nova senha"
           value={confirmPassword}
-          onChange={e => setConfirmPassword(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
           required
           minLength={8}
           autoComplete="new-password"
