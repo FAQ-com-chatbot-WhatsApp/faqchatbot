@@ -168,19 +168,6 @@ export function useSession(options: UseSessionOptions = {}): UseSessionReturn {
     return () => clearInterval(interval)
   }, [autoRefresh, refreshInterval, fetchSessionStatus])
 
-  // Auto-refresh específico para QR Code (sempre ativo quando status = SCAN_QR_CODE)
-  useEffect(() => {
-    if (currentSession?.status !== 'SCAN_QR_CODE') return
-
-    // QR expira em ~90 segundos, atualizar a cada 15s
-    const interval = setInterval(() => {
-      console.log('[useSession] Refreshing QR code...')
-      fetchSessionStatus()
-    }, 15000)
-
-    return () => clearInterval(interval)
-  }, [currentSession?.status, fetchSessionStatus])
-
   return {
     sessions,
     currentSession,
