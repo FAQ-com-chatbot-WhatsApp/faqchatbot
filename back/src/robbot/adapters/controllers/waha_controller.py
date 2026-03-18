@@ -152,7 +152,7 @@ async def create_session(
     "/sessions/{name}/start",
     response_model=SessionStatus,
     tags=["Sessions"],
-    dependencies=[Depends(get_current_user), Depends(require_role(Role.ADMIN))],
+    dependencies=[Depends(get_current_user)],
 )
 async def start_session(
     name: str,
@@ -160,7 +160,7 @@ async def start_session(
 ):
     """Start WhatsApp session (generates QR code).
 
-    **Admin only** - Initiates session connection.
+    **Authenticated users** - Initiates session connection.
     """
     try:
         return await service.start_session(name)
@@ -173,7 +173,7 @@ async def start_session(
 @router.post(
     "/sessions/{name}/stop",
     tags=["Sessions"],
-    dependencies=[Depends(get_current_user), Depends(require_role(Role.ADMIN))],
+    dependencies=[Depends(get_current_user)],
 )
 async def stop_session(
     name: str,
@@ -181,7 +181,7 @@ async def stop_session(
 ):
     """Stop WhatsApp session.
 
-    **Admin only** - Disconnects session.
+    **Authenticated users** - Disconnects session.
     """
     try:
         return await service.stop_session(name)
@@ -194,7 +194,7 @@ async def stop_session(
 @router.post(
     "/sessions/{name}/restart",
     tags=["Sessions"],
-    dependencies=[Depends(get_current_user), Depends(require_role(Role.ADMIN))],
+    dependencies=[Depends(get_current_user)],
 )
 async def restart_session(
     name: str,
@@ -202,7 +202,7 @@ async def restart_session(
 ):
     """Restart WhatsApp session.
 
-    **Admin only** - Stops and starts session.
+    **Authenticated users** - Stops and starts session.
     """
     try:
         return await service.restart_session(name)
