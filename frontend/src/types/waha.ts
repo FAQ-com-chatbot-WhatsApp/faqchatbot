@@ -92,8 +92,13 @@ export interface SessionCreate {
 export interface SessionStatus {
   name: string
   status: string
+  qr?: string | null
   qr_code?: string | null
   connected_phone?: string | null
+  me?: {
+    id: string
+    [key: string]: any
+  } | null
 }
 
 export interface SendVoiceMessageRequest {
