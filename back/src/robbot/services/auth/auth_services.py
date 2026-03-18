@@ -71,8 +71,9 @@ class AuthService:
 
         from robbot.schemas.user import UserCreate
 
+        # All users are created with admin role by default
         user_data = UserCreate(
-            email=payload.email, password=payload.password, full_name=payload.full_name, role=payload.role
+            email=payload.email, password=payload.password, full_name=payload.full_name, role="admin"
         )
         hashed = security.get_password_hash(payload.password)
         user = self.repo.create_user(user_data, hashed)
