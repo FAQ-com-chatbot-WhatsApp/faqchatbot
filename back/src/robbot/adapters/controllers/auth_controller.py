@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from robbot.api.v1.dependencies import get_current_user, get_db
 from robbot.config.settings import get_settings
+from robbot.core import security
 from robbot.core.custom_exceptions import AuthException
 from robbot.core.rate_limiting import (
     RATE_LIMIT_LOGIN,
@@ -24,12 +25,14 @@ from robbot.core.rate_limiting import (
 )
 from robbot.infra.persistence.models.user_model import UserModel
 from robbot.infra.persistence.repositories.auth_session_repository import AuthSessionRepository
+from robbot.infra.persistence.repositories.credential_repository import CredentialRepository
 from robbot.schemas.auth import (
     AuthSessionResponse,
     ChangePasswordRequest,
     EmailResendRequest,
     LoginResponse,
     MfaLoginRequest,
+    ResetPasswordRequest,
     SessionListResponse,
     SessionOut,
     SignupRequest,
@@ -43,6 +46,8 @@ from robbot.schemas.mfa import (
 )
 from robbot.schemas.user import UserOut
 from robbot.services.auth.auth_services import AuthService
+from robbot.services.auth.email_verification_service import EmailVerificationService
+from robbot.services.auth.mfa_service import MfaService
 
 router = APIRouter()
 settings = get_settings()
@@ -100,12 +105,11 @@ async def test_create_verified_user(payload: SignupRequest, db: Session = Depend
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     # Mark email as verified
-    from robbot.infra.persistence.repositories.credential_repository import CredentialRepository
 
     cred_repo = CredentialRepository(db)
     cred = cred_repo.get_by_user_id(user.id)
     if cred:
-        cred.email_verified = True
+        cred_repo.update(int(cred.id), {"email_verified": True})  # type: ignore
         db.commit()
 
     return user
@@ -134,10 +138,7 @@ async def login_for_access_token(
     service = AuthService(db)
     # Accept rememberMe from frontend (form or JSON)
     remember_me = False
-    # Try to get from form_data (for OAuth2PasswordRequestForm)
-    if hasattr(form_data, "remember_me"):
-        remember_me = bool(form_data.remember_me)
-    # Also check request body for JSON (for custom clients)
+    # Check request body for JSON (for custom clients)
     with contextlib.suppress(Exception):
         body = await request.json()
         if "rememberMe" in body:
@@ -180,12 +181,16 @@ async def login_for_access_token(
 
     # Set refresh token cookie duration based on rememberMe
     refresh_max_age = (60 * 24 * 30 * 60) if remember_me else (settings.REFRESH_TOKEN_EXPIRE_MINUTES * 60)
+    samesite_value = "lax"  # type: ignore
+    if settings.COOKIE_SAMESITE in ("lax", "strict", "none"):
+        samesite_value = settings.COOKIE_SAMESITE  # type: ignore
+
     response.set_cookie(
         key="refresh_token",
         value=token_result.refresh_token,
         httponly=settings.COOKIE_HTTPONLY,
         secure=settings.COOKIE_SECURE,
-        samesite=settings.COOKIE_SAMESITE,
+        samesite=samesite_value,
         max_age=refresh_max_age,
         path="/api/v1/auth/refresh",  # Only sent to refresh endpoint
         domain=settings.COOKIE_DOMAIN,
@@ -197,7 +202,7 @@ async def login_for_access_token(
         value=token_result.access_token,
         httponly=settings.COOKIE_HTTPONLY,
         secure=settings.COOKIE_SECURE,
-        samesite=settings.COOKIE_SAMESITE,
+        samesite=samesite_value,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         path="/api/v1",  # Sent to all API endpoints
         domain=settings.COOKIE_DOMAIN,
@@ -244,30 +249,21 @@ async def refresh_token(request: Request, response: Response, db: Session = Depe
             detail=str(exc),
         ) from exc
 
+    samesite_value = "lax"  # type: ignore
+    if settings.COOKIE_SAMESITE in ("lax", "strict", "none"):
+        samesite_value = settings.COOKIE_SAMESITE  # type: ignore
+
     # Update access token in cookie
     response.set_cookie(
         key="access_token",
         value=token_result.access_token,
         httponly=settings.COOKIE_HTTPONLY,
         secure=settings.COOKIE_SECURE,
-        samesite=settings.COOKIE_SAMESITE,
+        samesite=samesite_value,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         path="/api/v1",
         domain=settings.COOKIE_DOMAIN,
     )
-
-    # Optional: Implement refresh token rotation for extra security
-    if hasattr(token_result, "new_refresh_token") and token_result.new_refresh_token:
-        response.set_cookie(
-            key="refresh_token",
-            value=token_result.new_refresh_token,
-            httponly=settings.COOKIE_HTTPONLY,
-            secure=settings.COOKIE_SECURE,
-            samesite=settings.COOKIE_SAMESITE,
-            max_age=settings.REFRESH_TOKEN_EXPIRE_MINUTES * 60,
-            path="/api/v1/auth/refresh",
-            domain=settings.COOKIE_DOMAIN,
-        )
 
     return {
         "message": "Token refreshed successfully",
@@ -295,7 +291,7 @@ def logout(
     with contextlib.suppress(Exception):
         # Proceed to clear cookies regardless
         service.logout(
-            user_id=current_user.id,
+            user_id=int(current_user.id),  # type: ignore
             access_token=access_token,
             refresh_token=refresh_token_value,
         )
@@ -340,33 +336,39 @@ def read_me(current_user: UserModel = Depends(get_current_user), db: Session = D
     Retorna AuthSessionResponse (dados relacionados à autenticação).
     Para dados de perfil do usuário, use GET /users/me.
     """
-    from robbot.infra.persistence.repositories.credential_repository import CredentialRepository
 
     credential_repo = CredentialRepository(db)
     session_repo = AuthSessionRepository(db)
 
     # Get credential data (email_verified, mfa_enabled)
-    credential = credential_repo.get_by_user_id(current_user.id)
-    email_verified = credential.email_verified if credential else False
-    mfa_enabled = credential.mfa_enabled if credential else False
+    user_id = int(current_user.id)  # type: ignore
+    credential = credential_repo.get_by_user_id(user_id)
+    email_verified = bool(credential.email_verified) if credential else False  # type: ignore
+    mfa_enabled = bool(credential.mfa_enabled) if credential else False  # type: ignore
 
     # Get most recent active session
-    sessions = session_repo.get_all_by_user_id(current_user.id)  # type: ignore[attr-defined]
+    sessions = session_repo.get_all_by_user_id(user_id)  # type: ignore[attr-defined]
     now_utc = datetime.now(UTC)
-    active_sessions = [s for s in sessions if not s.is_revoked and s.expires_at.replace(tzinfo=UTC) > now_utc]
-    session_id = active_sessions[0].id if active_sessions else None
-    last_login_at = active_sessions[0].created_at if active_sessions else None
+    active_sessions = [s for s in sessions if (not bool(s.is_revoked)) and s.expires_at.replace(tzinfo=UTC) > now_utc]  # type: ignore
+    session_id = int(active_sessions[0].id) if active_sessions else None  # type: ignore
+    # Type cast last_login_at to avoid Column[datetime] type error
+    last_login_at_value = None
+    if active_sessions:
+        last_login_at_value = active_sessions[0].created_at
+        # Ensure it's a datetime, not Column
+        if hasattr(last_login_at_value, "__class__") and "Column" in str(type(last_login_at_value)):
+            last_login_at_value = None
 
     return AuthSessionResponse(
-        user_id=current_user.id,
-        id=current_user.id,
-        email=current_user.email,
-        role=current_user.role,
-        is_active=current_user.is_active,
+        user_id=user_id,
+        id=user_id,
+        email=str(current_user.email),  # type: ignore
+        role=str(current_user.role),  # type: ignore
+        is_active=bool(current_user.is_active),  # type: ignore
         email_verified=email_verified,
         mfa_enabled=mfa_enabled,
         session_id=session_id,
-        last_login_at=last_login_at,
+        last_login_at=last_login_at_value,  # type: ignore
     )
 
 
@@ -385,7 +387,7 @@ async def password_recovery(_request: Request, email: str = Form(...), db: Sessi
 
 @router.post("/password-reset", status_code=status.HTTP_200_OK)
 @RATE_LIMIT_PASSWORD_RESET  # 5 per 15min per IP
-async def password_reset(_request: Request, token: str, new_password: str, db: Session = Depends(get_db)):
+async def password_reset(_request: Request, payload: ResetPasswordRequest, db: Session = Depends(get_db)):
     """
     Resets password using recovery token.
 
@@ -393,7 +395,7 @@ async def password_reset(_request: Request, token: str, new_password: str, db: S
     """
     service = AuthService(db)
     try:
-        service.reset_password(token, new_password)
+        service.reset_password(payload.token, payload.new_password)
     except Exception as exc:  # noqa: BLE001 (blind exception)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -426,8 +428,6 @@ def list_sessions(
     refresh_token_value = request.cookies.get("refresh_token")
     if refresh_token_value:
         with contextlib.suppress(Exception):
-            from robbot.core import security
-
             payload = security.decode_token(refresh_token_value, verify_exp=False)
             current_jti = payload.get("jti")
 
@@ -487,8 +487,6 @@ def revoke_all_sessions(
     refresh_token_value = request.cookies.get("refresh_token")
     if refresh_token_value:
         with contextlib.suppress(Exception):
-            from robbot.core import security
-
             payload = security.decode_token(refresh_token_value, verify_exp=False)
             current_jti = payload.get("jti")
 
@@ -498,7 +496,7 @@ def revoke_all_sessions(
     # Revoke all except current
     revoked_count = 0
     for sess in all_sessions:
-        if sess.refresh_token_jti != current_jti and not sess.is_revoked:
+        if sess.refresh_token_jti != current_jti and not bool(sess.is_revoked):  # type: ignore
             session_repo.revoke(sess, reason="revoke_all_other_sessions")
             revoked_count += 1
 
@@ -520,7 +518,6 @@ async def verify_email(token: str, db: Session = Depends(get_db)):
     Redireciona para a página de login (/signin) após sucesso.
     Em caso de erro, exibe mensagem amigável em português.
     """
-    from robbot.services.auth.email_verification_service import EmailVerificationService
 
     service = EmailVerificationService(db)
     try:
@@ -528,8 +525,8 @@ async def verify_email(token: str, db: Session = Depends(get_db)):
         # Gerar access_token JWT para o usuário autenticado
         auth_service = AuthService(db)
         user = auth_service.repo.get_by_id(user_id)
-        from robbot.core import security
-
+        if not user:
+            raise AuthException("User not found")
         access_token = security.create_token_for_subject(str(user.id), minutes=15, token_type="access")
         # Redirecionar para o frontend com o token na URL
         return RedirectResponse(url=f"http://localhost:3000/signin?verified=1&token={access_token}", status_code=302)
@@ -560,7 +557,6 @@ async def resend_verification_email(payload: EmailResendRequest, db: Session = D
     Raises:
         HTTPException: Se usuário não encontrado, email já verificado, ou rate limited
     """
-    from robbot.services.auth.email_verification_service import EmailVerificationService
 
     service = EmailVerificationService(db)
     try:
@@ -592,7 +588,6 @@ def setup_mfa(
     Raises:
         HTTPException: Se usuário não encontrado ou MFA já habilitado
     """
-    from robbot.services.auth.mfa_service import MfaService
 
     service = MfaService(db)
     try:
@@ -629,7 +624,6 @@ def verify_mfa_code(
     Raises:
         HTTPException: Se MFA não habilitado ou código inválido
     """
-    from robbot.services.auth.mfa_service import MfaService
 
     service = MfaService(db)
     try:
@@ -675,7 +669,6 @@ def disable_mfa(
     Raises:
         HTTPException: Se MFA não habilitado ou código inválido
     """
-    from robbot.services.auth.mfa_service import MfaService
 
     service = MfaService(db)
     try:
@@ -694,7 +687,7 @@ def disable_mfa(
 def mfa_login(
     payload: MfaLoginRequest,
     db: Session = Depends(get_db),
-    request: Request = None,
+    request: Request = None,  # type: ignore
 ):
     """Completa login após verificação MFA.
 
@@ -730,8 +723,6 @@ def mfa_login(
             user = service.repo.get_by_email(payload.email)
             if not user:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
-            from robbot.core import security
 
             temporary_token = security.create_token_for_subject(
                 str(user.id),
