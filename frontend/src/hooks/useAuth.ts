@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { loginApi, signupApi, logoutApi, normalizeApiError } from "@/services/authService"
+import { loginApi, signupApi, logoutApi } from "@/services/authService"
 
 export function useAuth() {
   const [loading, setLoading] = useState(false)
@@ -15,7 +15,7 @@ export function useAuth() {
       setSuccess("Login realizado com sucesso!")
       return true
     } catch (err: any) {
-      setError(normalizeApiError(err.message || err))
+      setError(err.message)
       return false
     } finally {
       setLoading(false)
@@ -32,7 +32,7 @@ export function useAuth() {
       setSuccess("Cadastro realizado com sucesso! Você pode fazer login.")
       return true
     } catch (err: any) {
-      setError(normalizeApiError(err.message || err))
+      setError(err.message)
       return false
     } finally {
       setLoading(false)
