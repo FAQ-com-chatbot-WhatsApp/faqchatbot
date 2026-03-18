@@ -58,8 +58,8 @@ export default function SettingsPage() {
     refresh: refreshSession,
   } = useSession({
     sessionName: 'default',
-    autoRefresh: true,
-    refreshInterval: 5000,
+    autoRefresh: false,
+    refreshInterval: 30000,
   })
 
   const [fullName, setFullName] = useState('')
