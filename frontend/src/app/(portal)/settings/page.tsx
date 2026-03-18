@@ -83,8 +83,15 @@ export default function SettingsPage() {
     const fetchQrImage = async () => {
       if (currentSession?.status === 'SCAN_QR_CODE') {
         try {
+          console.log('[QR] Fetching screenshot...')
           const { getScreenshot } = await import('@/services/wahaService')
           const blob = await getScreenshot()
+          console.log(
+            '[QR] Screenshot received, size:',
+            blob.size,
+            'type:',
+            blob.type
+          )
           const url = URL.createObjectURL(blob)
 
           // Revoke old URL before setting new one
@@ -94,8 +101,11 @@ export default function SettingsPage() {
 
           setQrImageUrl(url)
           setQrDialogOpen(true)
+          console.log('[QR] QR Code modal opened with image URL')
         } catch (err) {
-          console.error('Failed to fetch QR screenshot:', err)
+          console.error('[QR] Failed to fetch QR screenshot:', err)
+          setErrorMessage('Erro ao buscar QR Code. Tente novamente.')
+          setTimeout(() => setErrorMessage(null), 3000)
         }
       } else if (currentSession?.status === 'WORKING') {
         setQrDialogOpen(false)
@@ -337,10 +347,10 @@ export default function SettingsPage() {
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                       <QrCode className="w-5 h-5 text-green-600" />
-                      Scan to log in
+                      Escaneie para conectar
                     </DialogTitle>
                     <DialogDescription>
-                      Escaneie o QR Code com seu WhatsApp
+                      Use o WhatsApp do seu celular para escanear o QR Code
                     </DialogDescription>
                   </DialogHeader>
                   <div className="flex flex-col items-center justify-center py-6">
@@ -358,19 +368,21 @@ export default function SettingsPage() {
                             <span className="flex items-center justify-center w-5 h-5 rounded-full bg-muted text-xs">
                               1
                             </span>
-                            Scan the QR code with your phone's camera
+                            Abra o WhatsApp no seu celular
                           </p>
                           <p className="flex items-center gap-2">
                             <span className="flex items-center justify-center w-5 h-5 rounded-full bg-muted text-xs">
                               2
                             </span>
-                            Tap the link to open WhatsApp
+                            Toque em Menu ou Configurações e selecione Aparelhos
+                            conectados
                           </p>
                           <p className="flex items-center gap-2">
                             <span className="flex items-center justify-center w-5 h-5 rounded-full bg-muted text-xs">
                               3
                             </span>
-                            Scan the QR code again to link to your account
+                            Toque em Conectar um aparelho e aponte o celular
+                            para esta tela
                           </p>
                         </div>
                         <div className="flex items-center gap-2 mt-4 text-xs text-muted-foreground">
