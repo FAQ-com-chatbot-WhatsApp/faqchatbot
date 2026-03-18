@@ -38,7 +38,7 @@ async def sync_sessions():
     try:
         waha_sessions = await waha_client.list_sessions()
         print(f"[SYNC] Found {len(waha_sessions)} session(s) in WAHA")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - Top-level script error handling
         print(f"[ERROR] Failed to fetch WAHA sessions: {e}")
         return
 
@@ -48,6 +48,12 @@ async def sync_sessions():
 
         for waha_session in waha_sessions:
             session_name = waha_session.get("name")
+
+            # Skip sessions without name
+            if not session_name or not isinstance(session_name, str):
+                print("[WARNING] Session without valid name, skipping...")
+                continue
+
             session_status = waha_session.get("status", "UNKNOWN")
 
             # Extract connected phone from 'me' field (if available)
