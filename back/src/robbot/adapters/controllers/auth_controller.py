@@ -686,8 +686,8 @@ def disable_mfa(
 @router.post("/mfa/login", response_model=LoginResponse, status_code=status.HTTP_200_OK)
 def mfa_login(
     payload: MfaLoginRequest,
+    request: Request,
     db: Session = Depends(get_db),
-    request: Request = None,  # type: ignore
 ):
     """Completa login após verificação MFA.
 
@@ -703,8 +703,8 @@ def mfa_login(
     service = AuthService(db)
 
     # Extract device info from request
-    user_agent = request.headers.get("user-agent") if request else None
-    ip_address = request.client.host if request and request.client else None
+    user_agent = request.headers.get("user-agent")
+    ip_address = request.client.host if request.client else None
 
     try:
         if payload.temporary_token:
