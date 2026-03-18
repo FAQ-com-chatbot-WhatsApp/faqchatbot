@@ -8,7 +8,7 @@ import logging
 from datetime import UTC, datetime
 
 from robbot.config.settings import settings
-from robbot.infra.integrations.waha.waha_client import WAHAClient
+from robbot.infra.integrations.waha.waha_client import WAHAClient, WAHAError
 from robbot.infra.persistence.models.session_model import WhatsAppSession
 from robbot.infra.persistence.repositories.session_repository import SessionRepository
 from robbot.infra.redis.client import get_redis_client
@@ -51,22 +51,22 @@ class WAHAService:
         self,
         data: SessionCreate,
     ) -> SessionOut:
-        """Create new WhatsApp session.
+        """Create new WhatsApp session (idempotent).
 
         Args:
             data: Session creation data
 
         Returns:
-            Created session
+            Created session (or existing if already in DB)
 
         Raises:
-            ValueError: If session already exists in DB or WAHA
-            WAHAError: For other WAHA API errors
+            ExternalServiceError: For WAHA API errors
         """
         # Check if session exists in DB
         existing = self.session_repo.get_by_name(data.name)
         if existing:
-            raise ValueError(f"Session '{data.name}' already exists in database")
+            logger.info("[INFO] Session '%s' already exists in DB (ID: %s)", data.name, existing.id)
+            return SessionOut.model_validate(existing)
 
         # Determine webhook_url: prefer provided, else first config webhook, else default
         webhook_url = data.webhook_url or None
@@ -75,7 +75,7 @@ class WAHAService:
                 webhooks = data.config.get("webhooks") or []
                 if isinstance(webhooks, list) and webhooks:
                     webhook_url = webhooks[0].get("url")
-            except Exception:
+            except (KeyError, AttributeError, TypeError):
                 webhook_url = None
         webhook_url = webhook_url or settings.WAHA_WEBHOOK_URL
 
@@ -87,15 +87,26 @@ class WAHAService:
                 config=data.config or None,
             )
             logger.info("[INFO] WAHA session created: %s", waha_response)
-        except Exception:
-            # Re-raise; let controller handle (may be conflict if session exists in WAHA)
-            raise
+        except WAHAError as e:
+            # If 422 (session exists in WAHA), create DB record and continue
+            # Otherwise re-raise
+            error_detail = getattr(e, "original_error", None)
+            status_code = getattr(error_detail, "status_code", None) if error_detail else None
+            if status_code == 422:
+                logger.info(
+                    "[INFO] Session '%s' already exists in WAHA, creating DB record",
+                    data.name,
+                )
+            else:
+                raise
 
-        # Save to DB
-        session = self.session_repo.create(
-            name=data.name,
-            webhook_url=webhook_url,
-        )
+        # Save to DB (or get existing if concurrent creation)
+        session = self.session_repo.get_by_name(data.name)
+        if not session:
+            session = self.session_repo.create(
+                name=data.name,
+                webhook_url=webhook_url,
+            )
 
         return SessionOut.model_validate(session)
 
@@ -121,7 +132,7 @@ class WAHAService:
                 name=name,
                 webhook_url=settings.WAHA_WEBHOOK_URL,
             )
-        except Exception as exc:  # noqa: BLE001 - non-fatal for start
+        except (ValueError, RuntimeError, OSError) as exc:
             logger.warning(
                 "[WARN] Failed to update WAHA session webhooks before start: %s",
                 exc,
@@ -187,7 +198,7 @@ class WAHAService:
                 name=name,
                 webhook_url=settings.WAHA_WEBHOOK_URL,
             )
-        except Exception as exc:  # noqa: BLE001 - non-fatal for restart
+        except (ValueError, RuntimeError, OSError) as exc:
             logger.warning(
                 "[WARN] Failed to update WAHA session webhooks before restart: %s",
                 exc,
@@ -223,7 +234,7 @@ class WAHAService:
 
         # Update DB if status changed
         current_status = status_data.get("status")
-        if current_status != session.status:
+        if current_status and current_status != session.status:
             me_data = status_data.get("me")
             connected_phone = me_data.get("id") if isinstance(me_data, dict) else None
             self.session_repo.update_status(
@@ -324,7 +335,7 @@ class WAHAService:
 
             return True
 
-        except Exception as e:  # noqa: BLE001 (blind exception)
+        except (ValueError, RuntimeError, ConnectionError) as e:
             logger.error("[ERROR] Redis rate limit check failed: %s", e)
             return True
 
@@ -342,7 +353,7 @@ class WAHAService:
         )
 
         logger.info("[INFO] Text message sent to %s", data.chat_id)
-        logger.debug(f"[DEBUG] WAHA raw response: {response}")
+        logger.debug("[DEBUG] WAHA raw response: %s", response)
 
         # Extract message_id from WAHA response
         # WAHA can return different formats:
@@ -364,7 +375,9 @@ class WAHAService:
 
         if not message_id:
             logger.warning(
-                f"[WARN] WAHA did not return message_id for {data.chat_id}. Response keys: {response.keys()}"
+                "[WARN] WAHA did not return message_id for %s. Response keys: %s",
+                data.chat_id,
+                list(response.keys()),
             )
 
         return MessageSentResponse(
