@@ -46,18 +46,6 @@ export function Header({
           >
             <Menu className="w-5 h-5" />
           </button>
-          <div className="flex-1 max-w-sm">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                id="global-search"
-                name="search"
-                placeholder="Pesquisar"
-                className="pl-10"
-                autoComplete="off"
-              />
-            </div>
-          </div>
         </div>
 
         <div className="flex items-center gap-4">

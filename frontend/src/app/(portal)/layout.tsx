@@ -17,10 +17,10 @@ export default function PortalLayout({
 
   const navItems = [
     { icon: 'Home', label: 'Dashboard', path: '/dashboard' },
+    { icon: 'Library', label: 'Repositório', path: '/faq' },
     { icon: 'Users', label: 'Contatos', path: '/contacts' },
     { icon: 'MessageSquare', label: 'Mensagens', path: '/messages' },
     { icon: 'Settings', label: 'Configurações', path: '/settings' },
-    { icon: 'HelpCircle', label: 'FAQ', path: '/faq' },
   ]
 
   if (loading) {
