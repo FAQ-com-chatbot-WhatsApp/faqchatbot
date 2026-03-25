@@ -14,6 +14,10 @@ const nextConfig: NextConfig = {
         source: '/api/:path*',
         destination: `${backendUrl}/api/:path*`,
       },
+       {
+        source: '/faq-api/:path*',
+        destination: 'https://www.faq.extensions-joomla.com/api/index.php/:path*',
+      },
     ]
   },
 }
