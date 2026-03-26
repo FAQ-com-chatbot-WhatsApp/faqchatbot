@@ -251,12 +251,11 @@ Start-Sleep -Seconds 3
 
 $currentBranch = git rev-parse --abbrev-ref HEAD
 Say "Executando: git push origin $currentBranch"
-try {
-    git push origin $currentBranch
+git push origin $currentBranch
+if ($LASTEXITCODE -ne 0) {
     Hr
-    Say "Push concluído com sucesso."
-} catch {
-    Hr
-    Write-Error "Falha no push. Verifique as permissões/remote e tente novamente."
+    Write-Error "Falha no push. Verifique as permissões/remote ou faça 'git pull' primeiro, e tente novamente."
     exit 1
 }
+Hr
+Say "Push concluído com sucesso."
