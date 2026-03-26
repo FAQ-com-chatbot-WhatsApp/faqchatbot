@@ -251,11 +251,11 @@ Start-Sleep -Seconds 3
 
 $currentBranch = git rev-parse --abbrev-ref HEAD
 
-git fetch origin $currentBranch 2>$null
+cmd.exe /c "git fetch origin $currentBranch 2>nul"
 if ($LASTEXITCODE -eq 0) {
     Say "Sincronizando branch '$currentBranch' com o GitHub..."
-    git pull origin $currentBranch --rebase
-    if ($LASTEXITCODE -ne 0) {
+    $procPull = Start-Process git -ArgumentList "pull origin $currentBranch --rebase" -NoNewWindow -PassThru -Wait
+    if ($procPull.ExitCode -ne 0) {
         Hr
         Write-Error "Falha de sincronização. Há conflitos de código. Resolva manualmente."
         exit 1
@@ -263,8 +263,8 @@ if ($LASTEXITCODE -eq 0) {
 }
 
 Say "Executando: git push origin $currentBranch"
-git push origin $currentBranch
-if ($LASTEXITCODE -ne 0) {
+$procPush = Start-Process git -ArgumentList "push origin $currentBranch" -NoNewWindow -PassThru -Wait
+if ($procPush.ExitCode -ne 0) {
     Hr
     Write-Error "Falha no push final. Verifique permissões."
     exit 1
