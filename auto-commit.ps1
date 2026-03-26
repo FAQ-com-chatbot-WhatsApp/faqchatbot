@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Auto-commit script em PowerShell que analisa diffs, inferir tipos de commit e faz push único.
+  Auto-commit script em PowerShell que analisa diffs, inferir tipos de commit e faz push unico.
 
 USO
   powershell -ExecutionPolicy Bypass -File .\auto-commit.ps1
@@ -15,26 +15,26 @@ function Hr  { Write-Host "----------------------------------------" }
 
 # Pré-requisitos
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
-    Write-Error "Erro: git não encontrado no PATH."
+    Write-Error "Erro: git nao encontrado no PATH."
     exit 1
 }
 
 # Repositório
 $repoRoot = git rev-parse --show-toplevel 2>$null
 if ([string]::IsNullOrWhiteSpace($repoRoot)) {
-    Write-Error "Erro: não está dentro de um repositório Git."
+    Write-Error "Erro: nao está dentro de um repositório Git."
     exit 1
 }
 Set-Location $repoRoot.Trim()
 
-# Se não houver mudanças
+# Se nao houver mudanças
 $statusPorcelain = git status --porcelain=v1
 if ([string]::IsNullOrWhiteSpace($statusPorcelain)) {
     Say "Nenhuma mudança para commitar. Saindo."
     exit 0
 }
 
-# Centralizar padrões (regex strings)
+# Centralizar padroes (regex strings)
 $DOC_PATH_REGEX = '(^|/)docs(/|$)'
 $DOC_BASENAMES_REGEX = '^README([.]|$)'
 $DOC_EXTS = 'md|rst|adoc|txt'
@@ -157,15 +157,15 @@ function Infer-TypeAndMessage($status, $f, $oldpath) {
     if ($status -eq '??' -or $status.Substring(0,1) -eq 'A') {
         if (Is-DocsFile $f) { return "docs|adiciona $base" }
         elseif (Is-TestFile $f) { return "chore|adiciona testes $base" }
-        elseif (Is-ConfigOrDeps $f) { return "chore|adiciona configuração $base" }
+        elseif (Is-ConfigOrDeps $f) { return "chore|adiciona configuracao $base" }
         else { return "feat|adiciona $base" }
     }
-    if (Is-DocsFile $f) { return "docs|atualiza documentação em $base" }
+    if (Is-DocsFile $f) { return "docs|atualiza documentacao em $base" }
     if (WhitespaceOnlyChange $f) { return "style|ajusta formatação em $base" }
-    if (CommentsOnlyChange $f) { return "docs|atualiza comentários em $base" }
-    if (Contains-FixKeyword $f) { return "fix|corrige lógica em $base" }
+    if (CommentsOnlyChange $f) { return "docs|atualiza comentarios em $base" }
+    if (Contains-FixKeyword $f) { return "fix|corrige logica em $base" }
     if (Is-TestFile $f) { return "chore|atualiza testes $base" }
-    if (Is-ConfigOrDeps $f) { return "chore|atualiza configuração $base" }
+    if (Is-ConfigOrDeps $f) { return "chore|atualiza configuracao $base" }
     return "refactor|refatora $base"
 }
 
@@ -202,7 +202,7 @@ for ($idx=0; $idx -lt $FILES.Count; $idx++) {
 
 # Auditoria
 Hr
-Say "Decisões de tipo por arquivo (antes de executar):"
+Say "Decisoes de tipo por arquivo (antes de executar):"
 foreach ($f in $FILES) {
     Say "- ${f}: $($TYPES[$f]) - motivo: $($REASONS[$f])"
 }
@@ -235,7 +235,7 @@ function Commit-Files($typ, $msg, [string[]]$files) {
 }
 
 # Executa commits por grupo
-if ($GROUP_DOCS.Count -gt 0) { Commit-Files "docs" "atualiza documentação" $GROUP_DOCS }
+if ($GROUP_DOCS.Count -gt 0) { Commit-Files "docs" "atualiza documentacao" $GROUP_DOCS }
 if ($GROUP_STYLE.Count -gt 0) { Commit-Files "style" "ajusta formatação" $GROUP_STYLE }
 if ($GROUP_CHORE_TESTS.Count -gt 0) { Commit-Files "chore" "atualiza testes de API" $GROUP_CHORE_TESTS }
 
@@ -246,7 +246,7 @@ for ($i=0; $i -lt $SOLO_FILES.Count; $i++) {
 }
 
 Hr
-Say "Commits locais concluídos. Push único em 3s... (Ctrl+C para abortar)"
+Say "Commits locais concluidos. Push unico em 3s... (Ctrl+C para abortar)"
 Start-Sleep -Seconds 3
 
 $currentBranch = git rev-parse --abbrev-ref HEAD
@@ -257,7 +257,7 @@ if ($LASTEXITCODE -eq 0) {
     $procPull = Start-Process git -ArgumentList "pull origin $currentBranch --rebase" -NoNewWindow -PassThru -Wait
     if ($procPull.ExitCode -ne 0) {
         Hr
-        Write-Error "Falha de sincronização. Há conflitos de código. Resolva manualmente."
+        Write-Error "Falha de sincronizacao. Ha conflitos de codigo. Resolva manualmente."
         exit 1
     }
 }
@@ -266,7 +266,7 @@ Say "Executando: git push origin $currentBranch"
 $procPush = Start-Process git -ArgumentList "push origin $currentBranch" -NoNewWindow -PassThru -Wait
 if ($procPush.ExitCode -ne 0) {
     Hr
-    Write-Error "Falha no push final. Verifique permissões."
+    Write-Error "Falha no push final. Verifique permissoes."
     exit 1
 }
 Hr
