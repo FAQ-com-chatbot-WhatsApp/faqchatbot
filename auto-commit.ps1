@@ -204,7 +204,7 @@ for ($idx=0; $idx -lt $FILES.Count; $idx++) {
 Hr
 Say "Decisões de tipo por arquivo (antes de executar):"
 foreach ($f in $FILES) {
-    Say "- ${f}: $($TYPES[$f]) — motivo: $($REASONS[$f])"
+    Say "- ${f}: $($TYPES[$f]) - motivo: $($REASONS[$f])"
 }
 Hr
 
@@ -246,7 +246,7 @@ for ($i=0; $i -lt $SOLO_FILES.Count; $i++) {
 }
 
 Hr
-Say "Commits locais concluídos. Push único em 3s… (Ctrl+C para abortar)"
+Say "Commits locais concluídos. Push único em 3s... (Ctrl+C para abortar)"
 Start-Sleep -Seconds 3
 
 $currentBranch = git rev-parse --abbrev-ref HEAD
