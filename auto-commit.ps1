@@ -250,11 +250,23 @@ Say "Commits locais concluídos. Push único em 3s... (Ctrl+C para abortar)"
 Start-Sleep -Seconds 3
 
 $currentBranch = git rev-parse --abbrev-ref HEAD
+
+git fetch origin $currentBranch 2>$null
+if ($LASTEXITCODE -eq 0) {
+    Say "Sincronizando branch '$currentBranch' com o GitHub..."
+    git pull origin $currentBranch --rebase
+    if ($LASTEXITCODE -ne 0) {
+        Hr
+        Write-Error "Falha de sincronização. Há conflitos de código. Resolva manualmente."
+        exit 1
+    }
+}
+
 Say "Executando: git push origin $currentBranch"
 git push origin $currentBranch
 if ($LASTEXITCODE -ne 0) {
     Hr
-    Write-Error "Falha no push. Verifique as permissões/remote ou faça 'git pull' primeiro, e tente novamente."
+    Write-Error "Falha no push final. Verifique permissões."
     exit 1
 }
 Hr
