@@ -3,7 +3,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Check, CheckCheck } from "lucide-react"
+import { Check, CheckCheck, User } from "lucide-react"
 import { AudioPlayer } from "@/components/ui/audio-player"
 
 type MessageStatus = "pending" | "sent" | "delivered" | "read"
@@ -25,7 +25,7 @@ export function MessageBubble({
   message,
   timestamp,
   senderName,
-  senderInitials = "JD",
+  senderInitials,
   senderAvatar,
   unread = false,
   status = "sent",
@@ -81,7 +81,12 @@ export function MessageBubble({
       {!isUser && (
         <Avatar className="size-8 shrink-0">
           {senderAvatar && <AvatarImage src={senderAvatar} alt={senderName} />}
-          <AvatarFallback className="text-xs">{senderInitials}</AvatarFallback>
+          <AvatarFallback className="text-xs">{senderInitials ? (
+            senderInitials
+            ) : (
+            <User className="size-4 text-muted-foreground" />
+            )}
+          </AvatarFallback>
         </Avatar>
       )}
 

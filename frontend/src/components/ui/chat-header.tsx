@@ -38,7 +38,13 @@ export function ChatHeader({
         <div className="relative">
           <Avatar className="h-10 w-10">
             {avatar && <AvatarImage src={avatar} />}
-            <AvatarFallback>{initials}</AvatarFallback>
+            <AvatarFallback>
+              {(/^\d+$/.test(initials) || initials === "??" || !initials) ? (
+             <User className="h-6 w-6" />
+              ) : (
+                initials
+              )}
+            </AvatarFallback>
           </Avatar>
           {isOnline && (
             <span className="absolute bottom-0 right-0 size-3 rounded-full bg-green-500 border-2 border-background" />

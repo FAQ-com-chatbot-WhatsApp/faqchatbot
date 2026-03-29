@@ -18,6 +18,41 @@ import { sendTextMessage, getContactPicture } from "@/services/wahaService"
 
 type FilterType = "all" | "unread" | "groups" | "favorites"
 
+ const formatPhoneNumber = (phone: string | undefined | null) => {
+  if (!phone) return "";
+  
+  // Remove tudo que não é número e o sufixo @c.us se existir
+  let cleaned = phone.split('@')[0].replace(/\D/g, '');
+
+  // Remove o '55' inicial se ele existir e o número for longo
+  if (cleaned.startsWith('55') && cleaned.length > 10) {
+    cleaned = cleaned.substring(2);
+  }
+
+  // Formatação para (XX) XXXXX-XXXX ou (XX) XXXX-XXXX
+  if (cleaned.length === 11) {
+    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
+  } else if (cleaned.length === 10) {
+    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(6)}`;
+  }
+
+  return cleaned;
+};
+
+const getDisplayName = (name: string | null | undefined, phone: string) => {
+  if (!name || name.trim() === "") return formatPhoneNumber(phone);
+
+  // REGEX: Se o nome contém pelo menos uma letra (a-z), é um nome real
+  const hasLetters = /[a-zA-Z]/.test(name);
+
+  if (hasLetters) {
+    return name;
+  } else {
+    // Se só tem números/símbolos, tratamos como telefone e formatamos
+    return formatPhoneNumber(name || phone);
+  }
+};
+
 export default function MessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
@@ -278,17 +313,6 @@ export default function MessagesPage() {
       : name.slice(0, 2).toUpperCase()
   }
 
-  const formatPhoneNumber = (phone: string) => {
-    const cleaned = phone.replace(/^\+?55/, '')
-
-    if (cleaned.length === 11) {
-      return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`
-    } else if (cleaned.length === 10) {
-      return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(6)}`
-    }
-    return phone
-  }
-
   const formatTimestamp = (timestamp: string) => {
     // Se o timestamp não tem 'Z' ou '+', adicionar 'Z' para tratar como UTC
     const isoTimestamp = timestamp.includes('Z') || timestamp.includes('+')
@@ -397,7 +421,7 @@ export default function MessagesPage() {
             filteredConversations.map((conv) => (
               <div key={conv.id} className="relative group">
                 <ConversationItem
-                  name={conv.lead_name || formatPhoneNumber(conv.phone_number)}
+                  name={getDisplayName(conv.lead_name ?? "", conv.phone_number)}
                   initials={getInitials(conv.lead_name)}
                   avatar={avatarCache[conv.phone_number] || ''}
                   lastMessage={conv.last_message || undefined}
@@ -425,7 +449,7 @@ export default function MessagesPage() {
         {selectedConversation ? (
           <>
             <ChatHeader
-              name={selectedConversation.lead_name || formatPhoneNumber(selectedConversation.phone_number)}
+              name={getDisplayName(selectedConversation.lead_name ?? "", selectedConversation.phone_number)}
               initials={getInitials(selectedConversation.lead_name)}
               avatar={avatarCache[selectedConversation.phone_number] || ''}
               status={selectedConversation.status === "active" ? "online" : "offline"}
@@ -450,7 +474,20 @@ export default function MessagesPage() {
               ) : (
                 messages.map((msg: ConversationMessage) => {
                   const isInbound = msg.direction === "INBOUND" || msg.direction === "inbound"
-                  const leadName = selectedConversation?.lead_name || "Lead"
+                  const leadName = getDisplayName(
+                        selectedConversation?.lead_name, 
+                        selectedConversation?.phone_number || ""
+                  )
+                  // Só gera iniciais se o lead_name original tiver LETRAS e NÃO for "JD"
+                  const rawName = selectedConversation?.lead_name || "";
+                  const hasLetters = /[a-zA-Z]/.test(rawName);
+                  const isJD = rawName.toLowerCase().trim() === 'jd';
+
+                  // Se for nome real, manda as iniciais. 
+                  // Se for número ou "JD", manda UNDEFINED (para o MessageBubble mostrar o bonequinho)
+                  const initials = (isInbound && hasLetters && !isJD) 
+                  ? getInitials(rawName) 
+                  : undefined;
 
                   // Determinar status da mensagem
                   const isPending = typeof msg.id === 'number' && msg.id > 1000000000000 // ID temporário (timestamp)
@@ -463,7 +500,7 @@ export default function MessagesPage() {
                       message={msg.body}
                       timestamp={formatTimestamp(msg.created_at)}
                       senderName={isInbound ? leadName : undefined}
-                      senderInitials={isInbound ? getInitials(leadName) : undefined}
+                      senderInitials={initials}
                       senderAvatar={isInbound ? avatarCache[selectedConversation?.phone_number || ''] : undefined}
                       status={messageStatus}
                       mediaUrl={msg.media_url}
