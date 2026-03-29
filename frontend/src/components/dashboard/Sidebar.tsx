@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { Home, Users, MessageSquare, Settings, Library } from 'lucide-react'
+import { Home, Users, MessageSquare, Settings, Library, Bell } from 'lucide-react'
 
 interface NavItem {
   icon: string
@@ -20,6 +20,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Home,
   Users,
   MessageSquare,
+  Bell,
   Settings,
   Library,
 }

@@ -20,6 +20,7 @@ export default function PortalLayout({
     { icon: 'Library', label: 'Repositório', path: '/faq' },
     { icon: 'Users', label: 'Contatos', path: '/contacts' },
     { icon: 'MessageSquare', label: 'Mensagens', path: '/messages' },
+    { icon: 'Bell', label: 'Notificações', path: '/notifications' },
     { icon: 'Settings', label: 'Configurações', path: '/settings' },
   ]
 

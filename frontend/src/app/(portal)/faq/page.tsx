@@ -1,10 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-
+import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-
 import {
   Tabs,
   TabsContent,
@@ -163,8 +162,8 @@ export default function FaqPage() {
   }, [])
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Repositório</h1>
+    <div className="p-6 max-w-7xl">
+      <PageHeader title="Repositório" />
 
       <Tabs defaultValue="groups">
         <TabsList>
