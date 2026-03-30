@@ -1,6 +1,9 @@
 """Webhook controller for WAHA events (NO JWT auth)."""
 
+import asyncio
+import json
 import logging
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
@@ -9,9 +12,11 @@ from robbot.api.v1.dependencies import get_db
 from robbot.config.settings import get_settings
 from robbot.core.custom_exceptions import ExternalServiceError, QueueError
 from robbot.infra.persistence.repositories.webhook_log_repository import WebhookLogRepository
+from robbot.infra.redis.client import get_redis_client
 from robbot.schemas.waha import WebhookLogOut, WebhookPayload
 from robbot.services.communication.message_filter_service import MessageFilterService
 from robbot.services.infrastructure.queue_service import get_queue_service
+from robbot.services.leads.lid_resolver_service import get_lid_resolver
 
 router = APIRouter()
 
@@ -65,8 +70,6 @@ async def receive_waha_webhook(
 
     # Ignorar gravação no banco de eventos que causam spam
     if payload.event == "engine.event":
-        from datetime import datetime, timezone
-        from robbot.schemas.waha import WebhookLogOut
         return WebhookLogOut(
             id=0,
             session_name=payload.session,
@@ -109,8 +112,6 @@ async def receive_waha_webhook(
 
             # If it's an audio/voice message, log the complete payload for debugging
             if msg_type in ["voice", "ptt", "audio"]:
-                import json
-
                 logger.info(
                     "[WEBHOOK DEBUG AUDIO] Payload completo de áudio: %s",
                     json.dumps(message_data, indent=2, default=str)[:2000],
@@ -128,15 +129,11 @@ async def receive_waha_webhook(
 
             # LID RESOLUTION: Try to resolve @lid to real phone number (non-blocking)
             if "@lid" in chat_id:
-                from robbot.services.leads.lid_resolver_service import get_lid_resolver
-
                 lid_resolver = get_lid_resolver()
                 resolved_phone = None
 
                 try:
                     # Quick attempt with 500ms timeout (non-blocking)
-                    import asyncio
-
                     resolved_phone = await asyncio.wait_for(
                         lid_resolver.try_resolve_lid(phone, payload.session),
                         timeout=0.5,
@@ -172,8 +169,6 @@ async def receive_waha_webhook(
 
                 # Se não encontrou direto e recebeu um LID, tenta encontrar via Redis cache
                 if not phone_is_allowed and "@" in chat_id and "@lid" in chat_id:
-                    from robbot.infra.redis.client import get_redis_client
-
                     redis_client = get_redis_client()
 
                     # Procurar o número original baseado no LID
