@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { PageHeader } from '@/components/ui/page-header'
 import { 
   CheckCircle2, 
@@ -19,7 +19,7 @@ const NOTIFICATIONS_MOCK = [
     user: "Maria Silva",
     message: "Bot finalizou atendimento. Aguardando agendamento.",
     time: "27/03/2026 23:56",
-    status: "pending", // pendente
+    status: "resolved", // resolvido
   },
   {
     id: 2,
@@ -28,10 +28,36 @@ const NOTIFICATIONS_MOCK = [
     time: "27/03/2026 23:30",
     status: "resolved", // resolvido
   },
+   {
+    id: 3,
+    user: "(51) 98888-7777",
+    message: "Cliente pediu informações sobre pagamento.",
+    time: "27/03/2026 23:57",
+    status: "pending", // pendente
+  },
 ];
+
+// Função para converter string de data no formato DD/MM/YYYY HH:mm para Date
+const parseDateTime = (dateString: string): Date => {
+  const [datePart, timePart] = dateString.split(" ");
+  const [day, month, year] = datePart.split("/").map(Number);
+  const [hours, minutes] = timePart.split(":").map(Number);
+  return new Date(year, month - 1, day, hours, minutes);
+};
 
 export default function NotificationsPage() {
   const [filter, setFilter] = useState("all");
+  const [notifications, setNotifications] = useState(NOTIFICATIONS_MOCK);
+
+  const handleMarkAsDone = (notificationId: number) => {
+    setNotifications(prevNotifications =>
+      prevNotifications.map(notification =>
+        notification.id === notificationId
+          ? { ...notification, status: "resolved" }
+          : notification
+      )
+    );
+  };
 
   return (
     <div className="p-6 max-w-7xl">
@@ -49,7 +75,10 @@ export default function NotificationsPage() {
 
       {/* Lista de Notificações */}
       <div className="p-6 max-w-7xl space-y-8">
-        {NOTIFICATIONS_MOCK.filter(n => filter === "all" || n.status === filter).map((notification) => (
+        {notifications
+          .filter(n => filter === "all" || n.status === filter)
+          .sort((a, b) => parseDateTime(b.time).getTime() - parseDateTime(a.time).getTime())
+          .map((notification) => (
           <Card key={notification.id} className="overflow-hidden border-slate-200 shadow-sm">
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -89,9 +118,14 @@ export default function NotificationsPage() {
                     <MessageSquare className="h-4 w-4 text-slate-500" />
                     Abrir conversa
                   </Button>
-                  <Button size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700">
+                  <Button 
+                    size="sm" 
+                    className="gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    onClick={() => handleMarkAsDone(notification.id)}
+                    disabled={notification.status === "resolved"}
+                  >
                     <Check className="h-4 w-4" />
-                    Marcar como feito
+                    {notification.status === "resolved" ? "Concluído" : "Marcar como feito"}
                   </Button>
                 </div>
 
@@ -101,7 +135,7 @@ export default function NotificationsPage() {
         ))}
 
         {/* Estado vazio */}
-        {NOTIFICATIONS_MOCK.length === 0 && (
+        {notifications.length === 0 && (
           <div className="py-20 text-center text-slate-500">
             Nenhuma notificação encontrada.
           </div>
