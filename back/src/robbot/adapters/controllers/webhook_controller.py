@@ -47,12 +47,33 @@ async def receive_waha_webhook(
     - `message.ack` - Message acknowledgment
     - `session.status` - Session status change
     """
-    logger.info(
-        "Webhook received: %s from session %s",
-        payload.event,
-        payload.session,
-        extra={"event": payload.event, "session": payload.session},
-    )
+    # Não logar / ignorar spam do engine.event no nível INFO
+    if payload.event not in ["engine.event", "message.ack"]:
+        logger.info(
+            "Webhook received: %s from session %s",
+            payload.event,
+            payload.session,
+            extra={"event": payload.event, "session": payload.session},
+        )
+    else:
+        logger.debug(
+            "Webhook received ignored event: %s from session %s",
+            payload.event,
+            payload.session,
+            extra={"event": payload.event, "session": payload.session},
+        )
+
+    # Ignorar gravação no banco de eventos que causam spam
+    if payload.event == "engine.event":
+        from datetime import datetime, timezone
+        from robbot.schemas.waha import WebhookLogOut
+        return WebhookLogOut(
+            id=0,
+            session_name=payload.session,
+            event_type=payload.event,
+            processed=True,
+            created_at=datetime.now(timezone.utc)
+        )
 
     log = repo.create(
         session_name=payload.session,
@@ -211,9 +232,10 @@ async def receive_waha_webhook(
                     "webhook_log_id": log.id,
                 },
             )
-        else:
+        elif payload.event != "engine.event":
+            # Log apenas para eventos que não sejam spam do engine
             logger.debug(
-                "Evento '%s' registrado mas não enfileirado",
+                "Evento '%s' registrado mas ignorado para processamento na fila (esperado)",
                 payload.event,
                 extra={"event": payload.event, "webhook_log_id": log.id},
             )
