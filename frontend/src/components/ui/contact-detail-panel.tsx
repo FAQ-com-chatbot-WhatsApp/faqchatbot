@@ -3,7 +3,7 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Phone, Video, MessageCircle, Edit2, Trash2 } from "lucide-react"
+import { MessageCircle, Edit2, User } from "lucide-react"
 
 interface ContactDetailPanelProps {
   name: string
@@ -28,7 +28,9 @@ export function ContactDetailPanel({
         <div className="flex flex-col items-center gap-4 mb-6">
           <Avatar className="h-24 w-24">
             <AvatarImage src={avatar} alt={name} />
-            <AvatarFallback>{initials}</AvatarFallback>
+            <AvatarFallback className="bg-blue-50 text-blue-600 font-semibold">
+                {(/^\d+$/.test(initials) || initials === "??") ? <User className="size-12" /> : initials}
+            </AvatarFallback>
           </Avatar>
           <div className="space-y-1 text-center">
             <h2 className="text-xl font-bold">{name}</h2>
