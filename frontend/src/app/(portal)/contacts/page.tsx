@@ -15,7 +15,7 @@ export default function ContatosPage() {
   const router = useRouter()
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
 
-  const { leads, isLoading, error, total, refresh } = useLeads({ enabled: true })
+  const { leads, isLoading, error, total } = useLeads({ enabled: true })
 
   const getInitials = (name?: string, phone?: string) => {
     if (name) {
