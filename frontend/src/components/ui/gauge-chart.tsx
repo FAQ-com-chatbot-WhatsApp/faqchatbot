@@ -27,9 +27,6 @@ export function GaugeChart({
   // Clamp value between 0-100
   const normalizedValue = Math.max(0, Math.min(100, value))
 
-  // Calculate rotation for the gauge (180deg = 0%, 0deg = 100%)
-  const rotation = 180 - (normalizedValue * 1.8)
-
   // Determine color based on value
   const getColor = () => {
     if (normalizedValue >= 80) return 'text-green-600 dark:text-green-400'
