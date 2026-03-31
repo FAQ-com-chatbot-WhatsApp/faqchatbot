@@ -6,6 +6,7 @@ This service orchestrates conversation operations using rich domain entities.
 
 import logging
 from datetime import UTC, datetime
+from uuid import uuid4
 
 from sqlalchemy.orm import Session
 
@@ -96,13 +97,10 @@ class ConversationService:
 
         lead_repo = LeadRepository(self.db)
 
-        # Determine fallback name to avoid DB NotNullViolation if name is None
-        # We use the phone number or a generic "Lead" if name is missing
-        db_name = name or f"Lead ({resolved_phone})"
-
         lead = LeadModel(
+            id=str(uuid4()), # Generate ID for the new lead
             phone_number=resolved_phone,
-            name=db_name, # Fallback to avoid NotNullViolation
+            name=name, # NULL if not provided, allowed by migration e4b5d6f7a8b9
             maturity_score=0,
             conversation_id=conversation_model.id,
         )
