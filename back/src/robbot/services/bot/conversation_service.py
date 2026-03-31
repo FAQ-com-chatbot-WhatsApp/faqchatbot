@@ -87,7 +87,7 @@ class ConversationService:
         )
 
         conversation_model = ConversationMapper.to_model(conversation_domain)
-        conversation_model.name = name or resolved_phone
+        conversation_model.name = name # Mantém None se não informado
         conversation_model = self.repo.create(conversation_model)
 
         # 3. Create Lead
@@ -97,7 +97,7 @@ class ConversationService:
         lead_repo = LeadRepository(self.db)
         lead = LeadModel(
             phone_number=resolved_phone,
-            name=name or resolved_phone,
+            name=name, # Mantém None para indicar que ainda não sabemos
             maturity_score=0,
             conversation_id=conversation_model.id,
         )
