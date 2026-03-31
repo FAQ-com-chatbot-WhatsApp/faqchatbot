@@ -384,6 +384,48 @@ def delete_lead(
         raise HTTPException(status_code=500, detail=f"Failed to delete lead: {str(e)}") from e
 
 
+class UpdateLeadRequest(BaseModel):
+    """Request schema for updating lead details."""
+
+    name: str | None = Field(None, max_length=255)
+    email: EmailStr | None = None
+
+
+@router.patch("/{lead_id}", response_model=LeadOut, tags=["Leads"])
+def update_lead(
+    lead_id: str,
+    request: UpdateLeadRequest,
+    _current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Update lead details (name, email).
+
+    Requires JWT authentication via HttpOnly cookie.
+    """
+    service = LeadService(db)
+    try:
+        lead = service.update_lead(
+            lead_id=lead_id,
+            name=request.name,
+            email=request.email,
+        )
+
+        return LeadOut(
+            id=lead.id,
+            phone_number=lead.phone_number,
+            name=lead.name,
+            email=lead.email,
+            status=lead.status.value,
+            maturity_score=lead.maturity_score,
+            assigned_to=lead.assigned_to,
+            created_at=lead.created_at.isoformat(),
+            updated_at=lead.updated_at.isoformat(),
+        )
+    except Exception as e:  # noqa: BLE001 (blind exception)
+        raise HTTPException(status_code=500, detail=f"Failed to update lead: {str(e)}") from e
+
+
 @router.post("/{lead_id}/restore", tags=["Leads"])
 def restore_lead(
     lead_id: str,
