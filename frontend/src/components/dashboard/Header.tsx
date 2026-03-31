@@ -1,7 +1,6 @@
 'use client'
 
-import { Menu, Search, Bell, MessageSquare, LogOut, User, Settings } from 'lucide-react'
-import { Input } from '@/components/ui/input'
+import { Menu, LogOut, User, Settings } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
