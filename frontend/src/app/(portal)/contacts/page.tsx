@@ -27,19 +27,8 @@ export default function ContatosPage() {
     return phone?.slice(-2) || '??'
   }
 
-  const getAvatarUrl = (phone: string) => {
-    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${phone}`
-  }
-
-  const handleCall = (phone: string) => {
-    console.log('Calling', phone)
-  }
-
-  const handleVideo = (phone: string) => {
-    console.log('Video calling', phone)
-  }
-
   const handleMessage = (phone: string) => {
+    // Navigate to messages with the correct chatId format
     router.push(`/messages?chatId=${encodeURIComponent(phone)}@c.us`)
   }
 
@@ -48,21 +37,10 @@ export default function ContatosPage() {
     console.log('Editing', lead.name || lead.phone_number)
   }
 
-  const handleDelete = (lead: Lead) => {
-    if (!confirm('Tem certeza que deseja remover este contato?')) return
-    console.log('Deleting', lead.id)
-  }
-
   return (
     <div className="p-6 h-full">
       <PageHeader
         title={`${total} Contatos`}
-        actions={
-          <Button className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Contato
-          </Button>
-        }
       />
 
       {error && (
@@ -80,22 +58,19 @@ export default function ContatosPage() {
         <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
           <AlertCircle className="h-12 w-12 mb-4" />
           <p className="text-lg">Nenhum contato encontrado</p>
-          <p className="text-sm">Envie uma mensagem no WhatsApp para começar</p>
+          <p className="text-sm">Os leads aparecerão aqui conforme as novas conversas iniciarem.</p>
         </div>
       ) : (
         <div className="flex gap-6 h-[calc(100vh-180px)]">
           {/* Lista de Contatos - Esquerda */}
           <div className="flex-1 overflow-auto pr-2">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
               {leads.map((lead) => (
                 <ContactCard
                   key={lead.id}
                   name={lead.name || lead.phone_number}
-                  avatar={getAvatarUrl(lead.phone_number)}
                   initials={getInitials(lead.name ?? undefined, lead.phone_number)}
                   isOnline={false}
-                  onCall={() => handleCall(lead.phone_number)}
-                  onVideo={() => handleVideo(lead.phone_number)}
                   onMessage={() => handleMessage(lead.phone_number)}
                   onEdit={() => handleEdit(lead)}
                 />
@@ -105,17 +80,13 @@ export default function ContatosPage() {
 
           {/* Painel de Detalhes - Direita */}
           {selectedLead && (
-            <div className="w-80 sticky top-0">
+            <div className="w-80 sticky top-0 border rounded-xl overflow-hidden bg-card">
               <ContactDetailPanel
                 name={selectedLead.name || selectedLead.phone_number}
-                avatar={getAvatarUrl(selectedLead.phone_number)}
                 initials={getInitials(selectedLead.name ?? undefined, selectedLead.phone_number)}
-                about={`Pontuação: ${selectedLead.maturity_score}/100`}
-                onCall={() => handleCall(selectedLead.phone_number)}
-                onVideo={() => handleVideo(selectedLead.phone_number)}
+                about={`Score: ${selectedLead.maturity_score}/100 - Lead Status: ${selectedLead.status || 'Ativo'}`}
                 onMessage={() => handleMessage(selectedLead.phone_number)}
                 onEdit={() => handleEdit(selectedLead)}
-                onDelete={() => handleDelete(selectedLead)}
               />
             </div>
           )}
