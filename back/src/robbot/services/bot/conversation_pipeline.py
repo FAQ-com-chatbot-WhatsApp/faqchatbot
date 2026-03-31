@@ -3,6 +3,7 @@ Conversation Pipeline - Orchestrates initial message processing and context buil
 """
 
 import logging
+import asyncio
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -110,13 +111,15 @@ class ConversationPipeline:
             f"RECENT CONVERSATION LOG:\n{state.recent_history}\n\nRELEVANT FACTS/MEMORY:\n{filtered_rag}"
         )
 
-        # 5. Detect intent and urgency
-        state.intent, state.spin_phase = await self.intent_detector.detect_intent(
-            state.message_text, state.context_text
-        )
-        state.is_urgent = await self.intent_detector.detect_urgency(state.message_text, state.context_text)
-
-        # 6. Try extract name
+        # 5. Detect intent, urgency and extract name IN PARALLEL
+        # Both are LLM calls, parallelizing saves ~5-10s per message.
+        
+        # Define tasks
+        intent_task = self.intent_detector.detect_intent(state.message_text, state.context_text)
+        urgency_task = self.intent_detector.detect_urgency(state.message_text, state.context_text)
+        
+        # Conditionally add name extraction task
+        name_task = None
         if conversation.lead:
             lead_name = conversation.lead.name
             should_extract = (
@@ -125,11 +128,21 @@ class ConversationPipeline:
                 or (len(lead_name.split()) == 1 and len(lead_name) < 15)
             )
             if should_extract:
-                await self.intent_detector.try_extract_name(
+                name_task = self.intent_detector.try_extract_name(
                     self.session, state.message_text, state.context_text, conversation
                 )
 
-        # 7. Update Score (Pre-calculation)
+        # Execute in parallel
+        if name_task:
+            (state.intent, state.spin_phase), state.is_urgent, _ = await asyncio.gather(
+                intent_task, urgency_task, name_task
+            )
+        else:
+            (state.intent, state.spin_phase), state.is_urgent = await asyncio.gather(
+                intent_task, urgency_task
+            )
+
+        # 7. Update Score (Pre-calculation) - MUST happen after intent
         state.new_score = await self.intent_detector.update_maturity_score(
             self.session, conversation, state.message_text, state.intent, state.spin_phase
         )
