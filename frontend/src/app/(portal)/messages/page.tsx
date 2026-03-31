@@ -101,6 +101,7 @@ export default function MessagesPage() {
       })
       setLocalUnreadCounts(counts)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversations])
 
   const loadAvatar = async (phoneNumber: string, chatId: string) => {
@@ -134,7 +135,7 @@ export default function MessagesPage() {
       setAvatarCache(prev => ({ ...prev, [phoneNumber]: url }))
 
       return url
-    } catch (error) {
+    } catch {
       // Marcar no cache como vazio para não tentar novamente
       setAvatarCache(prev => ({ ...prev, [phoneNumber]: '' }))
       return ''
