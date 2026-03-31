@@ -9,7 +9,7 @@ import {
   stopSession,
   restartSession,
 } from '@/services/wahaService'
-import type { WahaSession, SessionStatus, SessionCreate } from '@/types/waha'
+import type { WahaSession, SessionStatus } from '@/types/waha'
 
 interface UseSessionOptions {
   sessionName?: string
@@ -59,10 +59,11 @@ export function useSession(options: UseSessionOptions = {}): UseSessionReturn {
       setError(null)
       const status = await getSessionStatus(sessionName)
       setCurrentSession(status)
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errTyped = err as { status?: number } & Error
       // Se a sessão não existe (404), criar automaticamente
       if (
-        err?.status === 404 ||
+        errTyped?.status === 404 ||
         (err instanceof Error && err.message.includes('404'))
       ) {
         try {
