@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useAuthRedirect } from '../../hooks/useAuthRedirect'
 import { useUser } from '../../hooks/useUser'
+import { useNotifications } from '@/hooks/useNotifications'
 import { Sidebar } from '@/components/dashboard/Sidebar'
 import { Header } from '@/components/dashboard/Header'
 
@@ -12,6 +13,7 @@ export default function PortalLayout({
   children: React.ReactNode
 }) {
   const { loading } = useAuthRedirect()
+  const { unreadCount } = useNotifications()
   const { user } = useUser()
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
 
@@ -20,7 +22,12 @@ export default function PortalLayout({
     { icon: 'Library', label: 'Repositório', path: '/faq' },
     { icon: 'Users', label: 'Contatos', path: '/contacts' },
     { icon: 'MessageSquare', label: 'Mensagens', path: '/messages' },
-    { icon: 'Bell', label: 'Notificações', path: '/notifications' },
+    { 
+        icon: 'Bell', 
+        label: 'Notificações', 
+        path: '/notifications',
+        badge: unreadCount > 0 ? unreadCount : undefined 
+    },
     { icon: 'Settings', label: 'Configurações', path: '/settings' },
   ]
 
