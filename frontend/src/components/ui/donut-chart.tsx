@@ -47,39 +47,43 @@ export function DonutChart({
     )
   }
 
-  const total = segments.reduce((sum, seg) => sum + seg.value, 0)
-
-  // Calculate SVG path for each segment
-  let currentAngle = -90 // Start at top
+  // Calculate SVG path for each segment using reduce to avoid post-render mutation
   const radius = 80
   const centerX = 100
   const centerY = 100
   const strokeWidth = 24
 
-  const paths = segments.map((segment) => {
-    const angle = (segment.percentage / 100) * 360
-    const startAngle = currentAngle
-    const endAngle = currentAngle + angle
+  const paths = segments.reduce<(DonutChartSegment & { pathData: string })[]>(
+    (acc, segment) => {
+      const currentAngle = acc.length === 0
+        ? -90
+        : acc.reduce((sum, s) => {
+            const prevAngle = (s.percentage / 100) * 360
+            return sum + prevAngle
+          }, -90)
 
-    const startRad = (startAngle * Math.PI) / 180
-    const endRad = (endAngle * Math.PI) / 180
+      const angle = (segment.percentage / 100) * 360
+      const endAngle = currentAngle + angle
 
-    const x1 = centerX + radius * Math.cos(startRad)
-    const y1 = centerY + radius * Math.sin(startRad)
-    const x2 = centerX + radius * Math.cos(endRad)
-    const y2 = centerY + radius * Math.sin(endRad)
+      const startRad = (currentAngle * Math.PI) / 180
+      const endRad = (endAngle * Math.PI) / 180
 
-    const largeArc = angle > 180 ? 1 : 0
+      const x1 = centerX + radius * Math.cos(startRad)
+      const y1 = centerY + radius * Math.sin(startRad)
+      const x2 = centerX + radius * Math.cos(endRad)
+      const y2 = centerY + radius * Math.sin(endRad)
 
-    const pathData = [
-      `M ${x1} ${y1}`,
-      `A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}`,
-    ].join(' ')
+      const largeArc = angle > 180 ? 1 : 0
 
-    currentAngle = endAngle
+      const pathData = [
+        `M ${x1} ${y1}`,
+        `A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}`,
+      ].join(' ')
 
-    return { ...segment, pathData }
-  })
+      return [...acc, { ...segment, pathData }]
+    },
+    []
+  )
 
   return (
     <Card className={className}>
