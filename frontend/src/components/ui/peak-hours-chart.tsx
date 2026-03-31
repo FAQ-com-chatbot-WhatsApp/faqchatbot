@@ -33,7 +33,6 @@ export function PeakHoursChart({ title, subtitle, data, className }: PeakHoursCh
   }
 
   const maxMessages = Math.max(...data.map(d => d.message_count))
-  const maxConversations = Math.max(...data.map(d => d.conversation_count))
 
   const formatHour = (hour: number) => {
     if (hour === 0) return '00h'
