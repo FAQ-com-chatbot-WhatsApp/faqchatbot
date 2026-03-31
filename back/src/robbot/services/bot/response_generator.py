@@ -171,7 +171,7 @@ class ResponseGenerator:
             )
 
             # Extract response text
-            text = response.get("text", "")
+            text = response.get("response") or response.get("text", "")
 
             if not text:
                 raise LLMError("Empty response from LLM")
