@@ -3,7 +3,7 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Phone, Video, MessageSquare, Edit2, Trash2 } from "lucide-react"
+import { MessageSquare, Edit2, User } from "lucide-react"
 
 interface ContactCardProps {
   name: string
@@ -35,7 +35,9 @@ export function ContactCard({
           <div className="relative">
             <Avatar className="size-20">
               {avatar && <AvatarImage src={avatar} />}
-              <AvatarFallback className="text-lg">{initials}</AvatarFallback>
+              <AvatarFallback className="text-lg bg-blue-50 text-blue-600 font-semibold">
+                {(/^\d+$/.test(initials) || initials === "??") ? <User className="size-10" /> : initials}
+              </AvatarFallback>
             </Avatar>
             {isOnline && (
               <span className="absolute bottom-0 right-0 size-4 rounded-full bg-green-500 border-2 border-background" />
