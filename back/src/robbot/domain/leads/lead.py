@@ -13,8 +13,8 @@ class Lead:
     """
 
     id: str
-    name: str
-    phone_number: PhoneNumber
+    name: str | None = None
+    phone_number: PhoneNumber = field(default=None) # type: ignore
     status: LeadStatus = LeadStatus.NEW
     maturity_score: LeadScore = LeadScore(0)
     email: str | None = None
@@ -25,12 +25,20 @@ class Lead:
     deleted_at: datetime | None = None
 
     @classmethod
-    def create(cls, name: str, phone_number: str, id: str | None = None) -> "Lead":
+    def create(cls, name: str | None, phone_number: str, id: str | None = None) -> "Lead":
         return cls(
             id=id or str(uuid4()),
             name=name,
             phone_number=PhoneNumber(phone_number),
         )
+
+    def update_details(self, name: str | None = None, email: str | None = None):
+        """Update lead generic details."""
+        if name is not None:
+            self.name = name
+        if email is not None:
+            self.email = email
+        self.updated_at = datetime.utcnow()
 
     def update_score(self, new_value: int):
         """Logic to update lead score and potentially its status."""
