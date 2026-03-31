@@ -95,9 +95,14 @@ class ConversationService:
         from robbot.infra.persistence.repositories.lead_repository import LeadRepository
 
         lead_repo = LeadRepository(self.db)
+
+        # Determine fallback name to avoid DB NotNullViolation if name is None
+        # We use the phone number or a generic "Lead" if name is missing
+        db_name = name or f"Lead ({resolved_phone})"
+
         lead = LeadModel(
             phone_number=resolved_phone,
-            name=name, # Mantém None para indicar que ainda não sabemos
+            name=db_name, # Fallback to avoid NotNullViolation
             maturity_score=0,
             conversation_id=conversation_model.id,
         )
