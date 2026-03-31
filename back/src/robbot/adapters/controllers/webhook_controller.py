@@ -3,7 +3,7 @@
 import asyncio
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
@@ -75,7 +75,7 @@ async def receive_waha_webhook(
             session_name=payload.session,
             event_type=payload.event,
             processed=True,
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(UTC)
         )
 
     log = repo.create(
@@ -97,7 +97,8 @@ async def receive_waha_webhook(
             _data = message_data.get("_data", {})
 
             logger.info(
-                "[WEBHOOK DEBUG] Mensagem recebida - Type: %s | HasMedia: %s | Media: %s | _data.type: %s",
+                "[WEBHOOK DEBUG] Mensagem recebida - "
+                "Type: %s | HasMedia: %s | Media: %s | _data.type: %s",
                 msg_type,
                 has_media,
                 "PRESENTE" if media_data else "NULL",
@@ -153,7 +154,7 @@ async def receive_waha_webhook(
                         phone,
                         extra={"lid": chat_id, "webhook_log_id": log.id},
                     )
-                except Exception as e:
+                except Exception as e:  # pylint: disable=broad-exception-caught
                     logger.warning(
                         "[WEBHOOK] LID resolution error, accepting original: %s - %s",
                         phone,
@@ -162,7 +163,8 @@ async def receive_waha_webhook(
                     )
 
             # DEV MODE: Filtrar mensagens por número de telefone (exceto sessão de teste)
-            # IMPORTANTE: O WAHA pode retornar LID (24988337893388@lid) ou número (555191628223@c.us)
+            # IMPORTANTE: O WAHA pode retornar LID (24988337893388@lid)
+            # ou número (555191628223@c.us)
             if settings.DEV_MODE and settings.dev_phone_list and payload.session != "test":
                 # Procurar correspondência em dev_phone_list (números originais)
                 phone_is_allowed = phone in settings.dev_phone_list
@@ -175,7 +177,9 @@ async def receive_waha_webhook(
                     cached_number = redis_client.get(f"waha:dev_phone:{phone}")
                     if cached_number:
                         cached_number_str = (
-                            cached_number.decode() if isinstance(cached_number, bytes) else cached_number
+                            cached_number.decode()
+                            if isinstance(cached_number, bytes)
+                            else cached_number
                         )
                         if cached_number_str in settings.dev_phone_list:
                             phone_is_allowed = True
@@ -214,7 +218,7 @@ async def receive_waha_webhook(
             try:
                 message_filter = MessageFilterService()
                 message_filter.mark_as_processed(message_data.get("id"))
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.warning("[WEBHOOK] Failed to mark message as processed: %s", e)
 
             logger.info(
