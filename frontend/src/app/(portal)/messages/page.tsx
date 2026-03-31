@@ -308,10 +308,17 @@ export default function MessagesPage() {
 
   const getInitials = (name?: string | null) => {
     if (!name) return "??"
-    const parts = name.split(" ")
-    return parts.length > 1
-      ? `${parts[0][0]}${parts[1][0]}`.toUpperCase()
-      : name.slice(0, 2).toUpperCase()
+    
+    // Remover caracteres não alfanuméricos para gerar iniciais limpas
+    const cleaned = name.replace(/[^\w\s]/gi, '').trim();
+    if (!cleaned) return "??"
+
+    const parts = cleaned.split(/\s+/)
+    if (parts.length > 1 && parts[0] && parts[1]) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
+    }
+    
+    return cleaned.slice(0, 2).toUpperCase()
   }
 
   const formatTimestamp = (timestamp: string) => {
