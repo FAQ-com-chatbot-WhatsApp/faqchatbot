@@ -27,6 +27,8 @@ def enforce_whatsapp_style(text: str, max_paragraphs: int = 2) -> str:
         r"^Phase:\s*(SITUATION|SITUA[TÇ]?[ÃA]O|PROBLEM|IMPLICATION|NEED[_ ]PAYOFF)\b\s*",
         # Captura tags brasileiras ou genéricas entre asteriscos
         r"^\*?(Questão natural|Questão|Pergunta|Análise|Fase).*?\*?\s*",
+        r"^\*?Natural Response Following SPIN Methodology:?\*?\s*",
+        r"^\*?Context Analysis:?\*?\s*",
     ]
     
     for pat in header_patterns:
@@ -42,6 +44,8 @@ def enforce_whatsapp_style(text: str, max_paragraphs: int = 2) -> str:
         r"\s*\(Observação:.*?\)\s*",
         r"\s*\((SITUATION|SITUA[TÇ]?[ÃA]O|PROBLEM|IMPLICATION|NEED[_ ]PAYOFF|OPEN QUESTION|SPIN)\)\s*",
         r"\s*Situat[çc]ão\*\*.*?\s*", # Caso específico reportado
+        r"\s*\*?Context Analysis:?\*?\s*",
+        r"\s*\*?Natural Response Following SPIN Methodology:?\*?\s*",
     ]
     for pat in cleanup_patterns:
         # re.DOTALL caso a nota tenha quebras de linha
