@@ -73,7 +73,35 @@ class HandoffService:
         self.conversation_repo.update(conversation)
         session.flush()
 
-        logger.info("[SUCCESS] Handoff triggered: conv=%s, reason=%s, score=%s", conversation_id, reason, score)
+        # Create notifications for the team
+        from robbot.infra.persistence.repositories.notification_repository import NotificationRepository
+        from robbot.infra.persistence.repositories.user_repository import UserRepository
+
+        notif_repo = NotificationRepository(session)
+        user_repo = UserRepository(session)
+
+        # Determine target users: lead's assigned user OR all active team members
+        target_user_ids = []
+        if conversation.lead and conversation.lead.assigned_to_user_id:
+            target_user_ids = [conversation.lead.assigned_to_user_id]
+        else:
+            # If no one is assigned, notify everyone active
+            active_users = user_repo.list_all() # list_all inherited from BaseRepository
+            target_user_ids = [u.id for u in active_users if u.is_active]
+
+        lead_name = conversation.lead.name if conversation.lead and conversation.lead.name else conversation.phone_number
+        
+        for uid in target_user_ids:
+            notif_repo.create(
+                user_id=uid,
+                notification_type="HANDOFF_REQUIRED",
+                title="🎯 Lead Pronto para Agendamento",
+                message=f"O cliente {lead_name} atingiu a maturidade necessária e aguarda seu contato para agendar!",
+            )
+        
+        session.flush()
+
+        logger.info("[SUCCESS] Handoff triggered and notifications created: conv=%s, reason=%s", conversation_id, reason)
 
         # Generate natural transition message based on context
         transition_message = self._generate_transition_message(reason, score)
