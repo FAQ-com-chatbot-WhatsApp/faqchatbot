@@ -29,10 +29,10 @@ export function useConversations(options: UseConversationsOptions = {}): UseConv
   const [total, setTotal] = useState(0)
   const [pages, setPages] = useState(0)
 
-  const loadConversations = useCallback(async () => {
+  const loadConversations = useCallback(async (isPolling = false) => {
     if (!enabled) return;
 
-    setIsLoading(true)
+    if (!isPolling) setIsLoading(true)
     setError(null)
 
     try {
@@ -44,12 +44,19 @@ export function useConversations(options: UseConversationsOptions = {}): UseConv
       setError(err instanceof Error ? err.message : "Erro ao carregar conversas")
       console.error("Erro ao carregar conversas:", err)
     } finally {
-      setIsLoading(false)
+      if (!isPolling) setIsLoading(false)
     }
   }, [page, size, status, search, enabled])
 
   useEffect(() => {
     loadConversations()
+    
+    // Polling setup: refresh every 5 seconds
+    const interval = setInterval(() => {
+      loadConversations(true)
+    }, 5000)
+
+    return () => clearInterval(interval)
   }, [loadConversations])
 
   const refresh = useCallback(async () => {
@@ -87,26 +94,33 @@ export function useConversationMessages(options: UseConversationMessagesOptions 
   const [error, setError] = useState<string | null>(null)
   const [total, setTotal] = useState(0)
 
-  const loadMessages = useCallback(async () => {
+  const loadMessages = useCallback(async (isPolling = false) => {
     if (!enabled || !conversationId) return;
 
-    setIsLoading(true)
+    if (!isPolling) setIsLoading(true)
     setError(null)
 
     try {
-      const messages = await getConversationMessages(conversationId)
-      setMessages(messages || [])
-      setTotal(messages.length)
+      const messagesData = await getConversationMessages(conversationId)
+      setMessages(messagesData || [])
+      setTotal(messagesData.length)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro ao carregar mensagens")
       console.error("Erro ao carregar mensagens:", err)
     } finally {
-      setIsLoading(false)
+      if (!isPolling) setIsLoading(false)
     }
   }, [conversationId, enabled])
 
   useEffect(() => {
     loadMessages()
+
+    // Polling setup: refresh every 5 seconds
+    const interval = setInterval(() => {
+      loadMessages(true)
+    }, 5000)
+
+    return () => clearInterval(interval)
   }, [loadMessages])
 
   const refresh = useCallback(async () => {
