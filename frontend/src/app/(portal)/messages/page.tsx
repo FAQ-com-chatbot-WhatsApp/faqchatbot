@@ -453,9 +453,13 @@ export default function MessagesPage() {
               name={getDisplayName(selectedConversation.lead_name ?? "", selectedConversation.phone_number)}
               initials={getInitials(selectedConversation.lead_name)}
               avatar={avatarCache[selectedConversation.phone_number] || ''}
-              status={selectedConversation.status === "active" ? "online" : "offline"}
-              isOnline={selectedConversation.status === "active"}
-              isBotActive={selectedConversation.status === "ACTIVE_BOT" || !selectedConversation.status.includes("HUMAN")}
+              status={
+                selectedConversation.status === "PENDING_HANDOFF" ? "⚠️ Aguardando Atendimento" :
+                selectedConversation.status === "ACTIVE_HUMAN" ? "👤 Atendimento Humano" :
+                selectedConversation.status === "ACTIVE_BOT" ? "🤖 Bot Ativo" : "Offline"
+              }
+              isOnline={selectedConversation.status === "active" || selectedConversation.status === "ACTIVE_BOT"}
+              isBotActive={selectedConversation.status === "ACTIVE_BOT"}
               onBotToggle={handleBotToggle}
               onMore={refreshMessages}
             />
