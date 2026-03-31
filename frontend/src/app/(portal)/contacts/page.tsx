@@ -3,28 +3,48 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Plus, AlertCircle, Loader2 } from 'lucide-react'
+import { AlertCircle, Loader2 } from 'lucide-react'
 import { ContactCard } from '@/components/ui/contact-card'
 import { ContactDetailPanel } from '@/components/ui/contact-detail-panel'
 import { PageHeader } from '@/components/ui/page-header'
 import { useLeads } from '@/hooks/useLeads'
 import { useRouter } from 'next/navigation'
 import type { Lead } from '@/services/leadService'
+import { updateLead } from '@/services/leadService'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { toast } from 'sonner'
 
 export default function ContatosPage() {
   const router = useRouter()
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [editName, setEditName] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
 
-  const { leads, isLoading, error, total } = useLeads({ enabled: true })
+  const { leads, isLoading, error, total, refresh } = useLeads({ enabled: true })
 
-  const getInitials = (name?: string, phone?: string) => {
-    if (name) {
-      const parts = name.split(' ')
+  const getInitials = (name?: string | null) => {
+    if (!name) return "??"
+    
+    // REGEX: Se o nome contém pelo menos uma letra (a-z), é um nome real
+    const hasLetters = /[a-zA-Z]/.test(name);
+    
+    if (hasLetters) {
+      const parts = name.trim().split(' ')
       return parts.length > 1
         ? `${parts[0][0]}${parts[1][0]}`.toUpperCase()
         : name.slice(0, 2).toUpperCase()
     }
-    return phone?.slice(-2) || '??'
+    
+    return "??" // Vai disparar o ícone de silhueta no ContactCard
   }
 
   const handleMessage = (phone: string) => {
@@ -34,7 +54,31 @@ export default function ContatosPage() {
 
   const handleEdit = (lead: Lead) => {
     setSelectedLead(lead)
-    console.log('Editing', lead.name || lead.phone_number)
+    setEditName(lead.name || '')
+    setIsEditDialogOpen(true)
+  }
+
+  const handleSaveName = async () => {
+    if (!selectedLead) return
+
+    setIsSaving(true)
+    try {
+      await updateLead(selectedLead.id, { name: editName })
+      toast.success('Nome atualizado com sucesso')
+      setIsEditDialogOpen(false)
+      refresh() // Atualizar lista
+      
+      // Atualizar lead selecionado
+      setSelectedLead({
+          ...selectedLead,
+          name: editName
+      })
+    } catch (err) {
+      console.error('Erro ao salvar nome:', err)
+      toast.error('Erro ao atualizar nome')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -69,8 +113,9 @@ export default function ContatosPage() {
                 <ContactCard
                   key={lead.id}
                   name={lead.name || lead.phone_number}
-                  initials={getInitials(lead.name ?? undefined, lead.phone_number)}
+                  initials={getInitials(lead.name)}
                   isOnline={false}
+                  isSelected={selectedLead?.id === lead.id}
                   onMessage={() => handleMessage(lead.phone_number)}
                   onEdit={() => handleEdit(lead)}
                 />
@@ -83,7 +128,7 @@ export default function ContatosPage() {
             <div className="w-80 sticky top-0 border rounded-xl overflow-hidden bg-card">
               <ContactDetailPanel
                 name={selectedLead.name || selectedLead.phone_number}
-                initials={getInitials(selectedLead.name ?? undefined, selectedLead.phone_number)}
+                initials={getInitials(selectedLead.name)}
                 about={`Score: ${selectedLead.maturity_score}/100 - Lead Status: ${selectedLead.status || 'Ativo'}`}
                 onMessage={() => handleMessage(selectedLead.phone_number)}
                 onEdit={() => handleEdit(selectedLead)}
@@ -92,6 +137,38 @@ export default function ContatosPage() {
           )}
         </div>
       )}
+
+      {/* Modal de Edição de Nome */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Editar Nome do Contato</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Nome
+              </Label>
+              <Input
+                id="name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="col-span-3"
+                placeholder="Digite o nome real"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={isSaving}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveName} disabled={isSaving || !editName.trim()}>
+              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
