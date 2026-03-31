@@ -24,10 +24,6 @@ import {
   Bot,
   BarChart3,
   RefreshCw,
-  Target,
-  Zap,
-  BarChart2,
-  TrendingDown,
   Filter,
 } from 'lucide-react'
 import { useAnalytics } from '@/hooks/useAnalytics'
