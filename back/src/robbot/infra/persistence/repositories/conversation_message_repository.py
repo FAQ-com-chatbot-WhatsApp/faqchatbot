@@ -31,9 +31,9 @@ class ConversationMessageRepository(BaseRepository[ConversationMessageModel]):
         return (
             self.session.query(ConversationMessageModel)
             .filter_by(conversation_id=conversation_id)
-            .order_by(ConversationMessageModel.created_at.asc())
+            .order_by(ConversationMessageModel.created_at.desc())
             .limit(limit)
-            .all()
+            .all()[::-1]  # Invert to return in chronological order
         )
 
     def mark_conversation_as_read(self, conversation_id: str) -> int:
