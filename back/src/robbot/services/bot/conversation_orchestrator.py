@@ -49,7 +49,7 @@ class ConversationOrchestrator:
         logger.info("[SUCCESS] Decomposed ConversationOrchestrator initialized")
 
     async def process_inbound_message(
-        self, chat_id: str, phone_number: str, message_text: str, session_name: str = "default", **media_kwargs
+        self, chat_id: str, phone_number: str, message_text: str, session_name: str = "default", name: str | None = None, **media_kwargs
     ) -> dict[str, Any]:
         """
         Main entry point for message processing.
@@ -64,7 +64,7 @@ class ConversationOrchestrator:
                 dispatcher = ResponseDispatcher(session, self.waha_client)
 
                 # 2. Identify Conversation/Lead
-                conversation = await conv_service.get_or_create(chat_id, phone_number)
+                conversation = await conv_service.get_or_create(chat_id, phone_number, name=name)
 
                 # 3. Guard: Silencing
                 if self._should_bot_silence(conversation):
