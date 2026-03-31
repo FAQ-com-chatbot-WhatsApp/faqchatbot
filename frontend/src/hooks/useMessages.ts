@@ -39,8 +39,8 @@ export function useMessages({
     try {
       const response = await getChatMessages(chatId)
       setMessages(response.messages || [])
-    } catch (err: any) {
-      setError(err.message || "Erro ao carregar mensagens")
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao carregar mensagens")
       console.error("Erro ao carregar mensagens:", err)
     } finally {
       setIsLoading(false)
@@ -63,8 +63,8 @@ export function useMessages({
         }
         const newMessage = await sendTextMessage(request)
         setMessages((prev) => [...prev, newMessage])
-      } catch (err: any) {
-        setError(err.message || "Erro ao enviar mensagem")
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Erro ao enviar mensagem")
         throw err
       }
     },
@@ -77,8 +77,8 @@ export function useMessages({
       try {
         await deleteMessage(chatId, messageId)
         setMessages((prev) => prev.filter((msg) => msg.id !== messageId))
-      } catch (err: any) {
-        setError(err.message || "Erro ao deletar mensagem")
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Erro ao deletar mensagem")
         throw err
       }
     },
@@ -93,8 +93,8 @@ export function useMessages({
         setMessages((prev) =>
           prev.map((msg) => (msg.id === messageId ? updatedMessage : msg))
         )
-      } catch (err: any) {
-        setError(err.message || "Erro ao editar mensagem")
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Erro ao editar mensagem")
         throw err
       }
     },
