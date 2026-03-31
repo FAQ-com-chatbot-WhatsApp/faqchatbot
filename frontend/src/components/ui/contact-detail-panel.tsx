@@ -10,11 +10,8 @@ interface ContactDetailPanelProps {
   avatar?: string
   initials: string
   about: string
-  onCall?: () => void
-  onVideo?: () => void
   onMessage?: () => void
   onEdit?: () => void
-  onDelete?: () => void
 }
 
 export function ContactDetailPanel({
@@ -22,54 +19,55 @@ export function ContactDetailPanel({
   avatar,
   initials,
   about,
-  onCall,
-  onVideo,
   onMessage,
   onEdit,
-  onDelete
 }: ContactDetailPanelProps) {
   return (
-    <Card className="border-l border-border h-full">
+    <Card className="border-l border-border h-full shadow-none border-0">
       <CardContent className="p-6">
         <div className="flex flex-col items-center gap-4 mb-6">
           <Avatar className="h-24 w-24">
             <AvatarImage src={avatar} alt={name} />
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
-          <h2 className="text-xl font-bold text-center">{name}</h2>
+          <div className="space-y-1 text-center">
+            <h2 className="text-xl font-bold">{name}</h2>
+            <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-2.5 py-0.5 text-xs font-semibold text-primary transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+              Contato
+            </div>
+          </div>
         </div>
 
-        <div className="flex justify-center gap-4 mb-6">
-          <Button variant="ghost" size="icon" className="rounded-lg" onClick={onCall}>
-            <Phone className="w-5 h-5 text-blue-600" />
-          </Button>
-          <Button variant="ghost" size="icon" className="rounded-lg" onClick={onMessage}>
-            <MessageCircle className="w-5 h-5 text-blue-600" />
-          </Button>
-          <Button variant="ghost" size="icon" className="rounded-lg" onClick={onVideo}>
-            <Video className="w-5 h-5 text-blue-600" />
-          </Button>
+        <div className="flex justify-center gap-4 mb-8">
+          {onMessage && (
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full size-12 border-blue-100 bg-blue-50/50 hover:bg-blue-100 hover:text-blue-600 transition-all"
+              onClick={onMessage}
+              title="Ir para mensagens"
+            >
+              <MessageCircle className="w-5 h-5 text-blue-600" />
+            </Button>
+          )}
+          {onEdit && (
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full size-12 border-blue-100 bg-blue-50/50 hover:bg-blue-100 hover:text-blue-600 transition-all"
+              onClick={onEdit}
+              title="Editar nome"
+            >
+              <Edit2 className="w-5 h-5 text-blue-600" />
+            </Button>
+          )}
         </div>
 
-        <div className="flex gap-3 mb-6">
-          <Button variant="outline" size="sm" className="flex-1" onClick={onEdit}>
-            <Edit2 className="w-4 h-4 mr-2" />
-            Editar
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
-            onClick={onDelete}
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            Excluir
-          </Button>
-        </div>
-
-        <div>
-          <h3 className="text-sm font-semibold mb-2">Sobre</h3>
-          <p className="text-xs text-muted-foreground leading-relaxed">{about}</p>
+        <div className="pt-6 border-t">
+          <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wider">Anotações / Score</h3>
+          <div className="bg-muted/50 rounded-xl p-4">
+            <p className="text-sm leading-relaxed">{about}</p>
+          </div>
         </div>
       </CardContent>
     </Card>
