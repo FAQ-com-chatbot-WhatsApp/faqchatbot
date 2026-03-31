@@ -74,12 +74,15 @@ def process_debounced_message(chat_id: str) -> dict[str, Any]:
     # CRITICAL FIX: Preserve original message metadata (type, _data, media, etc)
     # Instead of forcing type="text", use the last message's actual metadata
 
+    _data_payload = last_payload.get("_data") or {}
+    media_payload = last_payload.get("media") or {}
+
     # DEBUG: Log what we're preserving from debounce
     logger.info("[DEBOUNCE] Preservando metadata do last_payload:")
     logger.info("[DEBOUNCE]   type: %s", last_payload.get("type", "text"))
-    logger.info("[DEBOUNCE]   _data.type: %s", last_payload.get("_data", {}).get("type"))
+    logger.info("[DEBOUNCE]   _data.type: %s", _data_payload.get("type"))
     logger.info("[DEBOUNCE]   hasMedia: %s", last_payload.get("hasMedia", False))
-    logger.info("[DEBOUNCE]   media keys: %s", list(last_payload.get("media", {}).keys()))
+    logger.info("[DEBOUNCE]   media keys: %s", list(media_payload.keys()))
 
     message_data = {
         "from": chat_id,
@@ -87,8 +90,8 @@ def process_debounced_message(chat_id: str) -> dict[str, Any]:
         "timestamp": int(time.time()),
         "session": last_payload.get("session", "default"),
         "type": last_payload.get("type", "text"),  # Preserve original type
-        "_data": last_payload.get("_data", {}),  # Preserve _data with correct type
-        "media": last_payload.get("media", {}),  # Preserve media payload
+        "_data": _data_payload,  # Preserve _data safely
+        "media": media_payload,  # Preserve media safely
         "hasMedia": last_payload.get("hasMedia", False),  # Preserve hasMedia flag
         "debounced": True,
         "debounce_window": settings.MESSAGE_DEBOUNCE_SECONDS,
