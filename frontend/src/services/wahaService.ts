@@ -1,7 +1,6 @@
 import { fetchApi } from '@/lib/api'
 import type {
   WahaMessage,
-  WahaChat,
   SendTextMessageRequest,
   SendImageMessageRequest,
   SendLocationMessageRequest,
