@@ -141,10 +141,11 @@ class IntentDetector:
             if name and name != "null" and confidence >= 65:
                 current_name = conversation.lead.name
 
-                # Only update if: no name, phone placeholder, or new name has higher confidence
+                # Only update if current name is empty or is the word 'Desconhecido'
                 should_update = (
-                    not current_name  # No name yet
-                    or current_name == conversation.lead.phone_number  # Phone placeholder
+                    not current_name  # No name yet (is None or empty)
+                    or current_name == conversation.lead.phone_number # Phone placeholder
+                    or current_name.lower().strip() == "desconhecido" # Is placeholder
                     or (len(current_name.split()) == 1 and len(name.split()) > 1)  # Upgrade from single to full name
                 )
 
