@@ -8,16 +8,29 @@ interface PageHeaderProps {
   subtitle?: string
   actions?: ReactNode
   className?: string
+  showTitle?: boolean
 }
 
-export function PageHeader({ title, subtitle, actions, className }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, actions, className, showTitle = false }: PageHeaderProps) {
+  if (!showTitle && !subtitle && !actions) {
+    return <h1 className="sr-only">{title}</h1>
+  }
+
   return (
-    <div className={cn("flex items-center justify-between mb-6", className)}>
+    <div className={cn("flex flex-col sm:flex-row sm:items-center justify-between gap-4", (subtitle || actions) ? "mb-6" : "mb-2", className)}>
       <div>
-        <h1 className="text-3xl font-bold">{title}</h1>
-        {subtitle && <p className="text-muted-foreground mt-1">{subtitle}</p>}
+        {showTitle ? (
+          <h1 className="text-3xl font-bold text-slate-900 leading-tight tracking-tight">{title}</h1>
+        ) : (
+          <h1 className="sr-only">{title}</h1>
+        )}
+        {subtitle && (
+          <p className={cn(showTitle ? "text-muted-foreground mt-1" : "text-xl font-semibold text-slate-800 tracking-tight")}>
+            {subtitle}
+          </p>
+        )}
       </div>
-      {actions && <div>{actions}</div>}
+      {actions && <div className="flex-shrink-0">{actions}</div>}
     </div>
   )
 }
