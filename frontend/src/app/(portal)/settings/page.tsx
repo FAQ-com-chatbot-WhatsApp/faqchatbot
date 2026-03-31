@@ -36,8 +36,6 @@ import {
   User,
   Shield,
   Smartphone,
-  Power,
-  PowerOff,
   RotateCw,
   QrCode,
   Phone,
@@ -132,6 +130,8 @@ export default function SettingsPage() {
         URL.revokeObjectURL(qrImageUrl)
       }
     }
+    // qrImageUrl is excluded from deps to avoid infinite reload loop (it's set inside fetchQrImage)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSession?.status])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -167,13 +167,13 @@ export default function SettingsPage() {
       await refreshSession()
       setSuccessMessage('Sessão WhatsApp iniciada com sucesso!')
       setTimeout(() => setSuccessMessage(null), 3000)
-    } catch (err: any) {
-      console.error('Failed to start session', err)
+    } catch (err: unknown) {
+      const typedErr = err as { status?: number; message?: string }
       // Se já está iniciada (409), apenas atualiza status sem mostrar erro
       if (
-        err?.status === 409 ||
-        err?.message?.includes('409') ||
-        err?.message?.includes('already')
+        typedErr?.status === 409 ||
+        typedErr?.message?.includes('409') ||
+        typedErr?.message?.includes('already')
       ) {
         console.log(
           '[handleStartSession] Session already started, refreshing status...'
@@ -357,6 +357,7 @@ export default function SettingsPage() {
                     {qrImageUrl ? (
                       <>
                         <div className="bg-white p-4 rounded-lg shadow-lg">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={qrImageUrl}
                             alt="QR Code WhatsApp"
