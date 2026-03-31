@@ -4,7 +4,7 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { Paperclip, Send, Image, Smile } from "lucide-react"
+import { Paperclip, Send, Image as ImageIcon, Smile } from "lucide-react"
 
 interface MessageInputProps extends React.HTMLAttributes<HTMLDivElement> {
   onSend?: (message: string) => void
@@ -94,7 +94,7 @@ export function MessageInput({
             disabled={disabled}
             aria-label="Attach image"
           >
-            <Image className="size-4" />
+            <ImageIcon className="size-4" aria-hidden="true" />
           </Button>
         )}
         {showEmoji && (
