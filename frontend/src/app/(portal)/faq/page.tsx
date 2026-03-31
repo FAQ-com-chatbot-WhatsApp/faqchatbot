@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { PageHeader } from '@/components/ui/page-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,10 +18,26 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 
+interface FaqAttributes {
+  name?: string
+  title?: string
+  question?: string
+  answer?: string
+}
+
+interface FaqItem {
+  id: string
+  name?: string
+  title?: string
+  question?: string
+  answer?: string
+  attributes?: FaqAttributes
+}
+
 export default function FaqPage() {
-  const [groups, setGroups] = useState<any[]>([])
-  const [categories, setCategories] = useState<any[]>([])
-  const [questions, setQuestions] = useState<any[]>([])
+  const [groups, setGroups] = useState<FaqItem[]>([])
+  const [categories, setCategories] = useState<FaqItem[]>([])
+  const [questions, setQuestions] = useState<FaqItem[]>([])
 
   const [selectedGroup, setSelectedGroup] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
@@ -36,14 +52,16 @@ export default function FaqPage() {
   const TOKEN = `Bearer c2hhMjU2OjI6ZTkwMjY4ODFhMmYzNzA1NDMyMWE5YWYzY2NlOWY4NTM1MWZkYTIzZDJmNDJkOGU0ZGZmM2E1ODllMmZiMTNlMg`
   const BASE_URL = "/faq-api"
 
-  const safeList = (data: any) => {
-    if (Array.isArray(data)) return data
-    if (Array.isArray(data?.data)) return data.data
-    if (Array.isArray(data?.data?.items)) return data.data.items
+  const safeList = (data: unknown): FaqItem[] => {
+    if (Array.isArray(data)) return data as FaqItem[]
+    const d = data as Record<string, unknown>
+    if (Array.isArray(d?.data)) return d.data as FaqItem[]
+    const nested = d?.data as Record<string, unknown>
+    if (Array.isArray(nested?.items)) return nested.items as FaqItem[]
     return []
   }
 
-  const fetchGroups = async () => {
+  const fetchGroups = useCallback(async () => {
     const res = await fetch(
       `${BASE_URL}/v1/nobossfaq/groups?state=1&language=pt-BR`,
       {
@@ -56,7 +74,8 @@ export default function FaqPage() {
 
     const data = await res.json()
     setGroups(safeList(data))
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const fetchCategories = async (groupId: string) => {
     const res = await fetch(
@@ -128,10 +147,10 @@ export default function FaqPage() {
     fetchQuestions(selectedCategory)
   }
 
-  const startEdit = (q: any) => {
+  const startEdit = (q: FaqItem) => {
     setEditingId(q.id)
-    setEditQuestion(q.question || q.attributes?.question || '')
-    setEditAnswer(q.answer || q.attributes?.answer || '')
+    setEditQuestion(q.question ?? q.attributes?.question ?? '')
+    setEditAnswer(q.answer ?? q.attributes?.answer ?? '')
   }
 
   const updateQuestion = async () => {
@@ -159,7 +178,7 @@ export default function FaqPage() {
 
   useEffect(() => {
     fetchGroups()
-  }, [])
+  }, [fetchGroups])
 
   return (
     <div className="p-6 max-w-7xl">
