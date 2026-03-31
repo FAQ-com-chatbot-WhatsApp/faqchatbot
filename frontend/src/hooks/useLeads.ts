@@ -40,8 +40,8 @@ export function useLeads(options: UseLeadsOptions = {}): UseLeadsReturn {
       setLeads(response.leads || [])
       setTotal(response.total || 0)
       setPages(Math.ceil((response.total || 0) / size))
-    } catch (err: any) {
-      setError(err.message || "Erro ao carregar leads")
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao carregar leads")
       console.error("Erro ao carregar leads:", err)
     } finally {
       setIsLoading(false)
