@@ -4,7 +4,6 @@ import * as React from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import { resetPassword } from '@/services/passwordService'
 import { useFormFeedback } from '@/hooks/useFormFeedback'
 import { useSearchParams } from 'next/navigation'
@@ -63,8 +62,8 @@ export function ResetPasswordForm() {
       await resetPassword(token, newPassword)
       setSuccess('✓ Senha redefinida! Redirecionando...')
       setTimeout(() => (window.location.href = '/signin'), 2000)
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Erro ao redefinir senha')
       focusFirstError()
       setLoading(false)
     }
