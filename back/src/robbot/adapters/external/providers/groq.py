@@ -95,8 +95,17 @@ class GroqProvider(LLMProvider):
                     response = await self._client.ainvoke(full_prompt)
                     latency_ms = int((time.time() - start_time) * 1000)
 
+                    content = response.content
+                    if isinstance(content, list):
+                        content = "".join(
+                            part.get("text", "") if isinstance(part, dict) else str(part)
+                            for part in content
+                        )
+                    elif not isinstance(content, str):
+                        content = str(content)
+
                     return {
-                        "response": response.content,
+                        "response": content,
                         "tokens_used": None,
                         "latency_ms": latency_ms,
                         "model": self._current_model,
