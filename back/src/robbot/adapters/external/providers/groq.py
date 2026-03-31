@@ -19,7 +19,6 @@ logger = logging.getLogger(__name__)
 GROQ_FALLBACK_MODELS = [
     "llama-3.3-70b-versatile",  # Latest Llama 3.3, best balance
     "llama-3.1-8b-instant",  # Fast, lower capability
-    "mixtral-8x7b-32768",  # Good for long context
 ]
 
 
