@@ -190,6 +190,29 @@ class LeadService:
             offset=offset,
         )
 
+    def update_lead(
+        self,
+        lead_id: str,
+        name: str | None = None,
+        email: str | None = None,
+    ) -> LeadModel:
+        """Update lead basic details."""
+        lead_model = self.repo.get_by_id(lead_id)
+        if not lead_model:
+            raise NotFoundException(f"Lead {lead_id} not found")
+
+        # Use domain for update
+        lead_domain = LeadMapper.to_domain(lead_model)
+        lead_domain.update_details(name=name, email=email)
+
+        # Save changes
+        LeadMapper.to_model(lead_domain, lead_model)
+        updated = self.repo.update(lead_model)
+        self.db.commit()
+
+        logger.info("[SUCCESS] Lead details updated (lead_id=%s, name=%s)", lead_id, name)
+        return updated
+
     def auto_assign_lead(self, lead_id: str) -> LeadModel | None:
         """Auto-assign lead to available secretary using round-robin logic."""
         from robbot.infra.persistence.repositories.user_repository import UserRepository
