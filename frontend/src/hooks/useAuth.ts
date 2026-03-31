@@ -14,8 +14,8 @@ export function useAuth() {
       await loginApi(email, password, rememberMe)
       setSuccess("Login realizado com sucesso!")
       return true
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Erro desconhecido')
       return false
     } finally {
       setLoading(false)
@@ -31,8 +31,8 @@ export function useAuth() {
       await signupApi(email, password, full_name)
       setSuccess("Cadastro realizado com sucesso! Você pode fazer login.")
       return true
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Erro desconhecido')
       return false
     } finally {
       setLoading(false)
