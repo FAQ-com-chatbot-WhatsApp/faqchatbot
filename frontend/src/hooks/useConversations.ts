@@ -40,8 +40,8 @@ export function useConversations(options: UseConversationsOptions = {}): UseConv
       setConversations(response.conversations || [])
       setTotal(response.total || 0)
       setPages(Math.ceil((response.total || 0) / size))
-    } catch (err: any) {
-      setError(err.message || "Erro ao carregar conversas")
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao carregar conversas")
       console.error("Erro ao carregar conversas:", err)
     } finally {
       setIsLoading(false)
@@ -97,8 +97,8 @@ export function useConversationMessages(options: UseConversationMessagesOptions 
       const messages = await getConversationMessages(conversationId)
       setMessages(messages || [])
       setTotal(messages.length)
-    } catch (err: any) {
-      setError(err.message || "Erro ao carregar mensagens")
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erro ao carregar mensagens")
       console.error("Erro ao carregar mensagens:", err)
     } finally {
       setIsLoading(false)
