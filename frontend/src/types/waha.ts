@@ -86,7 +86,7 @@ export interface WahaSession {
 export interface SessionCreate {
   name: string
   webhook_url?: string
-  config?: Record<string, any>
+  config?: Record<string, unknown>
 }
 
 export interface SessionStatus {
@@ -97,7 +97,7 @@ export interface SessionStatus {
   connected_phone?: string | null
   me?: {
     id: string
-    [key: string]: any
+    [key: string]: unknown
   } | null
 }
 
