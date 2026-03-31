@@ -274,6 +274,13 @@ class MessageProcessingJob(BaseJob):
                     video_url[:100] if video_url else "NULL",
                 )
 
+            # Extrair nome do contato se disponível (WAHA pushname ou contact.name)
+            name = (
+                self.message_data.get("pushname") or
+                self.message_data.get("contact", {}).get("name") or
+                self.message_data.get("pushName") # WAHA supports both cases
+            )
+
             # Processar com orchestrator
             result = asyncio.run(
                 orchestrator.process_inbound_message(
@@ -281,6 +288,7 @@ class MessageProcessingJob(BaseJob):
                     phone_number=phone,
                     message_text=text,
                     session_name=self.message_data.get("session", "default"),
+                    name=name,
                     has_audio=has_audio,
                     audio_url=audio_url,
                     has_video=has_video,
