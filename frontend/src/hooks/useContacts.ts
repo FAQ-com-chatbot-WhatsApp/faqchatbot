@@ -8,7 +8,7 @@ import {
   blockContact,
   unblockContact,
 } from "@/services/wahaService"
-import type { WahaContact, ContactAboutResponse, ContactPictureResponse } from "@/types/waha"
+import type { WahaContact } from "@/types/waha"
 
 interface UseContactsOptions {
   enabled?: boolean
