@@ -31,6 +31,7 @@ interface DateRangeParams {
   start_date?: string
   end_date?: string
   period?: '7d' | '30d' | '90d'
+  [key: string]: string | number | boolean | undefined | null
 }
 
 interface GranularityParams extends DateRangeParams {
@@ -38,7 +39,7 @@ interface GranularityParams extends DateRangeParams {
 }
 
 // Helper to build query string
-function buildQueryString(params: Record<string, any>): string {
+function buildQueryString(params: Record<string, string | number | boolean | undefined | null>): string {
   const filtered = Object.entries(params)
     .filter(([, value]) => value !== undefined && value !== null)
     .map(([key, value]) => `${key}=${encodeURIComponent(String(value))}`)
@@ -175,7 +176,7 @@ export const conversationAnalytics = {
    * Get activity heatmap (day x hour)
    * Cache: 15 minutes
    */
-  getActivityHeatmap: (params: DateRangeParams = {}): Promise<{ data: any }> => {
+  getActivityHeatmap: (params: DateRangeParams = {}): Promise<{ data: Record<string, unknown> }> => {
     return fetchApi(`/api/v1/dashboard/conversation/activity-heatmap${buildQueryString(params)}`)
   },
 
@@ -183,7 +184,7 @@ export const conversationAnalytics = {
    * Get top keywords
    * Cache: 15 minutes
    */
-  getKeywords: (params: DateRangeParams & { limit?: number } = {}): Promise<{ keywords: any[] }> => {
+  getKeywords: (params: DateRangeParams & { limit?: number } = {}): Promise<{ keywords: Record<string, unknown>[] }> => {
     return fetchApi(`/api/v1/dashboard/conversation/keywords${buildQueryString(params)}`)
   },
 
@@ -191,7 +192,7 @@ export const conversationAnalytics = {
    * Get sentiment distribution
    * Cache: 15 minutes
    */
-  getSentiment: (params: DateRangeParams = {}): Promise<{ sentiment: any }> => {
+  getSentiment: (params: DateRangeParams = {}): Promise<{ sentiment: Record<string, unknown> }> => {
     return fetchApi(`/api/v1/dashboard/conversation/sentiment${buildQueryString(params)}`)
   },
 
@@ -199,7 +200,7 @@ export const conversationAnalytics = {
    * Get topics distribution
    * Cache: 15 minutes
    */
-  getTopics: (params: DateRangeParams = {}): Promise<{ topics: any[] }> => {
+  getTopics: (params: DateRangeParams = {}): Promise<{ topics: Record<string, unknown>[] }> => {
     return fetchApi(`/api/v1/dashboard/conversation/topics${buildQueryString(params)}`)
   },
 
@@ -230,7 +231,7 @@ export const performanceAnalytics = {
    */
   exportPDF: async (params: DateRangeParams = {}): Promise<Blob> => {
     const response = await fetch(
-      `/api/v1/dashboard/performance/report/export/pdf?${new URLSearchParams(params as any)}`,
+      `/api/v1/dashboard/performance/report/export/pdf?${new URLSearchParams(params as Record<string, string>)}`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -250,7 +251,7 @@ export const performanceAnalytics = {
    */
   exportExcel: async (params: DateRangeParams = {}): Promise<Blob> => {
     const response = await fetch(
-      `/api/v1/dashboard/performance/report/export/excel?${new URLSearchParams(params as any)}`,
+      `/api/v1/dashboard/performance/report/export/excel?${new URLSearchParams(params as Record<string, string>)}`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
