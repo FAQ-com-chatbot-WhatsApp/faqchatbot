@@ -133,7 +133,7 @@ export default function ProfilePage() {
         <CardContent className="space-y-4">
           <Alert>
             <AlertDescription>
-              Para alterar sua senha, use a opção "Esqueci minha senha" na tela de login.
+              Para alterar sua senha, use a opção &ldquo;Esqueci minha senha&rdquo; na tela de login.
             </AlertDescription>
           </Alert>
         </CardContent>
