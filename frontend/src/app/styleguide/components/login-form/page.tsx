@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client"
 
 import { useState } from "react"
@@ -168,7 +169,7 @@ export default function LoginFormShowcase() {
                 Can't log in?
               </Button>
               <p className="text-xs text-muted-foreground">
-                Secure login with reCAPTCHA subject to Google Terms & Privacy
+               Secure login with reCAPTCHA subject to Google Terms &amp; Privacy
               </p>
             </div>
           </div>
