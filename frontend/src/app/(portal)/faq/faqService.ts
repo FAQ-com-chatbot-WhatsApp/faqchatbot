@@ -7,12 +7,14 @@ const getHeaders = () => ({
   Authorization: TOKEN,
 })
 
-const normalize = (data: any) => {
-  if (!data?.data) return []
+const normalize = (data: unknown): unknown[] => {
+  if (!data) return []
+  const d = data as { data?: unknown[] | { items?: unknown[] } }
+  if (!d?.data) return []
 
-  return Array.isArray(data.data)
-    ? data.data
-    : data.data.items || []
+  return Array.isArray(d.data)
+    ? d.data
+    : (d.data as { items?: unknown[] }).items || []
 }
 
 //  GRUPOS
@@ -60,7 +62,7 @@ export async function getQuestions(categoryId: number | string) {
 }
 
 //  CRIAR
-export async function createQuestion(data: any) {
+export async function createQuestion(data: Record<string, unknown>) {
   const res = await fetch(`${BASE_URL}/v1/nobossfaq/questions`, {
     method: 'POST',
     headers: {
@@ -77,7 +79,7 @@ export async function createQuestion(data: any) {
   return result
 }
 
-export async function updateQuestion(id: string, data: any) {
+export async function updateQuestion(id: string, data: Record<string, unknown>) {
   const res = await fetch(
     `${BASE_URL}/v1/nobossfaq/questions/${id}`,
     {
