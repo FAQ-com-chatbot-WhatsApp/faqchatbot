@@ -50,9 +50,11 @@ export async function fetchApi<T>(
       try {
         const data = await res.json()
         errorMessage = normalizeApiError(data, res.status, endpoint)
-      } catch (e) {}
-      const error = new Error(errorMessage)
-      ;(error as any).status = res.status
+      } catch {
+        // ignore json parse error
+      }
+      const error = new Error(errorMessage) as Error & { status: number }
+      error.status = res.status
 
       // Global 401 handler - redirect to signin (except for signin/signup pages)
       if (res.status === 401 && typeof window !== 'undefined') {
@@ -71,9 +73,10 @@ export async function fetchApi<T>(
       throw error
     }
     return res.json()
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const typedErr = err instanceof Error ? err : new Error(String(err))
     if (typeof options?.onError === 'function') {
-      options.onError(err, endpoint)
+      options.onError(typedErr, endpoint)
     }
     throw err
   } finally {
@@ -82,7 +85,7 @@ export async function fetchApi<T>(
 }
 
 export function normalizeApiError(
-  data: any,
+  data: Record<string, unknown>,
   status?: number,
   endpoint?: string
 ): string {
@@ -139,8 +142,8 @@ export function normalizeApiError(
 
   // FastAPI: validation error array
   if (Array.isArray(data.detail)) {
-    const messages = data.detail
-      .map((err: any) => {
+    const messages = (data.detail as Array<{ msg?: string; loc?: string[] }>)
+      .map((err) => {
         if (err.msg && err.loc) {
           // Campos obrigatórios
           if (err.msg.toLowerCase().includes('field required')) {
@@ -162,8 +165,8 @@ export function normalizeApiError(
     }
     // Se só campos obrigatórios faltando
     if (
-      data.detail.some(
-        (err: any) =>
+      (data.detail as Array<{ msg?: string }>).some(
+        (err) =>
           err.msg && err.msg.toLowerCase().includes('field required')
       )
     ) {
