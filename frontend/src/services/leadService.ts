@@ -72,6 +72,16 @@ export async function createLead(data: {
   })
 }
 
+export async function updateLead(
+  id: string,
+  data: { name?: string | null; email?: string | null }
+): Promise<Lead> {
+  return fetchApi<Lead>(`/api/v1/leads/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  })
+}
+
 export async function updateLeadMaturity(
   id: string,
   maturity_score: number
