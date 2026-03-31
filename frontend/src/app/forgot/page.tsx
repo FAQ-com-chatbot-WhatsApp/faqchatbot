@@ -23,8 +23,8 @@ export default function ForgotPasswordPage() {
     try {
       await requestPasswordRecovery(email)
       setSuccess('Se o email existir, um link de recuperação foi enviado.')
-    } catch (err: any) {
-      setError(err.message || 'Erro ao enviar email de recuperação')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Erro ao enviar email de recuperação')
     } finally {
       setLoading(false)
     }
