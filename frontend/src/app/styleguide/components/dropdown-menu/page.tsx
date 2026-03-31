@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { MoreVertical, User, Settings, LogOut, Check } from "lucide-react"
+import { MoreVertical, User, Settings, LogOut } from "lucide-react"
 import { useState } from "react"
 
 export default function DropdownMenuShowcase() {
