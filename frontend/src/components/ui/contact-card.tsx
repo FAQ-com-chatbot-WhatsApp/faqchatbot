@@ -13,11 +13,8 @@ interface ContactCardProps {
   isOnline?: boolean
   isSelected?: boolean
   description?: string
-  onCall?: () => void
-  onVideo?: () => void
   onMessage?: () => void
   onEdit?: () => void
-  onDelete?: () => void
 }
 
 export function ContactCard({
@@ -28,11 +25,8 @@ export function ContactCard({
   isOnline = false,
   isSelected = false,
   description,
-  onCall,
-  onVideo,
   onMessage,
   onEdit,
-  onDelete,
 }: ContactCardProps) {
   return (
     <Card className={`transition-all hover:shadow-md ${isSelected ? 'ring-2 ring-primary' : ''}`}>
@@ -60,16 +54,6 @@ export function ContactCard({
         </div>
 
         <div className="flex items-center justify-center gap-2">
-          {onCall && (
-            <Button variant="ghost" size="icon-sm" onClick={onCall} aria-label="Call">
-              <Phone className="size-4" />
-            </Button>
-          )}
-          {onVideo && (
-            <Button variant="ghost" size="icon-sm" onClick={onVideo} aria-label="Video call">
-              <Video className="size-4" />
-            </Button>
-          )}
           {onMessage && (
             <Button variant="ghost" size="icon-sm" onClick={onMessage} aria-label="Mensagem">
               <MessageSquare className="size-4" />
@@ -78,11 +62,6 @@ export function ContactCard({
           {onEdit && (
             <Button variant="ghost" size="icon-sm" onClick={onEdit} aria-label="Editar">
               <Edit2 className="size-4" />
-            </Button>
-          )}
-          {onDelete && (
-            <Button variant="ghost" size="icon-sm" onClick={onDelete} aria-label="Excluir" className="text-destructive">
-              <Trash2 className="size-4" />
             </Button>
           )}
         </div>
