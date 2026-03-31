@@ -45,7 +45,7 @@ class LeadModel(Base):
         comment="One lead per conversation (optional - leads can exist without conversations)",
     )
 
-    name: Mapped[str] = mapped_column(String(255), nullable=False, comment="Lead name")
+    name: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="Lead name")
 
     phone_number: Mapped[str] = mapped_column(
         String(64), nullable=False, index=True, comment="Contact phone number or chat JID (up to 64 chars)"
