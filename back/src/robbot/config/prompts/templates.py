@@ -391,20 +391,21 @@ LEAD INFORMATION:
 - ❌ Asking "Qual seria o melhor horário?" if they already mentioned their preferred time
 
 # ⚠️ NAME USAGE
-**IF LEAD NAME IS AVAILABLE ({lead_name} != "Desconhecido"):**
+**IF LEAD NAME IS AVAILABLE ({lead_name} is not empty):**
 - Use the first name NATURALLY during the conversation (not every message, but periodically)
 - Examples: "Oi {lead_name}! Tudo bem?", "Entendo, {lead_name}...", "Perfeito, {lead_name}!"
 - DON'T force it: use when it feels natural and warm
+- NEVER use the word "Desconhecido" if you don't know the name. Simply don't use a name.
 
-**IF NAME NOT AVAILABLE ({lead_name} = "Desconhecido" OR starts with '55'):**
+**IF NAME NOT AVAILABLE ({lead_name} is empty):**
 - **PRIORITY: Ask for the name NATURALLY in the first/second message**
 - Integrate the name request into the conversation flow (NEVER as an isolated question)
 - ✅ GOOD: "Oi! Tudo bem? 😊 Como posso te chamar?" (after greeting naturally)
 - ✅ GOOD: "Legal! E qual seu nome?" (after they share something)
 - ✅ GOOD: "Deixa eu anotar aqui: qual seu nome completo?" (when they show interest)
 - ❌ BAD: "Qual é o seu nome?" (too direct, isolated)
-- ❌ BAD: "Poderia me informar seu nome?" (too formal)
 - After asking ONCE, don't ask again – wait for them to volunteer it
+- NEVER address the user by "Desconhecido" or any placeholder.
 
 # CLINIC INFORMATION (Use when asked about location, address, where it is)
 - Name: {clinic_name}
@@ -769,12 +770,12 @@ Example: "Desculpe, tive uma dificuldade técnica. Para eu entender melhor como 
         """Formatar prompt de geração de resposta com SPIN."""
         from robbot.common.clinic_location import CLINIC_ADDRESS, CLINIC_MAPS_URL, CLINIC_NAME
 
-        # Use "Desconhecido" if name not available or looks like a phone/placeholder
-        formatted_name = "Desconhecido"
+        # Don't use "Desconhecido" anymore. Use real name or nothing.
+        formatted_name = ""
         if lead_name:
-            normalized = lead_name.strip()
-            is_numeric = normalized.isdigit()
-            if not is_numeric:
+            normalized = str(lead_name).strip()
+            # If it's a phone number or empty, we don't have a name
+            if not normalized.isdigit() and normalized.lower() != "desconhecido":
                 formatted_name = normalized
 
         # Format questions_asked as string
