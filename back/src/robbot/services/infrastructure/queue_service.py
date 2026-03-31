@@ -116,13 +116,23 @@ class QueueService:
         job_key = f"waha:debounce:job:{chat_id}"
 
         existing = redis_client.get(buffer_key)
-        payload = json.loads(existing) if existing else {"messages": [], "last_payload": {}}
+        payload = json.loads(existing) if existing else {"messages": [], "message_ids": [], "last_payload": {}}
+
+        msg_id = message_data.get("id")
+        # Initialize message_ids if not present in legacy payloads
+        if "message_ids" not in payload:
+            payload["message_ids"] = []
+
+        if msg_id and msg_id in payload["message_ids"]:
+            return f"buffered_duplicate:{chat_id}"
 
         body = message_data.get("body", "")
         if isinstance(body, str) and body.strip():
             payload.setdefault("messages", []).append(body)
+            if msg_id:
+                payload["message_ids"].append(msg_id)
 
-        payload["last_payload"] = {"session": message_data.get("session", "default")}
+        payload["last_payload"] = {"session": message_data.get("session", "default"), "type": message_data.get("type", "text"), "_data": message_data.get("_data", {}), "hasMedia": message_data.get("hasMedia", False), "media": message_data.get("media", {})}
         redis_client.setex(buffer_key, debounce_seconds + 10, json.dumps(payload))
 
         if redis_client.set(job_key, "1", nx=True, ex=debounce_seconds + 30):
