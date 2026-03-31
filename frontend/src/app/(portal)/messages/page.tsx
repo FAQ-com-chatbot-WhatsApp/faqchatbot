@@ -474,7 +474,10 @@ export default function MessagesPage() {
                 <EmptyState icon={MessageSquare} message="Nenhuma mensagem ainda" />
               ) : (
                 messages.map((msg: ConversationMessage) => {
-                  const isInbound = msg.direction === "INBOUND" || msg.direction === "inbound"
+                  const dir = msg.direction.toUpperCase()
+                  const isInbound = dir === "INBOUND"
+                  const isOutbound = dir === "OUTBOUND" || dir === "OUTGOING"
+                  
                   const leadName = getDisplayName(
                         selectedConversation?.lead_name, 
                         selectedConversation?.phone_number || ""
@@ -500,7 +503,7 @@ export default function MessagesPage() {
                       sender={isInbound ? "other" : "user"}
                       message={msg.body}
                       timestamp={formatTimestamp(msg.created_at)}
-                      senderName={isInbound ? leadName : undefined}
+                      senderName={isInbound ? leadName : (isOutbound ? "Bot" : undefined)}
                       senderInitials={initials}
                       senderAvatar={isInbound ? avatarCache[selectedConversation?.phone_number || ''] : undefined}
                       status={messageStatus}
