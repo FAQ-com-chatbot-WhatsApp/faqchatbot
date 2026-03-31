@@ -23,7 +23,11 @@ from robbot.services.ai.persistent_memory import PersistentMemory
 from robbot.services.bot.conversation_pipeline import ConversationPipeline, PipelineState
 from robbot.services.bot.conversation_service import ConversationService
 from robbot.services.bot.response_dispatcher import ResponseDispatcher
+from robbot.services.communication.message_processor import MessageProcessor
 from robbot.services.communication.transcription_service import TranscriptionService
+from robbot.infra.persistence.repositories.conversation_repository import ConversationRepository
+from robbot.infra.persistence.repositories.lead_repository import LeadRepository
+from robbot.services.handoff.handoff_service import HandoffService
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +71,15 @@ class ConversationOrchestrator:
                     return await self._handle_silenced(session, conversation, message_text)
 
                 # 4. Pipeline Execution (Ingestion & Analysis)
+                # O Pipeline salva a mensagem INBOUND. 
+                # Vamos comitar aqui para que o usuário veja a própria mensagem na tela IMEDIATAMENTE (UX).
                 state = await pipeline.execute(conversation, message_text, **media_kwargs)
+                session.commit() # Commit inicial (Inbound salva)
+
+                # Re-abrir sessão ou garantir que o objeto conversation ainda está OK
+                # Em SQLAlchemy, após commit os objetos podem expirar. Vamos dar um refresh.
+                session.add(conversation)
+                session.refresh(conversation)
 
                 # Update urgency in DB if detected
                 if state.is_urgent and not conversation.is_urgent:
@@ -109,6 +121,9 @@ class ConversationOrchestrator:
                     response_data,
                     session_name,
                 )
+                session.commit()
+                session.add(conversation)
+                session.refresh(conversation)
 
                 # 9. Final record in Chroma (Vector Memory)
                 await pipeline.context_builder.save_to_chroma(
@@ -144,8 +159,6 @@ class ConversationOrchestrator:
         ]
 
     async def _handle_silenced(self, session, conversation, message_text):
-        from robbot.services.communication.message_processor import MessageProcessor
-
         mp = MessageProcessor(session, None)
         await mp.save_inbound_message(session, conversation.id, message_text, from_phone=conversation.phone_number)
         session.commit()
@@ -204,10 +217,6 @@ class ConversationOrchestrator:
         return state.new_score >= 85 or state.intent in ["AGENDAMENTO", "RECLAMACAO_PROBLEMA", "ESCALACAO_SOLICITADA"]
 
     async def _trigger_handoff(self, session, conversation, score) -> str:
-        from robbot.infra.persistence.repositories.conversation_repository import ConversationRepository
-        from robbot.infra.persistence.repositories.lead_repository import LeadRepository
-        from robbot.services.handoff.handoff_service import HandoffService
-
         handoff_service = HandoffService(ConversationRepository(session), LeadRepository(session))
         res = await handoff_service.trigger_handoff(
             session=session,
