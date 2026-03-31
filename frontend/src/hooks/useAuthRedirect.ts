@@ -15,7 +15,7 @@ export function useAuthRedirect() {
         await fetchApi('/api/v1/users/me')
         // User is authenticated
         setLoading(false)
-      } catch (error: any) {
+      } catch {
         // 401 means not authenticated - redirect will happen automatically
         // Other errors we just set loading false and let the page handle it
         setLoading(false)
