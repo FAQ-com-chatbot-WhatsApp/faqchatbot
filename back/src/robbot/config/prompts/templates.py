@@ -562,6 +562,8 @@ Quer que eu te explique direitinho como funciona?"
 
 **RESPONSE LANGUAGE: Brazilian Portuguese (PT-BR)**
 Generate ONLY the natural response (as if you were typing on WhatsApp personally).
+DO NOT include internal sections, headers, or analysis notes such as "Natural Response Following SPIN Methodology", "Context Analysis", "Response Reasoning", etc.
+The output must start directly with the message to the patient.
 Response must be in Portuguese, but maintain the conversational, warm tone described above.
 """
 
@@ -774,8 +776,13 @@ Example: "Desculpe, tive uma dificuldade técnica. Para eu entender melhor como 
         formatted_name = ""
         if lead_name:
             normalized = str(lead_name).strip()
-            # If it's a phone number or empty, we don't have a name
-            if not normalized.isdigit() and normalized.lower() != "desconhecido":
+            # If it's a phone number, a generic "Desconhecido", or starts with 'Lead (' (fallback), we don't have a name
+            is_generic = (
+                normalized.isdigit() or
+                normalized.lower() == "desconhecido" or
+                normalized.lower().startswith("lead (")
+            )
+            if not is_generic:
                 formatted_name = normalized
 
         # Format questions_asked as string
