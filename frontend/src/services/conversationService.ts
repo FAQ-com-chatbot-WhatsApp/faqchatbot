@@ -18,7 +18,7 @@ export interface Conversation {
 }
 
 export interface ConversationMessage {
-  id: number
+  id: number | string
   direction: string
   from_phone: string
   to_phone: string
