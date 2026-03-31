@@ -12,11 +12,11 @@ export default function StyleguidePage() {
   const [isDark, setIsDark] = useState(false)
   const [mounted, setMounted] = useState(false)
 
-  // Avoid hydration errors by only rendering theme-dependent content after mount
+  // Avoid hydration errors - read DOM state after mount
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true)
-    // Check if dark mode is already enabled
-    setIsDark(document.documentElement.classList.contains("dark"))
+    setIsDark(document.documentElement.classList.contains('dark'))
   }, [])
 
   const toggleDarkMode = () => {
