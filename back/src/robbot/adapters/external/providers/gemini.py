@@ -102,8 +102,7 @@ class GeminiProvider(LLMProvider):
                     content = response.content
                     if isinstance(content, list):
                         content = "".join(
-                            part.get("text", "") if isinstance(part, dict) else str(part)
-                            for part in content
+                            part.get("text", "") if isinstance(part, dict) else str(part) for part in content
                         )
                     elif not isinstance(content, str):
                         content = str(content)
