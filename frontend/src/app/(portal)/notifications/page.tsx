@@ -24,14 +24,18 @@ export default function NotificationsPage() {
   const { notifications, isLoading, error, markAsRead } = useNotifications();
 
   const filteredNotifications = notifications.filter(n => {
-    if (filter === "pending") return !n.read;
-    if (filter === "resolved") return n.read;
+    if (filter === "pending") return !n.read || n.type.includes("HANDOFF");
+    if (filter === "resolved") return n.read && !n.type.includes("HANDOFF");
     return true;
   });
 
-  const handleOpenConversation = () => {
-    // Por simplicidade, leva o usuário para a tela de mensagens
-    router.push('/messages');
+  const handleOpenConversation = (conversationId?: string, notificationId?: string) => {
+    if (notificationId) markAsRead(notificationId);
+    if (conversationId) {
+      router.push(`/messages?conversationId=${conversationId}`);
+    } else {
+      router.push('/messages');
+    }
   };
 
   if (error) {
@@ -118,7 +122,7 @@ export default function NotificationsPage() {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={handleOpenConversation}
+                      onClick={() => handleOpenConversation(notification.entity_id, notification.id)}
                       className="gap-2 border-slate-300 hover:bg-slate-50 font-medium"
                     >
                       <MessageSquare className="h-4 w-4 text-slate-500" />
