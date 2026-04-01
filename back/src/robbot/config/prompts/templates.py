@@ -778,9 +778,7 @@ Example: "Desculpe, tive uma dificuldade técnica. Para eu entender melhor como 
             normalized = str(lead_name).strip()
             # If it's a phone number, a generic "Desconhecido", or starts with 'Lead (' (fallback), we don't have a name
             is_generic = (
-                normalized.isdigit() or
-                normalized.lower() == "desconhecido" or
-                normalized.lower().startswith("lead (")
+                normalized.isdigit() or normalized.lower() == "desconhecido" or normalized.lower().startswith("lead (")
             )
             if not is_generic:
                 formatted_name = normalized
