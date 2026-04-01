@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useMemo, useEffect, useRef } from "react"
-import { Search, AlertCircle, MessageSquare, Star } from "lucide-react"
+import { Search, AlertCircle, MessageSquare, Star, Bot, User, Clock } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { MessageBubble } from "@/components/ui/message-bubble"
@@ -15,6 +16,8 @@ import { useConversations, useConversationMessages } from "@/hooks/useConversati
 import type { Conversation, ConversationMessage } from "@/services/conversationService"
 import { markConversationAsRead, updateConversationStatus } from "@/services/conversationService"
 import { sendTextMessage, getContactPicture } from "@/services/wahaService"
+import { useSearchParams } from "next/navigation"
+import { toast } from "sonner"
 
 type FilterType = "all" | "unread" | "groups" | "favorites"
 
@@ -103,6 +106,18 @@ export default function MessagesPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversations])
+
+  const searchParams = useSearchParams()
+  useEffect(() => {
+    const convId = searchParams.get("conversationId")
+    if (convId && conversations.length > 0 && !selectedConversation) {
+      const target = conversations.find((c) => c.id === convId)
+      if (target) {
+         handleSelectConversation(target)
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, conversations])
 
   const loadAvatar = async (phoneNumber: string, chatId: string) => {
     // Verificar se já tem no cache (incluindo vazio para canais/grupos)
@@ -264,10 +279,11 @@ export default function MessagesPage() {
       })
 
       // Refresh para obter estado atualizado
+      toast.success(isBotEnabled ? "Bot reativado" : "Você assumiu o atendimento")
       await refreshConversations()
     } catch (error) {
       console.error("Erro ao alternar modo bot:", error)
-      alert("Erro ao alternar modo. Tente novamente.")
+      toast.error("Erro ao alternar modo. Tente novamente.")
     }
   }
 
@@ -435,7 +451,8 @@ export default function MessagesPage() {
                   lastMessage={conv.last_message || undefined}
                   unreadCount={localUnreadCounts.get(conv.id) ?? conv.unread_count ?? 0}
                   isActive={selectedConversation?.id === conv.id}
-                  isOnline={conv.status === "active"}
+                  isOnline={conv.status === "active" || conv.status === "ACTIVE_BOT"}
+                  status={conv.status}
                   onClick={() => handleSelectConversation(conv)}
                 />
                 <button
@@ -470,6 +487,34 @@ export default function MessagesPage() {
               onBotToggle={handleBotToggle}
               onMore={refreshMessages}
             />
+
+            {/* Banner de Comando Sistêmico (UX Improvements) */}
+            {selectedConversation.status === "PENDING_HANDOFF" && (
+              <div className="bg-orange-50 border-b border-orange-100 p-3 flex items-center justify-between animate-in slide-in-from-top duration-300">
+                <div className="flex items-center gap-3 text-orange-800">
+                  <Clock className="h-5 w-5 text-orange-600 animate-pulse" />
+                  <div>
+                    <p className="text-sm font-bold">Aguardando Atendimento</p>
+                    <p className="text-xs opacity-80">Este cliente aguarda sua resposta para continuar.</p>
+                  </div>
+                </div>
+                <Button 
+                  size="sm" 
+                  className="bg-orange-600 hover:bg-orange-700 text-white font-bold gap-2"
+                  onClick={() => handleBotToggle(false)}
+                >
+                  <User className="h-4 w-4" />
+                  Assumir Chat
+                </Button>
+              </div>
+            )}
+
+            {selectedConversation.status === "ACTIVE_BOT" && (
+              <div className="bg-blue-50/50 border-b border-blue-100 px-4 py-1.5 flex items-center gap-2">
+                <Bot className="h-3.5 w-3.5 text-blue-600" />
+                <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">Bot está no comando</span>
+              </div>
+            )}
 
             {messagesError && (
               <Alert variant="destructive" className="m-4">
