@@ -73,11 +73,11 @@ class HandoffService:
         self.conversation_repo.update(conversation)
         session.flush()
 
-        # Create notifications for the team
-        from robbot.infra.persistence.repositories.notification_repository import NotificationRepository
+        # Create notifications for the team (SOLID: delegate to NotificationService)
         from robbot.infra.persistence.repositories.user_repository import UserRepository
+        from robbot.services.communication.notification_service import NotificationService
 
-        notif_repo = NotificationRepository(session)
+        notif_service = NotificationService(session)
         user_repo = UserRepository(session)
 
         # Determine target users: lead's assigned user OR all active team members
@@ -86,19 +86,20 @@ class HandoffService:
             target_user_ids = [conversation.lead.assigned_to_user_id]
         else:
             # If no one is assigned, notify everyone active
-            active_users = user_repo.list_all() # list_all inherited from BaseRepository
+            active_users = user_repo.list_all()
             target_user_ids = [u.id for u in active_users if u.is_active]
 
         lead_name = conversation.lead.name if conversation.lead and conversation.lead.name else conversation.phone_number
-        
+        is_urgent = reason == "urgencia_detectada"
+
         for uid in target_user_ids:
-            notif_repo.create(
+            notif_service.notify_handoff(
                 user_id=uid,
-                notification_type="HANDOFF_REQUIRED",
-                title="🎯 Lead Pronto para Agendamento",
-                message=f"O cliente {lead_name} atingiu a maturidade necessária e aguarda seu contato para agendar!",
+                conversation_id=conversation.id,
+                lead_name=lead_name,
+                is_urgent=is_urgent,
             )
-        
+
         session.flush()
 
         logger.info("[SUCCESS] Handoff triggered and notifications created: conv=%s, reason=%s", conversation_id, reason)
