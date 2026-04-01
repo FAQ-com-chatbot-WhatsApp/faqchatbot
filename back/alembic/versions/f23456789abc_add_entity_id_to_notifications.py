@@ -1,7 +1,7 @@
 """add entity_id to notifications
 
 Revision ID: f23456789abc
-Revises: 439174cb8c5e
+Revises: e4b5d6f7a8b9
 Create Date: 2026-03-31 21:18:00.000000
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = 'f23456789abc'
-down_revision: str | Sequence[str] | None = '439174cb8c5e'
+down_revision: str | Sequence[str] | None = 'e4b5d6f7a8b9'
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
