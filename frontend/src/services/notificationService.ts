@@ -7,6 +7,7 @@ export interface Notification {
   title: string
   message: string
   read: boolean
+  entity_id?: string
   created_at: string
 }
 
