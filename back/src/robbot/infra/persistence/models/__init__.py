@@ -19,6 +19,7 @@ from robbot.infra.persistence.models.llm_interaction_model import LLMInteraction
 from robbot.infra.persistence.models.notification_model import NotificationModel
 from robbot.infra.persistence.models.revoked_token_model import RevokedTokenModel
 from robbot.infra.persistence.models.session_model import WhatsAppSession
+from robbot.infra.persistence.models.system_setting_model import SystemSettingModel
 from robbot.infra.persistence.models.tag_model import TagModel
 from robbot.infra.persistence.models.topic_model import TopicModel
 from robbot.infra.persistence.models.user_model import UserModel
@@ -46,6 +47,7 @@ __all__ = [
     "ContextModel",
     "ContextItemModel",
     "RevokedTokenModel",
+    "SystemSettingModel",
     "TagModel",
     "TopicModel",
     "User",
