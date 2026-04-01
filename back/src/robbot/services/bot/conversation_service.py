@@ -7,6 +7,7 @@ This service orchestrates conversation operations using rich domain entities.
 import logging
 from datetime import UTC, datetime
 from uuid import uuid4
+import re
 
 from sqlalchemy.orm import Session
 
@@ -18,6 +19,17 @@ from robbot.infra.persistence.models.conversation_model import ConversationModel
 from robbot.infra.persistence.repositories.conversation_repository import ConversationRepository
 
 logger = logging.getLogger(__name__)
+
+
+def _phone_digits(identifier: str | None) -> str:
+    if not identifier:
+        return ""
+    return re.sub(r"\D", "", identifier.split("@")[0])
+
+
+def _looks_like_real_phone(identifier: str | None) -> bool:
+    digits = _phone_digits(identifier)
+    return len(digits) in (10, 11) or (len(digits) >= 12 and digits.startswith("55"))
 
 
 class ConversationService:
@@ -46,9 +58,41 @@ class ConversationService:
         Get or create conversation and associated lead.
         Includes LID resolution logic.
         """
+        resolved_phone = phone_number
+        from robbot.services.leads.lid_resolver_service import get_lid_resolver
+
+        lid_resolver = get_lid_resolver()
+
+        if lid_resolver.is_lid_format(phone_number):
+            try:
+                resolved = await lid_resolver.try_resolve_lid(phone_number, timeout_seconds=1.0)
+                if resolved:
+                    resolved_phone = resolved
+                    logger.info("[LID] Phone resolved: %s -> %s", phone_number, resolved_phone)
+            except Exception as e:
+                logger.debug("[LID] Resolution skipped, will retry later: %s", e)
+
         conversation_model = self.repo.get_by_chat_id(chat_id)
 
         if conversation_model:
+            lead_phone = conversation_model.lead.phone_number if conversation_model.lead else None
+            if not _looks_like_real_phone(conversation_model.phone_number):
+                replacement_phone = resolved_phone if _looks_like_real_phone(resolved_phone) else None
+                if not replacement_phone and _looks_like_real_phone(lead_phone):
+                    replacement_phone = lead_phone
+
+                if replacement_phone:
+                    old_phone = conversation_model.phone_number
+                    conversation_model.phone_number = replacement_phone
+                    if conversation_model.chat_id and "@lid" in conversation_model.chat_id:
+                        conversation_model.chat_id = f"{replacement_phone}@c.us"
+                    if conversation_model.lead and _looks_like_real_phone(conversation_model.lead.phone_number):
+                        conversation_model.lead.phone_number = replacement_phone
+                    conversation_model.updated_at = datetime.now(UTC)
+                    self.db.commit()
+                    self.db.refresh(conversation_model)
+                    logger.info("[SYNC] Conversation phone normalized: %s -> %s", old_phone, replacement_phone)
+
             # Re-open if closed/completed
             if conversation_model.status in [ConversationStatus.CLOSED, ConversationStatus.COMPLETED]:
                 logger.info(
@@ -65,26 +109,11 @@ class ConversationService:
             )
             return conversation_model
 
-        # 1. LID Resolution (WhatsApp specific logic)
-        resolved_phone = phone_number
-        from robbot.services.leads.lid_resolver_service import get_lid_resolver
-
-        lid_resolver = get_lid_resolver()
-
-        if lid_resolver.is_lid_format(phone_number):
-            try:
-                resolved = await lid_resolver.try_resolve_lid(phone_number, timeout_seconds=1.0)
-                if resolved:
-                    resolved_phone = resolved
-                    logger.info("[LID] Phone resolved: %s -> %s", phone_number, resolved_phone)
-            except Exception as e:
-                logger.debug("[LID] Resolution skipped, will retry later: %s", e)
-
         # 2. Create Conversation
         conversation_domain = Conversation(
             id=None,
             chat_id=chat_id,
-            phone_number=phone_number,
+            phone_number=resolved_phone if _looks_like_real_phone(resolved_phone) else phone_number,
         )
 
         conversation_model = ConversationMapper.to_model(conversation_domain)

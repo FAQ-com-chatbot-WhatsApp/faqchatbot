@@ -21,29 +21,31 @@ import { toast } from "sonner"
 
 type FilterType = "all" | "unread" | "groups" | "favorites"
 
- const formatPhoneNumber = (phone: string | undefined | null) => {
-  if (!phone) return "";
-  
-  // Remove tudo que não é número e o sufixo @c.us se existir
-  let cleaned = phone.split('@')[0].replace(/\D/g, '');
+const formatPhoneNumber = (phone: string | undefined | null) => {
+  if (!phone) return ""
 
-  // Remove o '55' inicial se ele existir e o número for longo
-  if (cleaned.startsWith('55') && cleaned.length > 10) {
-    cleaned = cleaned.substring(2);
+  const rawValue = phone.split("@")[0].replace(/\D/g, "")
+  let cleaned = rawValue
+
+  if (cleaned.startsWith("55") && cleaned.length > 11) {
+    cleaned = cleaned.slice(2)
   }
 
-  // Formatação para (XX) XXXXX-XXXX ou (XX) XXXX-XXXX
   if (cleaned.length === 11) {
-    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
-  } else if (cleaned.length === 10) {
-    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(6)}`;
+    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`
   }
 
-  return cleaned;
-};
+  if (cleaned.length === 10) {
+    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(6)}`
+  }
+
+  return cleaned || phone.split("@")[0]
+}
 
 const getDisplayName = (name: string | null | undefined, phone: string) => {
-  if (!name || name.trim() === "") return formatPhoneNumber(phone);
+  const formattedPhone = formatPhoneNumber(phone)
+
+  if (!name || name.trim() === "") return formattedPhone
 
   // REGEX: Se o nome contém pelo menos uma letra (a-z), é um nome real
   const hasLetters = /[a-zA-Z]/.test(name);

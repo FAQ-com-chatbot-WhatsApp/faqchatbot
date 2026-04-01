@@ -12,6 +12,7 @@ Based on WAHA-LID-RESOLUTION-PLAN.md
 """
 
 import logging
+import re
 
 from robbot.infra.persistence.repositories.lead_repository import LeadRepository
 
@@ -46,7 +47,25 @@ class LIDResolverService:
         Returns:
             True if format is @lid
         """
-        return "@lid" in identifier or (identifier and not identifier.endswith("@c.us") and len(identifier) > 10)
+        if not identifier:
+            return False
+
+        normalized = identifier.lower()
+        if "@lid" in normalized:
+            return True
+
+        if normalized.endswith("@c.us") or normalized.endswith("@g.us"):
+            return False
+
+        digits = re.sub(r"\D", "", identifier.split("@")[0])
+
+        if len(digits) in (10, 11):
+            return False
+
+        if len(digits) == 13 and digits.startswith("55"):
+            return False
+
+        return len(digits) >= 12
 
     async def try_resolve_lid(
         self,

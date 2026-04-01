@@ -25,6 +25,17 @@ from robbot.services.bot.conversation_service import ConversationService
 router = APIRouter()
 
 
+def _phone_digits(identifier: str | None) -> str:
+    if not identifier:
+        return ""
+    return "".join(ch for ch in identifier.split("@")[0] if ch.isdigit())
+
+
+def _looks_like_real_phone(identifier: str | None) -> bool:
+    digits = _phone_digits(identifier)
+    return len(digits) in (10, 11) or (len(digits) >= 12 and digits.startswith("55"))
+
+
 # ===== SCHEMAS =====
 class ConversationMessageOut(BaseModel):
     """Response schema for conversation message."""
@@ -179,6 +190,10 @@ def list_conversations(
     # Convert to response
     conversations_out = []
     for c in conversations:
+        display_phone = c.phone_number
+        if c.lead and _looks_like_real_phone(c.lead.phone_number):
+            display_phone = c.lead.phone_number
+
         # Get last message
         messages = msg_repo.get_by_conversation(c.id, limit=1)
         last_message = messages[-1] if messages else None
@@ -191,7 +206,7 @@ def list_conversations(
             ConversationOut(
                 id=c.id,
                 chat_id=c.chat_id,
-                phone_number=c.phone_number,
+                phone_number=display_phone,
                 status=(
                     "active"
                     if c.status
