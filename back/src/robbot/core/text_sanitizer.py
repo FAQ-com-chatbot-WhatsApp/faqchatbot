@@ -30,7 +30,7 @@ def enforce_whatsapp_style(text: str, max_paragraphs: int = 2) -> str:
         r"^\*?Natural Response Following SPIN Methodology:?\*?\s*",
         r"^\*?Context Analysis:?\*?\s*",
     ]
-    
+
     for pat in header_patterns:
         # re.MULTILINE permite que '^' combine com o início de cada linha dentro da string
         text = re.sub(pat, "", text, flags=re.IGNORECASE | re.MULTILINE).strip()
@@ -43,7 +43,7 @@ def enforce_whatsapp_style(text: str, max_paragraphs: int = 2) -> str:
         r"\s*\(Obs:.*?\)\s*",
         r"\s*\(Observação:.*?\)\s*",
         r"\s*\((SITUATION|SITUA[TÇ]?[ÃA]O|PROBLEM|IMPLICATION|NEED[_ ]PAYOFF|OPEN QUESTION|SPIN)\)\s*",
-        r"\s*Situat[çc]ão\*\*.*?\s*", # Caso específico reportado
+        r"\s*Situat[çc]ão\*\*.*?\s*",  # Caso específico reportado
         r"\s*\*?Context Analysis:?\*?\s*",
         r"\s*\*?Natural Response Following SPIN Methodology:?\*?\s*",
     ]
@@ -53,9 +53,19 @@ def enforce_whatsapp_style(text: str, max_paragraphs: int = 2) -> str:
 
     # 3. Remover variáveis de template vazadas
     template_tokens = [
-        "{message}", "{context}", "{history}", "{patient_info}", "{user_message}",
-        "{response}", "{intent}", "{spin_phase}", "{maturity_score}", "{lead_status}",
-        "{last_interaction}", "{questions_asked}", "{conversation_summary}"
+        "{message}",
+        "{context}",
+        "{history}",
+        "{patient_info}",
+        "{user_message}",
+        "{response}",
+        "{intent}",
+        "{spin_phase}",
+        "{maturity_score}",
+        "{lead_status}",
+        "{last_interaction}",
+        "{questions_asked}",
+        "{conversation_summary}",
     ]
     for token in template_tokens:
         text = text.replace(token, "")
@@ -63,13 +73,13 @@ def enforce_whatsapp_style(text: str, max_paragraphs: int = 2) -> str:
     # 4. Limpeza final de marcadores residuais
     text = text.strip()
     # Remove aspas duplas residuais no início/fim (LLMs as vezes citam a si mesmos)
-    text = re.sub(r'^["\']|["\']$', '', text)
+    text = re.sub(r'^["\']|["\']$', "", text)
     # Remove qualquer início de linha que ainda tenha estrelas de negrito orfãs
     text = re.sub(r"^\*\*?\s*", "", text, flags=re.MULTILINE)
-    
+
     # 5. Limita a quantidade de parágrafos
     paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()]
     if len(paragraphs) > max_paragraphs:
         text = "\n\n".join(paragraphs[:max_paragraphs])
-    
+
     return text.strip()
