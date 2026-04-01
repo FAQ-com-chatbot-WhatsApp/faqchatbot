@@ -13,6 +13,7 @@ interface ConversationItemProps {
   unreadCount?: number
   isActive?: boolean
   isOnline?: boolean
+  status?: string
   onClick?: () => void
 }
 
@@ -25,6 +26,7 @@ export function ConversationItem({
   unreadCount = 0,
   isActive = false,
   isOnline = false,
+  status,
   onClick,
 }: ConversationItemProps) {
   return (
@@ -51,12 +53,17 @@ export function ConversationItem({
 
       <div className="flex-1 overflow-hidden">
         <div className="flex items-center justify-between mb-1">
-          <p className="font-medium truncate">{name}</p>
-          {timestamp && (
-            <span className="text-xs text-muted-foreground flex-shrink-0">
-              {timestamp}
-            </span>
-          )}
+          <p className="font-medium truncate flex-1">{name}</p>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {status === "ACTIVE_BOT" && <span className="text-[10px] bg-blue-100 text-blue-700 px-1 rounded font-bold">BOT</span>}
+            {status === "ACTIVE_HUMAN" && <span className="text-[10px] bg-green-100 text-green-700 px-1 rounded font-bold">HUMANO</span>}
+            {status === "PENDING_HANDOFF" && <span className="text-[10px] bg-orange-100 text-orange-700 px-1 rounded font-bold animate-pulse">AGUARDANDO</span>}
+            {timestamp && (
+              <span className="text-xs text-muted-foreground">
+                {timestamp}
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground truncate flex-1">
