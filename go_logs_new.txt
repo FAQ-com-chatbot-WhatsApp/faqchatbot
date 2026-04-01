@@ -1,0 +1,15 @@
+go  | [ENTRYPOINT] Creating ChromaDB directory...
+go  | [ENTRYPOINT] ChromaDB directory ready
+go  | [37mgo[0m | [01:15:57.446] [32mINFO[0m (Entrypoint/1): Entrypoint iniciado
+go  | [37mgo[0m | [01:15:57.456] [32mINFO[0m (Entrypoint/1): DATABASE_URL=postgresql+psycopg2://dba:***@postgres:5432/BotDB
+go  | [37mgo[0m | [01:15:57.463] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true
+go  | [37mgo[0m | [01:15:57.469] [32mINFO[0m (Entrypoint/1): WAIT_FOR_DB=true
+go  | [37mgo[0m | [01:15:57.475] [32mINFO[0m (Entrypoint/1): DB host=postgres port=5432 user=dba db=BotDB
+go  | [37mgo[0m | [01:15:57.484] [32mINFO[0m (Entrypoint/1): DB wait retries=60 sleep=2s
+go  | [37mgo[0m | [01:15:57.492] [32mINFO[0m (Entrypoint/1): Aguardando disponibilidade do banco de dados...
+go  | [37mgo[0m | [01:15:57.502] [32mINFO[0m (Entrypoint/1): Usando pg_isready para checar o DB
+go  | [37mgo[0m | [01:15:57.612] [32mINFO[0m (Entrypoint/1): Banco de dados está disponível (pg_isready)
+go  | [37mgo[0m | [01:15:57.620] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true e alembic.ini encontrado — executando alembic upgrade head
+go  | INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+go  | INFO  [alembic.runtime.migration] Will assume transactional DDL.
+go  | [37mgo[0m | [01:16:03.014] [32mINFO[0m (Entrypoint/1): Iniciando aplicação

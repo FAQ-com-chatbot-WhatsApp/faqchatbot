@@ -1,0 +1,212 @@
+go  | [ENTRYPOINT] Creating ChromaDB directory...
+go  | [ENTRYPOINT] ChromaDB directory ready
+go  | [37mgo[0m | [01:39:30.516] [32mINFO[0m (Entrypoint/1): Entrypoint iniciado
+go  | [37mgo[0m | [01:39:30.541] [32mINFO[0m (Entrypoint/1): DATABASE_URL=postgresql+psycopg2://dba:***@postgres:5432/BotDB
+go  | [37mgo[0m | [01:39:30.547] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true
+go  | [37mgo[0m | [01:39:30.555] [32mINFO[0m (Entrypoint/1): WAIT_FOR_DB=true
+go  | [37mgo[0m | [01:39:30.562] [32mINFO[0m (Entrypoint/1): DB host=postgres port=5432 user=dba db=BotDB
+go  | [37mgo[0m | [01:39:30.568] [32mINFO[0m (Entrypoint/1): DB wait retries=60 sleep=2s
+go  | [37mgo[0m | [01:39:30.574] [32mINFO[0m (Entrypoint/1): Aguardando disponibilidade do banco de dados...
+go  | [37mgo[0m | [01:39:30.581] [32mINFO[0m (Entrypoint/1): Usando pg_isready para checar o DB
+go  | [37mgo[0m | [01:39:30.850] [32mINFO[0m (Entrypoint/1): Banco de dados está disponível (pg_isready)
+go  | [37mgo[0m | [01:39:30.859] [32mINFO[0m (Entrypoint/1): AUTO_MIGRATE=true e alembic.ini encontrado — executando alembic upgrade head
+go  | INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+go  | INFO  [alembic.runtime.migration] Will assume transactional DDL.
+go  | [37mgo[0m | [01:39:44.318] [32mINFO[0m (Entrypoint/1): Iniciando aplicação
+go  | [90m[01:41:01.084][0m [32mINFO[0m [2m(63)[0m: Logging configured: level=DEBUG, file=logs/robbot.log, max_bytes=10485760, backup_count=5
+go  | [90m[01:41:01.469][0m [32mINFO[0m [2m(63)[0m: Started server process [63]
+go  | [90m[01:41:01.470][0m [32mINFO[0m [2m(63)[0m: Waiting for application startup.
+go  | [90m[01:41:01.471][0m [32mINFO[0m [2m(63)[0m: Initializing DI Container...
+go  | [90m[01:41:01.667][0m [32mINFO[0m [2m(63)[0m: Gemini provider initialized: model=gemini-flash-latest, temp=1.0
+go  | [90m[01:41:01.667][0m [32mINFO[0m [2m(63)[0m: Registered gemini provider
+go  | [90m[01:41:01.667][0m [32mINFO[0m [2m(63)[0m: [PROVIDER] Gemini registered (model=gemini-flash-latest)
+go  | [90m[01:41:02.071][0m [32mINFO[0m [2m(63)[0m: Groq provider initialized: model=llama-3.3-70b-versatile, temp=1.0
+go  | [90m[01:41:02.072][0m [32mINFO[0m [2m(63)[0m: Registered groq provider
+go  | [90m[01:41:02.072][0m [32mINFO[0m [2m(63)[0m: [PROVIDER] Groq registered (model=llama-3.3-70b-versatile)
+go  | [90m[01:41:02.072][0m [32mINFO[0m [2m(63)[0m: LLMClient (re)initialized with groq
+go  | [90m[01:41:02.073][0m [32mINFO[0m [2m(63)[0m: LLMClient initialized as singleton
+go  | [90m[01:41:02.258][0m [36mDEBUG[0m [2m(63)[0m: Starting component System
+go  | [90m[01:41:02.258][0m [36mDEBUG[0m [2m(63)[0m: Starting component Posthog
+go  | [90m[01:41:03.832][0m [32mINFO[0m [2m(63)[0m: ChromaClient initialized (collection=conversations, path=./data/chroma, count=0)
+go  | [90m[01:41:03.833][0m [32mINFO[0m [2m(63)[0m: Initialized ChromaVectorStore with collection: conversations
+go  | [90m[01:41:03.833][0m [32mINFO[0m [2m(63)[0m: Initialized WAHAIntegration with base_url: http://waha:3000
+go  | [90m[01:41:03.860][0m [32mINFO[0m [2m(63)[0m: Loaded 5 prompt templates from src/robbot/config/prompts.yaml
+go  | [90m[01:41:03.860][0m [32mINFO[0m [2m(63)[0m: DI Container initialized successfully
+go  | [90m[01:41:03.861][0m [32mINFO[0m [2m(63)[0m: Initializing rate limiter...
+go  | [90m[01:41:03.861][0m [32mINFO[0m [2m(63)[0m: Rate limiter initialized successfully
+go  | [90m[01:41:03.862][0m [32mINFO[0m [2m(63)[0m: Initializing default WAHA session...
+go  | [90m[01:41:03.963][0m [32mINFO[0m [2m(63)[0m: Default WAHA session ready: default (status: WORKING)
+go  | [90m[01:41:03.965][0m [32mINFO[0m [2m(63)[0m: Application startup complete.
+go  | [90m[01:41:03.969][0m [32mINFO[0m [2m(63)[0m: Uvicorn running on http://0.0.0.0:3333 (Press CTRL+C to quit)
+go  | [90m[01:41:11.178][0m [32mINFO[0m [2m(63)[0m: RQQueueManager initialized as singleton
+go  | [90m[01:41:11.179][0m [32mINFO[0m [2m(63)[0m: QueueService inicializado
+go  | [90m[01:41:11.209][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:32964 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:41:21.323][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:55994 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:41:31.414][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:58688 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:41:41.693][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:51814 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:41:51.800][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:43954 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:42:01.929][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:42432 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:42:08.848][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:59408 - "GET /api/v1/settings/ai/models/gemini HTTP/1.1" 401
+go  | [90m[01:42:12.227][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:59412 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:42:22.328][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:41480 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:42:32.437][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:47338 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:42:42.927][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:48916 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:42:53.100][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:36742 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:43:03.226][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:42190 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:43:13.488][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:32914 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:43:23.593][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:37200 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:43:33.710][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:49748 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:43:43.947][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:49134 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:43:54.077][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:39026 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:43:59.209][0m [36mDEBUG[0m [2m(63)[0m: Calling on_field_start with no data
+go  | [90m[01:43:59.209][0m [36mDEBUG[0m [2m(63)[0m: Calling on_field_name with data[0:8]
+go  | [90m[01:43:59.210][0m [36mDEBUG[0m [2m(63)[0m: Calling on_field_data with data[9:32]
+go  | [90m[01:43:59.210][0m [36mDEBUG[0m [2m(63)[0m: Calling on_field_end with no data
+go  | [90m[01:43:59.210][0m [36mDEBUG[0m [2m(63)[0m: Calling on_field_start with no data
+go  | [90m[01:43:59.210][0m [36mDEBUG[0m [2m(63)[0m: Calling on_field_name with data[33:41]
+go  | [90m[01:43:59.210][0m [36mDEBUG[0m [2m(63)[0m: Calling on_field_data with data[42:51]
+go  | [90m[01:43:59.210][0m [36mDEBUG[0m [2m(63)[0m: Calling on_field_end with no data
+go  | [90m[01:43:59.210][0m [36mDEBUG[0m [2m(63)[0m: Calling on_field_start with no data
+go  | [90m[01:43:59.210][0m [36mDEBUG[0m [2m(63)[0m: Calling on_field_name with data[52:62]
+go  | [90m[01:43:59.210][0m [36mDEBUG[0m [2m(63)[0m: Calling on_field_data with data[63:68]
+go  | [90m[01:43:59.210][0m [36mDEBUG[0m [2m(63)[0m: Calling on_field_end with no data
+go  | [90m[01:43:59.211][0m [36mDEBUG[0m [2m(63)[0m: Calling on_end with no data
+go  | [90m[01:43:59.518][0m [32mINFO[0m [2m(63)[0m: Login successful: user camposevero@gmail.com (id=1)
+go  | [90m[01:43:59.553][0m [32mINFO[0m [2m(63)[0m: Audit log created (action=login_success, entity=User:1, user=1)
+go  | [90m[01:43:59.645][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:41554 - "POST /api/v1/auth/token HTTP/1.1" 200
+go  | [90m[01:44:00.962][0m [32mINFO[0m [2m(63)[0m: Notifications retrieved (user_id=1, count=0, unread_only=False)
+go  | [90m[01:44:00.963][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:41562 - "GET /api/v1/notifications?limit=10 HTTP/1.1" 200
+go  | [90m[01:44:00.975][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:41592 - "GET /api/v1/notifications/unread-count HTTP/1.1" 200
+go  | [90m[01:44:00.979][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:41578 - "GET /api/v1/users/me HTTP/1.1" 200
+go  | [90m[01:44:01.013][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:41598 - "GET /api/v1/users/me HTTP/1.1" 200
+go  | [90m[01:44:01.253][0m [36mDEBUG[0m [2m(63)[0m: Cache MISS: metrics:dashboard_summary:2026-03-02_2026-04-01:global
+go  | [90m[01:44:01.381][0m [36mDEBUG[0m [2m(63)[0m: Cache SET: metrics:dashboard_summary:2026-03-02_2026-04-01:global (TTL=30s)
+go  | [90m[01:44:01.382][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:41610 - "GET /api/v1/dashboard/dashboard?period=30d HTTP/1.1" 200
+go  | [90m[01:44:01.387][0m [36mDEBUG[0m [2m(63)[0m: Cache MISS: metrics:conversations_by_status:2026-03-02_2026-04-01:global
+go  | [90m[01:44:01.404][0m [36mDEBUG[0m [2m(63)[0m: Cache SET: metrics:conversations_by_status:2026-03-02_2026-04-01:global (TTL=900s)
+go  | [90m[01:44:01.404][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:41646 - "GET /api/v1/dashboard/performance/conversations-by-status?period=30d HTTP/1.1" 200
+go  | [90m[01:44:01.406][0m [36mDEBUG[0m [2m(63)[0m: Cache MISS: metrics:bot_response_time:2026-03-02_2026-04-01:global
+go  | [90m[01:44:01.421][0m [36mDEBUG[0m [2m(63)[0m: Cache SET: metrics:bot_response_time:2026-03-02_2026-04-01:global (TTL=900s)
+go  | [90m[01:44:01.422][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:41636 - "GET /api/v1/dashboard/performance/bot-response-time?period=30d HTTP/1.1" 200
+go  | [90m[01:44:01.423][0m [36mDEBUG[0m [2m(63)[0m: Cache MISS: metrics:peak_hours:2026-03-02_2026-04-01:global
+go  | [90m[01:44:01.441][0m [36mDEBUG[0m [2m(63)[0m: Cache SET: metrics:peak_hours:2026-03-02_2026-04-01:global (TTL=900s)
+go  | [90m[01:44:01.442][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:41660 - "GET /api/v1/dashboard/performance/peak-hours?period=30d HTTP/1.1" 200
+go  | [90m[01:44:01.443][0m [36mDEBUG[0m [2m(63)[0m: Cache MISS: metrics:conversion_funnel:2026-03-02_2026-04-01:global
+go  | [90m[01:44:01.475][0m [36mDEBUG[0m [2m(63)[0m: Cache SET: metrics:conversion_funnel:2026-03-02_2026-04-01:global (TTL=900s)
+go  | [90m[01:44:01.476][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:41622 - "GET /api/v1/dashboard/conversion-funnel?period=30d HTTP/1.1" 200
+go  | [90m[01:44:01.483][0m [36mDEBUG[0m [2m(63)[0m: Cache MISS: metrics:bot_autonomy_rate:2026-03-02_2026-04-01:global
+go  | [90m[01:44:01.495][0m [36mDEBUG[0m [2m(63)[0m: Cache SET: metrics:bot_autonomy_rate:2026-03-02_2026-04-01:global (TTL=900s)
+go  | [90m[01:44:01.496][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:41630 - "GET /api/v1/dashboard/bot-autonomy?period=30d HTTP/1.1" 200
+go  | [90m[01:44:04.165][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:51752 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:44:04.668][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:41680 - "GET /api/v1/settings/ai HTTP/1.1" 200
+go  | [90m[01:44:04.672][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:41690 - "GET /api/v1/waha/sessions HTTP/1.1" 200
+go  | [90m[01:44:04.675][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:41670 - "GET /api/v1/users/me HTTP/1.1" 200
+go  | [90m[01:44:04.690][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:41706 - "GET /api/v1/waha/sessions/default/status HTTP/1.1" 200
+go  | [90m[01:44:05.571][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:41718 - "GET /api/v1/settings/ai/models/gemini HTTP/1.1" 200
+go  | [90m[01:44:05.585][0m [36mDEBUG[0m [2m(63)[0m: Request options: {'method': 'get', 'url': '/openai/v1/models'}
+go  | [90m[01:44:05.598][0m [36mDEBUG[0m [2m(63)[0m: Sending HTTP Request: GET https://api.groq.com/openai/v1/models
+go  | [90m[01:44:06.220][0m [36mDEBUG[0m [2m(63)[0m: HTTP Response: GET https://api.groq.com/openai/v1/models "200 OK" Headers({'date': 'Wed, 01 Apr 2026 04:44:06 GMT', 'content-type': 'application/json', 'transfer-encoding': 'chunked', 'connection': 'keep-alive', 'cache-control': 'private, max-age=0, no-store, no-cache, must-revalidate', 'server': 'cloudflare', 'vary': 'Origin', 'x-groq-region': 'dls', 'x-request-id': 'req_01kn3np6wzfzh8sm6j9xx0bjc8', 'via': '1.1 google', 'alt-svc': 'h3=":443"; ma=86400', 'cf-cache-status': 'DYNAMIC', 'set-cookie': '__cf_bm=0sSG8GserKvKEZL7_GuYcBXALb8NoyNaCFBrIKzquc8-1775018646.330455-1.0.1.1-N64.d3yXx9O4V8Lg0af9eoPUrHkvWSQOcORWW2UaI9viL5ANnZzRxEadH8G9HV9x3kmAhIPM3IlxiPy2HC3PiTkqgkbukJr6JHPwhzGUwxc_xilM6rAgWyctEscND0ue; HttpOnly; Secure; Path=/; Domain=groq.com; Expires=Wed, 01 Apr 2026 05:14:06 GMT', 'strict-transport-security': 'max-age=15552000', 'content-encoding': 'gzip', 'cf-ray': '9e54efcb8da05898-POA'})
+go  | [90m[01:44:06.225][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:41728 - "GET /api/v1/settings/ai/models/groq HTTP/1.1" 200
+go  | [90m[01:44:09.701][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:44806 - "GET /api/v1/waha/sessions/default/status HTTP/1.1" 200
+go  | [90m[01:44:10.927][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:44826 - "GET /api/v1/notifications/unread-count HTTP/1.1" 200
+go  | [90m[01:44:10.932][0m [32mINFO[0m [2m(63)[0m: Notifications retrieved (user_id=1, count=0, unread_only=False)
+go  | [90m[01:44:10.932][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:44814 - "GET /api/v1/notifications?limit=10 HTTP/1.1" 200
+go  | [90m[01:44:14.403][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:47856 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:44:19.795][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:40384 - "GET /api/v1/waha/sessions/default/status HTTP/1.1" 200
+go  | [90m[01:44:20.935][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:40392 - "GET /api/v1/notifications/unread-count HTTP/1.1" 200
+go  | [90m[01:44:20.942][0m [32mINFO[0m [2m(63)[0m: Notifications retrieved (user_id=1, count=0, unread_only=False)
+go  | [90m[01:44:20.942][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:40386 - "GET /api/v1/notifications?limit=10 HTTP/1.1" 200
+go  | [90m[01:44:24.479][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:43018 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:44:29.810][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:34666 - "GET /api/v1/waha/sessions/default/status HTTP/1.1" 200
+go  | [90m[01:44:30.839][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:34686 - "GET /api/v1/notifications/unread-count HTTP/1.1" 200
+go  | [90m[01:44:30.843][0m [32mINFO[0m [2m(63)[0m: Notifications retrieved (user_id=1, count=0, unread_only=False)
+go  | [90m[01:44:30.843][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:34678 - "GET /api/v1/notifications?limit=10 HTTP/1.1" 200
+go  | [90m[01:44:34.579][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:35232 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:44:39.952][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:50742 - "GET /api/v1/waha/sessions/default/status HTTP/1.1" 200
+go  | [90m[01:44:40.939][0m [32mINFO[0m [2m(63)[0m: Notifications retrieved (user_id=1, count=0, unread_only=False)
+go  | [90m[01:44:40.939][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:50752 - "GET /api/v1/notifications?limit=10 HTTP/1.1" 200
+go  | [90m[01:44:40.948][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:50756 - "GET /api/v1/notifications/unread-count HTTP/1.1" 200
+go  | [90m[01:44:44.847][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:34360 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:44:50.009][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:53172 - "GET /api/v1/waha/sessions/default/status HTTP/1.1" 200
+go  | [90m[01:44:50.943][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:53178 - "GET /api/v1/notifications/unread-count HTTP/1.1" 200
+go  | [90m[01:44:50.947][0m [32mINFO[0m [2m(63)[0m: Notifications retrieved (user_id=1, count=0, unread_only=False)
+go  | [90m[01:44:50.948][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:53176 - "GET /api/v1/notifications?limit=10 HTTP/1.1" 200
+go  | [90m[01:44:55.065][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:58676 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:44:59.957][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:56724 - "GET /api/v1/waha/sessions/default/status HTTP/1.1" 200
+go  | [90m[01:45:00.824][0m [32mINFO[0m [2m(63)[0m: Notifications retrieved (user_id=1, count=0, unread_only=False)
+go  | [90m[01:45:00.824][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:56732 - "GET /api/v1/notifications?limit=10 HTTP/1.1" 200
+go  | [90m[01:45:00.825][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:56748 - "GET /api/v1/notifications/unread-count HTTP/1.1" 200
+go  | [90m[01:45:05.175][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:36810 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:45:10.106][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:36460 - "GET /api/v1/waha/sessions/default/status HTTP/1.1" 200
+go  | [90m[01:45:10.951][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:36478 - "GET /api/v1/notifications/unread-count HTTP/1.1" 200
+go  | [90m[01:45:10.954][0m [32mINFO[0m [2m(63)[0m: Notifications retrieved (user_id=1, count=0, unread_only=False)
+go  | [90m[01:45:10.955][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:36472 - "GET /api/v1/notifications?limit=10 HTTP/1.1" 200
+go  | [90m[01:45:15.433][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:58760 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:45:20.162][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:42070 - "GET /api/v1/waha/sessions/default/status HTTP/1.1" 200
+go  | [90m[01:45:20.929][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:42090 - "GET /api/v1/notifications/unread-count HTTP/1.1" 200
+go  | [90m[01:45:20.932][0m [32mINFO[0m [2m(63)[0m: Notifications retrieved (user_id=1, count=0, unread_only=False)
+go  | [90m[01:45:20.932][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:42084 - "GET /api/v1/notifications?limit=10 HTTP/1.1" 200
+go  | [90m[01:45:23.087][0m [32mINFO[0m [2m(63)[0m: [CONFIG] Refreshing LLM configuration...
+go  | [90m[01:45:23.112][0m [32mINFO[0m [2m(63)[0m: Gemini provider initialized: model=gemini-1.5-flash, temp=1.0
+go  | [90m[01:45:23.112][0m [32mINFO[0m [2m(63)[0m: Registered gemini provider
+go  | [90m[01:45:23.112][0m [32mINFO[0m [2m(63)[0m: [PROVIDER] Gemini registered (model=gemini-1.5-flash)
+go  | [90m[01:45:23.124][0m [32mINFO[0m [2m(63)[0m: Groq provider initialized: model=llama-3.3-70b-versatile, temp=1.0
+go  | [90m[01:45:23.124][0m [32mINFO[0m [2m(63)[0m: Registered groq provider
+go  | [90m[01:45:23.124][0m [32mINFO[0m [2m(63)[0m: [PROVIDER] Groq registered (model=llama-3.3-70b-versatile)
+go  | [90m[01:45:23.125][0m [32mINFO[0m [2m(63)[0m: LLMClient (re)initialized with groq
+go  | [90m[01:45:23.146][0m [31mERROR[0m [2m(63)[0m: Unhandled exception: 1 validation error:
+go  |   {'type': 'model_attributes_type', 'loc': ('response',), 'msg': 'Input should be a valid dictionary or object to extract fields from', 'input': None}
+go  | 
+go  |   File "/app/src/robbot/adapters/controllers/settings_controller.py", line 79, in update_ai_settings
+go  |     PUT /api/v1/settings/ai
+go  | [90m[01:45:23.153][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:42092 - "PUT /api/v1/settings/ai HTTP/1.1" 500
+go  | [90m[01:45:23.154][0m [31mERROR[0m [2m(63)[0m: Exception in ASGI application
+go  | 
+go  | [90m[01:45:25.541][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:49042 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:45:30.126][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:38976 - "GET /api/v1/waha/sessions/default/status HTTP/1.1" 200
+go  | [90m[01:45:31.650][0m [32mINFO[0m [2m(63)[0m: Notifications retrieved (user_id=1, count=0, unread_only=False)
+go  | [90m[01:45:31.651][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:38978 - "GET /api/v1/notifications?limit=10 HTTP/1.1" 200
+go  | [90m[01:45:31.653][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:38986 - "GET /api/v1/notifications/unread-count HTTP/1.1" 200
+go  | [90m[01:45:35.677][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:48864 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:45:40.858][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:39146 - "GET /api/v1/waha/sessions/default/status HTTP/1.1" 200
+go  | [90m[01:45:41.896][0m [32mINFO[0m [2m(63)[0m: Notifications retrieved (user_id=1, count=0, unread_only=False)
+go  | [90m[01:45:41.897][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:39148 - "GET /api/v1/notifications?limit=10 HTTP/1.1" 200
+go  | [90m[01:45:41.899][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:39158 - "GET /api/v1/notifications/unread-count HTTP/1.1" 200
+go  | [90m[01:45:45.915][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:37624 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:45:51.782][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:54742 - "GET /api/v1/notifications/unread-count HTTP/1.1" 200
+go  | [90m[01:45:51.783][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:54724 - "GET /api/v1/waha/sessions/default/status HTTP/1.1" 200
+go  | [90m[01:45:51.787][0m [32mINFO[0m [2m(63)[0m: Notifications retrieved (user_id=1, count=0, unread_only=False)
+go  | [90m[01:45:51.787][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:54738 - "GET /api/v1/notifications?limit=10 HTTP/1.1" 200
+go  | [90m[01:45:56.014][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:38148 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:46:01.664][0m [32mINFO[0m [2m(63)[0m: Notifications retrieved (user_id=1, count=0, unread_only=False)
+go  | [90m[01:46:01.665][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:60468 - "GET /api/v1/notifications?limit=10 HTTP/1.1" 200
+go  | [90m[01:46:01.667][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:60476 - "GET /api/v1/notifications/unread-count HTTP/1.1" 200
+go  | [90m[01:46:02.709][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:60488 - "GET /api/v1/waha/sessions/default/status HTTP/1.1" 200
+go  | [90m[01:46:06.116][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:50024 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:46:11.817][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:54134 - "GET /api/v1/notifications/unread-count HTTP/1.1" 200
+go  | [90m[01:46:11.819][0m [32mINFO[0m [2m(63)[0m: Notifications retrieved (user_id=1, count=0, unread_only=False)
+go  | [90m[01:46:11.820][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:54130 - "GET /api/v1/notifications?limit=10 HTTP/1.1" 200
+go  | [90m[01:46:13.808][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:54138 - "GET /api/v1/waha/sessions/default/status HTTP/1.1" 200
+go  | [90m[01:46:16.365][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:59200 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:46:21.781][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:36840 - "GET /api/v1/notifications/unread-count HTTP/1.1" 200
+go  | [90m[01:46:21.783][0m [32mINFO[0m [2m(63)[0m: Notifications retrieved (user_id=1, count=0, unread_only=False)
+go  | [90m[01:46:21.783][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:36836 - "GET /api/v1/notifications?limit=10 HTTP/1.1" 200
+go  | [90m[01:46:24.746][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:36854 - "GET /api/v1/waha/sessions/default/status HTTP/1.1" 200
+go  | [90m[01:46:26.459][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:42064 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:46:35.588][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:54162 - "GET /api/v1/waha/sessions/default/status HTTP/1.1" 200
+go  | [90m[01:46:36.676][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:37092 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:46:46.820][0m [32mINFO[0m [2m(63)[0m: Notifications retrieved (user_id=1, count=0, unread_only=False)
+go  | [90m[01:46:46.821][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:49536 - "GET /api/v1/notifications?limit=10 HTTP/1.1" 200
+go  | [90m[01:46:46.858][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:44236 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:46:46.869][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:49560 - "GET /api/v1/notifications/unread-count HTTP/1.1" 200
+go  | [90m[01:46:46.888][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:49552 - "GET /api/v1/waha/sessions/default/status HTTP/1.1" 200
+go  | [90m[01:46:56.945][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:45728 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:46:57.691][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:55680 - "GET /api/v1/waha/sessions/default/status HTTP/1.1" 200
+go  | [90m[01:47:07.209][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:56486 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:47:08.779][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:37328 - "GET /api/v1/waha/sessions/default/status HTTP/1.1" 200
+go  | [90m[01:47:17.311][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:35276 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:47:19.792][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:49060 - "GET /api/v1/waha/sessions/default/status HTTP/1.1" 200
+go  | [90m[01:47:27.406][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:38066 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:47:30.683][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:58328 - "GET /api/v1/waha/sessions/default/status HTTP/1.1" 200
+go  | [90m[01:47:37.636][0m [32mINFO[0m [2m(63)[0m: 127.0.0.1:58164 - "GET /api/v1/health HTTP/1.1" 200
+go  | [90m[01:47:41.771][0m [32mINFO[0m [2m(63)[0m: 172.18.0.11:33006 - "GET /api/v1/waha/sessions/default/status HTTP/1.1" 200
