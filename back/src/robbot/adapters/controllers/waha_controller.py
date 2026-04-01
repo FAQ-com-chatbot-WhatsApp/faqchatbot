@@ -2,7 +2,7 @@
 
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from robbot.api.v1.dependencies import get_current_user, get_db, require_role
@@ -1358,6 +1358,7 @@ async def screenshot(
         if not session:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No active session")
 
-        return await waha.screenshot(session=session.name)
+        content = await waha.screenshot(session=session.name)
+        return Response(content=content, media_type="image/png")
     except ExternalServiceError as e:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
