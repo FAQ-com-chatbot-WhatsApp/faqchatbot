@@ -2,8 +2,8 @@
 Conversation Pipeline - Orchestrates initial message processing and context building.
 """
 
-import logging
 import asyncio
+import logging
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -111,13 +111,12 @@ class ConversationPipeline:
             f"RECENT CONVERSATION LOG:\n{state.recent_history}\n\nRELEVANT FACTS/MEMORY:\n{filtered_rag}"
         )
 
-        # 5. Detect intent, urgency and extract name IN PARALLEL
+        # 5. Detect intent and extract name IN PARALLEL
         # Both are LLM calls, parallelizing saves ~5-10s per message.
-        
+
         # Define tasks
         intent_task = self.intent_detector.detect_intent(state.message_text, state.context_text)
-        urgency_task = self.intent_detector.detect_urgency(state.message_text, state.context_text)
-        
+
         # Conditionally add name extraction task
         name_task = None
         if conversation.lead:
@@ -134,13 +133,18 @@ class ConversationPipeline:
 
         # Execute in parallel
         if name_task:
-            (state.intent, state.spin_phase), state.is_urgent, _ = await asyncio.gather(
-                intent_task, urgency_task, name_task
+            (state.intent, state.spin_phase), _ = await asyncio.gather(
+                intent_task, name_task
             )
         else:
-            (state.intent, state.spin_phase), state.is_urgent = await asyncio.gather(
-                intent_task, urgency_task
+            (state.intent, state.spin_phase) = await self.intent_detector.detect_intent(
+                state.message_text, state.context_text
             )
+
+        # Urgency is derived from intent — URGENCIA_DOR always means immediate handoff.
+        # This replaces the need for a separate detect_urgency() call.
+        if state.intent == "URGENCIA_DOR":
+            state.is_urgent = True
 
         # 7. Update Score (Pre-calculation) - MUST happen after intent
         state.new_score = await self.intent_detector.update_maturity_score(
@@ -148,3 +152,4 @@ class ConversationPipeline:
         )
 
         return state
+
