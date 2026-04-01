@@ -97,6 +97,11 @@ class WAHAClient:
             response = await self._client.request(method, endpoint, **kwargs)
             response.raise_for_status()
 
+            # Handle binary responses (e.g. images)
+            content_type = response.headers.get("Content-Type", "")
+            if "image/" in content_type or "application/octet-stream" in content_type:
+                return response.content
+
             # Handle empty responses (204 No Content, 201 Created)
             if response.status_code in (204, 201) and not response.content:
                 logger.warning(f"WAHA returned {response.status_code} with empty content for {endpoint}")
@@ -105,7 +110,11 @@ class WAHAClient:
             if not response.content:
                 return {"success": True}
 
-            return response.json()
+            try:
+                return response.json()
+            except ValueError:
+                # Fallback to raw content if not JSON
+                return response.content
 
         except httpx.HTTPStatusError as e:
             error_detail = e.response.text
@@ -1846,20 +1855,26 @@ class WAHAClient:
         """
         return await self._request("GET", "/api/server/status")
 
-    async def screenshot(self, session: str) -> dict[str, Any] | bytes:
+    async def screenshot(self, session: str) -> bytes:
         """Get screenshot of WhatsApp session.
 
         Args:
             session: Session name
 
         Returns:
-            Screenshot as JPEG or base64
+            Screenshot image bytes
 
         Docs: GET /api/screenshot
         """
         params = {"session": session}
         logger.info("Taking screenshot of session: %s", session)
-        return await self._request("GET", "/api/screenshot", params=params)
+        result = await self._request("GET", "/api/screenshot", params=params)
+        
+        # Ensure we return bytes even if it was mocked as dict or something
+        if isinstance(result, dict):
+            # This should only happen in mock mode if not implemented correctly
+            return b""
+        return result
 
 
 # ============================================================================
