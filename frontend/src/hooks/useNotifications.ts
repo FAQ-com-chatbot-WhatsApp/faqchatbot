@@ -29,15 +29,19 @@ export function useNotifications() {
           if (newest && !newest.read && newest.id !== lastNotifiedId.current) {
               lastNotifiedId.current = newest.id
               
-              if (newest.type === "HANDOFF_REQUIRED") {
-                  toast.success("🎯 Novo Handoff: Agendamento Disponível!", {
+              if (newest.type === "HANDOFF_REQUIRED" || newest.type === "HANDOFF_URGENT") {
+                  const isUrgent = newest.type === "HANDOFF_URGENT";
+                  const toastFn = isUrgent ? toast.error : toast.success;
+                  
+                  toastFn(newest.title, {
                     description: newest.message,
-                    duration: 15000, // 15 segundos para dar tempo do usuário ver
+                    duration: isUrgent ? 30000 : 15000, 
                     action: {
-                        label: "Ver",
+                        label: "Atender",
                         onClick: () => {
-                            // Poderia levar o usuário para a tela de notificações ou mensagens
-                            console.log("Visualizando notificação:", newest.id)
+                            // Marcar como lida antes de navegar para limpar o header
+                            markNotificationAsRead(newest.id).catch(() => {});
+                            window.location.href = `/messages?conversationId=${newest.entity_id}`;
                         }
                     }
                   })
@@ -70,8 +74,8 @@ export function useNotifications() {
     setIsLoading(true)
     fetchNotifications().finally(() => setIsLoading(false))
     
-    // Polling a cada 30 segundos para dados em tempo real
-    const interval = setInterval(fetchNotifications, 30000)
+    // Polling a cada 10 segundos para dados em tempo real (KISS)
+    const interval = setInterval(fetchNotifications, 10000)
     return () => clearInterval(interval)
   }, [fetchNotifications])
 
