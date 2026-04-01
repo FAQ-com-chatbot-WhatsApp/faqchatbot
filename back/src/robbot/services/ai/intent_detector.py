@@ -58,6 +58,7 @@ class IntentDetector:
                 "RECLAMACAO",
                 "AGRADECIMENTO",
                 "ENCERRAMENTO",
+                "URGENCIA_DOR",  # Triggers immediate handoff to human team
                 "OUTRO",
             ]
 
@@ -74,29 +75,6 @@ class IntentDetector:
             logger.warning("[WARNING] Failed to detect intent: %s", e)
             raise LLMError(f"Failed to detect intent: {e}") from e
 
-    async def detect_urgency(self, message: str, context: str) -> bool:
-        """
-        Detectar se mensagem indica urgência.
-
-        Args:
-            message: Mensagem do cliente
-            context: Contexto conversacional
-
-        Returns:
-            bool: True se urgente
-
-        Raises:
-            LLMError: Se falhar ao detectar urgência
-        """
-        try:
-            # Fallback to intent prompt if urgency prompt not available (or implement it)
-            # Actually, I'll use format_intent_prompt for now or implement urgency one.
-            # Looking at PromptTemplates, there is no urgency prompt.
-            # For now, let's just return False or implement a generic check.
-            return False
-        except Exception as e:
-            logger.warning("[WARNING] Failed to detect urgency: %s", e)
-            return False
 
     async def try_extract_name(self, session: Any, message: str, context: str, conversation: ConversationModel) -> None:
         """
