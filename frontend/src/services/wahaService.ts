@@ -217,7 +217,7 @@ export async function restartSession(sessionName: string): Promise<void> {
 }
 
 export async function getScreenshot(): Promise<Blob> {
-  const response = await fetch('/api/v1/screenshot', {
+  const response = await fetch('/api/v1/waha/screenshot', {
     method: 'GET',
     credentials: 'include',
     headers: {
