@@ -26,6 +26,7 @@ class NotificationOut(BaseModel):
     title: str
     message: str
     read: bool
+    entity_id: str | None = None
     created_at: str
 
     model_config = ConfigDict(from_attributes=True)
@@ -92,6 +93,7 @@ async def list_notifications(
             title=n.title,
             message=n.message,
             read=n.read,
+            entity_id=n.entity_id,
             created_at=n.created_at.isoformat(),
         )
         for n in notifications
@@ -178,6 +180,7 @@ async def mark_notification_as_read(
             title=updated.title,
             message=updated.message,
             read=updated.read,
+            entity_id=updated.entity_id,
             created_at=updated.created_at.isoformat(),
         )
 
