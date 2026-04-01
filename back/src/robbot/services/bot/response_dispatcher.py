@@ -70,6 +70,7 @@ class ResponseDispatcher:
             response_text[:200],
             response_data.get("tokens_used", 0),
             response_data.get("latency_ms", 0),
+            response_data.get("model_name", "unknown"),
         )
 
         return sent
@@ -91,12 +92,14 @@ class ResponseDispatcher:
         )
         self.lead_interaction_repo.create(interaction)
 
-    async def _log_llm_interaction(self, conv_id: str, prompt: str, resp: str, tokens: int, latency: int):
+    async def _log_llm_interaction(
+        self, conv_id: str, prompt: str, resp: str, tokens: int, latency: int, model_name: str = "unknown"
+    ):
         interaction = LLMInteractionModel(
             conversation_id=conv_id,
             prompt=prompt,
             response=resp,
-            model_name="gemini-1.5-pro",
+            model_name=model_name,
             tokens_used=tokens,
             latency_ms=latency,
         )
