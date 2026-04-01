@@ -133,9 +133,7 @@ class ConversationPipeline:
 
         # Execute in parallel
         if name_task:
-            (state.intent, state.spin_phase), _ = await asyncio.gather(
-                intent_task, name_task
-            )
+            (state.intent, state.spin_phase), _ = await asyncio.gather(intent_task, name_task)
         else:
             (state.intent, state.spin_phase) = await self.intent_detector.detect_intent(
                 state.message_text, state.context_text
@@ -152,4 +150,3 @@ class ConversationPipeline:
         )
 
         return state
-
