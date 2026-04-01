@@ -711,8 +711,10 @@ class WAHAClient:
             base_delay = 1.0  # Just 1 second base delay
             typing_delay = len(text) * 0.01  # 10ms per character
             total_delay = min(base_delay + typing_delay, 5.0)  # Max 5 seconds absolute limit
-            
-            logger.info("Anti-ban delay: %.1fs for %s chars (optimized for async worker throughput)", total_delay, len(text))
+
+            logger.info(
+                "Anti-ban delay: %.1fs for %s chars (optimized for async worker throughput)", total_delay, len(text)
+            )
 
             # Sleep in intervals with heartbeat pings to keep session alive
             # Ping every 10 seconds to prevent session timeout
@@ -1869,7 +1871,7 @@ class WAHAClient:
         params = {"session": session}
         logger.info("Taking screenshot of session: %s", session)
         result = await self._request("GET", "/api/screenshot", params=params)
-        
+
         # Ensure we return bytes even if it was mocked as dict or something
         if isinstance(result, dict):
             # This should only happen in mock mode if not implemented correctly
