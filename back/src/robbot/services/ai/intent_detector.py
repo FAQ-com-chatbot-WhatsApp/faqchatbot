@@ -75,7 +75,6 @@ class IntentDetector:
             logger.warning("[WARNING] Failed to detect intent: %s", e)
             raise LLMError(f"Failed to detect intent: {e}") from e
 
-
     async def try_extract_name(self, session: Any, message: str, context: str, conversation: ConversationModel) -> None:
         """
         Tentar extrair nome do paciente da mensagem de forma inteligente.
@@ -122,8 +121,8 @@ class IntentDetector:
                 # Only update if current name is empty or is the word 'Desconhecido'
                 should_update = (
                     not current_name  # No name yet (is None or empty)
-                    or current_name == conversation.lead.phone_number # Phone placeholder
-                    or current_name.lower().strip() == "desconhecido" # Is placeholder
+                    or current_name == conversation.lead.phone_number  # Phone placeholder
+                    or current_name.lower().strip() == "desconhecido"  # Is placeholder
                     or (len(current_name.split()) == 1 and len(name.split()) > 1)  # Upgrade from single to full name
                 )
 
