@@ -42,6 +42,7 @@ class NotificationService:
         notification_type: str,
         title: str,
         message: str,
+        entity_id: str | None = None,
     ) -> NotificationModel:
         """
         Create a new notification.
@@ -51,6 +52,7 @@ class NotificationService:
             notification_type: Type of notification (NEW_LEAD, NEW_MESSAGE, etc.)
             title: Notification title
             message: Detailed message content
+            entity_id: Optional ID of the related entity
 
         Returns:
             Created notification model
@@ -60,6 +62,7 @@ class NotificationService:
             notification_type=notification_type,
             title=title,
             message=message,
+            entity_id=entity_id,
         )
 
         logger.info(
@@ -226,4 +229,40 @@ class NotificationService:
             notification_type="TRANSFER_RECEIVED",
             title="Conversation Transferred",
             message=f"You received a conversation from {from_user_name} (ID: {conversation_id[:8]})",
+            entity_id=conversation_id,
+        )
+
+    def notify_handoff(
+        self,
+        user_id: int,
+        conversation_id: str,
+        lead_name: str,
+        is_urgent: bool = False,
+    ) -> NotificationModel:
+        """
+        Notify user that a handoff is required.
+
+        Args:
+            user_id: ID of the user to notify
+            conversation_id: Conversation ID
+            lead_name: Name of the lead
+            is_urgent: If True, uses urgent styling
+
+        Returns:
+            Created notification model
+        """
+        title = "🚨 URGÊNCIA: Atendimento Imediato" if is_urgent else "🎯 Lead Pronto para Agendamento"
+        msg = (
+            f"URGÊNCIA detectada para o cliente {lead_name}! Por favor, assuma o atendimento agora."
+            if is_urgent else
+            f"O cliente {lead_name} atingiu a maturidade necessária e aguarda seu contato para agendar!"
+        )
+        notif_type = "HANDOFF_URGENT" if is_urgent else "HANDOFF_REQUIRED"
+
+        return self.create_notification(
+            user_id=user_id,
+            notification_type=notif_type,
+            title=title,
+            message=msg,
+            entity_id=conversation_id,
         )
