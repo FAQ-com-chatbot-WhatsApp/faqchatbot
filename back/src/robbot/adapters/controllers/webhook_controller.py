@@ -71,11 +71,7 @@ async def receive_waha_webhook(
     # Ignorar gravação no banco de eventos que causam spam
     if payload.event == "engine.event":
         return WebhookLogOut(
-            id=0,
-            session_name=payload.session,
-            event_type=payload.event,
-            processed=True,
-            created_at=datetime.now(UTC)
+            id=0, session_name=payload.session, event_type=payload.event, processed=True, created_at=datetime.now(UTC)
         )
 
     log = repo.create(
@@ -97,8 +93,7 @@ async def receive_waha_webhook(
             _data = message_data.get("_data", {})
 
             logger.info(
-                "[WEBHOOK DEBUG] Mensagem recebida - "
-                "Type: %s | HasMedia: %s | Media: %s | _data.type: %s",
+                "[WEBHOOK DEBUG] Mensagem recebida - Type: %s | HasMedia: %s | Media: %s | _data.type: %s",
                 msg_type,
                 has_media,
                 "PRESENTE" if media_data else "NULL",
@@ -177,9 +172,7 @@ async def receive_waha_webhook(
                     cached_number = redis_client.get(f"waha:dev_phone:{phone}")
                     if cached_number:
                         cached_number_str = (
-                            cached_number.decode()
-                            if isinstance(cached_number, bytes)
-                            else cached_number
+                            cached_number.decode() if isinstance(cached_number, bytes) else cached_number
                         )
                         if cached_number_str in settings.dev_phone_list:
                             phone_is_allowed = True
