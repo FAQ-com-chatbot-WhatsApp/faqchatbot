@@ -42,48 +42,116 @@ class LLMClient(LLMProvider):
         Raises:
             LLMError: If initialization fails
         """
+        self.manager = None
+        self._load_config()
+
+    def _load_config(self):
+        """Load configuration from DB with fallback to settings.py (Env)."""
+        from robbot.infra.db.session import get_sync_session
+        from robbot.infra.persistence.repositories.system_setting_repository import SystemSettingRepository
+
         try:
-            # Determine primary provider from settings
-            primary: ProviderType = "gemini" if settings.LLM_PRIMARY_PROVIDER == "gemini" else "groq"
+            with get_sync_session() as db:
+                repo = SystemSettingRepository(db)
+                db_settings = repo.get_all_settings()
+
+                # Dynamic settings
+                google_api_key = db_settings.get("GOOGLE_API_KEY", settings.GOOGLE_API_KEY)
+                gemini_model = db_settings.get("GEMINI_MODEL", settings.GEMINI_MODEL)
+                gemini_max_tokens = int(db_settings.get("GEMINI_MAX_TOKENS", settings.GEMINI_MAX_TOKENS))
+                gemini_temperature = float(db_settings.get("GEMINI_TEMPERATURE", settings.GEMINI_TEMPERATURE))
+
+                groq_api_key = db_settings.get("GROQ_API_KEY", settings.GROQ_API_KEY)
+                groq_model = db_settings.get("GROQ_MODEL", settings.GROQ_MODEL)
+                groq_max_tokens = int(db_settings.get("GROQ_MAX_TOKENS", settings.GROQ_MAX_TOKENS))
+                groq_temperature = float(db_settings.get("GROQ_TEMPERATURE", settings.GROQ_TEMPERATURE))
+
+                primary_provider = db_settings.get("LLM_PRIMARY_PROVIDER", settings.LLM_PRIMARY_PROVIDER)
+                enable_fallback = (
+                    db_settings.get("LLM_ENABLE_FALLBACK", str(settings.LLM_ENABLE_FALLBACK)).lower() == "true"
+                )
+
+                self._initialize_manager(
+                    primary=primary_provider,
+                    enable_fallback=enable_fallback,
+                    google_key=google_api_key,
+                    gemini_model=gemini_model,
+                    gemini_max_tokens=gemini_max_tokens,
+                    gemini_temp=gemini_temperature,
+                    groq_key=groq_api_key,
+                    groq_model=groq_model,
+                    groq_max_tokens=groq_max_tokens,
+                    groq_temp=groq_temperature,
+                )
+        except Exception as e:
+            logger.error("[ERROR] Failed to load LLM configuration from DB, using defaults: %s", e)
+            self._initialize_manager(
+                primary=settings.LLM_PRIMARY_PROVIDER,
+                enable_fallback=settings.LLM_ENABLE_FALLBACK,
+                google_key=settings.GOOGLE_API_KEY,
+                gemini_model=settings.GEMINI_MODEL,
+                gemini_max_tokens=settings.GEMINI_MAX_TOKENS,
+                gemini_temp=settings.GEMINI_TEMPERATURE,
+                groq_key=settings.GROQ_API_KEY,
+                groq_model=settings.GROQ_MODEL,
+                groq_max_tokens=settings.GROQ_MAX_TOKENS,
+                groq_temp=settings.GROQ_TEMPERATURE,
+            )
+
+    def _initialize_manager(
+        self,
+        primary,
+        enable_fallback,
+        google_key,
+        gemini_model,
+        gemini_max_tokens,
+        gemini_temp,
+        groq_key,
+        groq_model,
+        groq_max_tokens,
+        groq_temp,
+    ):
+        """Initialize and register providers."""
+        try:
+            # Determine primary provider
+            primary_type: ProviderType = "gemini" if primary == "gemini" else "groq"
 
             # Initialize provider manager
             self.manager = LLMProviderManager(
-                primary_provider=primary,
-                enable_fallback=settings.LLM_ENABLE_FALLBACK,
+                primary_provider=primary_type,
+                enable_fallback=enable_fallback,
             )
 
             # Register Gemini provider
-            if settings.GOOGLE_API_KEY:
+            if google_key:
                 gemini = GeminiProvider(
-                    api_key=settings.GOOGLE_API_KEY,
-                    model=settings.GEMINI_MODEL,
-                    default_temperature=settings.GEMINI_TEMPERATURE,
-                    default_max_tokens=settings.GEMINI_MAX_TOKENS,
+                    api_key=google_key,
+                    model=gemini_model,
+                    default_temperature=gemini_temp,
+                    default_max_tokens=gemini_max_tokens,
                     timeout=settings.LLM_TIMEOUT,
                 )
                 self.manager.register_provider("gemini", gemini)
-                logger.info("[PROVIDER] Gemini registered (model=%s)", settings.GEMINI_MODEL)
+                logger.info("[PROVIDER] Gemini registered (model=%s)", gemini_model)
 
             # Register Groq provider
-            if settings.GROQ_API_KEY:
+            if groq_key:
                 groq = GroqProvider(
-                    api_key=settings.GROQ_API_KEY,
-                    model=settings.GROQ_MODEL,
-                    default_temperature=settings.GROQ_TEMPERATURE,
-                    default_max_tokens=settings.GROQ_MAX_TOKENS,
+                    api_key=groq_key,
+                    model=groq_model,
+                    default_temperature=groq_temp,
+                    default_max_tokens=groq_max_tokens,
                     timeout=settings.LLM_TIMEOUT,
                 )
                 self.manager.register_provider("groq", groq)
-                logger.info("[PROVIDER] Groq registered (model=%s)", settings.GROQ_MODEL)
+                logger.info("[PROVIDER] Groq registered (model=%s)", groq_model)
 
-            active_provider = self.manager.get_active_provider_info()
-            logger.info(
-                "[SUCCESS] LLMClient initialized with %s as primary provider",
-                active_provider["provider"],
-            )
+            active_info = self.manager.get_active_provider_info()
+            logger.info("[SUCCESS] LLMClient (re)initialized with %s", active_info["provider"])
+
         except Exception as e:
-            logger.error("[ERROR] Failed to initialize LLMClient: %s", e)
-            raise LLMError("LLMClient", f"Initialization failed: {e}", original_error=e) from e
+            logger.error("[ERROR] Failed to initialize LLM providers: %s", e)
+            raise LLMError("LLMClient", f"Provider initialization failed: {e}") from e
 
     async def generate_response(
         self,
@@ -91,15 +159,11 @@ class LLMClient(LLMProvider):
         context: str | None = None,
         max_retries: int = 3,
     ) -> dict[str, Any]:
-        """
-        Generate a response from LLM with automatic provider fallback.
-        """
+        """Generate a response from LLM with automatic provider fallback."""
         try:
             logger.info("[INFO] Generating LLM response via provider manager")
 
             # Provider manager handles fallback automatically
-            # Note: We need to ensure LLMProviderManager.generate_response is async
-            # or wrap it. Since we updated Providers to be async, let's update Manager too.
             return await self.manager.generate_response(
                 prompt=prompt,
                 context=context,
@@ -139,13 +203,17 @@ class LLMClient(LLMProvider):
 
     async def close(self) -> None:
         """Cleanup resources."""
-        await self.manager.close()
+        if self.manager:
+            await self.manager.close()
+
+    def refresh(self) -> None:
+        """Reload configuration and recreate providers."""
+        logger.info("[CONFIG] Refreshing LLM configuration...")
+        self._load_config()
 
 
 def get_llm_client() -> LLMClient:
-    """
-    Get singleton instance of LLMClient.
-    """
+    """Get singleton instance of LLMClient."""
     client = _singleton.get("client")
     if client is None:
         _singleton["client"] = LLMClient()
@@ -154,9 +222,7 @@ def get_llm_client() -> LLMClient:
 
 
 def close_llm_client() -> None:
-    """
-    Close LLMClient singleton instance.
-    """
+    """Close LLMClient singleton instance."""
     if _singleton.get("client") is not None:
         logger.info("Closing LLMClient singleton")
     _singleton["client"] = None
