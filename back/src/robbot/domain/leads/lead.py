@@ -14,7 +14,7 @@ class Lead:
 
     id: str
     name: str | None = None
-    phone_number: PhoneNumber = field(default=None) # type: ignore
+    phone_number: PhoneNumber = field(default=None)  # type: ignore
     status: LeadStatus = LeadStatus.NEW
     maturity_score: LeadScore = LeadScore(0)
     email: str | None = None
