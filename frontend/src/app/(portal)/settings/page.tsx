@@ -64,8 +64,8 @@ export default function SettingsPage() {
     refresh: refreshSession,
   } = useSession({
     sessionName: 'default',
-    autoRefresh: false,
-    refreshInterval: 30000,
+    autoRefresh: true, // Enable auto-refresh (now smart-polls 5s/30s)
+    refreshInterval: 10000, // 10s base interval when WORKING
   })
 
   const [fullName, setFullName] = useState('')
@@ -76,63 +76,45 @@ export default function SettingsPage() {
   const [qrDialogOpen, setQrDialogOpen] = useState(false)
   const [qrImageUrl, setQrImageUrl] = useState<string | null>(null)
 
-  // Auto-open QR dialog when status changes to SCAN_QR_CODE
+  /**
+   * Smart QR Image Management
+   * Fetches QR screenshot whenever the session moves to SCAN_QR_CODE or the status is polled.
+   */
   useEffect(() => {
-    const fetchQrImage = async () => {
-      if (currentSession?.status === 'SCAN_QR_CODE') {
-        try {
-          console.log('[QR] Fetching screenshot...')
-          const { getScreenshot } = await import('@/services/wahaService')
-          const blob = await getScreenshot()
-          console.log(
-            '[QR] Screenshot received, size:',
-            blob.size,
-            'type:',
-            blob.type
-          )
-          const url = URL.createObjectURL(blob)
+    let intervalId: NodeJS.Timeout | null = null
+    const isActive = currentSession?.status === 'SCAN_QR_CODE'
 
-          // Revoke old URL before setting new one
-          if (qrImageUrl) {
-            URL.revokeObjectURL(qrImageUrl)
-          }
-
-          setQrImageUrl(url)
-          setQrDialogOpen(true)
-          console.log('[QR] QR Code modal opened with image URL')
-        } catch (err) {
-          console.error('[QR] Failed to fetch QR screenshot:', err)
-          setErrorMessage('Erro ao buscar QR Code. Tente novamente.')
-          setTimeout(() => setErrorMessage(null), 3000)
-        }
-      } else if (currentSession?.status === 'WORKING') {
-        setQrDialogOpen(false)
-        if (qrImageUrl) {
-          URL.revokeObjectURL(qrImageUrl)
-          setQrImageUrl(null)
-        }
+    const fetchQr = async () => {
+      try {
+        const { getScreenshot } = await import('@/services/wahaService')
+        const blob = await getScreenshot()
+        const url = URL.createObjectURL(blob)
+        setQrImageUrl(prev => {
+          if (prev) URL.revokeObjectURL(prev)
+          return url
+        })
+        if (!qrDialogOpen) setQrDialogOpen(true)
+      } catch (err) {
+        console.error('[QR] Failed to fetch QR:', err)
       }
     }
 
-    fetchQrImage()
-
-    // Auto-refresh QR screenshot every 5 seconds when waiting for scan
-    let intervalId: NodeJS.Timeout | null = null
-    if (currentSession?.status === 'SCAN_QR_CODE') {
-      intervalId = setInterval(fetchQrImage, 5000)
+    if (isActive) {
+      fetchQr()
+      // Refresh the image every 15 seconds while scanning (independent of status polling)
+      intervalId = setInterval(fetchQr, 15000)
+    } else {
+      setQrDialogOpen(false)
+      if (qrImageUrl) {
+        URL.revokeObjectURL(qrImageUrl)
+        setQrImageUrl(null)
+      }
     }
 
     return () => {
-      if (intervalId) {
-        clearInterval(intervalId)
-      }
-      if (qrImageUrl) {
-        URL.revokeObjectURL(qrImageUrl)
-      }
+      if (intervalId) clearInterval(intervalId)
     }
-    // qrImageUrl is excluded from deps to avoid infinite reload loop (it's set inside fetchQrImage)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSession?.status])
+  }, [currentSession?.status, qrDialogOpen])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
