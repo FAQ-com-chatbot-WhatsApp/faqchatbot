@@ -89,7 +89,9 @@ class HandoffService:
             active_users = user_repo.list_all()
             target_user_ids = [u.id for u in active_users if u.is_active]
 
-        lead_name = conversation.lead.name if conversation.lead and conversation.lead.name else conversation.phone_number
+        lead_name = (
+            conversation.lead.name if conversation.lead and conversation.lead.name else conversation.phone_number
+        )
         is_urgent = reason == "urgencia_detectada"
 
         for uid in target_user_ids:
@@ -102,7 +104,9 @@ class HandoffService:
 
         session.flush()
 
-        logger.info("[SUCCESS] Handoff triggered and notifications created: conv=%s, reason=%s", conversation_id, reason)
+        logger.info(
+            "[SUCCESS] Handoff triggered and notifications created: conv=%s, reason=%s", conversation_id, reason
+        )
 
         # Generate natural transition message based on context
         transition_message = self._generate_transition_message(reason, score)
