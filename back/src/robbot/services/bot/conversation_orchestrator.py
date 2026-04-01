@@ -49,7 +49,13 @@ class ConversationOrchestrator:
         logger.info("[SUCCESS] Decomposed ConversationOrchestrator initialized")
 
     async def process_inbound_message(
-        self, chat_id: str, phone_number: str, message_text: str, session_name: str = "default", name: str | None = None, **media_kwargs
+        self,
+        chat_id: str,
+        phone_number: str,
+        message_text: str,
+        session_name: str = "default",
+        name: str | None = None,
+        **media_kwargs,
     ) -> dict[str, Any]:
         """
         Main entry point for message processing.
@@ -74,7 +80,7 @@ class ConversationOrchestrator:
                 # O Pipeline salva a mensagem INBOUND.
                 # Vamos comitar aqui para que o usuário veja a própria mensagem na tela IMEDIATAMENTE (UX).
                 state = await pipeline.execute(conversation, message_text, **media_kwargs)
-                session.commit() # Commit inicial (Inbound salva)
+                session.commit()  # Commit inicial (Inbound salva)
 
                 # Re-abrir sessão ou garantir que o objeto conversation ainda está OK
                 # Em SQLAlchemy, após commit os objetos podem expirar. Vamos dar um refresh.
