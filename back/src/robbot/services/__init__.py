@@ -12,7 +12,6 @@ from robbot.services.bot.conversation_orchestrator import ConversationOrchestrat
 from robbot.services.bot.conversation_pipeline import ConversationPipeline
 from robbot.services.bot.conversation_service import ConversationService
 from robbot.services.bot.response_dispatcher import ResponseDispatcher
-from robbot.services.bot.response_generator import ResponseGenerator
 
 # Content services
 from robbot.services.content.content_service import ContentService
@@ -33,7 +32,6 @@ __all__ = [
     "ConversationPipeline",
     "ConversationService",
     "ResponseDispatcher",
-    "ResponseGenerator",
     # Leads
     "LeadService",
     # Auth
