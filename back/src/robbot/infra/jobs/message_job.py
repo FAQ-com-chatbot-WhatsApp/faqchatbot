@@ -276,9 +276,9 @@ class MessageProcessingJob(BaseJob):
 
             # Extrair nome do contato se disponível (WAHA pushname ou contact.name)
             name = (
-                self.message_data.get("pushname") or
-                self.message_data.get("contact", {}).get("name") or
-                self.message_data.get("pushName") # WAHA supports both cases
+                self.message_data.get("pushname")
+                or self.message_data.get("contact", {}).get("name")
+                or self.message_data.get("pushName")  # WAHA supports both cases
             )
 
             # Processar com orchestrator
