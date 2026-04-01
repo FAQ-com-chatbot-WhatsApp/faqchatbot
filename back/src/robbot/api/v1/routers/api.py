@@ -19,6 +19,7 @@ from robbot.adapters.controllers import (
     notification_controller,
     queue_controller,
     queues_controller,
+    settings_controller,
     tag_controller,
     topic_controller,
     user_controller,
@@ -39,6 +40,7 @@ api_router.include_router(health_controller.router, prefix="/health", tags=["Hea
 api_router.include_router(queue_controller.router, prefix="/queue", tags=["Queue"])
 api_router.include_router(queues_controller.router, prefix="/queues", tags=["Queues"])
 api_router.include_router(worker_routes.router, prefix="/workers", tags=["Workers"])
+api_router.include_router(settings_controller.router, prefix="/settings", tags=["Settings"])
 api_router.include_router(audit_controller.router, prefix="/audit-logs", tags=["Audit"])
 api_router.include_router(job_controller.router, prefix="/jobs", tags=["Jobs"])
 
