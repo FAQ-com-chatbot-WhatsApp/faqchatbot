@@ -325,7 +325,7 @@ export default function SettingsPage() {
 
               {/* QR Code Dialog */}
               <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-2xl">
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                       <QrCode className="w-5 h-5 text-green-600" />
@@ -338,12 +338,12 @@ export default function SettingsPage() {
                   <div className="flex flex-col items-center justify-center py-6">
                     {qrImageUrl ? (
                       <>
-                        <div className="bg-white p-4 rounded-lg shadow-lg">
+                        <div className="w-full bg-white p-2 rounded-xl shadow-md border overflow-hidden">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={qrImageUrl}
                             alt="QR Code WhatsApp"
-                            className="w-80 h-80 object-contain"
+                            className="w-full h-auto min-h-[300px] max-h-[70vh] object-contain mx-auto"
                           />
                         </div>
                         <div className="mt-6 space-y-2 text-sm text-muted-foreground">
