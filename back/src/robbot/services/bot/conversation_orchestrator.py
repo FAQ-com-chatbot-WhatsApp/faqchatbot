@@ -18,6 +18,8 @@ from robbot.infra.db.session import get_sync_session
 from robbot.infra.integrations.llm.llm_client import get_llm_client
 from robbot.infra.integrations.vector_store.chroma_vector_store import ChromaVectorStore
 from robbot.infra.integrations.waha.waha_client import WAHAClient
+from robbot.infra.persistence.repositories.conversation_repository import ConversationRepository
+from robbot.infra.persistence.repositories.lead_repository import LeadRepository
 from robbot.services.ai.answered_questions import AnsweredQuestionsMemory
 from robbot.services.ai.persistent_memory import PersistentMemory
 from robbot.services.bot.conversation_pipeline import ConversationPipeline, PipelineState
@@ -25,8 +27,6 @@ from robbot.services.bot.conversation_service import ConversationService
 from robbot.services.bot.response_dispatcher import ResponseDispatcher
 from robbot.services.communication.message_processor import MessageProcessor
 from robbot.services.communication.transcription_service import TranscriptionService
-from robbot.infra.persistence.repositories.conversation_repository import ConversationRepository
-from robbot.infra.persistence.repositories.lead_repository import LeadRepository
 from robbot.services.handoff.handoff_service import HandoffService
 
 logger = logging.getLogger(__name__)
@@ -71,14 +71,13 @@ class ConversationOrchestrator:
                     return await self._handle_silenced(session, conversation, message_text)
 
                 # 4. Pipeline Execution (Ingestion & Analysis)
-                # O Pipeline salva a mensagem INBOUND. 
+                # O Pipeline salva a mensagem INBOUND.
                 # Vamos comitar aqui para que o usuário veja a própria mensagem na tela IMEDIATAMENTE (UX).
                 state = await pipeline.execute(conversation, message_text, **media_kwargs)
                 session.commit() # Commit inicial (Inbound salva)
 
                 # Re-abrir sessão ou garantir que o objeto conversation ainda está OK
                 # Em SQLAlchemy, após commit os objetos podem expirar. Vamos dar um refresh.
-                session.add(conversation)
                 session.refresh(conversation)
 
                 # Update urgency in DB if detected
@@ -87,7 +86,7 @@ class ConversationOrchestrator:
                     session.flush()
 
                 # 5. Guard: Answered Questions
-                if self.answered_questions_memory.was_answered(state.message_text):
+                if self.answered_questions_memory.was_answered(conversation.id, state.message_text):
                     return await self._handle_repeated_question(
                         session, conversation, dispatcher, state.message_text, session_name
                     )
@@ -96,15 +95,19 @@ class ConversationOrchestrator:
                 response_data = await self._generate_response(state, conversation)
                 response_text = self._normalize_response_text(response_data["response"])
 
-                # 7. Check Closure
-                if state.intent == "ENCERRAMENTO":
+                # 7. Guard: Urgency — immediate handoff before anything else
+                if state.is_urgent:
+                    response_text = await self._trigger_urgent_handoff(session, conversation, state.new_score)
+                    state.intent = "URGENCIA_HANDOFF"
+
+                # 8. Check Closure
+                elif state.intent == "ENCERRAMENTO":
                     conv_service.close(conversation.id, reason="CLIENT_REQUEST")
-                    # Force a polite closing message if LLM didn't generate one well
                     response_text = (
                         "Entendido! Conversa encerrada. Se precisar de algo no futuro, é só chamar. Até mais! 👋"
                     )
 
-                # 8. Check Handoff
+                # 9. Check Handoff (score-based or intent-based)
                 elif await self._should_handoff(conversation, state):
                     response_text = await self._trigger_handoff(session, conversation, state.new_score)
                     state.intent = "HANDOFF"
@@ -122,16 +125,16 @@ class ConversationOrchestrator:
                     session_name,
                 )
                 session.commit()
-                session.add(conversation)
-                session.refresh(conversation)
+                session.refresh(conversation)  # refresh after commit (P5: remove redundant session.add)
 
                 # 9. Final record in Chroma (Vector Memory)
                 await pipeline.context_builder.save_to_chroma(
                     conversation.id, f"User: {state.message_text}", {"intent": state.intent, "score": state.new_score}
                 )
+                # Note: save_to_chroma writes to vector DB (Chroma), not Postgres.
+                # No session.commit() needed here. (P7: removed redundant commit)
 
-                session.commit()
-                self.answered_questions_memory.add(state.message_text)
+                self.answered_questions_memory.add(conversation.id, state.message_text)
 
                 return {
                     "conversation_id": conversation.id,
@@ -225,6 +228,26 @@ class ConversationOrchestrator:
             score=score,
         )
         return res["message"]
+
+    async def _trigger_urgent_handoff(self, session, conversation, score) -> str:
+        """
+        Immediate handoff for urgency (URGENCIA_DOR intent).
+        Notifies the human attendance/scheduling team and sends an empathetic
+        message to the client — making clear a real person will reach out.
+        """
+        handoff_service = HandoffService(ConversationRepository(session), LeadRepository(session))
+        await handoff_service.trigger_handoff(
+            session=session,
+            conversation_id=conversation.id,
+            reason="urgencia_detectada",
+            score=score,
+        )
+        return (
+            "Entendo que você está passando por um momento difícil. 💙\n\n"
+            "Já notifiquei nosso setor de atendimento e agendamentos — "
+            "em breve um de nossos responsáveis entrará em contato com você pessoalmente.\n\n"
+            "Por favor, aguarde. Você está em boas mãos."
+        )
 
     def _normalize_response_text(self, text: Any) -> str:
         # Reuse existing logic but simplified
