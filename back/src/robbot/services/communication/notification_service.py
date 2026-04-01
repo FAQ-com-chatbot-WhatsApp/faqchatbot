@@ -254,8 +254,8 @@ class NotificationService:
         title = "🚨 URGÊNCIA: Atendimento Imediato" if is_urgent else "🎯 Lead Pronto para Agendamento"
         msg = (
             f"URGÊNCIA detectada para o cliente {lead_name}! Por favor, assuma o atendimento agora."
-            if is_urgent else
-            f"O cliente {lead_name} atingiu a maturidade necessária e aguarda seu contato para agendar!"
+            if is_urgent
+            else f"O cliente {lead_name} atingiu a maturidade necessária e aguarda seu contato para agendar!"
         )
         notif_type = "HANDOFF_URGENT" if is_urgent else "HANDOFF_REQUIRED"
 
