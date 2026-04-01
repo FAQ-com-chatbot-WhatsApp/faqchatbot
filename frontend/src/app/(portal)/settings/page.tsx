@@ -43,9 +43,23 @@ import {
   Brain,
   Play,
   Square,
+  Loader2,
+  Save,
+  Check,
+  Settings2,
+  Network,
+  Cpu,
 } from 'lucide-react'
 import { useUser } from '@/hooks/useUser'
 import { useSession } from '@/hooks/useSession'
+import { 
+  getAISettings, 
+  updateAISettings, 
+  getAIModels,
+  type AISettings, 
+  type AIModel 
+} from '@/services/settingsService'
+import { Switch } from '@/components/ui/switch'
 
 export default function SettingsPage() {
   const {
@@ -72,7 +86,6 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [selectedLLM, setSelectedLLM] = useState('gemini')
   const [qrDialogOpen, setQrDialogOpen] = useState(false)
   const [qrImageUrl, setQrImageUrl] = useState<string | null>(null)
 
@@ -111,10 +124,72 @@ export default function SettingsPage() {
       }
     }
 
-    return () => {
-      if (intervalId) clearInterval(intervalId)
-    }
   }, [currentSession?.status, qrDialogOpen])
+
+  // IA Settings state
+  const [iaSettings, setIaSettings] = useState<AISettings | null>(null)
+  const [iaLoading, setIaLoading] = useState(true)
+  const [iaSaving, setIaSaving] = useState(false)
+  const [geminiModels, setGeminiModels] = useState<AIModel[]>([])
+  const [groqModels, setGroqModels] = useState<AIModel[]>([])
+  const [loadingModels, setLoadingModels] = useState({ gemini: false, groq: false })
+
+  const fetchAIModels = async (provider: 'gemini' | 'groq') => {
+    setLoadingModels(prev => ({ ...prev, [provider]: true }))
+    try {
+      const response = await getAIModels(provider)
+      if (provider === 'gemini') setGeminiModels(response.models)
+      else setGroqModels(response.models)
+    } catch (err) {
+      console.error(`[IA] Failed to fetch ${provider} models:`, err)
+    } finally {
+      setLoadingModels(prev => ({ ...prev, [provider]: false }))
+    }
+  }
+
+  // Fetch AI settings on mount
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        setIaLoading(true)
+        const data = await getAISettings()
+        setIaSettings(data)
+        
+        // Load initial model lists
+        if (data) {
+          fetchAIModels('gemini')
+          fetchAIModels('groq')
+        }
+      } catch (err) {
+        console.error('[IA] Failed to load settings:', err)
+        setErrorMessage('Erro ao carregar configurações de IA.')
+      } finally {
+        setIaLoading(false)
+      }
+    }
+    fetchSettings()
+  }, [])
+
+  const handleUpdateAISetting = (key: keyof AISettings, value: any) => {
+    if (!iaSettings) return
+    setIaSettings({ ...iaSettings, [key]: value })
+  }
+
+  const handleSaveAISettings = async () => {
+    if (!iaSettings) return
+    try {
+      setIaSaving(true)
+      setErrorMessage(null)
+      await updateAISettings(iaSettings)
+      setSuccessMessage('Configurações de IA salvas com sucesso!')
+      setTimeout(() => setSuccessMessage(null), 3000)
+    } catch (err) {
+      console.error('[IA] Failed to save settings:', err)
+      setErrorMessage('Erro ao salvar configurações de IA.')
+    } finally {
+      setIaSaving(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -392,14 +467,22 @@ export default function SettingsPage() {
                   onClick={handleStartSession}
                   disabled={
                     sessionLoading ||
-                    currentSession?.status === 'WORKING' ||
-                    currentSession?.status === 'STARTING'
+                    currentSession?.status === 'STARTING' ||
+                    currentSession?.status === 'WORKING'
                   }
                   size="icon"
-                  className="w-16 h-16 rounded-full bg-transparent border-2 border-green-500 hover:bg-green-500/10 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                  className={`w-16 h-16 rounded-full bg-transparent border-2 ${
+                    currentSession?.status === 'STARTING'
+                      ? 'border-yellow-500 text-yellow-600'
+                      : 'border-green-500 text-green-600 hover:bg-green-500/10 hover:text-green-700'
+                  } transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md`}
                   title="Iniciar conexão"
                 >
-                  <Play className="w-7 h-7" fill="currentColor" />
+                  {currentSession?.status === 'STARTING' ? (
+                    <Loader2 className="w-7 h-7 animate-spin" />
+                  ) : (
+                    <Play className="w-7 h-7" fill="currentColor" />
+                  )}
                 </Button>
 
                 {/* QR Code Button */}
@@ -423,7 +506,11 @@ export default function SettingsPage() {
                   className="w-16 h-16 rounded-full bg-transparent border-2 border-blue-500 hover:bg-blue-500/10 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
                   title="Reiniciar conexão"
                 >
-                  <RotateCw className="w-7 h-7" />
+                  {sessionLoading ? (
+                    <Loader2 className="w-7 h-7 animate-spin" />
+                  ) : (
+                    <RotateCw className="w-7 h-7" />
+                  )}
                 </Button>
 
                 {/* Stop Button */}
@@ -571,45 +658,235 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="ia" className="space-y-4">
-          <Card>
+        <TabsContent value="ia" className="space-y-6">
+          <Card className="border-primary/10">
             <CardHeader>
-              <CardTitle>Configurações de Inteligência Artificial</CardTitle>
-              <CardDescription>
-                Escolha o provedor de IA para suas conversas e respostas
-                automáticas
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="llm-select">Provedor de IA</Label>
-                <Select value={selectedLLM} onValueChange={setSelectedLLM}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione o provedor de IA" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="gemini">Google Gemini</SelectItem>
-                    <SelectItem value="groq">Groq</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-sm text-muted-foreground">
-                  O provedor selecionado será usado para gerar respostas
-                  automáticas nas conversas.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  <div>
-                    <strong>Google Gemini:</strong> Modelo avançado da Google,
-                    ótimo para conversas naturais e análise de contexto.
-                  </div>
-                  <div>
-                    <strong>Groq:</strong> Focado em velocidade e eficiência,
-                    ideal para respostas rápidas e processamento em tempo real.
-                  </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <CardTitle className="text-2xl flex items-center gap-2">
+                    <Brain className="w-6 h-6 text-primary" />
+                    Inteligência Artificial
+                  </CardTitle>
+                  <CardDescription>
+                    Gerencie os provedores de LLM e configure o failover automático.
+                  </CardDescription>
                 </div>
+                <Button 
+                  onClick={handleSaveAISettings} 
+                  disabled={iaSaving || iaLoading}
+                  className="gap-2"
+                >
+                  {iaSaving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  Salvar Configurações
+                </Button>
               </div>
+            </CardHeader>
+            <CardContent>
+              {iaLoading ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-4">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <p className="text-muted-foreground animate-pulse">Carregando configurações...</p>
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  {/* Global AI Config */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-muted/30 rounded-xl border border-primary/5">
+                    <div className="space-y-3">
+                      <Label className="flex items-center gap-2 text-sm font-semibold">
+                        <Settings2 className="w-4 h-4" />
+                        Provedor Primário
+                      </Label>
+                      <Select 
+                        value={iaSettings?.llm_primary_provider || 'groq'} 
+                        onValueChange={(val) => handleUpdateAISetting('llm_primary_provider', val)}
+                      >
+                        <SelectTrigger className="w-full bg-background border-primary/20">
+                          <SelectValue placeholder="Selecione o provedor" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="gemini">Google Gemini (Sugerido para Visão)</SelectItem>
+                          <SelectItem value="groq">Groq (Sugerido para Velocidade)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Este provedor será a primeira tentativa para todas as conversas.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col justify-center space-y-4">
+                      <div className="flex items-center justify-between p-3 bg-background rounded-lg border border-primary/10 shadow-sm">
+                        <div className="space-y-0.5">
+                          <Label className="flex items-center gap-2 text-sm font-semibold">
+                            <Network className="w-4 h-4 text-blue-500" />
+                            Failover Automático
+                          </Label>
+                          <p className="text-xs text-muted-foreground">
+                            Ativa o provedor secundário se o primário falhar.
+                          </p>
+                        </div>
+                        <Switch 
+                          checked={iaSettings?.llm_enable_fallback ?? true}
+                          onCheckedChange={(val) => handleUpdateAISetting('llm_enable_fallback', val)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Provider Specific Tabs */}
+                  <Tabs defaultValue="gemini_config" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 mb-6">
+                      <TabsTrigger value="gemini_config" className="gap-2">
+                        <Cpu className="w-4 h-4" /> Google Gemini
+                      </TabsTrigger>
+                      <TabsTrigger value="groq_config" className="gap-2">
+                        <Cpu className="w-4 h-4" /> Groq Cloud
+                      </TabsTrigger>
+                    </TabsList>
+
+                    {/* Gemini Settings */}
+                    <TabsContent value="gemini_config" className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label>Google API Key</Label>
+                          <Input 
+                            type="password" 
+                            className="font-mono bg-muted/20"
+                            placeholder="AIzaSy..."
+                            value={iaSettings?.google_api_key || ''}
+                            onChange={(e) => handleUpdateAISetting('google_api_key', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label>Modelo Gemini</Label>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6" 
+                              onClick={() => fetchAIModels('gemini')}
+                              disabled={loadingModels.gemini}
+                            >
+                              <Loader2 className={`w-3 h-3 ${loadingModels.gemini ? 'animate-spin' : ''}`} />
+                            </Button>
+                          </div>
+                          <Select 
+                            value={iaSettings?.gemini_model || ''} 
+                            onValueChange={(val) => handleUpdateAISetting('gemini_model', val)}
+                          >
+                            <SelectTrigger className="w-full bg-background border-primary/20">
+                              <SelectValue placeholder="Selecione o modelo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {geminiModels.length > 0 ? (
+                                geminiModels.map(m => (
+                                  <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value={iaSettings?.gemini_model || 'gemini-1.5-flash'}>
+                                  {iaSettings?.gemini_model || 'gemini-1.5-flash'} (Default)
+                                </SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Max Tokens</Label>
+                          <Input 
+                            type="number"
+                            value={iaSettings?.gemini_max_tokens || 2048}
+                            onChange={(e) => handleUpdateAISetting('gemini_max_tokens', parseInt(e.target.value))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Temperatura ({iaSettings?.gemini_temperature})</Label>
+                          <Input 
+                            type="range"
+                            min="0"
+                            max="2"
+                            step="0.1"
+                            value={iaSettings?.gemini_temperature || 0.7}
+                            onChange={(e) => handleUpdateAISetting('gemini_temperature', parseFloat(e.target.value))}
+                            className="cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                    </TabsContent>
+
+                    {/* Groq Settings */}
+                    <TabsContent value="groq_config" className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label>Groq API Key</Label>
+                          <Input 
+                            type="password" 
+                            className="font-mono bg-muted/20"
+                            placeholder="gsk_..."
+                            value={iaSettings?.groq_api_key || ''}
+                            onChange={(e) => handleUpdateAISetting('groq_api_key', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label>Modelo Groq</Label>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6" 
+                              onClick={() => fetchAIModels('groq')}
+                              disabled={loadingModels.groq}
+                            >
+                              <Loader2 className={`w-3 h-3 ${loadingModels.groq ? 'animate-spin' : ''}`} />
+                            </Button>
+                          </div>
+                          <Select 
+                            value={iaSettings?.groq_model || ''} 
+                            onValueChange={(val) => handleUpdateAISetting('groq_model', val)}
+                          >
+                            <SelectTrigger className="w-full bg-background border-primary/20">
+                              <SelectValue placeholder="Selecione o modelo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {groqModels.length > 0 ? (
+                                groqModels.map(m => (
+                                  <SelectItem key={m.id} value={m.id}>{m.id}</SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value={iaSettings?.groq_model || 'llama-3.3-70b-versatile'}>
+                                  {iaSettings?.groq_model || 'llama-3.3-70b-versatile'} (Default)
+                                </SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Max Tokens</Label>
+                          <Input 
+                            type="number"
+                            value={iaSettings?.groq_max_tokens || 2048}
+                            onChange={(e) => handleUpdateAISetting('groq_max_tokens', parseInt(e.target.value))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Temperatura ({iaSettings?.groq_temperature})</Label>
+                          <Input 
+                            type="range"
+                            min="0"
+                            max="2"
+                            step="0.1"
+                            value={iaSettings?.groq_temperature || 0.7}
+                            onChange={(e) => handleUpdateAISetting('groq_temperature', parseFloat(e.target.value))}
+                            className="cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
