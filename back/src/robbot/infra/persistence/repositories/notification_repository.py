@@ -33,6 +33,7 @@ class NotificationRepository(BaseRepository[NotificationModel]):
         notification_type: str,
         title: str,
         message: str,
+        entity_id: str | None = None,
     ) -> NotificationModel:
         """
         Create a new notification.
@@ -42,12 +43,18 @@ class NotificationRepository(BaseRepository[NotificationModel]):
             notification_type: Type of notification
             title: Notification title
             message: Notification message
+            entity_id: Optional ID of the related entity (e.g. conversation_id)
 
         Returns:
             Created notification model
         """
         notification = NotificationModel(
-            user_id=user_id, type=notification_type, title=title, message=message, read=False
+            user_id=user_id,
+            type=notification_type,
+            title=title,
+            message=message,
+            entity_id=entity_id,
+            read=False,
         )
         self.db.add(notification)
         self.db.flush()
