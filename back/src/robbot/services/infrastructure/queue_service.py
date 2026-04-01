@@ -132,7 +132,13 @@ class QueueService:
             if msg_id:
                 payload["message_ids"].append(msg_id)
 
-        payload["last_payload"] = {"session": message_data.get("session", "default"), "type": message_data.get("type", "text"), "_data": message_data.get("_data", {}), "hasMedia": message_data.get("hasMedia", False), "media": message_data.get("media", {})}
+        payload["last_payload"] = {
+            "session": message_data.get("session", "default"),
+            "type": message_data.get("type", "text"),
+            "_data": message_data.get("_data", {}),
+            "hasMedia": message_data.get("hasMedia", False),
+            "media": message_data.get("media", {}),
+        }
         redis_client.setex(buffer_key, debounce_seconds + 10, json.dumps(payload))
 
         if redis_client.set(job_key, "1", nx=True, ex=debounce_seconds + 30):
