@@ -475,48 +475,58 @@ export default function MessagesPage() {
       <Card className="flex-1 flex flex-col shadow-sm">
         {selectedConversation ? (
           <>
-            <ChatHeader
-              name={getDisplayName(selectedConversation.lead_name ?? "", selectedConversation.phone_number)}
-              initials={getInitials(selectedConversation.lead_name)}
-              avatar={avatarCache[selectedConversation.phone_number] || ''}
-              status={
-                selectedConversation.status === "PENDING_HANDOFF" ? "⚠️ Aguardando Atendimento" :
-                selectedConversation.status === "ACTIVE_HUMAN" ? "👤 Atendimento Humano" :
-                selectedConversation.status === "ACTIVE_BOT" ? "🤖 Bot Ativo" : "Offline"
-              }
-              isOnline={selectedConversation.status === "active" || selectedConversation.status === "ACTIVE_BOT"}
-              isBotActive={selectedConversation.status === "ACTIVE_BOT"}
-              onBotToggle={handleBotToggle}
-              onMore={refreshMessages}
-            />
+            {(() => {
+              // Buscar a versão mais atualizada da conversa selecionada na lista do polling
+              const currentConv = conversations.find(c => c.id === selectedConversation.id) || selectedConversation;
+              
+              return (
+                <>
+                  <ChatHeader
+                    name={getDisplayName(currentConv.lead_name ?? "", currentConv.phone_number)}
+                    initials={getInitials(currentConv.lead_name)}
+                    avatar={avatarCache[currentConv.phone_number] || ''}
+                    status={
+                      currentConv.status === "PENDING_HANDOFF" ? "⚠️ Aguardando Atendimento" :
+                      currentConv.status === "ACTIVE_HUMAN" ? "👤 Atendimento Humano" :
+                      currentConv.status === "ACTIVE_BOT" ? "🤖 Bot Ativo" : "Offline"
+                    }
+                    rawStatus={currentConv.status}
+                    isOnline={currentConv.status === "active" || currentConv.status === "ACTIVE_BOT"}
+                    isBotActive={currentConv.status === "ACTIVE_BOT"}
+                    onBotToggle={handleBotToggle}
+                    onMore={refreshMessages}
+                  />
 
-            {/* Banner de Comando Sistêmico (UX Improvements) */}
-            {selectedConversation.status === "PENDING_HANDOFF" && (
-              <div className="bg-orange-50 border-b border-orange-100 p-3 flex items-center justify-between animate-in slide-in-from-top duration-300">
-                <div className="flex items-center gap-3 text-orange-800">
-                  <Clock className="h-5 w-5 text-orange-600 animate-pulse" />
-                  <div>
-                    <p className="text-sm font-bold">Aguardando Atendimento</p>
-                    <p className="text-xs opacity-80">Este cliente aguarda sua resposta para continuar.</p>
-                  </div>
-                </div>
-                <Button 
-                  size="sm" 
-                  className="bg-orange-600 hover:bg-orange-700 text-white font-bold gap-2"
-                  onClick={() => handleBotToggle(false)}
-                >
-                  <User className="h-4 w-4" />
-                  Assumir Chat
-                </Button>
-              </div>
-            )}
+                  {/* Banner de Comando Sistêmico (UX Improvements) */}
+                  {currentConv.status === "PENDING_HANDOFF" && (
+                    <div className="bg-orange-50 border-b border-orange-100 p-3 flex items-center justify-between animate-in slide-in-from-top duration-300">
+                      <div className="flex items-center gap-3 text-orange-800">
+                        <Clock className="h-5 w-5 text-orange-600 animate-pulse" />
+                        <div>
+                          <p className="text-sm font-bold">Aguardando Atendimento</p>
+                          <p className="text-xs opacity-80">Este cliente aguarda sua resposta para continuar.</p>
+                        </div>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        className="bg-orange-600 hover:bg-orange-700 text-white font-bold gap-2"
+                        onClick={() => handleBotToggle(false)}
+                      >
+                        <User className="h-4 w-4" />
+                        Assumir Chat
+                      </Button>
+                    </div>
+                  )}
 
-            {selectedConversation.status === "ACTIVE_BOT" && (
-              <div className="bg-blue-50/50 border-b border-blue-100 px-4 py-1.5 flex items-center gap-2">
-                <Bot className="h-3.5 w-3.5 text-blue-600" />
-                <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">Bot está no comando</span>
-              </div>
-            )}
+                  {currentConv.status === "ACTIVE_BOT" && (
+                    <div className="bg-blue-50/50 border-b border-blue-100 px-4 py-1.5 flex items-center gap-2">
+                      <Bot className="h-3.5 w-3.5 text-blue-600" />
+                      <span className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">Bot está no comando</span>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
 
             {messagesError && (
               <Alert variant="destructive" className="m-4">
