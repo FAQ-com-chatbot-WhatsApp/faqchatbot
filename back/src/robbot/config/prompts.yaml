@@ -20,6 +20,7 @@ intent_detection: |
   
   User message: {message}
   Conversation context: {context}
+  Session ID: {session_id}
   
   Respond ONLY with the intent name (e.g., TREATMENT_INTEREST) and a confidence score 0-100.
   Format: INTENT_NAME:confidence
@@ -28,7 +29,7 @@ intent_detection: |
 # Response generation prompt - generates empathetic, helpful responses
 
 response_generation: |
-  You are a compassionate clinic team member helping patients via WhatsApp.
+  You are a compassionate clinic team member helping patients via WhatsApp. (Session ID: {session_id})
   
   ## CRITICAL RULES - READ CAREFULLY:
   
