@@ -13,6 +13,7 @@ It implements multiple safeguards:
 
 import asyncio
 import hashlib  # noqa: F401
+import logging
 import sys
 import time  # noqa: F401
 from typing import Any
@@ -22,6 +23,9 @@ sys.path.insert(0, "/app/src")
 # ============================================================================
 # SAFEGUARD 1: Vector Similarity Threshold
 # ============================================================================
+
+
+logger = logging.getLogger(__name__)
 
 
 class ContextValidator:
@@ -100,17 +104,25 @@ class ContextValidator:
 
             # SAFEGUARD 1b: Only accept high-similarity matches
             if similarity >= self.min_similarity:
-                # SAFEGUARD 1c: Verify conversation_id
+                # SAFEGUARD 1c: Verify conversation_id (CRITICAL FOR ISOLATION)
                 metadata = item.get("metadata", {})
-                if metadata.get("conversation_id") == conversation_id:
+                item_conv_id = metadata.get("conversation_id")
+                
+                if str(item_conv_id) == str(conversation_id):
                     filtered.append(item)
+                else:
+                    logger.warning(
+                        "[ISOLATION ERROR] ChromaDB returned document for WRONG conversation! "
+                        "(Expected: %s, Found: %s)",
+                        conversation_id, item_conv_id
+                    )
 
         # SAFEGUARD 2: Need minimum matches
         if len(filtered) < min_results:
             return {
                 "is_valid": False,
-                "filtered_context": filtered,
-                "reason": f"Only {len(filtered)} valid matches (need {min_results}), scores: {similarity_scores}",
+                "filtered_context": "",
+                "reason": f"Only {len(filtered)} valid matches (need {min_results}) for conv {conversation_id}",
                 "similarity_scores": similarity_scores,
             }
 
