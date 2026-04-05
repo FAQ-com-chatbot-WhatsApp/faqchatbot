@@ -483,16 +483,20 @@ export default function MessagesPage() {
                 <>
                   <ChatHeader
                     name={getDisplayName(currentConv.lead_name ?? "", currentConv.phone_number)}
-                    initials={getInitials(currentConv.lead_name)}
+                    initials={getInitials(currentConv.lead_name ?? "")}
                     avatar={avatarCache[currentConv.phone_number] || ''}
                     status={
                       currentConv.status === "PENDING_HANDOFF" ? "⚠️ Aguardando Atendimento" :
-                      currentConv.status === "ACTIVE_HUMAN" ? "👤 Atendimento Humano" :
-                      currentConv.status === "ACTIVE_BOT" ? "🤖 Bot Ativo" : "Offline"
+                      (currentConv.status === "ACTIVE_HUMAN" || currentConv.status === "transferred") ? "👤 Atendimento Humano" :
+                      (currentConv.status === "ACTIVE_BOT" || currentConv.status === "active" || currentConv.status === "ACTIVE") ? "🤖 Bot Ativo" : "Offline"
                     }
                     rawStatus={currentConv.status}
-                    isOnline={currentConv.status === "active" || currentConv.status === "ACTIVE_BOT"}
-                    isBotActive={currentConv.status === "ACTIVE_BOT"}
+                    isOnline={currentConv.status === "active" || currentConv.status === "ACTIVE_BOT" || currentConv.status === "ACTIVE"}
+                    isBotActive={
+                      currentConv.status === "ACTIVE_BOT" || 
+                      currentConv.status === "active" || 
+                      currentConv.status === "ACTIVE"
+                    }
                     onBotToggle={handleBotToggle}
                     onMore={refreshMessages}
                   />
