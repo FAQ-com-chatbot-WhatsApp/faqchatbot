@@ -1,0 +1,310 @@
+{
+  "info": {
+    "_postman_id": "afba4232-b4e9-4c6f-b9f0-7aba4c28d619",
+    "name": "No Boss FAQ API",
+    "description": "Coleção Postman para endpoints da API do No Boss FAQ",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "11158235"
+  },
+  "item": [
+    {
+      "name": "Groups - Listar",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json, application/vnd.api+json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/nobossfaq/groups?state=1&language=pt-BR",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "v1",
+            "nobossfaq",
+            "groups"
+          ],
+          "query": [
+            {
+              "key": "state",
+              "value": "1"
+            },
+            {
+              "key": "language",
+              "value": "pt-BR"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Categories - Listar por grupo",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json, application/vnd.api+json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/nobossfaq/categories?group_id={{group_id}}&language=pt-BR",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "v1",
+            "nobossfaq",
+            "categories"
+          ],
+          "query": [
+            {
+              "key": "group_id",
+              "value": "{{group_id}}"
+            },
+            {
+              "key": "language",
+              "value": "pt-BR"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Questions - Listar com filtros",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json, application/vnd.api+json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/nobossfaq/questions?category_id={{category_id}}&keywords=pagamento boleto&answer_type=editor&language=pt-BR",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "v1",
+            "nobossfaq",
+            "questions"
+          ],
+          "query": [
+            {
+              "key": "category_id",
+              "value": "{{category_id}}"
+            },
+            {
+              "key": "keywords",
+              "value": "pagamento boleto"
+            },
+            {
+              "key": "answer_type",
+              "value": "editor"
+            },
+            {
+              "key": "language",
+              "value": "pt-BR"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Questions - Obter uma",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json, application/vnd.api+json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/nobossfaq/questions/{{question_id}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "v1",
+            "nobossfaq",
+            "questions",
+            "{{question_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Questions - Criar",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json, application/vnd.api+json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question\": \"Quais formas de pagamento vocês aceitam?\",\n  \"id_faqs_group\": {{group_id}},\n  \"id_category\": {{category_id}},\n  \"answer\": \"Aceitamos cartão, PIX e boleto.\",\n  \"state\": 1,\n  \"language\": \"pt-BR\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/v1/nobossfaq/questions",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "v1",
+            "nobossfaq",
+            "questions"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Questions - Editar",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json, application/vnd.api+json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question\": \"Quais formas de pagamento vocês aceitam hoje?\",\n  \"answer_type\": \"external-url\",\n  \"answer_url_video\": \"https://www.youtube.com/watch?v=upwjtMl6fm4\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/v1/nobossfaq/questions/{{question_id}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "v1",
+            "nobossfaq",
+            "questions",
+            "{{question_id}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Questions - Excluir",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json, application/vnd.api+json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/v1/nobossfaq/questions/{{question_id}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "v1",
+            "nobossfaq",
+            "questions",
+            "{{question_id}}"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://SEU_DOMINIO/api/index.php"
+    },
+    {
+      "key": "token",
+      "value": "SEU_TOKEN"
+    },
+    {
+      "key": "group_id",
+      "value": ""
+    },
+    {
+      "key": "category_id",
+      "value": "1"
+    },
+    {
+      "key": "question_id",
+      "value": "1"
+    }
+  ]
+}
