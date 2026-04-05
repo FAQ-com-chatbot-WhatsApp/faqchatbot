@@ -352,7 +352,7 @@ Analise e responda em JSON:
 """
 
     # ========== RESPONSE GENERATION WITH SPIN ==========
-    RESPONSE_GENERATION_PROMPT = """Generate a response following the SPIN Selling methodology.
+    RESPONSE_GENERATION_PROMPT = """Generate a response following the SPIN Selling methodology. (Session: {session_id})
 
 CLIENT MESSAGE: "{user_message}"
 
@@ -768,6 +768,7 @@ Example: "Desculpe, tive uma dificuldade técnica. Para eu entender melhor como 
         lead_name: str | None = None,
         questions_asked: list[str] | None = None,
         conversation_summary: str = "",
+        session_id: str = "default",
     ) -> str:
         """Formatar prompt de geração de resposta com SPIN."""
         from robbot.common.clinic_location import CLINIC_ADDRESS, CLINIC_MAPS_URL, CLINIC_NAME
@@ -800,6 +801,7 @@ Example: "Desculpe, tive uma dificuldade técnica. Para eu entender melhor como 
             clinic_maps_url=CLINIC_MAPS_URL,
             questions_asked=questions_str,
             conversation_summary=conversation_summary or "No conversation summary yet",
+            session_id=session_id,
         )
 
     @classmethod
