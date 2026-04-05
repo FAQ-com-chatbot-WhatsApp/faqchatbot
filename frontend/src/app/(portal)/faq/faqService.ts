@@ -113,3 +113,25 @@ export async function deleteQuestion(id: string) {
 
   return true
 }
+
+// SINCRONIZAR COM BOT
+export async function syncFaqWithBot() {
+  // Passamos as credenciais que estamos usando no front para o back realizar a ponte
+  const res = await fetch('/api/faq/sync', {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json' 
+    },
+    body: JSON.stringify({
+      base_url: BASE_URL,
+      token: TOKEN
+    }),
+  })
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({ detail: 'Erro ao sincronizar' }))
+    throw new Error(errorData.detail || 'Erro ao sincronizar com bot')
+  }
+  
+  return res.json()
+}
