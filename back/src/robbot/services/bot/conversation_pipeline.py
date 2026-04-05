@@ -113,9 +113,14 @@ class ConversationPipeline:
 
         # 5. Detect intent and extract name IN PARALLEL
         # Both are LLM calls, parallelizing saves ~5-10s per message.
+        logger.info("[PIPELINE] Analyzing message for conversation: %s", conversation.id)
 
         # Define tasks
-        intent_task = self.intent_detector.detect_intent(state.message_text, state.context_text)
+        intent_task = self.intent_detector.detect_intent(
+            state.message_text, 
+            state.context_text,
+            conversation_id=conversation.id # Pass ID for prompt isolation
+        )
 
         # Conditionally add name extraction task
         name_task = None
@@ -136,7 +141,7 @@ class ConversationPipeline:
             (state.intent, state.spin_phase), _ = await asyncio.gather(intent_task, name_task)
         else:
             (state.intent, state.spin_phase) = await self.intent_detector.detect_intent(
-                state.message_text, state.context_text
+                state.message_text, state.context_text, conversation_id=conversation.id
             )
 
         # Urgency is derived from intent — URGENCIA_DOR always means immediate handoff.
