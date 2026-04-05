@@ -11,6 +11,7 @@ from robbot.adapters.controllers import (
     context_item_controller,
     conversation_controller,
     dashboard_controller,
+    faq_controller,
     handoff_controller,
     health_controller,
     job_controller,
@@ -67,5 +68,6 @@ api_router.include_router(dashboard_controller.router, prefix="/dashboard", tags
 api_router.include_router(metrics_controller.router, prefix="/metrics", tags=["Metrics"])
 
 # External Integrations
+api_router.include_router(faq_controller.router, prefix="/faq", tags=["FAQ Sync"])
 api_router.include_router(waha_controller.router, prefix="/waha", tags=["WAHA"])
 api_router.include_router(webhook_controller.router, prefix="/webhooks", tags=["Webhooks"])
