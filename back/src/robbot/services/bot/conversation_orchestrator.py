@@ -205,6 +205,7 @@ class ConversationOrchestrator:
             lead_status=conversation.lead.status.value if conversation.lead else "NEW",
             questions_asked=questions_asked,
             conversation_summary=summary,
+            session_id=conversation.id,
         )
 
         response_data = await self.llm.generate_response(prompt)
