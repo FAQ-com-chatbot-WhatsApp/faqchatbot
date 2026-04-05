@@ -90,9 +90,11 @@ class HandoffService:
             target_user_ids = [u.id for u in active_users if u.is_active]
 
         lead_name = (
-            conversation.lead.name if conversation.lead and conversation.lead.name else conversation.phone_number
+            conversation.lead.name if conversation.lead and conversation.lead.name else (conversation.phone_number or "Cliente")
         )
-        is_urgent = reason == "urgencia_detectada"
+
+        # Consistent urgency flag based on reason
+        is_urgent = reason in ["urgencia_detectada", "URGENCIA_DOR"]
 
         for uid in target_user_ids:
             notif_service.notify_handoff(
@@ -236,6 +238,9 @@ class HandoffService:
             "manual": (
                 "Um de nossos atendentes vai assumir essa conversa agora "
                 "para te dar um atendimento mais personalizado. 👤"
+            ),
+            "urgencia_detectada": (
+                "Entendi! Vou te passar agora mesmo para nossa equipe técnica para um atendimento imediato e humano. Aguarde um minutinho! 😊"
             ),
         }
 
