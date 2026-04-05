@@ -74,19 +74,20 @@ class PromptLoader:
 
         return self._prompts[name]
 
-    def format_intent_detection_prompt(self, message: str, context: str = "") -> str:
+    def format_intent_detection_prompt(self, message: str, context: str = "", session_id: str = "default") -> str:
         """
-        Format intent detection prompt with message and context.
+        Format intent detection prompt with message, context, and session_id.
 
         Args:
             message: User message to analyze
             context: Previous conversation context
+            session_id: Unique session identifier for isolation
 
         Returns:
             Formatted prompt ready for LLM
         """
         template = self.get_prompt("intent_detection")
-        return template.format(message=message, context=context)
+        return template.format(message=message, context=context, session_id=session_id)
 
     def format_response_generation_prompt(
         self,
@@ -95,6 +96,8 @@ class PromptLoader:
         patient_info: str = "",
         questions_asked: list[str] | None = None,
         conversation_summary: str = "",
+        session_id: str = "default",
+        spin_phase: str = "SITUATION",
     ) -> str:
         """
         Format response generation prompt.
@@ -105,6 +108,8 @@ class PromptLoader:
             patient_info: Patient context (name, status, etc.)
             questions_asked: List of questions already asked
             conversation_summary: Summary of known facts
+            session_id: Unique session identifier for isolation
+            spin_phase: Current SPIN phase
 
         Returns:
             Formatted prompt ready for LLM
@@ -120,6 +125,8 @@ class PromptLoader:
             patient_info=patient_info,
             questions_asked=questions_str,
             conversation_summary=conversation_summary or "No conversation summary yet",
+            session_id=session_id,
+            spin_phase=spin_phase,
         )
 
     def format_urgency_detection_prompt(self, message: str) -> str:
