@@ -196,7 +196,7 @@ export default function FaqPage() {
         <div>
           <h1 className="text-4xl font-bold tracking-tight mb-2 text-foreground flex items-center gap-3">
             <Layers className="w-10 h-10 text-primary" />
-            Knowledge Hub
+              Hub de Conhecimento
           </h1>
           <p className="text-muted-foreground text-lg">
             Organize o conhecimento do repositório e alimente a inteligência do bot.
@@ -230,7 +230,7 @@ export default function FaqPage() {
           
           <div className="space-y-2">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground ml-1">
-              Grupos de FAQ
+              Grupos
             </h2>
             <div className="space-y-1">
               {groups.map((g) => (
