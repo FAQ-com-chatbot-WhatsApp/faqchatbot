@@ -293,6 +293,11 @@ class IntentDetector:
             logger.info("[INFO] Escalation needed: high score (%s) - conv=%s", score, conversation.id)
             return True
 
+        # Critério EXTRA: Intent de Agendamento Explícito (NO STALLING)
+        if intent == "AGENDAMENTO":
+            logger.info("[INFO] Escalation needed: explicit scheduling intent detected - conv=%s", conversation.id)
+            return True
+
         # Critério 2: Cliente pede falar com humano
         human_keywords = [
             "falar com alguém",
