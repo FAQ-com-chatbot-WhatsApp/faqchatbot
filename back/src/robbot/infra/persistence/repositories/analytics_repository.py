@@ -190,10 +190,10 @@ class AnalyticsRepository:
                 "name": "Qualificados (score >= 60)",
                 "count": row.total_qualified or 0,
                 "percentage": round((row.total_qualified or 0) / total_created * 100, 2) if total_created > 0 else 0,
-                "drop_off": round(
+                "drop_off": max(0, round(
                     ((row.total_engaged or 0) - (row.total_qualified or 0)) / (row.total_engaged or 0) * 100,
                     2,
-                )
+                ))
                 if row.total_engaged
                 else 0,
             },
@@ -202,10 +202,10 @@ class AnalyticsRepository:
                 "name": "Transferidos para humano",
                 "count": row.total_handoff or 0,
                 "percentage": round((row.total_handoff or 0) / total_created * 100, 2) if total_created > 0 else 0,
-                "drop_off": round(
+                "drop_off": max(0, round(
                     ((row.total_qualified or 0) - (row.total_handoff or 0)) / (row.total_qualified or 0) * 100,
                     2,
-                )
+                ))
                 if row.total_qualified
                 else 0,
             },
@@ -214,10 +214,10 @@ class AnalyticsRepository:
                 "name": "Convertidos (agendaram)",
                 "count": row.total_converted or 0,
                 "percentage": round((row.total_converted or 0) / total_created * 100, 2) if total_created > 0 else 0,
-                "drop_off": round(
+                "drop_off": max(0, round(
                     ((row.total_handoff or 0) - (row.total_converted or 0)) / (row.total_handoff or 0) * 100,
                     2,
-                )
+                ))
                 if row.total_handoff
                 else 0,
             },
