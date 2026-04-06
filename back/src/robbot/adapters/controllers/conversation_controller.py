@@ -210,7 +210,7 @@ def list_conversations(
                 status=(
                     "active"
                     if c.status
-                    in (ConversationStatus.ACTIVE, ConversationStatus.ACTIVE_BOT, ConversationStatus.PENDING_HANDOFF)
+                    in (ConversationStatus.ACTIVE, ConversationStatus.ACTIVE_BOT)
                     else c.status.value
                 ),
                 lead_status=c.lead.status.value if c.lead and c.lead.status else "NEW",
