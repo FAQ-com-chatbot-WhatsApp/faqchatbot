@@ -1,75 +1,54 @@
-# Clínica Go - Monorepo Infrastructure
+# Manual do Sistema - Clínica Go
 
-This repository contains the full stack application for Clínica Go, structured as a monorepo with Dockerized environments for easy development and deployment.
+Bem-vindo(a) ao seu novo sistema inteligente de atendimento!
+Este painel gerencia as suas conversas no WhatsApp com a ajuda de Inteligência Artificial para não perder mais nenhum lead.
 
-## Project Structure
+## Instalando e Iniciando (Primeio Acesso)
 
-```
-clinica_go/
-├── back/               # Backend (FastAPI, Python)
-│   ├── Dockerfile      # Multi-stage optimized Dockerfile
-│   └── src/            # Application source code
-├── frontend/           # Frontend (Next.js, React)
-│   ├── Dockerfile      # Production-ready Dockerfile
-│   └── src/            # Application components and pages
-├── docker-compose.yml  # Root orchestration file
-└── .env                # centralized configuration (optional, or use back/.env)
-```
+Você não precisa de conhecimentos técnicos! O sistema vem pré-configurado.
 
-## Prerequisites
+1. Baixe e instale o **Docker Desktop**:
+   - [Baixar para Windows](https://www.docker.com/products/docker-desktop)
+   - [Baixar para Mac](https://www.docker.com/products/docker-desktop)
+2. Após instalar, certifique-se de abri-lo (o ícone de uma baleia deve aparecer na bandeja do sistema).
+3. Dentro desta mesma pasta onde você encontrou este manual, dê um duplo clique no arquivo:
+   - **Windows:** `start_windows.bat`
+   - **Mac/Linux:** `start_linux.sh` (pelo terminal: `./start_linux.sh`)
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop) (v4.32+)
-- [Git](https://git-scm.com/)
+Isso iniciará o processo de instalação! A primeira execução pode levar alguns minutos enquanto ele baixa os componentes, mas as próximas serão quase instantâneas.
 
-## Quick Start (Docker)
+---
 
-To start the entire stack (Backend + Frontend + Databases + Tools):
+## Acessando o Painel de Controle
 
-```bash
-docker compose up -d --build
-```
+Após o script informar que tudo foi concluído (verá na tela preta a mensagem de sucesso), acesse no seu navegador preferido:
 
-### Services & Ports
+🔗 **Endereço do Painel:** [http://localhost:3000](http://localhost:3000)
 
-| Service            | Host Name | Host Port | Internal Port | Description                     |
-|--------------------|-----------|-----------|---------------|---------------------------------|
-| **Frontend**       | `web`     | `3000`    | `3000`        | Next.js Web Interface           |
-| **Backend API**    | `go`      | `3333`    | `3333`        | FastAPI REST API                |
-| **WAHA Dashboard** | `waha`    | `3001`    | `3000`        | WhatsApp API Dashboard          |
-| **PostgreSQL**     | `db`      | `15432`   | `5432`        | Database Access                 |
-| **Redis**          | `rd`      | `6379`    | `6379`        | Cache & Queue                   |
-| **Adminer**        | `adm`     | `8080`    | `8080`        | Database UI Management          |
-| **MailDev**        | `md`      | `1080`    | `1080`        | Email Preview Tool              |
-| **Worker**         | `wk`      | -         | -             | RQ Background Worker            |
-| **Poller**         | `pwk`     | -         | -             | polling-worker                  |
-| **Ops**            | `ops`     | -         | -             | Autoscaler                      |
+**Acesso Padrão:**
+- **E-mail:** `admin@admin.com`
+- **Senha:** `admin`
 
-**Note:** The WAHA service is mapped to host port `3001` to reserve `3000` for the Frontend.
-**Naming Convention:** Short codes (`go`, `wk`, `rd`) are used for all container names as per project standards.
+---
 
-## Development Workflow
+## Configurando seu Sistema (Passo a Passo)
 
-### Backend (`back/`)
-- Code changes in `back/src` are NOT automatically hot-reloaded in the main compose setup unless you mount volumes (configured by default for `api`).
-- To view logs: `docker compose logs -f api`
+Siga os seguintes passos usando a aba de configurações dentro do próprio sistema Web. **Não é necessário mexer em nenhum código.**
 
-### Frontend (`frontend/`)
-- The Docker setup currently runs a **production build** (`npm run build` -> `npm start`). 
-- For active frontend development, it is recommended to run the frontend locally outside Docker while keeping backend in Docker:
-  ```bash
-  cd frontend
-  npm install
-  npm run dev
-  ```
-  (Ensure your `.env.local` points to `NEXT_PUBLIC_API_URL=http://localhost:3333/api/v1`)
+### Passo 1: Informar qual IA ele deve usar
+Vá na barra lateral > `Configurações` > Aba `IA`.
+Cole sua chave (exemplo: Gemini API Key ou Groq API Key) para que o robô consiga "pensar" as respostas usando o modelo de linguagem que preferir.
 
-## Troubleshooting
+### Passo 2: Conectar ao seu WhatsApp
+Vá na barra lateral > `Configurações` > Aba `WhatsApp`.
+Clique no botão roxo de **QR Code** e escaneie com o aparelho de celular que vai responder as mensagens no momento (Aparelhos Conectados).
 
-### Build Issues
-If `npm ci` fails in the frontend build, ensure `frontend/package-lock.json` is consistent.
-If backend build fails on PyTorch, ensure you have allocated enough memory to Docker (4GB+ recommended).
+### Passo 3: Iniciar a sessão
+Na mesma página do QR Code, basta apertar o botão redondo Verde (Play) para que o sistema comece a receber e analisar e responder suas mensagens automaticamente!
 
-### Database Persistence
-Data is persisted in named volumes: `db_data`, `redis_data`, `waha_data`, `chroma_data`.
-To reset data: `docker compose down -v`.
+---
 
+## Ajuda Extra
+
+- **Dados sumiram?** Fique calmo. Todo histórico do banco e configurações são salvos permanentemente em "Volumes" isolados. Se reiniciar o computador, basta executar o `.bat` novamente que os arquivos carregam.
+- Se encontrar lentidez, confira na aba Analytics qual IA tem o melhor Tempo de Resposta.
