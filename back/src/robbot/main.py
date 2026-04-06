@@ -70,6 +70,31 @@ def create_app() -> FastAPI:
             logger.warning("[WARN] Failed to initialize default WAHA session: %s", e)
             # Non-critical - session can be created via UI or sync script
 
+        # Initialize default Admin user in DB
+        logger.info("[INFO] Initializing default Admin user...")
+        try:
+            from robbot.infra.db.base import SessionLocal
+            from robbot.infra.persistence.models.user_model import UserModel
+            from robbot.infra.persistence.models.credential_model import CredentialModel
+            from robbot.core.security import get_password_hash
+            from robbot.domain.shared.enums import Role
+
+            with SessionLocal() as db:
+                admin_user = db.query(UserModel).filter(UserModel.email == "admin@admin.com").first()
+                if not admin_user:
+                    admin = UserModel(email="admin@admin.com", full_name="Administrador", role=Role.ADMIN.value)
+                    db.add(admin)
+                    db.flush()  # to get admin.id
+                    
+                    creds = CredentialModel(user_id=admin.id, hashed_password=get_password_hash("admin"))
+                    db.add(creds)
+                    db.commit()
+                    logger.info("[SUCCESS] Default Admin user created: admin@admin.com / admin")
+                else:
+                    logger.info("[INFO] Default Admin user already exists.")
+        except Exception as e:
+            logger.warning("[WARN] Failed to initialize default Admin user: %s", e)
+
         yield
 
         # Shutdown DI Container
