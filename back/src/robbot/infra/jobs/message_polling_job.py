@@ -98,13 +98,6 @@ def poll_waha_messages(**_kwargs):
                     message_filter.mark_as_processed(message_data["id"])
 
                     messages_processed += 1
-                    logger.info(
-                        "[POLLING] Msg processada: %s | Chat: %s | QID: %s",
-                        message_data["id"],
-                        message_data["from"],
-                        queue_id,
-                    )
-
                 except Exception as e:
                     logger.error("[POLLING] Falha ao enfileirar mensagem %s: %s", message.get("id"), e)
 
