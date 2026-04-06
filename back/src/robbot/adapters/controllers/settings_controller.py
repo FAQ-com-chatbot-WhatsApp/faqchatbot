@@ -115,10 +115,11 @@ async def list_ai_models(
                 client = genai.Client(api_key=api_key)
                 # Filter to only show generating models
                 for m in client.models.list():
-                    if "generateContent" in m.supported_generation_methods:
+                    supported_actions = getattr(m, "supported_actions", [])
+                    if "generateContent" in supported_actions:
                         # Normalize name: models/gemini-1.5-flash -> gemini-1.5-flash
                         model_id = m.name.replace("models/", "")
-                        models.append(ModelOption(id=model_id, name=m.display_name))
+                        models.append(ModelOption(id=model_id, name=m.display_name or m.name))
 
         elif provider == "groq":
             from groq import Groq
