@@ -41,7 +41,6 @@ class MessageFilterService:
         # 2. DEV Mode Restrictions
         if settings.DEV_MODE and allowed_senders:
             if not sender:
-                logger.debug("[FILTER] Rejeitada (sem remetente): msg_id=%s", message_id)
                 return False
 
             # Check exact match or phone number match
@@ -49,24 +48,20 @@ class MessageFilterService:
 
             # Using set for O(1) lookup
             if sender not in allowed_senders and sender_base not in allowed_senders:
-                logger.debug(
-                    "[FILTER] Rejeitada (remetente não autorizado): sender=%s, sender_base=%s, allowed=%s",
-                    sender,
-                    sender_base,
-                    allowed_senders,
-                )
                 return False
 
         # 3. Deduplication Check (Idempotency)
         if not message_id:
             self.last_check_was_processed = False
-            logger.debug("[FILTER] Ignore (missing message_id)")
             return False
 
         is_processed = self._is_processed(message_id)
         self.last_check_was_processed = is_processed
 
-        return not is_processed
+        if is_processed:
+            return False
+
+        return True
 
     def mark_as_processed(self, message_id: str):
         """Marks a message ID as processed in Redis with 24h TTL."""
