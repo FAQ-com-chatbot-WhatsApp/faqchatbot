@@ -63,9 +63,8 @@ class HandoffService:
             return {
                 "status": "already_pending",
                 "conversation_id": conversation_id,
-                "message": "Aguarde um momento, já estamos te conectando!",
+                "message": "Só um minutinho que já tô verificando a agenda aqui pra você, tá bom? 😊",
             }
-
         if conversation.status in [
             ConversationStatus.COMPLETED,
             ConversationStatus.CLOSED,
@@ -249,28 +248,28 @@ class HandoffService:
         """Generates natural transition message based on context."""
         messages = {
             "score_high": (
-                "Vejo que você está bem interessado! 🎯\n\n"
-                "Vou transferir você para nossa equipe de agendamento "
-                "que vai conseguir te ajudar melhor com horários e detalhes finais. "
-                "Aguarde só um momento, ok?"
+                "Vejo que você está bem interessada em cuidar desse ponto! 🎯\n\n"
+                "Deixa eu só dar uma olhadinha aqui na agenda pra ver os horários disponíveis "
+                "pra gente já deixar tudo certinho pra você. Só um instantinho que já te dou um retorno, tá?"
             ),
             "bot_confused": (
-                "Entendo que você precisa de uma orientação mais específica. "
-                "Vou te conectar com alguém da equipe que pode te ajudar "
-                "melhor nessa situação. Aguarde só um instante."
+                "Entendo que essa é uma dúvida bem específica! "
+                "Deixa eu só dar uma verificada rápida aqui pra poder te dar "
+                "a resposta exata, viu? Um minutinho só."
             ),
             "manual": (
-                "Um de nossos atendentes vai assumir essa conversa agora "
-                "para te dar um atendimento mais personalizado. 👤"
+                "Ó, já tô vendo aqui os detalhes pra você. Só um instantinho que "
+                "já verifico a agenda pra gente resolver isso da melhor forma! 😊"
             ),
             "urgencia_detectada": (
-                "Entendi! Vou te passar agora mesmo para nossa equipe técnica para um atendimento imediato e humano. Aguarde um minutinho! 😊"
+                "Entendi! Fica tranquila que eu já tô dando uma olhada aqui pra ver como consigo "
+                "te encaixar o mais rápido possível, viu? Só um segundinho!"
             ),
         }
 
         return messages.get(
             reason,
-            "Vou transferir você para um atendente humano. Aguarde um momento.",
+            "Só um minutinho que eu já tô verificando a agenda aqui pra você, tá? 😊",
         )
 
     def _calculate_metrics(self, conversation: ConversationModel) -> dict:
