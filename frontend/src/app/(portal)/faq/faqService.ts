@@ -135,3 +135,15 @@ export async function syncFaqWithBot() {
   
   return res.json()
 }
+
+// PESQUISA GLOBAL (NO BANCO INTERNO)
+export async function searchGlobal(query: string) {
+  const res = await fetch(`/api/faq/search?q=${encodeURIComponent(query)}`, {
+    headers: getHeaders()
+  })
+
+  if (!res.ok) throw new Error('Erro na pesquisa global')
+  
+  const data = await res.json()
+  return data.items || []
+}
