@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { PageHeader } from '@/components/ui/page-header'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { EmptyState } from '@/components/ui/empty-state'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { MetricCard } from '@/components/ui/metric-card'
 import { GaugeChart } from '@/components/ui/gauge-chart'
@@ -25,11 +25,22 @@ import {
   BarChart3,
   RefreshCw,
   Filter,
+  Settings,
+  Smartphone,
 } from 'lucide-react'
 import { useAnalytics } from '@/hooks/useAnalytics'
+import { useSession } from '@/hooks/useSession'
+import { getAISettings, type AISettings } from '@/services/settingsService'
+import Link from 'next/link'
 
 export default function DashboardPage() {
   const [period, setPeriod] = useState<'7d' | '30d' | '90d'>('30d')
+  const [iaSettings, setIaSettings] = useState<AISettings | null>(null)
+  const { currentSession } = useSession({ sessionName: 'default' })
+
+  useEffect(() => {
+    getAISettings().then(setIaSettings).catch(console.error)
+  }, [])
 
   const {
     dashboard,
@@ -91,6 +102,41 @@ export default function DashboardPage() {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* UX Banners for Installation/Onboarding */}
+      {(!iaSettings?.google_api_key && !iaSettings?.groq_api_key) && iaSettings !== null && (
+        <Alert className="border-amber-500 bg-amber-50 dark:bg-amber-950 text-amber-800 dark:text-amber-200 shadow-sm relative overflow-hidden">
+          <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-500"></div>
+          <AlertCircle className="h-5 w-5 !text-amber-600 dark:!text-amber-400" />
+          <AlertTitle className="font-semibold text-amber-800 dark:text-amber-200">Inteligência Artificial não configurada</AlertTitle>
+          <AlertDescription className="mt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-700 dark:text-amber-300">
+            O assistente não poderá responder mensagens até que uma chave de API (Gemini ou Groq) seja configurada.
+            <Button asChild size="sm" className="bg-amber-600 hover:bg-amber-700 text-white shrink-0">
+              <Link href="/settings">
+                <Settings className="w-4 h-4 mr-2" />
+                Configurar IA
+              </Link>
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {(currentSession?.status !== 'WORKING') && currentSession !== null && (
+        <Alert className="border-blue-500 bg-blue-50 dark:bg-blue-950 text-blue-800 dark:text-blue-200 shadow-sm relative overflow-hidden">
+          <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
+          <AlertCircle className="h-5 w-5 !text-blue-600 dark:!text-blue-400" />
+          <AlertTitle className="font-semibold text-blue-800 dark:text-blue-200">WhatsApp Desconectado</AlertTitle>
+          <AlertDescription className="mt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-blue-700 dark:text-blue-300">
+            Você precisa escanear o QR Code ou iniciar a sessão para que o bot envie/receba mensagens.
+            <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700 text-white shrink-0">
+              <Link href="/settings">
+                <Smartphone className="w-4 h-4 mr-2" />
+                Conectar WhatsApp
+              </Link>
+            </Button>
+          </AlertDescription>
         </Alert>
       )}
 
