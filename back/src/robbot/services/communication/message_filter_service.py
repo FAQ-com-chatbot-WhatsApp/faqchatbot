@@ -35,10 +35,7 @@ class MessageFilterService:
         sender = message.get("from")
 
         # 1. Ignore messages sent by the bot itself
-        # FIX(Bug1): Default MUST be False — if field is absent, assume NOT from bot.
-        # Previous default of True silently rejected ALL messages without fromMe field.
         if message.get("fromMe", False):
-            logger.debug("[FILTER] Rejeitada (fromMe=True): msg_id=%s", message_id)
             return False
 
         # 2. DEV Mode Restrictions
@@ -63,18 +60,13 @@ class MessageFilterService:
         # 3. Deduplication Check (Idempotency)
         if not message_id:
             self.last_check_was_processed = False
-            logger.debug("[FILTER] Rejeitada (sem message_id)")
+            logger.debug("[FILTER] Ignore (missing message_id)")
             return False
 
         is_processed = self._is_processed(message_id)
         self.last_check_was_processed = is_processed
 
-        if is_processed:
-            # DEBUG level to avoid spam — dedup is normal in polling mode
-            logger.debug("[FILTER] Rejeitada (já processada): msg_id=%s", message_id)
-            return False
-
-        return True
+        return not is_processed
 
     def mark_as_processed(self, message_id: str):
         """Marks a message ID as processed in Redis with 24h TTL."""
