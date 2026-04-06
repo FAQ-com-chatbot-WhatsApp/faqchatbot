@@ -35,3 +35,18 @@ def close_redis_pool() -> None:
     if _pool is not None:
         _pool.disconnect()
         _pool = None
+
+
+def invalidate_analytics_cache() -> int:
+    """Removes all dashboard and metrics keys from Redis."""
+    try:
+        from robbot.infra.redis.client import get_redis_client
+        client = get_redis_client()
+        # Invalidate dashboard, analytics and metrics keys
+        keys = client.keys("dashboard:*") + client.keys("analytics:*") + client.keys("metrics:*")
+        if keys:
+            client.delete(*keys)
+            return len(keys)
+        return 0
+    except Exception:
+        return 0
