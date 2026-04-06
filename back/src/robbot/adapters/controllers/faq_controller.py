@@ -17,6 +17,10 @@ class SyncResponse(BaseModel):
     message: str
     success: bool
 
+class SearchResponse(BaseModel):
+    items: list
+    total: int
+
 @router.post("/sync", response_model=SyncResponse)
 async def sync_faq_with_bot(
     payload: FaqSyncRequest,
@@ -52,4 +56,22 @@ async def sync_faq_with_bot(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao sincronizar FAQ: {str(e)}"
+        )
+
+@router.get("/search", response_model=SearchResponse)
+async def search_faq(
+    q: str,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Search FAQ items in the internal database."""
+    try:
+        service = FaqIntegrationService(db=db, base_url="", token="")
+        items = await service.search_internal(q)
+        return SearchResponse(items=items, total=len(items))
+    except Exception as e:
+        logger.error(f"[FAQ_CONTROLLER] Error during search: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro ao pesquisar FAQ"
         )
