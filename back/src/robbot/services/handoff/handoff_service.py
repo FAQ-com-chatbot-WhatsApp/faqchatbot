@@ -58,6 +58,14 @@ class HandoffService:
             raise NotFoundException(f"Conversation {conversation_id} not found")
 
         # Validate allowed states
+        if conversation.status == ConversationStatus.PENDING_HANDOFF:
+            logger.info("[SKIP] Handoff already triggered for conversation: %s", conversation_id)
+            return {
+                "status": "already_pending",
+                "conversation_id": conversation_id,
+                "message": "Aguarde um momento, já estamos te conectando!",
+            }
+
         if conversation.status in [
             ConversationStatus.COMPLETED,
             ConversationStatus.CLOSED,
@@ -204,6 +212,7 @@ class HandoffService:
             if lead:
                 lead.status = LeadStatus.SCHEDULED
                 lead.maturity_score = 100
+                lead.converted_at = datetime.now(UTC)
                 lead.updated_at = datetime.now(UTC)
                 self.lead_repo.update(lead)
 
