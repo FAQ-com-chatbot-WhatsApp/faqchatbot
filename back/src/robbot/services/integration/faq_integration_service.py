@@ -1,6 +1,7 @@
 import logging
 import httpx
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 
 from robbot.services.ai.context_service import ContextService
 from robbot.infra.persistence.models.topic_model import TopicModel
@@ -75,7 +76,7 @@ class FaqIntegrationService:
         category_map = {} # external_id -> local_context_id
         for c in categories:
             ext_id = str(c.get("id"))
-            ext_group_id = str(c.get("id_faqs_group") or c.get("attributes", {}).get("id_faqs_group"))
+            ext_group_id = str(c.get("group_id") or c.get("id_faqs_group") or c.get("attributes", {}).get("group_id") or c.get("attributes", {}).get("id_faqs_group"))
             name = c.get("name") or c.get("attributes", {}).get("name") or c.get("title") or c.get("attributes", {}).get("title") or f"Categoria {ext_id}"
             local_topic_id = group_map.get(ext_group_id)
             if not local_topic_id:
@@ -102,7 +103,7 @@ class FaqIntegrationService:
         questions = await self.fetch_all("questions?language=pt-BR")
         for q in questions:
             ext_id = str(q.get("id"))
-            ext_cat_id = str(q.get("id_category") or q.get("attributes", {}).get("id_category"))
+            ext_cat_id = str(q.get("category_id") or q.get("id_category") or q.get("attributes", {}).get("category_id") or q.get("attributes", {}).get("id_category"))
             question_text = q.get("question") or q.get("attributes", {}).get("question")
             answer_text = q.get("answer") or q.get("attributes", {}).get("answer")
             if not question_text or not answer_text:
@@ -140,3 +141,33 @@ class FaqIntegrationService:
         self.db.commit()
         logger.info("[FAQ_SYNC] Synchronization completed successfully.")
         return True
+
+    async def search_internal(self, query: str):
+        """Search synchronized questions in the bot's internal database."""
+        if not query: return []
+        
+        # Simple text search on synchronized FAQ items
+        # We look for items that have "FAQ Item ID" in description or related tags
+        search = f"%{query}%"
+        results = self.db.query(ContentModel).filter(
+            or_(
+                ContentModel.title.ilike(search),
+                ContentModel.text.ilike(search),
+                ContentModel.tags.ilike(search)
+            ),
+            ContentModel.description.ilike("%FAQ Item ID%")
+        ).all()
+
+        formatted = []
+        for r in results:
+            formatted.append({
+                "id": str(r.id),
+                "question": r.title,
+                "answer": r.text.replace(f"Pergunta: {r.title}\nResposta: ", "") if r.text else "",
+                "source": "internal",
+                "attributes": {
+                    "question": r.title,
+                    "answer": r.text
+                }
+            })
+        return formatted
