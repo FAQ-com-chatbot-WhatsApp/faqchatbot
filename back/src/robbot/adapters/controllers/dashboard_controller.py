@@ -522,7 +522,7 @@ async def websocket_realtime_metrics(
 
             # Buscar métricas (sempre fresh - não usar cache aqui)
             try:
-                data = svc.get_realtime_dashboard()
+                data = await svc.get_realtime_dashboard()
 
                 # Enviar para cliente
                 await websocket.send_text(json.dumps(data, default=str))
