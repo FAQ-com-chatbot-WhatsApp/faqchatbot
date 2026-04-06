@@ -65,6 +65,8 @@ export default function FaqPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editQuestion, setEditQuestion] = useState('')
   const [editAnswer, setEditAnswer] = useState('')
+  const [isSearching, setIsSearching] = useState(false)
+  const [searchResults, setSearchResults] = useState<FaqItem[]>([])
 
   // Fetching Logic
   const fetchGroups = useCallback(async () => {
@@ -173,13 +175,35 @@ export default function FaqPage() {
     setEditAnswer(q.answer ?? q.attributes?.answer ?? '')
   }
 
-  // Initial Load
   useEffect(() => {
     fetchGroups()
   }, [fetchGroups])
 
+  // Global Search Logic
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (searchQuery.trim().length > 2) {
+        setLoading(true)
+        setIsSearching(true)
+        try {
+          const items = await faqService.searchGlobal(searchQuery)
+          setSearchResults(items)
+        } catch (error) {
+          toast.error('Erro na pesquisa global')
+        } finally {
+          setLoading(false)
+        }
+      } else {
+        setIsSearching(false)
+        setSearchResults([])
+      }
+    }, 500)
+
+    return () => clearTimeout(delayDebounceFn)
+  }, [searchQuery])
+
   // Filtering
-  const filteredQuestions = questions.filter(q => {
+  const displayQuestions = isSearching ? searchResults : questions.filter(q => {
     const text = (q.question || q.attributes?.question || '').toLowerCase()
     return text.includes(searchQuery.toLowerCase())
   })
@@ -311,7 +335,7 @@ export default function FaqPage() {
 
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             
-            {!selectedCategory ? (
+            {!selectedCategory && !isSearching ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-10 opacity-60">
                 <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-6">
                   <Layers className="w-10 h-10 text-muted-foreground" />
@@ -327,14 +351,21 @@ export default function FaqPage() {
                   <div key={i} className="h-24 bg-muted animate-pulse rounded-2xl" />
                 ))}
               </div>
-            ) : filteredQuestions.length === 0 && !showAddForm ? (
+            ) : displayQuestions.length === 0 && !showAddForm ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-10 opacity-60">
                 <Info className="w-12 h-12 text-muted-foreground mb-4" />
-                <h4 className="text-lg font-medium">Nenhuma pergunta encontrada</h4>
-                <p className="text-sm">Clique em 'Nova Pergunta' para começar.</p>
+                <h4 className="text-lg font-medium">{isSearching ? 'Nenhum resultado na busca global' : 'Nenhuma pergunta encontrada'}</h4>
+                <p className="text-sm">{isSearching ? 'Tente outros termos ou limpe a busca' : "Clique em 'Nova Pergunta' para começar."}</p>
               </div>
             ) : (
               <div className="grid gap-6">
+                
+                {isSearching && (
+                   <div className="flex items-center gap-2 text-sm text-primary mb-2 animate-pulse">
+                      <Sparkles className="w-4 h-4" />
+                      Resultados da Pesquisa Global (Memória do Bot)
+                   </div>
+                )}
                 
                 {showAddForm && (
                   <Card className="border-primary/20 bg-primary/[0.02] shadow-inner animate-in fade-in zoom-in-95 duration-300 rounded-2xl">
@@ -366,7 +397,7 @@ export default function FaqPage() {
                   </Card>
                 )}
 
-                {filteredQuestions.map((q) => {
+                {displayQuestions.map((q) => {
                   const isEditing = editingId === q.id
                   const questionText = q.question || q.attributes?.question
                   const answerText = q.answer || q.attributes?.answer
