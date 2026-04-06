@@ -274,11 +274,15 @@ PREVIOUS CONTEXT:
 6. AGRADECIMENTO - Thanks or shows gratitude
 7. OUTRO - Does not fit the categories above
 
-# AGENDAMENTO DETECTION (CRITICAL - HIGH PRIORITY)
-Detect AGENDAMENTO intent when the message contains any of these keywords (in Portuguese):
-- "agendar", "marcar consulta", "quando posso ir", "quero marcar", "disponibilidade", "horários", "próxima semana", "quanto antes", "posso ir", "quero consulta", "como faço pra agendar"
+# AGENDAMENTO DETECTION (CRITICAL - MAXIMUM PRIORITY)
+Detect AGENDAMENTO intent when the message contains ANY desire to see the doctor or book a time.
+Keywords/Phrases: "agendar", "marcar consulta", "quando posso ir", "quero marcar", "disponibilidade", "horários", "próxima semana", "quanto antes", "posso ir", "quero consulta", "como faço pra agendar", "falar com a dra", "ver a dra"
 
-If ANY of these keywords appear → intent MUST be "AGENDAMENTO"
+MANDATORY RULES:
+1. If ANY of these keywords or similar intent appear → Intent MUST be "AGENDAMENTO".
+2. If Intent is "AGENDAMENTO" → SPIN Phase MUST be "READY".
+3. NEVER classify a scheduling request as "OUTRO" or "LOCATION_HOURS".
+4. If the user mentions "consulta" (appointment) → It is ALWAYS "AGENDAMENTO" and "READY".
 
 # CURRENT SPIN PHASE (IMPORTANT FOR SCORING)
 The SPIN phase is CRUCIAL to calculate lead maturity:
