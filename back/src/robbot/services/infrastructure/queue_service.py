@@ -143,13 +143,24 @@ class QueueService:
 
         if redis_client.set(job_key, "1", nx=True, ex=debounce_seconds + 30):
             delay = timedelta(seconds=debounce_seconds)
-            self.queue_manager.queue_messages.enqueue_in(
+
+            # CRITICAL FIX: explicitly pass job_timeout to avoid 10s default worker death penalty timeout
+            enqueued_job = self.queue_manager.queue_messages.enqueue_in(
                 delay,
                 "robbot.infra.jobs.message_job.process_debounced_message",
                 chat_id=chat_id,
+                job_timeout=600,
                 result_ttl=settings.RQ_DEFAULT_RESULT_TTL,
                 failure_ttl=settings.RQ_DEFAULT_FAILURE_TTL,
             )
+
+            # Força o timeout como forma de prevenir ignorância do parametro
+            try:
+                enqueued_job.timeout = 600
+                enqueued_job.save()
+            except Exception:
+                pass
+
             return f"debounced:{chat_id}"
 
         return f"buffered:{chat_id}"
