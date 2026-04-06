@@ -114,6 +114,10 @@ class HandoffService:
 
         session.flush()
 
+        # Invalidate analytics cache
+        from robbot.infra.redis.client import invalidate_analytics_cache
+        invalidate_analytics_cache()
+
         logger.info(
             "[SUCCESS] Handoff triggered and notifications created: conv=%s, reason=%s", conversation_id, reason
         )
@@ -164,6 +168,10 @@ class HandoffService:
 
         self.conversation_repo.update(conversation)
         session.flush()
+
+        # Invalidate analytics cache
+        from robbot.infra.redis.client import invalidate_analytics_cache
+        invalidate_analytics_cache()
 
         logger.info("[SUCCESS] Conversation assigned: conv=%s, user=%s", conversation_id, user_id)
 
@@ -218,6 +226,13 @@ class HandoffService:
 
         self.conversation_repo.update(conversation)
         session.flush()
+
+        # Invalidate analytics cache
+        try:
+            from robbot.infra.redis.client import invalidate_analytics_cache
+            invalidate_analytics_cache()
+        except Exception:
+            pass
 
         # Calculate metrics
         metrics = self._calculate_metrics(conversation)
@@ -323,6 +338,13 @@ class HandoffService:
 
         self.conversation_repo.update(conversation)
         session.flush()
+
+        # Invalidate analytics cache
+        try:
+            from robbot.infra.redis.client import invalidate_analytics_cache
+            invalidate_analytics_cache()
+        except Exception:
+            pass
 
         logger.info("[SUCCESS] Conversation returned to bot: conv=%s, by_user=%s", conversation_id, user_id)
 
